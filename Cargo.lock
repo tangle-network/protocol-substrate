@@ -4042,6 +4042,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-verifier"
+version = "3.0.0"
+dependencies = [
+ "darkwebb-primitives",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "parity-db"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
