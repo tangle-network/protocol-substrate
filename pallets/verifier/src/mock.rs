@@ -72,8 +72,8 @@ impl pallet_balances::Config for Test {
 
 pub struct TestVerifier;
 impl InstanceVerifier for TestVerifier {
-	fn hash(data: &[u8], _params: &[u8]) -> Vec<u8> {
-		return data.to_vec();
+	fn verify(_data: &[u8], _params: &[u8]) -> bool {
+		true
 	}
 }
 
