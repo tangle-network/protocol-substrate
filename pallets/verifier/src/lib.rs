@@ -15,23 +15,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Hasher Module
+//! # Verifier Module
 //!
-//! A simple module for abstracting over arbitrary hash functions primarily
-//! for zero-knowledge friendly hash functions that have potentially large
-//! parameters to deal with.
+//! A simple module for abstracting over arbitrary zero-knowledge verifiers
+//! for arbitrary zero-knowledge gadgets. This pallet should store verifying
+//! keys and any other verification specific parameters for different backends
+//! that we support in Webb's ecosystem of runtime modules.
 //!
 //! ## Overview
 //!
-//! The Hasher module provides functionality for hash function management
-//! including:
+//! The Verifier module provides functionality for zero-knowledge verifier
+//! management including:
 //!
-//! * Setting parameters for hash functions
+//! * Setting parameters for zero-knowledge verifier
 //! * Setting the maintainer of the parameters
 //!
-//! To use it in your runtime, you need to implement the hasher [`Config`].
-//! Additionally, you will want to implement the hash traits defined in the
-//! darkwebb_primitives::hasher module.
+//! To use it in your runtime, you need to implement the verifier [`Config`].
+//! Additionally, you will want to implement the verifier traits defined in the
+//! darkwebb_primitives::verifier module.
 //!
 //! The supported dispatchable functions are documented in the [`Call`] enum.
 //!
@@ -39,7 +40,7 @@
 //!
 //! ### Goals
 //!
-//! The hasher system in Webb is designed to make the following possible:
+//! The verifier system in Webb is designed to make the following possible:
 //!
 //! * Define.
 //!
@@ -68,7 +69,7 @@ use sp_runtime::{
 
 use frame_support::traits::{Currency, ReservableCurrency};
 use frame_system::Config as SystemConfig;
-use darkwebb_primitives::{types::DepositDetails, hasher::*};
+use darkwebb_primitives::{types::DepositDetails, verifier::*};
 
 type DepositBalanceOf<T, I = ()> =
 	<<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
@@ -94,8 +95,8 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// The hash instance trait
-		type Hasher: InstanceHasher;
+		/// The verifier instance trait
+		type Verifier: InstanceVerifier;
 
 		/// The currency mechanism.
 		type Currency: ReservableCurrency<Self::AccountId>;
@@ -261,9 +262,9 @@ pub mod pallet {
 }
 
 
-impl<T: Config> HasherModule for Pallet<T> {
-	fn hash(data: &[u8]) -> Vec<u8> {
+impl<T: Config> VerifierModule for Pallet<T> {
+	fn verify(proof: &[u8]) -> bool {
 		let params = Self::parameters();
-		T::Hasher::hash(data, &params)
+		T::Verifier::verify(proof, &params)
 	}
 }
