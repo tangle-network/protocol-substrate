@@ -94,6 +94,21 @@ pub mod opaque {
 	}
 }
 
+/// Money matters.
+pub mod currency {
+	use super::Balance;
+
+	pub const MILLICENTS: Balance = 1_000_000_000;
+	pub const CENTS: Balance = 1_000 * MILLICENTS;    // assume this is worth about a cent.
+	pub const DOLLARS: Balance = 100 * CENTS;
+
+	pub const fn deposit(items: u32, bytes: u32) -> Balance {
+		items as Balance * 15 * CENTS + (bytes as Balance) * 6 * CENTS
+	}
+}
+
+pub use currency::*;
+
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("node-template"),
 	impl_name: create_runtime_str!("node-template"),
@@ -194,6 +209,7 @@ impl frame_system::Config for Runtime {
 	type SystemWeightInfo = ();
 	/// Version of the runtime.
 	type Version = Version;
+	type OnSetCode = ();
 }
 
 impl pallet_aura::Config for Runtime {
@@ -237,6 +253,8 @@ impl pallet_balances::Config for Runtime {
 	type Event = Event;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = MaxLocks;
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 }
 
@@ -265,29 +283,49 @@ use pallet_hasher::{Instance1, Instance2};
 
 pub struct Sha256Hasher;
 
-impl pallet_hasher::InstanceHasher for Sha256Hasher {
-	fn hash(data: &[u8]) -> Vec<u8> {
+impl darkwebb_primitives::InstanceHasher for Sha256Hasher {
+	fn hash(data: &[u8], params: &[u8]) -> Vec<u8> {
 		Vec::new()
 	}
 }
 
 pub struct Sha512Hasher;
 
-impl pallet_hasher::InstanceHasher for Sha512Hasher {
-	fn hash(data: &[u8]) -> Vec<u8> {
+impl darkwebb_primitives::InstanceHasher for Sha512Hasher {
+	fn hash(data: &[u8], params: &[u8]) -> Vec<u8> {
 		Vec::new()
 	}
 }
 
+parameter_types! {
+	pub const StringLimit: u32 = 50;
+	pub const MetadataDepositBase: Balance = 10 * DOLLARS;
+	pub const MetadataDepositPerByte: Balance = 1 * DOLLARS;
+}
+
 impl pallet_hasher::Config<Instance1> for Runtime {
+	type Currency = Balances;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type ParameterDeposit = ();
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type StringLimit = StringLimit;
 	type Event = Event;
 	type Hasher = Sha256Hasher;
 }
 
 impl pallet_hasher::Config<Instance2> for Runtime {
+	type Currency = Balances;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type ParameterDeposit = ();
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type StringLimit = StringLimit;
 	type Event = Event;
 	type Hasher = Sha512Hasher;
 }
+
+impl pallet_randomness_collective_flip::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously
 // configured.
@@ -297,18 +335,18 @@ construct_runtime!(
 		NodeBlock = opaque::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
-		System: frame_system::{Module, Call, Config, Storage, Event<T>},
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
-		Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
-		Aura: pallet_aura::{Module, Config<T>},
-		Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},
-		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
-		TransactionPayment: pallet_transaction_payment::{Module, Storage},
-		Sudo: pallet_sudo::{Module, Call, Config<T>, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Aura: pallet_aura::{Pallet, Config<T>},
+		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		// Include the custom logic from the template pallet in the runtime.
-		TemplateModule: pallet_template::{Module, Call, Storage, Event<T>},
-		Sha256Hash: pallet_hasher::<Instance1>::{Module, Call, Storage, Event<T>},
-		Sha512Hash: pallet_hasher::<Instance2>::{Module, Call, Storage, Event<T>},
+		TemplatePallet: pallet_template::{Pallet, Call, Storage, Event<T>},
+		Sha256Hash: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		Sha512Hash: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -381,10 +419,6 @@ impl_runtime_apis! {
 		) -> sp_inherents::CheckInherentsResult {
 			data.check_extrinsics(&block)
 		}
-
-		fn random_seed() -> <Block as BlockT>::Hash {
-			RandomnessCollectiveFlip::random_seed()
-		}
 	}
 
 	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
@@ -403,8 +437,8 @@ impl_runtime_apis! {
 	}
 
 	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
-		fn slot_duration() -> u64 {
-			Aura::slot_duration()
+		fn slot_duration() -> sp_consensus_aura::SlotDuration {
+			sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
 		}
 
 		fn authorities() -> Vec<AuraId> {

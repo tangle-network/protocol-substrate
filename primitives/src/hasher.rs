@@ -1,3 +1,7 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
+use sp_std::vec::Vec;
+
 // A trait meant to be implemented over a hash function instance
 pub trait InstanceHasher {
 	fn hash(data: &[u8], params: &[u8]) -> Vec<u8>;
