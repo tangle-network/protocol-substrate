@@ -27,7 +27,7 @@ serde = { features = ["derive"], optional = true, version = "1.0.119" }
 # local dependencies
 pallet-template = { path = "../pallets/template", default-features = false, version = "3.0.0" }
 pallet-hasher = { path = "../pallets/hasher", default-features = false, version = "3.0.0" }
-darkwebb-primitives = { path = "../primitives", default-features = false }
+darkwebb-primitives = { path = "../primitives", default-features = false, features = ["hashing"] }
 
 # Substrate dependencies
 frame-benchmarking = { default-features = false, optional = true, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }

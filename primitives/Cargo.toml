@@ -17,10 +17,8 @@ ark-ec = { version = "^0.3.0", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ] }
-ark-ed-on-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "r1cs" ], optional = true }
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ], optional = true }
-ark-mnt4-298 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ], optional = true }
-ark-mnt6-298 = { version = "^0.3.0", default-features = false, features = [ "r1cs" ], optional = true }
 tracing = { version = "0.1", default-features = false, features = [ "attributes" ], optional = true }
 
 blake2 = { version = "0.9", default-features = false }
@@ -42,7 +40,6 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"sp-std/std",
-
 	"ark-ff/std",
 	"ark-ec/std",
 	"ark-std/std",
@@ -51,14 +48,12 @@ std = [
 hashing = [
 	"arkworks-gadgets",
 	"ark-crypto-primitives",
-	"ark-ed-on-bls12-381",
+	"ark-bls12-381",
 	"ark-bls12-377",
-	"ark-mnt4-298",
-	"ark-mnt6-298",
 ]
 verifying = [
-	"ark-ed-on-bls12-381",
+	"arkworks-gadgets",
+	"ark-crypto-primitives",
+	"ark-bls12-381",
 	"ark-bls12-377",
-	"ark-mnt4-298",
-	"ark-mnt6-298",
 ]

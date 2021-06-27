@@ -316,31 +316,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ark-mnt4-298"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad641dc1498d0dfe8d1af35bd773752fd85b9ca1ce4d5c652cc88ca1bc2c5df1"
-dependencies = [
- "ark-ec",
- "ark-ff",
- "ark-r1cs-std",
- "ark-std",
-]
-
-[[package]]
-name = "ark-mnt6-298"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82335122b96dd416b69ec209ae156fc5995d030b62e4cd829a266b1b460c5ac3"
-dependencies = [
- "ark-ec",
- "ark-ff",
- "ark-mnt4-298",
- "ark-r1cs-std",
- "ark-std",
-]
-
-[[package]]
 name = "ark-nonnative-field"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1496,12 +1471,10 @@ name = "darkwebb-primitives"
 version = "0.1.0"
 dependencies = [
  "ark-bls12-377",
+ "ark-bls12-381",
  "ark-crypto-primitives",
  "ark-ec",
- "ark-ed-on-bls12-381",
  "ark-ff",
- "ark-mnt4-298",
- "ark-mnt6-298",
  "ark-relations",
  "ark-serialize",
  "ark-std",

@@ -281,27 +281,13 @@ impl pallet_template::Config for Runtime {
 
 use pallet_hasher::{Instance1, Instance2};
 
-pub struct Sha256Hasher;
-
-impl darkwebb_primitives::InstanceHasher for Sha256Hasher {
-	fn hash(data: &[u8], params: &[u8]) -> Vec<u8> {
-		Vec::new()
-	}
-}
-
-pub struct Sha512Hasher;
-
-impl darkwebb_primitives::InstanceHasher for Sha512Hasher {
-	fn hash(data: &[u8], params: &[u8]) -> Vec<u8> {
-		Vec::new()
-	}
-}
-
 parameter_types! {
 	pub const StringLimit: u32 = 50;
 	pub const MetadataDepositBase: Balance = 10 * DOLLARS;
 	pub const MetadataDepositPerByte: Balance = 1 * DOLLARS;
 }
+
+
 
 impl pallet_hasher::Config<Instance1> for Runtime {
 	type Currency = Balances;
@@ -311,7 +297,7 @@ impl pallet_hasher::Config<Instance1> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type StringLimit = StringLimit;
 	type Event = Event;
-	type Hasher = Sha256Hasher;
+	type Hasher = darkwebb_primitives::hashing::BLS381Poseidon3Rounds;
 }
 
 impl pallet_hasher::Config<Instance2> for Runtime {
@@ -322,7 +308,7 @@ impl pallet_hasher::Config<Instance2> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type StringLimit = StringLimit;
 	type Event = Event;
-	type Hasher = Sha512Hasher;
+	type Hasher = darkwebb_primitives::hashing::BLS381Poseidon5Rounds;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
