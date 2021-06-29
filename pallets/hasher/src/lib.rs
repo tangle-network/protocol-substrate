@@ -65,7 +65,7 @@ use sp_runtime::{
 	}
 };
 
-
+use frame_support::pallet_prelude::{ensure, DispatchError};
 use frame_support::traits::{Currency, ReservableCurrency};
 use frame_system::Config as SystemConfig;
 use darkwebb_primitives::{types::DepositDetails, hasher::*};
@@ -157,10 +157,14 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
+		/// Parameters haven't been initialized
+		ParametersNotInitialized,
 		/// Parameters are invalid or empty
 		InvalidParameters,
 		/// Account does not have correct permissions
 		InvalidPermissions,
+		/// Error during hashing
+		HashError,
 	}
 
 	#[pallet::hooks]
@@ -261,9 +265,24 @@ pub mod pallet {
 }
 
 
-impl<T: Config> HasherModule for Pallet<T> {
-	fn hash(data: &[u8]) -> Vec<u8> {
+impl<T: Config<I>, I: 'static> HasherModule for Pallet<T, I> {
+	fn hash(data: &[u8]) -> Result<Vec<u8>, DispatchError> {
 		let params = Self::parameters();
-		T::Hasher::hash(data, &params)
+		ensure!(params.len() != 0, Error::<T, I>::ParametersNotInitialized);
+		match T::Hasher::hash(data, &params) {
+			Ok(hash) => Ok(hash),
+			Err(_) => {
+				// TODO: Handler properly
+				ensure!(false, Error::<T, I>::HashError);
+				Ok(vec![])
+			}
+		}
+	}
+
+	fn hash_two(left: &[u8], right: &[u8]) -> Result<Vec<u8>, DispatchError> {
+		let mut buf = vec![];
+		buf.extend_from_slice(left);
+		buf.extend_from_slice(right);
+		Self::hash(&buf)
 	}
 }

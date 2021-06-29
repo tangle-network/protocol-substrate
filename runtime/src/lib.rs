@@ -39,9 +39,6 @@ use pallet_transaction_payment::CurrencyAdapter;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-/// Import the template pallet.
-pub use pallet_template;
-
 /// An index to a block.
 pub type BlockNumber = u32;
 
@@ -274,11 +271,6 @@ impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 }
 
-/// Configure the template pallet in pallets/template.
-impl pallet_template::Config for Runtime {
-	type Event = Event;
-}
-
 use pallet_hasher::{Instance1, Instance2};
 
 parameter_types! {
@@ -329,10 +321,9 @@ construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-		// Include the custom logic from the template pallet in the runtime.
-		TemplatePallet: pallet_template::{Pallet, Call, Storage, Event<T>},
-		Sha256Hash: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		Sha512Hash: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>},
+
+		BLS381Poseidon3Rounds: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		BLS381Poseidon5Rounds: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>},
 	}
 );
 

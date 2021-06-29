@@ -24,7 +24,7 @@ tracing = { version = "0.1", default-features = false, features = [ "attributes"
 blake2 = { version = "0.9", default-features = false }
 digest = "0.9"
 
-ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false, optional = true }
+ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
 arkworks-gadgets = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch = "parameter-decode", default-features = false, optional = true}
 
 [dependencies.codec]
@@ -47,13 +47,11 @@ std = [
 ]
 hashing = [
 	"arkworks-gadgets",
-	"ark-crypto-primitives",
 	"ark-bls12-381",
 	"ark-bls12-377",
 ]
 verifying = [
 	"arkworks-gadgets",
-	"ark-crypto-primitives",
 	"ark-bls12-381",
 	"ark-bls12-377",
 ]

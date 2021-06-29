@@ -1,6 +1,7 @@
 use super::*;
-use crate as pallet_hasher;
+use crate as pallet_smt;
 use sp_core::H256;
+
 use frame_support::parameter_types;
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup}, testing::Header,
@@ -21,8 +22,9 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		HasherPallet: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
+		SMT: pallet_smt::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -70,7 +72,7 @@ impl pallet_balances::Config for Test {
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
-	type ReserveIdentifier = [u8; 8];	
+	type ReserveIdentifier = [u8; 8];
 }
 
 pub struct TestHasher;
@@ -87,7 +89,7 @@ parameter_types! {
 	pub const MetadataDepositPerByte: u64 = 1;
 }
 
-impl pallet_hasher::Config<Instance1> for Test {
+impl pallet_hasher::Config for Test {
 	type Event = Event;
 	type Hasher = TestHasher;
 	type Currency = Balances;
@@ -95,6 +97,47 @@ impl pallet_hasher::Config<Instance1> for Test {
 	type ParameterDeposit = ParameterDeposit;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type StringLimit = StringLimit;
+}
+
+parameter_types! {
+	pub const TreeDeposit: u64 = 1;
+	pub const LeafDepositBase: u64 = 1;
+	pub const LeafDepositPerByte: u64 = 1;
+	pub const Two: u64 = 2;
+	pub const MaxTreeDepth: u8 = 255;
+	pub const RootHistorySize: u32 = 1096;
+}
+
+#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq)]
+pub struct Element([u8; 32]);
+impl ElementTrait for Element {
+	fn to_bytes(&self) -> &[u8] {
+		&self.0
+	}
+
+	fn from_bytes(mut input: &[u8]) -> Self {
+		let mut buf = [0u8; 32];
+		let _ = input.read(&mut buf);
+		Self(buf)
+	}
+}
+
+impl Config for Test {
+	type Event = Event;
+	type TreeId = u32;
+	type LeafIndex = u32;
+	type RootIndex = u32;
+	type Element = Element;
+	type Hasher = HasherPallet;
+	type Currency = Balances;
+	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type TreeDeposit = TreeDeposit;
+	type DataDepositBase = LeafDepositBase;
+	type DataDepositPerByte = LeafDepositPerByte;
+	type Two = Two;
+	type RootHistorySize = RootHistorySize;
+	type MaxTreeDepth = MaxTreeDepth;
 	type StringLimit = StringLimit;
 }
 

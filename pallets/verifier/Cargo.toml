@@ -1,5 +1,5 @@
 [package]
-authors = ["Substrate DevHub <https://github.com/substrate-developer-hub>"]
+authors = ["Webb Technologies Inc."]
 description = "FRAME pallet template for defining custom runtime logic."
 edition = "2018"
 homepage = "https://substrate.dev"
