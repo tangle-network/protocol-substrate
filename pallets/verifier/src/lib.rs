@@ -66,7 +66,7 @@ use sp_runtime::{
 	}
 };
 
-
+use frame_support::pallet_prelude::{ensure, DispatchError};
 use frame_support::traits::{Currency, ReservableCurrency};
 use frame_system::Config as SystemConfig;
 use darkwebb_primitives::{types::DepositDetails, verifier::*};
@@ -158,10 +158,14 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
+		/// Parameters haven't been initialized
+		ParametersNotInitialized,
 		/// Parameters are invalid or empty
 		InvalidParameters,
 		/// Account does not have correct permissions
 		InvalidPermissions,
+		/// Error during verification
+		VerifyError,
 	}
 
 	#[pallet::hooks]
@@ -262,9 +266,17 @@ pub mod pallet {
 }
 
 
-impl<T: Config> VerifierModule for Pallet<T> {
-	fn verify(proof: &[u8]) -> bool {
+impl<T: Config<I>, I: 'static> VerifierModule for Pallet<T, I> {
+	fn verify(public_inp_bytes: &[u8], proof: &[u8]) -> Result<bool, DispatchError> {
 		let params = Self::parameters();
-		T::Verifier::verify(proof, &params)
+		ensure!(params.len() != 0, Error::<T, I>::ParametersNotInitialized);
+		match T::Verifier::verify(public_inp_bytes, proof, &params) {
+			Ok(verified) => Ok(verified),
+			Err(_) => {
+				// TODO: Handle properly
+				ensure!(false, Error::<T, I>::VerifyError);
+				Ok(false)
+			}
+		}
 	}
 }

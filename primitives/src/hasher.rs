@@ -4,7 +4,6 @@ use sp_std::vec::Vec;
 use frame_support::pallet_prelude::DispatchError;
 use ark_crypto_primitives::Error;
 
-
 // A trait meant to be implemented over a hash function instance
 pub trait InstanceHasher {
 	fn hash(data: &[u8], params: &[u8]) -> Result<Vec<u8>, Error>;
