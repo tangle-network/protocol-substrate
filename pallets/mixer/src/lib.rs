@@ -242,9 +242,9 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 		bytes.extend_from_slice(&root.encode());
 		bytes.extend_from_slice(&recipient.encode());
 		bytes.extend_from_slice(&relayer.encode());
-		bytes.extend_from_slice(&fee.encode());
 		// TODO: Update gadget being used to include fee as well
 		// TODO: This is not currently included in arkworks_gadgets::setup::mixer::get_public_inputs
+		// bytes.extend_from_slice(&fee.encode());
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 		Ok(())
