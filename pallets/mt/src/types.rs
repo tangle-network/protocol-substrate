@@ -21,10 +21,11 @@ pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy {
 
 /// Tree trait definition to be used in other pallets
 pub trait TreeInterface<T: Config<I>, I: 'static = ()> {
+	type TreeId;
 	// Creates a new tree
 	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, dispatch::DispatchError>;
 	/// Adds members/leaves to the tree
-	fn insert(id: T::TreeId, leaf: T::Element, index: T::LeafIndex) -> Result<T::Element, dispatch::DispatchError>;
+	fn insert_in_order(id: T::TreeId, leaf: T::Element) -> Result<T::Element, dispatch::DispatchError>;
 }
 
 /// Tree trait for inspecting tree state

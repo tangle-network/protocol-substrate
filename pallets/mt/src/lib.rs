@@ -285,16 +285,10 @@ pub mod pallet {
 			ensure!(next_index == tree.leaf_count, Error::<T,I>::InvalidLeafIndex);
 			ensure!(tree.leaf_count.saturating_add(One::one()) <= tree.max_leaves, Error::<T, I>::ExceedsMaxLeaves);
 			// insert the leaf
-			let new_root = <Self as TreeInterface<_,_>>::insert(
+			<Self as TreeInterface<_,_>>::insert_in_order(
 				tree_id,
 				leaf,
-				next_index,
 			)?;
-			// Setting the next root index
-			let root_index = Self::next_root_index();
-			NextRootIndex::<T, I>::mutate(|index| *index = index.saturating_add(One::one()) % T::RootHistorySize::get());
-			CachedRoots::<T, I>::insert(tree_id, root_index, new_root);
-			NextLeafIndex::<T, I>::mutate(tree_id, |index| *index += One::one());
 
 			Ok(().into())
 		}
@@ -345,6 +339,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 }
 
 impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
+	type TreeId = T::TreeId;
+
 	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, DispatchError> {
 		// Setting the next tree id
 		let tree_id = Self::next_tree_id();
@@ -366,7 +362,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 		Ok(tree_id)
 	}
 
-	fn insert(id: T::TreeId, leaf: T::Element, index: T::LeafIndex) -> Result<T::Element, DispatchError> {
+	fn insert_in_order(id: T::TreeId, leaf: T::Element) -> Result<T::Element, DispatchError> {
 		let tree = Trees::<T, I>::get(id);
 		let default_hashes = DefaultHashes::<T, I>::get();
 		let mut edge_index = tree.leaf_count;
@@ -387,7 +383,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 			edge_index /= two;
 		}
 
-		Leaves::<T, I>::insert(id, index, leaf);
+		Leaves::<T, I>::insert(id, tree.leaf_count, leaf);
 		Trees::<T, I>::insert(id, TreeMetadata::<_,_,_> {
 			creator: tree.creator,
 			depth: tree.depth,
@@ -397,6 +393,13 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 			root: hash,
 			edge_nodes: edge_nodes,
 		});
+
+		// Setting the next root index
+		let root_index = Self::next_root_index();
+		NextRootIndex::<T, I>::mutate(|i| *i = i.saturating_add(One::one()) % T::RootHistorySize::get());
+		CachedRoots::<T, I>::insert(id, root_index, hash);
+		NextLeafIndex::<T, I>::mutate(id, |i| *i += One::one());
+
 		// return the root
 		Ok(hash)
 	}

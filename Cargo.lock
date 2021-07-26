@@ -4340,6 +4340,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-mixer"
+version = "3.0.0"
+dependencies = [
+ "ark-crypto-primitives",
+ "darkwebb-primitives",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-hasher",
+ "pallet-mt",
+ "pallet-verifier",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-mt"
 version = "3.0.0"
 dependencies = [

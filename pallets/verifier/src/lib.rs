@@ -265,7 +265,6 @@ pub mod pallet {
 	}
 }
 
-
 impl<T: Config<I>, I: 'static> VerifierModule for Pallet<T, I> {
 	fn verify(public_inp_bytes: &[u8], proof: &[u8]) -> Result<bool, DispatchError> {
 		let params = Self::parameters();
