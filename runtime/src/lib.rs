@@ -96,7 +96,7 @@ pub mod currency {
 	use super::Balance;
 
 	pub const MILLICENTS: Balance = 1_000_000_000;
-	pub const CENTS: Balance = 1_000 * MILLICENTS;    // assume this is worth about a cent.
+	pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
 	pub const DOLLARS: Balance = 100 * CENTS;
 
 	pub const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -193,6 +193,7 @@ impl frame_system::Config for Runtime {
 	type OnKilledAccount = ();
 	/// What to do if a new account is created.
 	type OnNewAccount = ();
+	type OnSetCode = ();
 	/// The ubiquitous origin type.
 	type Origin = Origin;
 	/// Converts a module to the index of the module in `construct_runtime!`.
@@ -206,7 +207,6 @@ impl frame_system::Config for Runtime {
 	type SystemWeightInfo = ();
 	/// Version of the runtime.
 	type Version = Version;
-	type OnSetCode = ();
 }
 
 impl pallet_aura::Config for Runtime {
@@ -279,28 +279,26 @@ parameter_types! {
 	pub const MetadataDepositPerByte: Balance = 1 * DOLLARS;
 }
 
-
-
 impl pallet_hasher::Config<Instance1> for Runtime {
 	type Currency = Balances;
+	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type ParameterDeposit = ();
+	type Hasher = darkwebb_primitives::hashing::BLS381Poseidon3Rounds;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
-	type Event = Event;
-	type Hasher = darkwebb_primitives::hashing::BLS381Poseidon3Rounds;
 }
 
 impl pallet_hasher::Config<Instance2> for Runtime {
 	type Currency = Balances;
+	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type ParameterDeposit = ();
+	type Hasher = darkwebb_primitives::hashing::BLS381Poseidon5Rounds;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
-	type Event = Event;
-	type Hasher = darkwebb_primitives::hashing::BLS381Poseidon5Rounds;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}

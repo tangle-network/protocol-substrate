@@ -8,5 +8,5 @@ pub mod verifier;
 pub mod hashing;
 
 pub use hasher::*;
-pub use verifier::*;
 pub use types::*;
+pub use verifier::*;

@@ -25,7 +25,7 @@ blake2 = { version = "0.9", default-features = false }
 digest = "0.9"
 
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
-arkworks-gadgets = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch = "parameter-decode", default-features = false, optional = true}
+arkworks-gadgets = { version = "^0.3", default-features = false, optional = true }
 
 [dependencies.codec]
 default-features = false

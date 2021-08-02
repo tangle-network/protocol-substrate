@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::pallet_prelude::DispatchError;
 use ark_crypto_primitives::Error;
+use frame_support::pallet_prelude::DispatchError;
 
 // A trait meant to be implemented over a zero-knowledge verifier function.
 pub trait InstanceVerifier {

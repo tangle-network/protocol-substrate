@@ -1,8 +1,7 @@
 //! All the traits exposed to be used in other custom pallets
-use frame_support::Parameter;
 use crate::*;
-use frame_support::dispatch;
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
+use frame_support::{dispatch, Parameter};
 
 pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy {
 	/// converts type to byte slice
@@ -32,7 +31,8 @@ pub trait TreeInterface<T: Config<I>, I: 'static = ()> {
 pub trait TreeInspector<T: Config<I>, I: 'static = ()> {
 	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
 	fn get_root(id: T::TreeId) -> Result<T::Element, dispatch::DispatchError>;
-	/// Checks if a merkle root is in a tree's cached history or returns `TreeDoesntExist
+	/// Checks if a merkle root is in a tree's cached history or returns
+	/// `TreeDoesntExist
 	fn is_known_root(id: T::TreeId, target: T::Element) -> Result<bool, dispatch::DispatchError>;
 }
 
