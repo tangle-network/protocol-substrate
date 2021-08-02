@@ -1,9 +1,8 @@
 use crate::*;
-use sp_std::vec::Vec;
-use sp_std::marker::PhantomData;
-use ark_ff::{PrimeField, BigInteger};
-use arkworks_gadgets::poseidon::{CRH, PoseidonParameters, Rounds, sbox::PoseidonSbox};
-use ark_crypto_primitives::{CRH as CRHTrait, Error};
+use ark_crypto_primitives::{Error, CRH as CRHTrait};
+use ark_ff::{BigInteger, PrimeField};
+use arkworks_gadgets::poseidon::{sbox::PoseidonSbox, PoseidonParameters, Rounds, CRH};
+use sp_std::{marker::PhantomData, vec::Vec};
 
 #[derive(Default, Clone)]
 pub struct PoseidonRounds3;
@@ -29,11 +28,11 @@ pub struct ArkworksPoseidonHasher<F: PrimeField, P: Rounds>(PhantomData<F>, Phan
 impl<F: PrimeField, P: Rounds> InstanceHasher for ArkworksPoseidonHasher<F, P> {
 	fn hash(input: &[u8], param_bytes: &[u8]) -> Result<Vec<u8>, Error> {
 		let params = PoseidonParameters::<F>::from_bytes(param_bytes)?;
-		let output: F = <CRH::<F, P> as CRHTrait>::evaluate(&params, input)?;
+		let output: F = <CRH<F, P> as CRHTrait>::evaluate(&params, input)?;
 		Ok(output.into_repr().to_bytes_le())
 	}
 }
 
-use ark_bls12_381::{Fr as Bls381};
+use ark_bls12_381::Fr as Bls381;
 pub type BLS381Poseidon3Rounds = ArkworksPoseidonHasher<Bls381, PoseidonRounds3>;
 pub type BLS381Poseidon5Rounds = ArkworksPoseidonHasher<Bls381, PoseidonRounds5>;

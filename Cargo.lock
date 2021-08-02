@@ -435,8 +435,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-gadgets"
-version = "0.2.1"
-source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=parameter-decode#2394c47962c6eeda8f03ac47bc58a458bd8524b9"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8cf7fc0d1d0e99ad421d4c55a64150fb4d4bb6ee47fcdecaa70c5261dc85fbcf"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",

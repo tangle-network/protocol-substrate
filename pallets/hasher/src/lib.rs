@@ -44,7 +44,7 @@
 //! * Define.
 //!
 //! ## Interface
-//! 
+//!
 //! ## Related Modules
 //!
 //! * [`System`](../frame_system/index.html)
@@ -58,31 +58,25 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
-use sp_std::{prelude::*};
-use sp_runtime::{
-	traits::{
-		Zero, Saturating,
-	}
+use sp_runtime::traits::{Saturating, Zero};
+use sp_std::prelude::*;
+
+use darkwebb_primitives::{hasher::*, types::DepositDetails};
+use frame_support::{
+	pallet_prelude::{ensure, DispatchError},
+	traits::{Currency, ReservableCurrency},
 };
-
-use frame_support::pallet_prelude::{ensure, DispatchError};
-use frame_support::traits::{Currency, ReservableCurrency};
 use frame_system::Config as SystemConfig;
-use darkwebb_primitives::{types::DepositDetails, hasher::*};
 
-type DepositBalanceOf<T, I = ()> =
-	<<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
+type DepositBalanceOf<T, I = ()> = <<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
 pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{
-		dispatch::DispatchResultWithPostInfo,
-		pallet_prelude::*,
-	};
-	use frame_system::pallet_prelude::*;
 	use super::*;
+	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -100,18 +94,19 @@ pub mod pallet {
 		/// The currency mechanism.
 		type Currency: ReservableCurrency<Self::AccountId>;
 
-		/// The origin which may forcibly reset parameters or otherwise alter privileged
-		/// attributes.
+		/// The origin which may forcibly reset parameters or otherwise alter
+		/// privileged attributes.
 		type ForceOrigin: EnsureOrigin<Self::Origin>;
 
 		/// The basic amount of funds that must be reserved for an asset.
 		type ParameterDeposit: Get<DepositBalanceOf<Self, I>>;
 
-		/// The basic amount of funds that must be reserved when adding metadata to your parameters.
+		/// The basic amount of funds that must be reserved when adding metadata
+		/// to your parameters.
 		type MetadataDepositBase: Get<DepositBalanceOf<Self, I>>;
 
-		/// The additional funds that must be reserved for the number of bytes you store in your
-		/// parameter metadata.
+		/// The additional funds that must be reserved for the number of bytes
+		/// you store in your parameter metadata.
 		type MetadataDepositPerByte: Get<DepositBalanceOf<Self, I>>;
 
 		/// The maximum length of a name or symbol stored on-chain.
@@ -121,35 +116,22 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn parameters)]
 	/// Details of the module's parameters
-	pub(super) type Parameters<T: Config<I>, I: 'static = ()> = StorageValue<
-		_,
-		Vec<u8>,
-		ValueQuery,
-	>;
+	pub(super) type Parameters<T: Config<I>, I: 'static = ()> = StorageValue<_, Vec<u8>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn existing_deposit)]
 	/// Details of the module's parameters
-	pub(super) type Deposit<T: Config<I>, I: 'static = ()> = StorageValue<
-		_,
-		Option<DepositDetails<T::AccountId, DepositBalanceOf<T, I>>>,
-		ValueQuery,
-	>;
+	pub(super) type Deposit<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, Option<DepositDetails<T::AccountId, DepositBalanceOf<T, I>>>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn maintainer)]
 	/// The parameter maintainer who can change the parameters
-	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<
-		_,
-		T::AccountId,
-		ValueQuery,
-	>;
+	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	#[pallet::metadata(
-		T::AccountId = "AccountId",
-	)]
+	#[pallet::metadata(T::AccountId = "AccountId")]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		ParametersSet(T::AccountId, Vec<u8>),
 		MaintainerSet(T::AccountId, T::AccountId),
@@ -173,10 +155,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
-		pub fn set_parameters(
-			origin: OriginFor<T>,
-			parameters: Vec<u8>
-		) -> DispatchResultWithPostInfo {
+		pub fn set_parameters(origin: OriginFor<T>, parameters: Vec<u8>) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			// ensure parameter setter is the maintainer
 			ensure!(origin == Self::maintainer(), Error::<T, I>::InvalidPermissions);
@@ -187,7 +166,7 @@ pub mod pallet {
 			// get old deposit details if they exist
 			let old_deposit_details = Self::existing_deposit().unwrap_or(Default::default());
 			// reserve and unreserve the currrency amounts
-			if  old_deposit_details.depositor == origin {
+			if old_deposit_details.depositor == origin {
 				// handle when the current origin is the same as previous depositor
 				if deposit > old_deposit_details.deposit {
 					T::Currency::reserve(&origin, deposit - old_deposit_details.deposit)?;
@@ -208,10 +187,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(0)]
-		pub fn set_maintainer(
-			origin: OriginFor<T>,
-			new_maintainer: T::AccountId,
-		) -> DispatchResultWithPostInfo {
+		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			// ensure parameter setter is the maintainer
 			ensure!(origin == Self::maintainer(), Error::<T, I>::InvalidPermissions);
@@ -221,19 +197,15 @@ pub mod pallet {
 				Self::deposit_event(Event::MaintainerSet(origin, new_maintainer));
 				Ok(().into())
 			})
-
 		}
 
 		#[pallet::weight(0)]
-		pub fn force_set_parameters(
-			origin: OriginFor<T>,
-			parameters: Vec<u8>
-		) -> DispatchResultWithPostInfo {
+		pub fn force_set_parameters(origin: OriginFor<T>, parameters: Vec<u8>) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			// get old deposit details if they exist
 			let old_deposit_details = Self::existing_deposit().unwrap_or(Default::default());
 			// unreserve the currrency amounts from old depositor when force set
-			if  old_deposit_details.deposit > DepositBalanceOf::<T, I>::zero() {
+			if old_deposit_details.deposit > DepositBalanceOf::<T, I>::zero() {
 				T::Currency::unreserve(&old_deposit_details.depositor, old_deposit_details.deposit);
 			}
 
@@ -244,14 +216,10 @@ pub mod pallet {
 				Self::deposit_event(Event::ParametersSet(Default::default(), parameters));
 				Ok(().into())
 			})
-
 		}
 
 		#[pallet::weight(0)]
-		pub fn force_set_maintainer(
-			origin: OriginFor<T>,
-			new_maintainer: T::AccountId,
-		) -> DispatchResultWithPostInfo {
+		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
@@ -259,11 +227,9 @@ pub mod pallet {
 				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
 				Ok(().into())
 			})
-
 		}
 	}
 }
-
 
 impl<T: Config<I>, I: 'static> HasherModule for Pallet<T, I> {
 	fn hash(data: &[u8]) -> Result<Vec<u8>, DispatchError> {

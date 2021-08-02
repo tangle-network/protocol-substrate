@@ -1,8 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::vec::Vec;
-use frame_support::pallet_prelude::DispatchError;
 use ark_crypto_primitives::Error;
+use frame_support::pallet_prelude::DispatchError;
+use sp_std::vec::Vec;
 
 // A trait meant to be implemented over a hash function instance
 pub trait InstanceHasher {

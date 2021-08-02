@@ -1,7 +1,7 @@
 //! All the traits exposed to be used in other custom pallets
 use crate::*;
+use codec::{Decode, Encode};
 use frame_support::dispatch;
-use codec::{Encode, Decode};
 
 /// Tree trait definition to be used in other pallets
 pub trait MixerInterface<T: Config<I>, I: 'static = ()> {

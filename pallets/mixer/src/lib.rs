@@ -37,7 +37,7 @@
 //! * Define.
 //!
 //! ## Interface
-//! 
+//!
 //! ## Related Modules
 //!
 //! * [`System`](../frame_system/index.html)
@@ -54,32 +54,25 @@ mod tests;
 pub mod types;
 use types::{MixerInterface, MixerMetadata};
 
-use codec::{Encode, Decode, Input};
-use frame_support::pallet_prelude::DispatchError;
-use frame_support::ensure;
-use pallet_mt::types::{TreeInterface, TreeInspector, TreeMetadata, ElementTrait};
+use codec::{Decode, Encode, Input};
+use frame_support::{ensure, pallet_prelude::DispatchError};
+use pallet_mt::types::{ElementTrait, TreeInspector, TreeInterface, TreeMetadata};
 
-use sp_std::{prelude::*};
-use sp_runtime::{
-	traits::{Saturating, AtLeast32Bit, One, Zero}
-};
-use frame_support::traits::{Currency, ReservableCurrency, Get, ExistenceRequirement::AllowDeath};
-use darkwebb_primitives::{verifier::*};
+use darkwebb_primitives::verifier::*;
+use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get, ReservableCurrency};
 use frame_system::Config as SystemConfig;
+use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
+use sp_std::prelude::*;
 
 pub use pallet::*;
 
-type BalanceOf<T, I = ()> =
-	<<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
+type BalanceOf<T, I = ()> = <<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{
-		dispatch::{DispatchResultWithPostInfo},
-		pallet_prelude::*,
-	};
-	use frame_system::pallet_prelude::*;
 	use super::*;
+	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -104,29 +97,17 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn maintainer)]
 	/// The parameter maintainer who can change the parameters
-	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<
-		_,
-		T::AccountId,
-		ValueQuery,
-	>;
+	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
 
 	/// The map of trees to their metadata
 	#[pallet::storage]
 	#[pallet::getter(fn mixers)]
-	pub type Mixers<T: Config<I>, I: 'static = ()> = StorageMap<
-		_,
-		Blake2_128Concat,
-		T::TreeId,
-		MixerMetadata<T::AccountId, BalanceOf<T, I>>,
-		ValueQuery
-	>;
+	pub type Mixers<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::TreeId, MixerMetadata<T::AccountId, BalanceOf<T, I>>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	#[pallet::metadata(
-		T::AccountId = "AccountId",
-		T::TreeId = "TreeId",
-	)]
+	#[pallet::metadata(T::AccountId = "AccountId", T::TreeId = "TreeId")]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		MaintainerSet(T::AccountId, T::AccountId),
 		/// New tree created
@@ -147,9 +128,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
-		pub fn create(
-			origin: OriginFor<T>,
-		) -> DispatchResultWithPostInfo {
+		pub fn create(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			let tree_id = T::Tree::create(T::AccountId::default(), 32u8)?;
 
@@ -158,21 +137,14 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(0)]
-		pub fn deposit(
-			origin: OriginFor<T>,
-			tree_id: T::TreeId,
-			leaf: T::Element,
-		) -> DispatchResultWithPostInfo {
+		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			<Self as MixerInterface<_,_>>::deposit(origin, tree_id, leaf);
+			<Self as MixerInterface<_, _>>::deposit(origin, tree_id, leaf);
 			Ok(().into())
 		}
 
 		#[pallet::weight(0)]
-		pub fn set_maintainer(
-			origin: OriginFor<T>,
-			new_maintainer: T::AccountId,
-		) -> DispatchResultWithPostInfo {
+		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			// ensure parameter setter is the maintainer
 			ensure!(origin == Self::maintainer(), Error::<T, I>::InvalidPermissions);
@@ -182,14 +154,10 @@ pub mod pallet {
 				Self::deposit_event(Event::MaintainerSet(origin, new_maintainer));
 				Ok(().into())
 			})
-
 		}
 
 		#[pallet::weight(0)]
-		pub fn force_set_maintainer(
-			origin: OriginFor<T>,
-			new_maintainer: T::AccountId,
-		) -> DispatchResultWithPostInfo {
+		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
@@ -197,7 +165,6 @@ pub mod pallet {
 				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
 				Ok(().into())
 			})
-
 		}
 	}
 }
@@ -216,14 +183,16 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {
 		// insert the leaf
-		T::Tree::insert_in_order(
-			id,
-			leaf,
-		)?;
+		T::Tree::insert_in_order(id, leaf)?;
 
 		let mixer = Self::mixers(id);
 		// transfer tokens to the pallet
-		<T as pallet::Config<I>>::Currency::transfer(&depositor, &T::AccountId::default(), mixer.deposit_size, AllowDeath)?;
+		<T as pallet::Config<I>>::Currency::transfer(
+			&depositor,
+			&T::AccountId::default(),
+			mixer.deposit_size,
+			AllowDeath,
+		)?;
 
 		Ok(())
 	}
@@ -243,8 +212,9 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 		bytes.extend_from_slice(&recipient.encode());
 		bytes.extend_from_slice(&relayer.encode());
 		// TODO: Update gadget being used to include fee as well
-		// TODO: This is not currently included in arkworks_gadgets::setup::mixer::get_public_inputs
-		// bytes.extend_from_slice(&fee.encode());
+		// TODO: This is not currently included in
+		// arkworks_gadgets::setup::mixer::get_public_inputs bytes.extend_from_slice(&
+		// fee.encode());
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 		Ok(())

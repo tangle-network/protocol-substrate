@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;
-use codec::{Encode, Decode};
 
 // Deposit details used in hasher / verifier pallets for
 // tracking the reserved deposits of maintainers of various
@@ -37,7 +37,7 @@ pub enum Curve {
 pub enum Snark {
 	Groth16,
 	Marlin,
-	Plonk
+	Plonk,
 }
 
 #[cfg_attr(feature = "std", derive(Debug))]

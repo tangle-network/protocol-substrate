@@ -1,5 +1,4 @@
-use crate::{mock::*};
-
+use crate::mock::*;
 
 #[test]
 fn verify_nothing_with_test_verifier() {

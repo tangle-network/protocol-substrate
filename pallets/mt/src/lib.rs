@@ -37,7 +37,7 @@
 //! * Define.
 //!
 //! ## Interface
-//! 
+//!
 //! ## Related Modules
 //!
 //! * [`System`](../frame_system/index.html)
@@ -52,32 +52,25 @@ pub mod mock;
 mod tests;
 
 pub mod types;
-use codec::{Encode, Decode, Input};
-use frame_support::pallet_prelude::DispatchError;
-use frame_support::ensure;
-use types::{TreeInterface, TreeInspector, TreeMetadata, ElementTrait};
+use codec::{Decode, Encode, Input};
+use frame_support::{ensure, pallet_prelude::DispatchError};
+use types::{ElementTrait, TreeInspector, TreeInterface, TreeMetadata};
 
-use sp_std::{prelude::*};
-use sp_runtime::{
-	traits::{Saturating, AtLeast32Bit, One, Zero}
-};
-use frame_support::traits::{Currency, ReservableCurrency, Get};
+use darkwebb_primitives::{hasher::*, types::DepositDetails};
+use frame_support::traits::{Currency, Get, ReservableCurrency};
 use frame_system::Config as SystemConfig;
-use darkwebb_primitives::{types::DepositDetails, hasher::*};
+use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
+use sp_std::prelude::*;
 
-type DepositBalanceOf<T, I = ()> =
-	<<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
+type DepositBalanceOf<T, I = ()> = <<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
 pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::{
-		dispatch::{DispatchResultWithPostInfo},
-		pallet_prelude::*,
-	};
-	use frame_system::pallet_prelude::*;
 	use super::*;
+	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -116,13 +109,14 @@ pub mod pallet {
 		/// The basic amount of funds that must be reserved for an tree.
 		type TreeDeposit: Get<DepositBalanceOf<Self, I>>;
 
-		/// The basic amount of funds that must be reserved when adding metadata to your parameters.
+		/// The basic amount of funds that must be reserved when adding metadata
+		/// to your parameters.
 		type DataDepositBase: Get<DepositBalanceOf<Self, I>>;
 
-		/// The additional funds that must be reserved for the number of bytes you store in your
-		/// parameter metadata.
+		/// The additional funds that must be reserved for the number of bytes
+		/// you store in your parameter metadata.
 		type DataDepositPerByte: Get<DepositBalanceOf<Self, I>>;
-		
+
 		/// The value of two in this form
 		type Two: Get<DepositBalanceOf<Self, I>>;
 
@@ -136,20 +130,13 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn existing_deposit)]
 	/// Details of the module's parameters
-	pub(super) type Deposit<T: Config<I>, I: 'static = ()> = StorageValue<
-		_,
-		Option<DepositDetails<T::AccountId, DepositBalanceOf<T, I>>>,
-		ValueQuery,
-	>;
+	pub(super) type Deposit<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, Option<DepositDetails<T::AccountId, DepositBalanceOf<T, I>>>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn maintainer)]
 	/// The parameter maintainer who can change the parameters
-	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<
-		_,
-		T::AccountId,
-		ValueQuery,
-	>;
+	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
 
 	/// The next tree identifier up for grabs
 	#[pallet::storage]
@@ -159,32 +146,19 @@ pub mod pallet {
 	/// The map of trees to their metadata
 	#[pallet::storage]
 	#[pallet::getter(fn trees)]
-	pub type Trees<T: Config<I>, I: 'static = ()> = StorageMap<
-		_,
-		Blake2_128Concat,
-		T::TreeId,
-		TreeMetadata<T::AccountId, T::LeafIndex, T::Element>,
-		ValueQuery
-	>;
+	pub type Trees<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::TreeId, TreeMetadata<T::AccountId, T::LeafIndex, T::Element>, ValueQuery>;
 
 	/// The default hashes for this tree pallet
 	#[pallet::storage]
 	#[pallet::getter(fn default_hashes)]
 	pub(super) type DefaultHashes<T: Config<I>, I: 'static = ()> = StorageValue<_, Vec<T::Element>, ValueQuery>;
 
-
 	/// The map of (tree_id, index) to the leaf commitment
 	#[pallet::storage]
 	#[pallet::getter(fn leaves)]
-	pub(super) type Leaves<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		T::TreeId,
-		Blake2_128Concat,
-		T::LeafIndex,
-		T::Element,
-		ValueQuery
-	>;
+	pub(super) type Leaves<T: Config<I>, I: 'static = ()> =
+		StorageDoubleMap<_, Blake2_128Concat, T::TreeId, Blake2_128Concat, T::LeafIndex, T::Element, ValueQuery>;
 
 	/// The next tree identifier up for grabs
 	#[pallet::storage]
@@ -194,25 +168,14 @@ pub mod pallet {
 	/// The next tree identifier up for grabs
 	#[pallet::storage]
 	#[pallet::getter(fn next_leaf_index)]
-	pub(super) type NextLeafIndex<T: Config<I>, I: 'static = ()> = StorageMap<
-		_,
-		Blake2_128Concat,
-		T::TreeId,
-		T::LeafIndex,
-		ValueQuery>;
+	pub(super) type NextLeafIndex<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::TreeId, T::LeafIndex, ValueQuery>;
 
 	/// Map of root history from tree id to root index to root values
 	#[pallet::storage]
 	#[pallet::getter(fn cached_roots)]
-	pub(super) type CachedRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		T::TreeId,
-		Blake2_128Concat,
-		T::RootIndex,
-		T::Element,
-		ValueQuery,
-	>;
+	pub(super) type CachedRoots<T: Config<I>, I: 'static = ()> =
+		StorageDoubleMap<_, Blake2_128Concat, T::TreeId, Blake2_128Concat, T::RootIndex, T::Element, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -220,7 +183,7 @@ pub mod pallet {
 		T::AccountId = "AccountId",
 		T::TreeId = "TreeId",
 		T::LeafIndex = "LeafIndex",
-		T::Element = "Element",
+		T::Element = "Element"
 	)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		MaintainerSet(T::AccountId, T::AccountId),
@@ -250,10 +213,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
-		pub fn create(
-			origin: OriginFor<T>,
-			depth: u8,
-		) -> DispatchResultWithPostInfo {
+		pub fn create(origin: OriginFor<T>, depth: u8) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			ensure!(
 				depth <= T::MaxTreeDepth::get() && depth > 0,
@@ -266,38 +226,31 @@ pub mod pallet {
 
 			T::Currency::reserve(&origin, deposit)?;
 
-			let tree_id = <Self as TreeInterface<_,_>>::create(origin.clone(), depth)?;
+			let tree_id = <Self as TreeInterface<_, _>>::create(origin.clone(), depth)?;
 
 			Self::deposit_event(Event::TreeCreation(tree_id, origin));
 			Ok(().into())
 		}
 
 		#[pallet::weight(0)]
-		pub fn insert(
-			origin: OriginFor<T>,
-			tree_id: T::TreeId,
-			leaf: T::Element,
-		) -> DispatchResultWithPostInfo {
+		pub fn insert(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let _origin = ensure_signed(origin)?;
-			ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T,I>::TreeDoesntExist);
+			ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T, I>::TreeDoesntExist);
 			let tree = Trees::<T, I>::get(tree_id);
 			let next_index = Self::next_leaf_index(tree_id);
-			ensure!(next_index == tree.leaf_count, Error::<T,I>::InvalidLeafIndex);
-			ensure!(tree.leaf_count.saturating_add(One::one()) <= tree.max_leaves, Error::<T, I>::ExceedsMaxLeaves);
+			ensure!(next_index == tree.leaf_count, Error::<T, I>::InvalidLeafIndex);
+			ensure!(
+				tree.leaf_count.saturating_add(One::one()) <= tree.max_leaves,
+				Error::<T, I>::ExceedsMaxLeaves
+			);
 			// insert the leaf
-			<Self as TreeInterface<_,_>>::insert_in_order(
-				tree_id,
-				leaf,
-			)?;
+			<Self as TreeInterface<_, _>>::insert_in_order(tree_id, leaf)?;
 
 			Ok(().into())
 		}
 
 		#[pallet::weight(0)]
-		pub fn set_maintainer(
-			origin: OriginFor<T>,
-			new_maintainer: T::AccountId,
-		) -> DispatchResultWithPostInfo {
+		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			// ensure parameter setter is the maintainer
 			ensure!(origin == Self::maintainer(), Error::<T, I>::InvalidPermissions);
@@ -307,14 +260,10 @@ pub mod pallet {
 				Self::deposit_event(Event::MaintainerSet(origin, new_maintainer));
 				Ok(().into())
 			})
-
 		}
 
 		#[pallet::weight(0)]
-		pub fn force_set_maintainer(
-			origin: OriginFor<T>,
-			new_maintainer: T::AccountId,
-		) -> DispatchResultWithPostInfo {
+		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
@@ -322,7 +271,6 @@ pub mod pallet {
 				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
 				Ok(().into())
 			})
-
 		}
 	}
 }
@@ -384,14 +332,14 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 		}
 
 		Leaves::<T, I>::insert(id, tree.leaf_count, leaf);
-		Trees::<T, I>::insert(id, TreeMetadata::<_,_,_> {
+		Trees::<T, I>::insert(id, TreeMetadata::<_, _, _> {
 			creator: tree.creator,
 			depth: tree.depth,
 			paused: tree.paused,
 			max_leaves: tree.max_leaves,
 			leaf_count: tree.leaf_count + One::one(),
 			root: hash,
-			edge_nodes: edge_nodes,
+			edge_nodes,
 		});
 
 		// Setting the next root index
@@ -405,7 +353,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 	}
 }
 
-impl <T: Config<I>, I: 'static> TreeInspector<T, I> for Pallet<T, I> {
+impl<T: Config<I>, I: 'static> TreeInspector<T, I> for Pallet<T, I> {
 	fn get_root(tree_id: T::TreeId) -> Result<T::Element, DispatchError> {
 		ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T, I>::TreeDoesntExist);
 		Ok(Trees::<T, I>::get(tree_id).root)

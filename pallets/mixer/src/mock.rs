@@ -2,13 +2,12 @@ use super::*;
 use crate as pallet_mixer;
 use sp_core::H256;
 
+pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
 use frame_support::parameter_types;
-use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup}, testing::Header,
-};
 use frame_system as system;
-pub use darkwebb_primitives::hasher::{
-	InstanceHasher, HasherModule
+use sp_runtime::{
+	testing::Header,
+	traits::{BlakeTwo256, IdentityLookup},
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -35,29 +34,29 @@ parameter_types! {
 }
 
 impl system::Config for Test {
+	type AccountData = pallet_balances::AccountData<u64>;
+	type AccountId = u64;
 	type BaseCallFilter = ();
-	type BlockWeights = ();
+	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	type DbWeight = ();
-	type Origin = Origin;
-	type Call = Call;
-	type Index = u64;
 	type BlockNumber = u64;
+	type BlockWeights = ();
+	type Call = Call;
+	type DbWeight = ();
+	type Event = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = u64;
-	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = Event;
-	type BlockHashCount = BlockHashCount;
-	type Version = ();
-	type PalletInfo = PalletInfo;
-	type AccountData = pallet_balances::AccountData<u64>;
-	type OnNewAccount = ();
+	type Index = u64;
+	type Lookup = IdentityLookup<Self::AccountId>;
 	type OnKilledAccount = ();
-	type SystemWeightInfo = ();
-	type SS58Prefix = SS58Prefix;
+	type OnNewAccount = ();
 	type OnSetCode = ();
+	type Origin = Origin;
+	type PalletInfo = PalletInfo;
+	type SS58Prefix = SS58Prefix;
+	type SystemWeightInfo = ();
+	type Version = ();
 }
 
 parameter_types! {
@@ -65,15 +64,15 @@ parameter_types! {
 }
 
 impl pallet_balances::Config for Test {
+	type AccountStore = System;
 	type Balance = u64;
 	type DustRemoval = ();
 	type Event = Event;
 	type ExistentialDeposit = ExistentialDeposit;
-	type AccountStore = System;
-	type WeightInfo = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
+	type WeightInfo = ();
 }
 
 pub struct TestHasher;
@@ -91,13 +90,13 @@ parameter_types! {
 }
 
 impl pallet_hasher::Config for Test {
-	type Event = Event;
-	type Hasher = TestHasher;
 	type Currency = Balances;
+	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
-	type ParameterDeposit = ParameterDeposit;
+	type Hasher = TestHasher;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
 }
 
@@ -125,27 +124,27 @@ impl ElementTrait for Element {
 }
 
 impl pallet_mt::Config for Test {
-	type Event = Event;
-	type TreeId = u32;
-	type LeafIndex = u32;
-	type RootIndex = u32;
-	type Element = Element;
-	type Hasher = HasherPallet;
 	type Currency = Balances;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
-	type TreeDeposit = TreeDeposit;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
-	type Two = Two;
-	type RootHistorySize = RootHistorySize;
+	type Element = Element;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type Hasher = HasherPallet;
+	type LeafIndex = u32;
 	type MaxTreeDepth = MaxTreeDepth;
+	type RootHistorySize = RootHistorySize;
+	type RootIndex = u32;
 	type StringLimit = StringLimit;
+	type TreeDeposit = TreeDeposit;
+	type TreeId = u32;
+	type Two = Two;
 }
 
 impl Config for Test {
+	type Currency = Balances;
 	type Event = Event;
 	type Tree = MT;
-	type Currency = Balances;
 }
 
 // Build genesis storage according to the mock runtime.
