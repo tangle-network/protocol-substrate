@@ -54,8 +54,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
-pub mod constants;
-#[cfg(test)]
 pub mod mock;
 #[cfg(test)]
 mod tests;
