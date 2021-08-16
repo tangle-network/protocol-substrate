@@ -435,9 +435,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-gadgets"
-version = "0.3.3"
+version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8cf7fc0d1d0e99ad421d4c55a64150fb4d4bb6ee47fcdecaa70c5261dc85fbcf"
+checksum = "954b0d142bce41280dd3ce2882d0ccc1990ea996f7583a58ae6ee669b6e8cfc5"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -1473,6 +1473,7 @@ version = "0.1.0"
 dependencies = [
  "ark-bls12-377",
  "ark-bls12-381",
+ "ark-bn254",
  "ark-crypto-primitives",
  "ark-ec",
  "ark-ff",
@@ -4327,7 +4328,16 @@ dependencies = [
 name = "pallet-hasher"
 version = "3.0.0"
 dependencies = [
+ "ark-bls12-377",
+ "ark-bls12-381",
+ "ark-bn254",
  "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ff",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "arkworks-gadgets",
  "darkwebb-primitives",
  "frame-support",
  "frame-system",

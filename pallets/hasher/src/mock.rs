@@ -1,5 +1,6 @@
 use super::*;
 use crate as pallet_hasher;
+
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
 use frame_support::parameter_types;
 use frame_system as system;
@@ -20,7 +21,9 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		HasherPallet: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		BN254Poseidon3x5Hasher: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		BN254Poseidon5x5Hasher: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>},
+		BN254CircomPoseidon3x5Hasher: pallet_hasher::<Instance3>::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -72,13 +75,6 @@ impl pallet_balances::Config for Test {
 	type WeightInfo = ();
 }
 
-pub struct TestHasher;
-impl InstanceHasher for TestHasher {
-	fn hash(data: &[u8], _params: &[u8]) -> Result<Vec<u8>, ark_crypto_primitives::Error> {
-		return Ok(data.to_vec());
-	}
-}
-
 parameter_types! {
 	pub const ParameterDeposit: u64 = 1;
 	pub const StringLimit: u32 = 50;
@@ -90,13 +86,38 @@ impl pallet_hasher::Config<Instance1> for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
-	type Hasher = TestHasher;
+	type Hasher = darkwebb_primitives::hashing::BN254Poseidon3x5Hasher;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
 }
 
+impl pallet_hasher::Config<Instance2> for Test {
+	type Currency = Balances;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type Hasher = darkwebb_primitives::hashing::BN254Poseidon5x5Hasher;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ParameterDeposit;
+	type StringLimit = StringLimit;
+}
+
+impl pallet_hasher::Config<Instance3> for Test {
+	type Currency = Balances;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type Hasher = darkwebb_primitives::hashing::BN254CircomPoseidon3x5Hasher;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ParameterDeposit;
+	type StringLimit = StringLimit;
+}
+
+pub type BN254Poseidon3x5HasherCall = pallet_hasher::Call<Test, Instance1>;
+pub type BN254Poseidon5x5HasherCall = pallet_hasher::Call<Test, Instance2>;
+pub type BN254CircomPoseidon3x5HasherCall = pallet_hasher::Call<Test, Instance3>;
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()

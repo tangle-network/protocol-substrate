@@ -164,7 +164,7 @@ pub mod pallet {
 				.saturating_mul((parameters.len() as u32).into())
 				.saturating_add(T::MetadataDepositBase::get());
 			// get old deposit details if they exist
-			let old_deposit_details = Self::existing_deposit().unwrap_or(Default::default());
+			let old_deposit_details = Self::existing_deposit().unwrap_or_default();
 			// reserve and unreserve the currrency amounts
 			if old_deposit_details.depositor == origin {
 				// handle when the current origin is the same as previous depositor
@@ -203,7 +203,7 @@ pub mod pallet {
 		pub fn force_set_parameters(origin: OriginFor<T>, parameters: Vec<u8>) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			// get old deposit details if they exist
-			let old_deposit_details = Self::existing_deposit().unwrap_or(Default::default());
+			let old_deposit_details = Self::existing_deposit().unwrap_or_default();
 			// unreserve the currrency amounts from old depositor when force set
 			if old_deposit_details.deposit > DepositBalanceOf::<T, I>::zero() {
 				T::Currency::unreserve(&old_deposit_details.depositor, old_deposit_details.deposit);
@@ -234,7 +234,7 @@ pub mod pallet {
 impl<T: Config<I>, I: 'static> HasherModule for Pallet<T, I> {
 	fn hash(data: &[u8]) -> Result<Vec<u8>, DispatchError> {
 		let params = Self::parameters();
-		ensure!(params.len() != 0, Error::<T, I>::ParametersNotInitialized);
+		ensure!(!params.is_empty(), Error::<T, I>::ParametersNotInitialized);
 		match T::Hasher::hash(data, &params) {
 			Ok(hash) => Ok(hash),
 			Err(_) => {

@@ -271,7 +271,7 @@ impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 }
 
-use pallet_hasher::{Instance1, Instance2};
+use pallet_hasher::{Instance1, Instance2, Instance3, Instance4, Instance5};
 
 parameter_types! {
 	pub const StringLimit: u32 = 50;
@@ -283,7 +283,7 @@ impl pallet_hasher::Config<Instance1> for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::BLS381Poseidon3Rounds;
+	type Hasher = darkwebb_primitives::hashing::BLS381Poseidon3x5Hasher;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
@@ -294,7 +294,40 @@ impl pallet_hasher::Config<Instance2> for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::BLS381Poseidon5Rounds;
+	type Hasher = darkwebb_primitives::hashing::BLS381Poseidon5x5Hasher;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ();
+	type StringLimit = StringLimit;
+}
+
+impl pallet_hasher::Config<Instance3> for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Hasher = darkwebb_primitives::hashing::BN254Poseidon3x5Hasher;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ();
+	type StringLimit = StringLimit;
+}
+
+impl pallet_hasher::Config<Instance4> for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Hasher = darkwebb_primitives::hashing::BN254Poseidon5x5Hasher;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ();
+	type StringLimit = StringLimit;
+}
+
+impl pallet_hasher::Config<Instance5> for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Hasher = darkwebb_primitives::hashing::BN254CircomPoseidon3x5Hasher;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
@@ -320,8 +353,11 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 
-		BLS381Poseidon3Rounds: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		BLS381Poseidon5Rounds: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>},
+		BLS381Poseidon3x5Hasher: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		BLS381Poseidon5x5Hasher: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>},
+		BN254Poseidon3x5Hasher: pallet_hasher::<Instance3>::{Pallet, Call, Storage, Event<T>},
+		BN254Poseidon5x5Hasher: pallet_hasher::<Instance4>::{Pallet, Call, Storage, Event<T>},
+		BN254CircomPoseidon3x5Hasher: pallet_hasher::<Instance5>::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
