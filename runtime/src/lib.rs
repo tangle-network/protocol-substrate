@@ -271,7 +271,7 @@ impl pallet_sudo::Config for Runtime {
 	type Event = Event;
 }
 
-use pallet_hasher::{Instance1, Instance2, Instance3, Instance4};
+use pallet_hasher::{Instance1, Instance2, Instance3, Instance4, Instance5};
 
 parameter_types! {
 	pub const StringLimit: u32 = 50;
@@ -323,6 +323,17 @@ impl pallet_hasher::Config<Instance4> for Runtime {
 	type StringLimit = StringLimit;
 }
 
+impl pallet_hasher::Config<Instance5> for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Hasher = darkwebb_primitives::hashing::BN254CircomPoseidon3x5Hasher;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ();
+	type StringLimit = StringLimit;
+}
+
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
 // Create the runtime by composing the FRAME pallets that were previously
@@ -346,6 +357,7 @@ construct_runtime!(
 		BLS381Poseidon5x5Hasher: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>},
 		BN254Poseidon3x5Hasher: pallet_hasher::<Instance3>::{Pallet, Call, Storage, Event<T>},
 		BN254Poseidon5x5Hasher: pallet_hasher::<Instance4>::{Pallet, Call, Storage, Event<T>},
+		BN254CircomPoseidon3x5Hasher: pallet_hasher::<Instance5>::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
