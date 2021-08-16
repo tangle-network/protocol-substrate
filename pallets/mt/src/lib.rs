@@ -329,6 +329,8 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 		NextTreeId::<T, I>::mutate(|id| *id += One::one());
 		// get unit of two
 		let two: T::LeafIndex = Self::two();
+		// get default edge nodes
+		let default_edge_nodes = Self::default_hashes();
 		// Setting up the tree
 		let tree_metadata = TreeMetadata::<T::AccountId, T::LeafIndex, T::Element> {
 			creator,
@@ -337,7 +339,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 			max_leaves: two.saturating_pow(depth.into()),
 			leaf_count: T::LeafIndex::zero(),
 			root: T::Element::default(),
-			edge_nodes: vec![],
+			edge_nodes: default_edge_nodes,
 		};
 
 		Trees::<T, I>::insert(tree_id, tree_metadata);
