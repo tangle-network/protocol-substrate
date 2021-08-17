@@ -4,9 +4,7 @@ use codec::{Decode, Encode};
 use frame_support::dispatch;
 
 /// Tree trait definition to be used in other pallets
-pub trait MixerInterface<T: Config<I>, I: 'static = ()> {
-	// Creates a new mixer
-	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, dispatch::DispatchError>;
+pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
 	/// Deposit into the mixer
 	fn deposit(account: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), dispatch::DispatchError>;
 	/// Withdraw into the mixer
@@ -21,16 +19,15 @@ pub trait MixerInterface<T: Config<I>, I: 'static = ()> {
 }
 
 /// Tree trait for inspecting tree state
-pub trait MixerInspector<T: Config<I>, I: 'static = ()> {
+pub trait AnchorInspector<T: Config<I>, I: 'static = ()> {
 	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
-	fn get_root(id: T::TreeId) -> Result<T::Element, dispatch::DispatchError>;
-	/// Checks if a merkle root is in a tree's cached history or returns
+	fn get_neighbor_roots(id: T::TreeId) -> Result<T::Element, dispatch::DispatchError>;	/// Checks if a merkle root is in a tree's cached history or returns
 	/// `TreeDoesntExist
-	fn is_known_root(id: T::TreeId, target: T::Element) -> Result<bool, dispatch::DispatchError>;
+	fn is_known_neighbor_root(id: T::TreeId, target: T::Element) -> Result<bool, dispatch::DispatchError>;
 }
 
 #[derive(Default, Clone, Encode, Decode)]
-pub struct MixerMetadata<AccountId, Balance> {
+pub struct AnchorMetadata<AccountId, Balance> {
 	/// Creator account
 	pub creator: AccountId,
 	/// Balance size of deposit

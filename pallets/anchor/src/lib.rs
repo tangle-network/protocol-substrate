@@ -15,13 +15,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Mixer Module
+//! # Merkle Tree Module
 //!
-//! A simple module for building Mixers.
+//! A simple module for building incremental merkle trees.
 //!
 //! ## Overview
 //!
-//! The Mixer module provides functionality for SMT operations
+//! The Merkle Tree module provides functionality for SMT operations
 //! including:
 //!
 //! * Inserting elements to the tree
@@ -32,7 +32,7 @@
 //!
 //! ### Goals
 //!
-//! The Mixer system in Webb is designed to make the following possible:
+//! The Merkle Tree system in Webb is designed to make the following possible:
 //!
 //! * Define.
 //!
@@ -46,17 +46,18 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(test)]
-pub mod mock;
-#[cfg(test)]
-mod tests;
+// #[cfg(test)]
+// pub mod mock;
+// #[cfg(test)]
+// mod tests;
 
 pub mod types;
-use types::{MixerInterface, MixerMetadata, MixerInspector};
+use types::{AnchorInterface, AnchorMetadata};
 
 use codec::{Decode, Encode, Input};
 use frame_support::{ensure, pallet_prelude::DispatchError};
-use pallet_mt::types::{ElementTrait, TreeInspector, TreeInterface, TreeMetadata};
+use pallet_mt::types::{ElementTrait};
+use pallet_mixer::types::{MixerInspector, MixerInterface, MixerMetadata};
 
 use darkwebb_primitives::verifier::*;
 use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get, ReservableCurrency};
@@ -80,12 +81,12 @@ pub mod pallet {
 
 	#[pallet::config]
 	/// The module configuration trait.
-	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_mt::Config<I> {
+	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_mixer::Config<I> {
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// The tree
-		type Tree: TreeInterface<Self, I> + TreeInspector<Self, I>;
+		type Mixer: MixerInterface<Self, I> + MixerInspector<Self, I>;
 
 		/// The verifier
 		type Verifier: VerifierModule;
@@ -101,9 +102,9 @@ pub mod pallet {
 
 	/// The map of trees to their metadata
 	#[pallet::storage]
-	#[pallet::getter(fn mixers)]
-	pub type Mixers<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, T::TreeId, MixerMetadata<T::AccountId, BalanceOf<T, I>>, ValueQuery>;
+	#[pallet::getter(fn anchors)]
+	pub type Anchors<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::TreeId, AnchorMetadata<T::AccountId, BalanceOf<T, I>>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -111,7 +112,7 @@ pub mod pallet {
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		MaintainerSet(T::AccountId, T::AccountId),
 		/// New tree created
-		MixerCreation(T::TreeId),
+		AnchorCreation(T::TreeId),
 	}
 
 	#[pallet::error]
@@ -130,16 +131,16 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn create(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id = <Self as MixerInterface<_,_>>::create(T::AccountId::default(), 32u8)?;
+			let tree_id = T::Mixer::create(T::AccountId::default(), 32u8)?;
 
-			Self::deposit_event(Event::MixerCreation(tree_id));
+			Self::deposit_event(Event::AnchorCreation(tree_id));
 			Ok(().into())
 		}
 
 		#[pallet::weight(0)]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			<Self as MixerInterface<_, _>>::deposit(origin, tree_id, leaf);
+			T::Mixer::deposit(origin, tree_id, leaf);
 			Ok(().into())
 		}
 
@@ -166,71 +167,5 @@ pub mod pallet {
 				Ok(().into())
 			})
 		}
-	}
-}
-
-impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	fn two() -> T::LeafIndex {
-		let two: T::LeafIndex = {
-			let one: T::LeafIndex = One::one();
-			one.saturating_add(One::one())
-		};
-
-		two
-	}
-}
-
-impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
-	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, DispatchError> {
-		T::Tree::create(T::AccountId::default(), 32u8)
-	}
-
-	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {
-		// insert the leaf
-		T::Tree::insert_in_order(id, leaf)?;
-
-		let mixer = Self::mixers(id);
-		// transfer tokens to the pallet
-		<T as pallet::Config<I>>::Currency::transfer(
-			&depositor,
-			&T::AccountId::default(),
-			mixer.deposit_size,
-			AllowDeath,
-		)?;
-
-		Ok(())
-	}
-
-	fn withdraw(
-		id: T::TreeId,
-		proof_bytes: &[u8],
-		nullifier_hash: T::Element,
-		recipient: T::AccountId,
-		relayer: T::AccountId,
-		fee: BalanceOf<T, I>,
-	) -> Result<(), DispatchError> {
-		let root = T::Tree::get_root(id)?;
-		let mut bytes = vec![];
-		bytes.extend_from_slice(&nullifier_hash.encode());
-		bytes.extend_from_slice(&root.encode());
-		bytes.extend_from_slice(&recipient.encode());
-		bytes.extend_from_slice(&relayer.encode());
-		// TODO: Update gadget being used to include fee as well
-		// TODO: This is not currently included in
-		// arkworks_gadgets::setup::mixer::get_public_inputs bytes.extend_from_slice(&
-		// fee.encode());
-		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
-		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
-		Ok(())
-	}
-}
-
-impl<T: Config<I>, I: 'static> MixerInspector<T, I> for Pallet<T, I> {
-	fn get_root(tree_id: T::TreeId) -> Result<T::Element, DispatchError> {
-		T::Tree::get_root(tree_id)
-	}
-
-	fn is_known_root(tree_id: T::TreeId, target_root: T::Element) -> Result<bool, DispatchError> {
-		T::Tree::is_known_root(tree_id, target_root)
 	}
 }
