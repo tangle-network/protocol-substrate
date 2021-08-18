@@ -324,7 +324,11 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 		// get unit of two
 		let two: T::LeafIndex = Self::two();
 		// get default edge nodes
-		let default_edge_nodes = Self::default_hashes();
+		let num_of_zero_nodes = depth.saturating_add(1);
+		let default_edge_nodes = Self::default_hashes()
+			.into_iter()
+			.take(num_of_zero_nodes as _)
+			.collect();
 		// Setting up the tree
 		let tree_metadata = TreeMetadata::<T::AccountId, T::LeafIndex, T::Element> {
 			creator,
