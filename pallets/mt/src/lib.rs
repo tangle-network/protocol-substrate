@@ -52,7 +52,7 @@ pub mod mock;
 mod tests;
 
 pub mod types;
-use codec::{Decode, Encode, Input};
+use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchError};
 use types::{ElementTrait, TreeInspector, TreeInterface, TreeMetadata};
 
@@ -314,13 +314,13 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 		let tree = Trees::<T, I>::get(id);
 		let default_hashes = DefaultHashes::<T, I>::get();
 		let mut edge_index = tree.leaf_count;
-		let mut hash = leaf.clone();
+		let mut hash = leaf;
 		let mut edge_nodes = tree.edge_nodes.clone();
 		// Update the tree
 		let two = Self::two();
 		for i in 0..edge_nodes.len() {
 			hash = if edge_index % two == Zero::zero() {
-				edge_nodes[i] = hash.clone();
+				edge_nodes[i] = hash;
 				let h = T::Hasher::hash_two(&hash.to_bytes(), &default_hashes[i].to_bytes())?;
 				T::Element::from_vec(h)
 			} else {

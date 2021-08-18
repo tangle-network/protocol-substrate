@@ -4374,7 +4374,10 @@ dependencies = [
 name = "pallet-mt"
 version = "3.0.0"
 dependencies = [
+ "ark-bn254",
  "ark-crypto-primitives",
+ "ark-std",
+ "arkworks-gadgets",
  "darkwebb-primitives",
  "frame-support",
  "frame-system",

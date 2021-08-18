@@ -20,7 +20,7 @@ pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy {
 
 /// Tree trait definition to be used in other pallets
 pub trait TreeInterface<T: Config<I>, I: 'static = ()> {
-	type TreeId;
+	type TreeId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 	// Creates a new tree
 	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, dispatch::DispatchError>;
 	/// Adds members/leaves to the tree
