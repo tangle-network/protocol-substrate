@@ -107,6 +107,13 @@ pub mod pallet {
 	pub type Anchors<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, T::TreeId, AnchorMetadata<T::AccountId, BalanceOf<T, I>>, ValueQuery>;
 
+	/// The map of trees to the maximum number of anchor edges they can have
+	#[pallet::storage]
+	#[pallet::getter(fn max_edges)]
+	pub type MaxEdges<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::TreeId, u32, ValueQuery>;
+
+
 	/// The map of trees to their metadata
 	#[pallet::storage]
 	#[pallet::getter(fn edges)]
@@ -154,6 +161,8 @@ pub mod pallet {
 		/// Invalid neighbor root passed in withdrawal
 		/// (neighbor root is not in neighbor history)
 		InvalidNeighborWithdrawRoot,
+		/// Anchor is at maximum number of edges for the given tree
+		TooManyEdges
 	}
 
 	#[pallet::hooks]
@@ -162,9 +171,13 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
-		pub fn create(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+		pub fn create(
+			origin: OriginFor<T>,
+			max_edges: u32,			
+		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			let tree_id = T::Mixer::create(T::AccountId::default(), 32u8)?;
+			MaxEdges::<T, I>::insert(tree_id, max_edges);
 
 			Self::deposit_event(Event::AnchorCreation(tree_id));
 			Ok(().into())
@@ -226,7 +239,11 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 		T::Mixer::ensure_known_root(id, roots[0])?;
 		if roots.len() > 1 {
 			for i in 1..roots.len() {
-				<Self as AnchorInspector<_,_>>::ensure_known_neighbor_root(id, i as u32, roots[i])?;
+				<Self as AnchorInspector<_,_>>::ensure_known_neighbor_root(
+					id,
+					T::ChainId::from(i as u32),
+					roots[i]
+				)?;
 			}
 		}
 
@@ -256,16 +273,26 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 
 	fn add_edge(
 		id: T::TreeId,
-		src_chain_id: u32,
+		src_chain_id: T::ChainId,
 		root: T::Element,
 		height: T::BlockNumber
 	) -> Result<(), DispatchError> {
+		let edges: Vec<EdgeMetadata<_,_,_>> = Self::edges(id);
+		let max_edges: u32 = Self::max_edges(id);
+		ensure!(max_edges > edges.len() as u32, Error::<T, I>::TooManyEdges);
+		let e_meta = EdgeMetadata::<T::ChainId, T::Element, T::BlockNumber> {
+			src_chain_id: src_chain_id,
+			root: root,
+			height: height,
+		};
+		// Append new edge to the end of the edge list for the given tree
+		Edges::<T, I>::append(id, e_meta);
 		Ok(())
 	}
 
 	fn update_edge(
 		id: T::TreeId,
-		src_chain_id: u32,
+		src_chain_id: T::ChainId,
 		root: T::Element,
 		height: T::BlockNumber
 	) -> Result<(), DispatchError> {
@@ -280,7 +307,7 @@ impl<T: Config<I>, I: 'static> AnchorInspector<T, I> for Pallet<T, I> {
 
 	fn is_known_neighbor_root(
 		tree_id: T::TreeId,
-		src_chain_id: u32,
+		src_chain_id: T::ChainId,
 		target_root: T::Element
 	) -> Result<bool, DispatchError> {
 		Ok(true)

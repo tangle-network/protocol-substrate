@@ -27,14 +27,14 @@ pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
 	/// Add an edge to this anchor bridge
 	fn add_edge(
 		id: T::TreeId,
-		src_chain_id: u32,
+		src_chain_id: T::ChainId,
 		root: T::Element,
 		height: T::BlockNumber
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this anchor bridge
 	fn update_edge(
 		id: T::TreeId,
-		src_chain_id: u32,
+		src_chain_id: T::ChainId,
 		root: T::Element,
 		height: T::BlockNumber
 	) -> Result<(), dispatch::DispatchError>;
@@ -45,8 +45,8 @@ pub trait AnchorInspector<T: Config<I>, I: 'static = ()> {
 	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
 	fn get_neighbor_roots(id: T::TreeId) -> Result<Vec<T::Element>, dispatch::DispatchError>;	/// Checks if a merkle root is in a tree's cached history or returns
 	/// `TreeDoesntExist
-	fn is_known_neighbor_root(id: T::TreeId, src_chain_id: u32, target: T::Element) -> Result<bool, dispatch::DispatchError>;
-	fn ensure_known_neighbor_root(id: T::TreeId, src_chain_id: u32, target: T::Element) -> Result<(), dispatch::DispatchError> {
+	fn is_known_neighbor_root(id: T::TreeId, src_chain_id: T::ChainId, target: T::Element) -> Result<bool, dispatch::DispatchError>;
+	fn ensure_known_neighbor_root(id: T::TreeId, src_chain_id: T::ChainId, target: T::Element) -> Result<(), dispatch::DispatchError> {
 		let is_known = Self::is_known_neighbor_root(id, src_chain_id, target)?;
 		ensure!(is_known, Error::<T, I>::InvalidNeighborWithdrawRoot);
 		Ok(())
