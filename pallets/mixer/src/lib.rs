@@ -105,6 +105,19 @@ pub mod pallet {
 	pub type Mixers<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, T::TreeId, MixerMetadata<T::AccountId, BalanceOf<T, I>>, ValueQuery>;
 
+	/// The map of trees to their metadata
+	#[pallet::storage]
+	#[pallet::getter(fn nullifier_hashes)]
+	pub type NullifierHashes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		T::TreeId,
+		Blake2_128Concat,
+		T::Element,
+		bool,
+		ValueQuery
+	>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	#[pallet::metadata(T::AccountId = "AccountId", T::TreeId = "TreeId")]
@@ -120,6 +133,11 @@ pub mod pallet {
 		InvalidPermissions,
 		/// Invalid withdraw proof
 		InvalidWithdrawProof,
+		/// Invalid nullifier that is already used
+		/// (this error is thrown when a nullifier is used twice)
+		InvalidNullifier,
+		/// Invalid root used in withdrawal
+		InvalidWithdrawRoot,
 	}
 
 	#[pallet::hooks]
@@ -204,15 +222,28 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 	fn withdraw(
 		id: T::TreeId,
 		proof_bytes: &[u8],
+		roots: Vec<T::Element>,
 		nullifier_hash: T::Element,
 		recipient: T::AccountId,
 		relayer: T::AccountId,
 		fee: BalanceOf<T, I>,
+		refund: BalanceOf<T, I>,
 	) -> Result<(), DispatchError> {
-		let root = T::Tree::get_root(id)?;
+		// Check if local root is known
+		ensure!(T::Tree::is_known_root(id, roots[0])?, Error::<T, I>::InvalidWithdrawRoot);
+		// Check nullifier and add or return `InvalidNullifier`
+		ensure!(
+			<Self as MixerInspector<_,_>>::is_nullifier_used(id, nullifier_hash),
+			Error::<T, I>::InvalidNullifier
+		);
+		Self::add_nullifier_hash(id, nullifier_hash);
+		// Format proof public inputs for verification 
+		// FIXME: This is for a specfic gadget so we ought to create a generic handler
+		// FIXME: Such as a unpack/pack public inputs trait
+		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
 		let mut bytes = vec![];
 		bytes.extend_from_slice(&nullifier_hash.encode());
-		bytes.extend_from_slice(&root.encode());
+		bytes.extend_from_slice(&roots[0].encode());
 		bytes.extend_from_slice(&recipient.encode());
 		bytes.extend_from_slice(&relayer.encode());
 		// TODO: Update gadget being used to include fee as well
@@ -221,6 +252,12 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 		// fee.encode());
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
+		// TODO: Transfer assets to the recipient
+		Ok(())
+	}
+
+	fn add_nullifier_hash(id: T::TreeId, nullifier_hash: T::Element) -> Result<(), DispatchError> {
+		NullifierHashes::<T, I>::insert(id, nullifier_hash, true);
 		Ok(())
 	}
 }
@@ -232,5 +269,9 @@ impl<T: Config<I>, I: 'static> MixerInspector<T, I> for Pallet<T, I> {
 
 	fn is_known_root(tree_id: T::TreeId, target_root: T::Element) -> Result<bool, DispatchError> {
 		T::Tree::is_known_root(tree_id, target_root)
+	}
+
+	fn is_nullifier_used(tree_id: T::TreeId, nullifier_hash: T::Element) -> bool {
+		NullifierHashes::<T, I>::contains_key(tree_id, nullifier_hash)
 	}
 }

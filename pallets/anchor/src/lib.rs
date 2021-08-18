@@ -15,14 +15,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Merkle Tree Module
+//! # Anchor Module
 //!
-//! A simple module for building incremental merkle trees.
+//! A simple module for building Anchors.
 //!
 //! ## Overview
 //!
-//! The Merkle Tree module provides functionality for SMT operations
-//! including:
+//! The Anchor module provides functionality for the following:
 //!
 //! * Inserting elements to the tree
 //!
@@ -32,7 +31,7 @@
 //!
 //! ### Goals
 //!
-//! The Merkle Tree system in Webb is designed to make the following possible:
+//! The Anchor system in Webb is designed to make the following possible:
 //!
 //! * Define.
 //!
@@ -52,8 +51,7 @@
 // mod tests;
 
 pub mod types;
-use types::{AnchorInterface, AnchorMetadata};
-
+use types::*;
 use codec::{Decode, Encode, Input};
 use frame_support::{ensure, pallet_prelude::DispatchError};
 use pallet_mt::types::{ElementTrait};
@@ -85,7 +83,10 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// The tree
+		/// ChainID for anchor edges
+		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+
+		/// The mixer type
 		type Mixer: MixerInterface<Self, I> + MixerInspector<Self, I>;
 
 		/// The verifier
@@ -106,6 +107,35 @@ pub mod pallet {
 	pub type Anchors<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, T::TreeId, AnchorMetadata<T::AccountId, BalanceOf<T, I>>, ValueQuery>;
 
+	/// The map of trees to their metadata
+	#[pallet::storage]
+	#[pallet::getter(fn edges)]
+	pub type Edges<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::TreeId, Vec<EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>>, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn neighbor_roots)]
+	pub type NeighborRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		(T::TreeId, T::ChainId),
+		Blake2_128Concat,
+		T::RootIndex,
+		T::Element,
+	>;
+
+	/// The next tree identifier up for grabs
+	#[pallet::storage]
+	#[pallet::getter(fn next_neighbor_root_index)]
+	pub type NextNeighborRootIndex<T: Config<I>, I: 'static = ()> = StorageMap<
+		_,
+		Blake2_128Concat,
+		(T::TreeId, T::ChainId),
+		T::RootIndex,
+		ValueQuery
+	>;
+
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	#[pallet::metadata(T::AccountId = "AccountId", T::TreeId = "TreeId")]
@@ -121,6 +151,9 @@ pub mod pallet {
 		InvalidPermissions,
 		/// Invalid withdraw proof
 		InvalidWithdrawProof,
+		/// Invalid neighbor root passed in withdrawal
+		/// (neighbor root is not in neighbor history)
+		InvalidNeighborWithdrawRoot,
 	}
 
 	#[pallet::hooks]
@@ -167,5 +200,89 @@ pub mod pallet {
 				Ok(().into())
 			})
 		}
+	}
+}
+
+impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
+	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, DispatchError> {
+		T::Mixer::create(T::AccountId::default(), 32u8)
+	}
+
+	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {
+		T::Mixer::deposit(depositor, id, leaf)
+	}
+
+	fn withdraw(
+		id: T::TreeId,
+		proof_bytes: &[u8],
+		roots: Vec<T::Element>,
+		nullifier_hash: T::Element,
+		recipient: T::AccountId,
+		relayer: T::AccountId,
+		fee: BalanceOf<T, I>,
+		refund: BalanceOf<T, I>,
+	) -> Result<(), DispatchError> {
+		// Check if local root is known
+		T::Mixer::ensure_known_root(id, roots[0])?;
+		if roots.len() > 1 {
+			for i in 1..roots.len() {
+				<Self as AnchorInspector<_,_>>::ensure_known_neighbor_root(id, i as u32, roots[i])?;
+			}
+		}
+
+		// Check nullifier and add or return `InvalidNullifier`
+		T::Mixer::ensure_nullifier_unused(id, nullifier_hash)?;
+		T::Mixer::add_nullifier_hash(id, nullifier_hash);
+		// Format proof public inputs for verification 
+		// FIXME: This is for a specfic gadget so we ought to create a generic handler
+		// FIXME: Such as a unpack/pack public inputs trait
+		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
+		let mut bytes = vec![];
+		bytes.extend_from_slice(&nullifier_hash.encode());
+		for i in 0..roots.len() {
+			bytes.extend_from_slice(&roots[i].encode());
+		}
+		bytes.extend_from_slice(&recipient.encode());
+		bytes.extend_from_slice(&relayer.encode());
+		// TODO: Update gadget being used to include fee as well
+		// TODO: This is not currently included in
+		// arkworks_gadgets::setup::mixer::get_public_inputs bytes.extend_from_slice(&
+		// fee.encode());
+		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
+		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
+		// TODO: Transfer assets to the recipient
+		Ok(())
+	}
+
+	fn add_edge(
+		id: T::TreeId,
+		src_chain_id: u32,
+		root: T::Element,
+		height: T::BlockNumber
+	) -> Result<(), DispatchError> {
+		Ok(())
+	}
+
+	fn update_edge(
+		id: T::TreeId,
+		src_chain_id: u32,
+		root: T::Element,
+		height: T::BlockNumber
+	) -> Result<(), DispatchError> {
+		Ok(())
+	}
+}
+
+impl<T: Config<I>, I: 'static> AnchorInspector<T, I> for Pallet<T, I> {
+	fn get_neighbor_roots(tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
+		Ok(vec![T::Element::default()])
+	}
+
+	fn is_known_neighbor_root(
+		tree_id: T::TreeId,
+		src_chain_id: u32,
+		target_root: T::Element
+	) -> Result<bool, DispatchError> {
+		Ok(true)
 	}
 }
