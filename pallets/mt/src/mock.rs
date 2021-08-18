@@ -1,5 +1,8 @@
+#![allow(clippy::zero_prefixed_literal)]
+
 use super::*;
 use crate as pallet_smt;
+use ark_ff::{BigInteger, PrimeField};
 use sp_core::H256;
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
@@ -99,7 +102,13 @@ parameter_types! {
 	pub const Two: u64 = 2;
 	pub const MaxTreeDepth: u8 = 32;
 	pub const RootHistorySize: u32 = 1096;
-	pub const DefaultZeroElement: Element = Element([0u8; 32]);
+	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
+	pub const DefaultZeroElement: Element = Element([
+		047, 229, 076, 096, 211, 172, 171, 243,
+		052, 058, 053, 182, 235, 161, 093, 180,
+		130, 027, 052, 015, 118, 231, 065, 226,
+		036, 150, 133, 237, 072, 153, 175, 108,
+	]);
 }
 
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq)]
