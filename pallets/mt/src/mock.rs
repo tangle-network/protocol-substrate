@@ -2,7 +2,6 @@
 
 use super::*;
 use crate as pallet_smt;
-use ark_ff::{BigInteger, PrimeField};
 use sp_core::H256;
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};

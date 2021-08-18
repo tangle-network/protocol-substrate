@@ -215,14 +215,10 @@ pub mod pallet {
 		fn on_initialize(_n: T::BlockNumber) -> Weight {
 			let mut temp_hashes: Vec<T::Element> = Vec::with_capacity(T::MaxTreeDepth::get() as usize);
 			let default_zero = T::DefaultZeroElement::get();
-			let default_zero_bytes = default_zero.to_bytes();
-			let mut temp_hash = T::Hasher::hash_two(default_zero_bytes, default_zero_bytes)
-				.unwrap_or_else(|_| default_zero_bytes.to_vec());
-			// add temp hash to collection
-			temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
-
-			for _ in 1..=T::MaxTreeDepth::get() {
-				temp_hash = T::Hasher::hash_two(&temp_hash, &temp_hash).unwrap_or_else(|_| default_zero_bytes.to_vec());
+			temp_hashes.push(default_zero);
+			let mut temp_hash = default_zero.to_bytes().to_vec();
+			for _ in 0..T::MaxTreeDepth::get() {
+				temp_hash = T::Hasher::hash_two(&temp_hash, &temp_hash).unwrap();
 				temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
 			}
 
