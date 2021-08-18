@@ -99,7 +99,7 @@ parameter_types! {
 	pub const Two: u64 = 2;
 	pub const MaxTreeDepth: u8 = 32;
 	pub const RootHistorySize: u32 = 1096;
-	pub const DefaultZeroElement = [0u8; 32];
+	pub const DefaultZeroElement: Element = Element([0u8; 32]);
 }
 
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq)]
@@ -121,8 +121,8 @@ impl Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
-	type Element = Element;
 	type DefaultZeroElement = DefaultZeroElement;
+	type Element = Element;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
 	type Hasher = HasherPallet;
