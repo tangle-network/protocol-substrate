@@ -52,5 +52,4 @@ std = [
     "sp-std/std",
     "darkwebb-primitives/std",
     "darkwebb-primitives/hashing",
-    "ark-crypto-primitives/std",
 ]
