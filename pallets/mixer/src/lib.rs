@@ -200,7 +200,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, DispatchError> {
-		T::Tree::create(T::AccountId::default(), 32u8)
+		T::Tree::create(T::AccountId::default(), depth)
 	}
 
 	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {
