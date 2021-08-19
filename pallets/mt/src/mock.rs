@@ -1,7 +1,7 @@
 #![allow(clippy::zero_prefixed_literal)]
 
 use super::*;
-use crate as pallet_smt;
+use crate as pallet_mt;
 use sp_core::H256;
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
@@ -25,7 +25,7 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
-		Smt: pallet_smt::{Pallet, Call, Storage, Event<T>},
+		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 	}
 );
 

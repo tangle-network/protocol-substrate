@@ -18,7 +18,7 @@ fn hasher_params() -> Vec<u8> {
 #[test]
 fn shout_create_an_empty_tree() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Smt::create(Origin::signed(1), 32));
+		assert_ok!(MerkleTree::create(Origin::signed(1), 32));
 	});
 }
 
@@ -26,11 +26,14 @@ fn shout_create_an_empty_tree() {
 fn should_fail_in_case_of_larger_depth() {
 	new_test_ext().execute_with(|| {
 		let max_depth = <Test as Config>::MaxTreeDepth::get();
-		assert_err!(Smt::create(Origin::signed(1), max_depth + 1), DispatchError::Module {
-			index: 3,
-			error: 1, // InvalidTreeDepth,
-			message: None,
-		});
+		assert_err!(
+			MerkleTree::create(Origin::signed(1), max_depth + 1),
+			DispatchError::Module {
+				index: 3,
+				error: 1, // InvalidTreeDepth,
+				message: None,
+			}
+		);
 	});
 }
 
@@ -40,12 +43,12 @@ fn should_be_able_to_insert_leaves() {
 		// init hasher pallet first.
 		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
 		let depth = 3;
-		assert_ok!(Smt::create(Origin::signed(1), depth));
-		let tree_id = Smt::next_tree_id() - 1;
+		assert_ok!(MerkleTree::create(Origin::signed(1), depth));
+		let tree_id = MerkleTree::next_tree_id() - 1;
 		let total_leaves_count = 2u32.pow(depth as _);
 		let leaf = Element::from_bytes(&[1u8; 32]);
 		(0..total_leaves_count).for_each(|_| {
-			assert_ok!(Smt::insert(Origin::signed(1), tree_id, leaf));
+			assert_ok!(MerkleTree::insert(Origin::signed(1), tree_id, leaf));
 		});
 	});
 }
@@ -56,18 +59,21 @@ fn should_fail_if_the_tree_is_full() {
 		// init hasher pallet first.
 		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
 		let depth = 3;
-		assert_ok!(Smt::create(Origin::signed(1), depth));
-		let tree_id = Smt::next_tree_id() - 1;
+		assert_ok!(MerkleTree::create(Origin::signed(1), depth));
+		let tree_id = MerkleTree::next_tree_id() - 1;
 		let total_leaves_count = 2u32.pow(depth as _);
 		let leaf = Element::from_bytes(&[1u8; 32]);
 		(0..total_leaves_count).for_each(|_| {
-			assert_ok!(Smt::insert(Origin::signed(1), tree_id, leaf));
+			assert_ok!(MerkleTree::insert(Origin::signed(1), tree_id, leaf));
 		});
-		assert_err!(Smt::insert(Origin::signed(1), tree_id, leaf), DispatchError::Module {
-			index: 3,
-			error: 3, // ExceedsMaxLeaves
-			message: None,
-		});
+		assert_err!(
+			MerkleTree::insert(Origin::signed(1), tree_id, leaf),
+			DispatchError::Module {
+				index: 3,
+				error: 3, // ExceedsMaxLeaves
+				message: None,
+			}
+		);
 	});
 }
 
@@ -83,24 +89,24 @@ fn should_reach_same_root_as_js() {
 		// init hasher pallet first.
 		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
 		// init zero hashes.
-		<Smt as OnInitialize<u64>>::on_initialize(1);
+		<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 		let depth = 3;
-		assert_ok!(Smt::create(Origin::signed(1), depth as _));
-		let tree_id = Smt::next_tree_id() - 1;
+		assert_ok!(MerkleTree::create(Origin::signed(1), depth as _));
+		let tree_id = MerkleTree::next_tree_id() - 1;
 		let one = Fr::one();
 		let two = one.double();
 		let leaf_one = Element::from_bytes(&one.into_repr().to_bytes_be());
 		let leaf_two = Element::from_bytes(&two.into_repr().to_bytes_be());
-		assert_ok!(Smt::insert(Origin::signed(1), tree_id, leaf_one));
-		assert_ok!(Smt::insert(Origin::signed(1), tree_id, leaf_two));
-		let root = Smt::get_root(tree_id).unwrap();
+		assert_ok!(MerkleTree::insert(Origin::signed(1), tree_id, leaf_one));
+		assert_ok!(MerkleTree::insert(Origin::signed(1), tree_id, leaf_two));
+		let root = MerkleTree::get_root(tree_id).unwrap();
 		let root = Fr::from_be_bytes_mod_order(root.to_bytes());
 		let expected_root = ark_ff::field_new!(
 			Fr,
 			"4699987802398398943634862747629228556213954342379652513425782003585571710410"
 		);
 		assert_eq!(root, expected_root);
-		assert_ok!(Smt::is_known_root(
+		assert_ok!(MerkleTree::is_known_root(
 			tree_id,
 			Element::from_bytes(&expected_root.into_repr().to_bytes_be())
 		));
