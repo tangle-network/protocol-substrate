@@ -52,7 +52,7 @@ pub mod mock;
 mod tests;
 
 pub mod types;
-use codec::{Decode, Encode, Input};
+use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchError};
 use types::{ElementTrait, TreeInspector, TreeInterface, TreeMetadata};
 
@@ -215,22 +215,13 @@ pub mod pallet {
 		fn on_initialize(_n: T::BlockNumber) -> Weight {
 			let mut temp_hashes: Vec<T::Element> = Vec::with_capacity(T::MaxTreeDepth::get() as usize);
 			let default_zero = T::DefaultZeroElement::get();
-			let default_zero_bytes = default_zero.to_bytes();
-			let mut temp_hash = T::Hasher::hash_two(
-				default_zero_bytes.clone(),
-				default_zero_bytes.clone()
-			).unwrap_or(default_zero_bytes.to_vec());
-			// add temp hash to collection
-			temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
-
-			for _ in 1..=T::MaxTreeDepth::get() {
-				temp_hash = T::Hasher::hash_two(
-					&temp_hash,
-					&temp_hash
-				).unwrap_or(default_zero_bytes.to_vec());
+			temp_hashes.push(default_zero);
+			let mut temp_hash = default_zero.to_bytes().to_vec();
+			for _ in 0..T::MaxTreeDepth::get() {
+				temp_hash = T::Hasher::hash_two(&temp_hash, &temp_hash).unwrap();
 				temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
 			}
-			
+
 			DefaultHashes::<T, I>::put(temp_hashes);
 			1u64 + 1u64
 		}
@@ -300,7 +291,10 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(0)]
-		pub fn force_set_default_hashes(origin: OriginFor<T>, default_hashes: Vec<T::Element>) -> DispatchResultWithPostInfo {
+		pub fn force_set_default_hashes(
+			origin: OriginFor<T>,
+			default_hashes: Vec<T::Element>,
+		) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			// set the new maintainer
 			DefaultHashes::<T, I>::put(default_hashes);
@@ -330,9 +324,13 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 		// get unit of two
 		let two: T::LeafIndex = Self::two();
 		// get default edge nodes
-		let default_edge_nodes = Self::default_hashes();
+		let num_of_zero_nodes = depth;
+		let default_edge_nodes = Self::default_hashes()
+			.into_iter()
+			.take(num_of_zero_nodes as _)
+			.collect();
 		// Setting up the tree
-		let tree_metadata = TreeMetadata::<T::AccountId, T::LeafIndex, T::Element> {
+		let tree_metadata = TreeMetadata {
 			creator,
 			depth,
 			paused: false,
@@ -350,13 +348,13 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 		let tree = Trees::<T, I>::get(id);
 		let default_hashes = DefaultHashes::<T, I>::get();
 		let mut edge_index = tree.leaf_count;
-		let mut hash = leaf.clone();
+		let mut hash = leaf;
 		let mut edge_nodes = tree.edge_nodes.clone();
 		// Update the tree
 		let two = Self::two();
 		for i in 0..edge_nodes.len() {
 			hash = if edge_index % two == Zero::zero() {
-				edge_nodes[i] = hash.clone();
+				edge_nodes[i] = hash;
 				let h = T::Hasher::hash_two(&hash.to_bytes(), &default_hashes[i].to_bytes())?;
 				T::Element::from_vec(h)
 			} else {
@@ -368,7 +366,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 		}
 
 		Leaves::<T, I>::insert(id, tree.leaf_count, leaf);
-		Trees::<T, I>::insert(id, TreeMetadata::<_, _, _> {
+		Trees::<T, I>::insert(id, TreeMetadata {
 			creator: tree.creator,
 			depth: tree.depth,
 			paused: tree.paused,
