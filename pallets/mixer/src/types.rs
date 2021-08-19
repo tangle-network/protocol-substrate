@@ -3,13 +3,13 @@ use crate::*;
 use codec::{Decode, Encode};
 use frame_support::{dispatch, ensure};
 
-/// Tree trait definition to be used in other pallets
+/// Mixer trait definition to be used in other pallets
 pub trait MixerInterface<T: Config<I>, I: 'static = ()> {
 	// Creates a new mixer
 	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, dispatch::DispatchError>;
 	/// Deposit into the mixer
 	fn deposit(account: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), dispatch::DispatchError>;
-	/// Withdraw into the mixer
+	/// Withdraw from the mixer
 	fn withdraw(
 		id: T::TreeId,
 		proof_bytes: &[u8],
@@ -24,7 +24,7 @@ pub trait MixerInterface<T: Config<I>, I: 'static = ()> {
 	fn add_nullifier_hash(id: T::TreeId, nullifier_hash: T::Element) -> Result<(), dispatch::DispatchError>;
 }
 
-/// Tree trait for inspecting tree state
+/// Mixer trait for inspecting mixer state
 pub trait MixerInspector<T: Config<I>, I: 'static = ()> {
 	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
 	fn get_root(id: T::TreeId) -> Result<T::Element, dispatch::DispatchError>;

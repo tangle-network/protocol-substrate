@@ -3,17 +3,17 @@ use crate::*;
 use codec::{Decode, Encode};
 use frame_support::dispatch;
 
-/// Tree trait definition to be used in other pallets
+/// Anchor trait definition to be used in other pallets
 pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
-	// Creates a new mixer
+	// Creates a new anchor
 	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, dispatch::DispatchError>;
-	/// Deposit into the mixer
+	/// Deposit into the anchor
 	fn deposit(
 		account: T::AccountId,
 		id: T::TreeId,
 		leaf: T::Element
 	) -> Result<(), dispatch::DispatchError>;
-	/// Withdraw into the mixer
+	/// Withdraw from the anchor
 	fn withdraw(
 		id: T::TreeId,
 		proof_bytes: &[u8],
@@ -24,14 +24,14 @@ pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
 		fee: BalanceOf<T, I>,
 		refund: BalanceOf<T, I>,
 	) -> Result<(), dispatch::DispatchError>;
-	/// Add an edge to this anchor bridge
+	/// Add an edge to this anchor
 	fn add_edge(
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
 		root: T::Element,
 		height: T::BlockNumber
 	) -> Result<(), dispatch::DispatchError>;
-	/// Update an edge for this anchor bridge
+	/// Update an edge for this anchor
 	fn update_edge(
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
@@ -40,7 +40,7 @@ pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
 	) -> Result<(), dispatch::DispatchError>;
 }
 
-/// Tree trait for inspecting tree state
+/// Anchor trait for inspecting tree state
 pub trait AnchorInspector<T: Config<I>, I: 'static = ()> {
 	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
 	fn get_neighbor_roots(id: T::TreeId) -> Result<Vec<T::Element>, dispatch::DispatchError>;	/// Checks if a merkle root is in a tree's cached history or returns
