@@ -104,7 +104,7 @@ pub mod pallet {
 	/// The parameter maintainer who can change the parameters
 	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
 
-	/// The map of trees to their metadata
+	/// The map of trees to their anchor metadata
 	#[pallet::storage]
 	#[pallet::getter(fn anchors)]
 	pub type Anchors<T: Config<I>, I: 'static = ()> =
@@ -116,7 +116,7 @@ pub mod pallet {
 	pub type MaxEdges<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, T::TreeId, u32, ValueQuery>;
 
-	/// The map of trees to their metadata
+	/// The map of trees and chain ids to their edge metadata
 	#[pallet::storage]
 	#[pallet::getter(fn edge_list)]
 	pub type EdgeList<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
@@ -129,7 +129,7 @@ pub mod pallet {
 		ValueQuery
 	>;
 
-	/// The map of trees to their metadata
+	/// A helper map for denoting whether an anchor is bridged to given chain
 	#[pallet::storage]
 	#[pallet::getter(fn anchor_has_edge)]
 	pub type AnchorHasEdge<T: Config<I>, I: 'static = ()> = StorageMap<
@@ -140,6 +140,7 @@ pub mod pallet {
 		ValueQuery
 	>;
 
+	/// The map of (tree, chain id) pairs to their latest recorded merkle root
 	#[pallet::storage]
 	#[pallet::getter(fn neighbor_roots)]
 	pub type NeighborRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
@@ -151,7 +152,7 @@ pub mod pallet {
 		T::Element,
 	>;
 
-	/// The next tree identifier up for grabs
+	/// The next neighbor root index to store the merkle root update record
 	#[pallet::storage]
 	#[pallet::getter(fn next_neighbor_root_index)]
 	pub type NextNeighborRootIndex<T: Config<I>, I: 'static = ()> = StorageMap<

@@ -99,13 +99,13 @@ pub mod pallet {
 	/// The parameter maintainer who can change the parameters
 	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
 
-	/// The map of trees to their metadata
+	/// The map of trees to their mixer metadata
 	#[pallet::storage]
 	#[pallet::getter(fn mixers)]
 	pub type Mixers<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, T::TreeId, MixerMetadata<T::AccountId, BalanceOf<T, I>>, ValueQuery>;
 
-	/// The map of trees to their metadata
+	/// The map of trees to their spent nullifier hashes
 	#[pallet::storage]
 	#[pallet::getter(fn nullifier_hashes)]
 	pub type NullifierHashes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
