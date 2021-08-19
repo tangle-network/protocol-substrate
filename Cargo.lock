@@ -1477,6 +1477,7 @@ dependencies = [
  "ark-crypto-primitives",
  "ark-ec",
  "ark-ff",
+ "ark-groth16",
  "ark-relations",
  "ark-serialize",
  "ark-std",
@@ -4521,6 +4522,7 @@ dependencies = [
 name = "pallet-verifier"
 version = "3.0.0"
 dependencies = [
+ "ark-crypto-primitives",
  "darkwebb-primitives",
  "frame-support",
  "frame-system",

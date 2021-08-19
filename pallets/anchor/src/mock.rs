@@ -1,5 +1,5 @@
 use super::*;
-use crate as pallet_mixer;
+use crate as pallet_anchor;
 use sp_core::H256;
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
@@ -26,6 +26,7 @@ frame_support::construct_runtime!(
 		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
 		MT: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
+		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -76,18 +77,22 @@ impl pallet_balances::Config for Test {
 	type WeightInfo = ();
 }
 
-pub struct TestHasher;
-impl InstanceHasher for TestHasher {
-	fn hash(data: &[u8], _params: &[u8]) -> Result<Vec<u8>, ark_crypto_primitives::Error> {
-		return Ok(data.to_vec());
-	}
-}
-
 parameter_types! {
 	pub const ParameterDeposit: u64 = 1;
 	pub const StringLimit: u32 = 50;
 	pub const MetadataDepositBase: u64 = 1;
 	pub const MetadataDepositPerByte: u64 = 1;
+}
+
+impl pallet_verifier::Config for Test {
+	type Currency = Balances;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ParameterDeposit;
+	type StringLimit = StringLimit;
+	type Verifier = darkwebb_primitives::verifying::ArkworksBls381Verifier;
 }
 
 impl pallet_hasher::Config for Test {
@@ -108,7 +113,6 @@ parameter_types! {
 	pub const Two: u64 = 2;
 	pub const MaxTreeDepth: u8 = 255;
 	pub const RootHistorySize: u32 = 1096;
-	pub const DefaultZeroElement: Element = Element([0u8; 32]);
 }
 
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq)]
@@ -141,25 +145,28 @@ impl pallet_mt::Config for Test {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
-	type DefaultZeroElement = DefaultZeroElement;
 }
 
-impl pallet_verifier::Config for Test {
-	type Currency = Balances;
-	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ParameterDeposit;
-	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBls381Verifier;
-}
-
-impl Config for Test {
+impl pallet_mixer::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type Tree = MT;
+}
+
+parameter_types! {
+	pub const HistoryLength: u32 = 30;
+	pub const StringLimit: u32 = 50;
+	pub const MetadataDepositBase: u64 = 1;
+	pub const MetadataDepositPerByte: u64 = 1;
+}
+
+impl pallet_anchor::Config for Test {
+	type Event = Event;
+	type ChainId = u32;
+	type Mixer = Mixer;
+	type Currency = Balances;
 	type Verifier = VerifierPallet;
+	type HistoryLength = HistoryLength;
 }
 
 // Build genesis storage according to the mock runtime.

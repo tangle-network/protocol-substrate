@@ -106,7 +106,7 @@ parameter_types! {
 	pub const Two: u64 = 2;
 	pub const MaxTreeDepth: u8 = 255;
 	pub const RootHistorySize: u32 = 1096;
-	pub const DefaultZeroElement = [0u8; 32];
+	pub const DefaultZeroElement: Element = Element([0u8; 32]);
 }
 
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq)]

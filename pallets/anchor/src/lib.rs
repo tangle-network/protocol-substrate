@@ -86,9 +86,6 @@ pub mod pallet {
 		/// ChainID for anchor edges
 		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 
-		/// EdgeIndex type
-		type EdgeIndex: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
-
 		/// The mixer type
 		type Mixer: MixerInterface<Self, I> + MixerInspector<Self, I>;
 

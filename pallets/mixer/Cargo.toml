@@ -24,7 +24,7 @@ sp-std = { default-features = false, version = "3.0.0", git = "https://github.co
 pallet-hasher = { path = "../hasher", default-features = false }
 pallet-mt = { path = "../mt", default-features = false }
 pallet-verifier = { path = "../verifier", default-features = false }
-darkwebb-primitives = { path = "../../primitives", default-features = false }
+darkwebb-primitives = { path = "../../primitives", features = ["verifying"], default-features = false }
 
 [dev-dependencies]
 serde = { version = "1.0.119" }

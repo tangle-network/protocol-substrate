@@ -74,8 +74,8 @@ impl pallet_balances::Config for Test {
 
 pub struct TestVerifier;
 impl InstanceVerifier for TestVerifier {
-	fn verify(_data: &[u8], _params: &[u8]) -> bool {
-		true
+	fn verify(pub_inps: &[u8], data: &[u8], _params: &[u8]) -> Result<bool, ark_crypto_primitives::Error> {
+		Ok(true)
 	}
 }
 

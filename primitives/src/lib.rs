@@ -7,6 +7,9 @@ pub mod verifier;
 #[cfg(feature = "hashing")]
 pub mod hashing;
 
+#[cfg(feature = "verifying")]
+pub mod verifying;
+
 pub use hasher::*;
 pub use types::*;
 pub use verifier::*;
