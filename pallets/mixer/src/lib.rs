@@ -233,7 +233,7 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 		ensure!(T::Tree::is_known_root(id, roots[0])?, Error::<T, I>::InvalidWithdrawRoot);
 		// Check nullifier and add or return `InvalidNullifier`
 		ensure!(
-			<Self as MixerInspector<_,_>>::is_nullifier_used(id, nullifier_hash),
+			!<Self as MixerInspector<_,_>>::is_nullifier_used(id, nullifier_hash),
 			Error::<T, I>::InvalidNullifier
 		);
 		Self::add_nullifier_hash(id, nullifier_hash);
