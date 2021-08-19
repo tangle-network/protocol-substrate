@@ -1,5 +1,5 @@
 use super::*;
-use crate as pallet_chainbridge;
+use crate as pallet_bridge;
 use frame_support::parameter_types;
 use frame_system as system;
 use sp_core::H256;
@@ -19,7 +19,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		ChainBridge: pallet_chainbridge::{Pallet, Call, Storage, Event<T>},
+		Bridge: pallet_bridge::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -54,7 +54,7 @@ impl system::Config for Test {
 	type Version = ();
 }
 
-impl pallet_chainbridge::Config for Test {
+impl pallet_bridge::Config for Test {
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
 }

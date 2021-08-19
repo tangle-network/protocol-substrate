@@ -6,7 +6,7 @@ fn set_maintainer() {
 	new_test_ext().execute_with(|| {
 		// Dispatch a signed extrinsic.
 		assert_err!(
-			ChainBridge::set_maintainer(Origin::signed(1), 42),
+			Bridge::set_maintainer(Origin::signed(1), 42),
 			Error::<Test>::InvalidPermissions
 		);
 	});
