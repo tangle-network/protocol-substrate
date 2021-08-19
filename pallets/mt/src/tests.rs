@@ -74,26 +74,21 @@ fn should_fail_if_the_tree_is_full() {
 #[test]
 fn should_reach_same_root_as_js() {
 	new_test_ext().execute_with(|| {
+		// ```js
+		// const tree = new MerkleTree(3, [1, 2]);
+		// const root = await tree.root();
+		// console.log({ root });
+		// ```
 		use ark_bn254::Fr;
 		// init hasher pallet first.
 		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
 		// init zero hashes.
 		<Smt as OnInitialize<u64>>::on_initialize(1);
 		let depth = 3;
-		let _ = Smt::default_hashes()
-			.into_iter()
-			.take(depth + 1)
-			.map(|e| Fr::from_be_bytes_mod_order(e.to_bytes()))
-			.inspect(|f| {
-				println!("{}", f);
-			})
-			.collect::<Vec<_>>();
-
 		assert_ok!(Smt::create(Origin::signed(1), depth as _));
 		let tree_id = Smt::next_tree_id() - 1;
 		let one = Fr::one();
 		let two = one.double();
-		println!("{}\n{}", one, two);
 		let leaf_one = Element::from_bytes(&one.into_repr().to_bytes_be());
 		let leaf_two = Element::from_bytes(&two.into_repr().to_bytes_be());
 		assert_ok!(Smt::insert(Origin::signed(1), tree_id, leaf_one));
@@ -102,9 +97,12 @@ fn should_reach_same_root_as_js() {
 		let root = Fr::from_be_bytes_mod_order(root.to_bytes());
 		let expected_root = ark_ff::field_new!(
 			Fr,
-			"90705101527017413862904869340323827962397807757635781575579909868816800839"
+			"4699987802398398943634862747629228556213954342379652513425782003585571710410"
 		);
-		println!("root: {} and expected: {}", root, expected_root);
 		assert_eq!(root, expected_root);
+		assert_ok!(Smt::is_known_root(
+			tree_id,
+			Element::from_bytes(&expected_root.into_repr().to_bytes_be())
+		));
 	});
 }
