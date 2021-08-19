@@ -39,7 +39,7 @@ pub trait MixerInspector<T: Config<I>, I: 'static = ()> {
 	/// Check if a nullifier has been used in a tree or returns `InvalidNullifier`
 	fn is_nullifier_used(id: T::TreeId, nullifier: T::Element) -> bool;
 	fn ensure_nullifier_unused(id : T::TreeId, nullifier: T::Element) -> Result<(), dispatch::DispatchError> {
-		ensure!(Self::is_nullifier_used(id, nullifier), Error::<T, I>::InvalidNullifier);
+		ensure!(Self::is_nullifier_used(id, nullifier), Error::<T, I>::AlreadyRevealedNullifier);
 		Ok(())
 	}
 }

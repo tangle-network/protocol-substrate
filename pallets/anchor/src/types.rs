@@ -43,10 +43,18 @@ pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
 /// Anchor trait for inspecting tree state
 pub trait AnchorInspector<T: Config<I>, I: 'static = ()> {
 	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
-	fn get_neighbor_roots(id: T::TreeId) -> Result<Vec<T::Element>, dispatch::DispatchError>;	/// Checks if a merkle root is in a tree's cached history or returns
-	/// `TreeDoesntExist
-	fn is_known_neighbor_root(id: T::TreeId, src_chain_id: T::ChainId, target: T::Element) -> Result<bool, dispatch::DispatchError>;
-	fn ensure_known_neighbor_root(id: T::TreeId, src_chain_id: T::ChainId, target: T::Element) -> Result<(), dispatch::DispatchError> {
+	fn get_neighbor_roots(id: T::TreeId) -> Result<Vec<T::Element>, dispatch::DispatchError>;
+	/// Checks if a merkle root is in a tree's cached history or returns `TreeDoesntExist
+	fn is_known_neighbor_root(
+		id: T::TreeId,
+		src_chain_id: T::ChainId,
+		target: T::Element
+	) -> Result<bool, dispatch::DispatchError>;
+	fn ensure_known_neighbor_root(
+		id: T::TreeId,
+		src_chain_id: T::ChainId,
+		target: T::Element
+	) -> Result<(), dispatch::DispatchError> {
 		let is_known = Self::is_known_neighbor_root(id, src_chain_id, target)?;
 		ensure!(is_known, Error::<T, I>::InvalidNeighborWithdrawRoot);
 		Ok(())

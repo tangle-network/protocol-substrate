@@ -135,7 +135,7 @@ pub mod pallet {
 		InvalidWithdrawProof,
 		/// Invalid nullifier that is already used
 		/// (this error is thrown when a nullifier is used twice)
-		InvalidNullifier,
+		AlreadyRevealedNullifier,
 		/// Invalid root used in withdrawal
 		InvalidWithdrawRoot,
 	}
@@ -146,9 +146,9 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
-		pub fn create(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+		pub fn create(origin: OriginFor<T>, depth: u8) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id = <Self as MixerInterface<_,_>>::create(T::AccountId::default(), 32u8)?;
+			let tree_id = <Self as MixerInterface<_,_>>::create(T::AccountId::default(), depth)?;
 
 			Self::deposit_event(Event::MixerCreation(tree_id));
 			Ok(().into())
@@ -231,10 +231,10 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 	) -> Result<(), DispatchError> {
 		// Check if local root is known
 		ensure!(T::Tree::is_known_root(id, roots[0])?, Error::<T, I>::InvalidWithdrawRoot);
-		// Check nullifier and add or return `InvalidNullifier`
+		// Check nullifier and add or return `AlreadyRevealedNullifier`
 		ensure!(
 			!<Self as MixerInspector<_,_>>::is_nullifier_used(id, nullifier_hash),
-			Error::<T, I>::InvalidNullifier
+			Error::<T, I>::AlreadyRevealedNullifier
 		);
 		Self::add_nullifier_hash(id, nullifier_hash);
 		// Format proof public inputs for verification 
