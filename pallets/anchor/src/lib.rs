@@ -86,6 +86,9 @@ pub mod pallet {
 		/// ChainID for anchor edges
 		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 
+		/// EdgeIndex type
+		type EdgeIndex: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+
 		/// The mixer type
 		type Mixer: MixerInterface<Self, I> + MixerInspector<Self, I>;
 
@@ -94,6 +97,9 @@ pub mod pallet {
 
 		/// The currency mechanism.
 		type Currency: ReservableCurrency<Self::AccountId>;
+
+		/// The pruning length for neighbor root histories
+		type HistoryLength: Get<Self::RootIndex>;
 	}
 
 	#[pallet::storage]
@@ -113,12 +119,29 @@ pub mod pallet {
 	pub type MaxEdges<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, T::TreeId, u32, ValueQuery>;
 
+	/// The map of trees to their metadata
+	#[pallet::storage]
+	#[pallet::getter(fn edge_list)]
+	pub type EdgeList<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		T::TreeId,
+		Blake2_128Concat,
+		T::ChainId,
+		EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>,
+		ValueQuery
+	>;
 
 	/// The map of trees to their metadata
 	#[pallet::storage]
-	#[pallet::getter(fn edges)]
-	pub type Edges<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, T::TreeId, Vec<EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>>, ValueQuery>;
+	#[pallet::getter(fn anchor_has_edge)]
+	pub type AnchorHasEdge<T: Config<I>, I: 'static = ()> = StorageMap<
+		_,
+		Blake2_128Concat,
+		(T::TreeId, T::ChainId),
+		bool,
+		ValueQuery
+	>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn neighbor_roots)]
@@ -162,7 +185,10 @@ pub mod pallet {
 		/// (neighbor root is not in neighbor history)
 		InvalidNeighborWithdrawRoot,
 		/// Anchor is at maximum number of edges for the given tree
-		TooManyEdges
+		TooManyEdges,
+		/// Edge already exists
+		EdgeAlreadyExists,
+		EdgeDoesntExists,
 	}
 
 	#[pallet::hooks]
@@ -277,16 +303,27 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 		root: T::Element,
 		height: T::BlockNumber
 	) -> Result<(), DispatchError> {
-		let edges: Vec<EdgeMetadata<_,_,_>> = Self::edges(id);
+		// ensure edge doesn't exists
+		ensure!(!EdgeList::<T, I>::contains_key(id, src_chain_id), Error::<T, I>::EdgeAlreadyExists);
+		// ensure anchor isn't at maximum edges
 		let max_edges: u32 = Self::max_edges(id);
-		ensure!(max_edges > edges.len() as u32, Error::<T, I>::TooManyEdges);
+		let curr_length = EdgeList::<T, I>::iter_prefix_values(id).into_iter().count();
+		ensure!(max_edges > curr_length as u32, Error::<T, I>::TooManyEdges);
+		// craft edge
 		let e_meta = EdgeMetadata::<T::ChainId, T::Element, T::BlockNumber> {
 			src_chain_id: src_chain_id,
 			root: root,
 			height: height,
 		};
+		// update historical neighbor list for this edge's root
+		let neighbor_root_inx = NextNeighborRootIndex::<T, I>::get((id, src_chain_id));
+		NextNeighborRootIndex::<T, I>::insert(
+			(id, src_chain_id),
+			neighbor_root_inx + T::RootIndex::one() % T::HistoryLength::get(),
+		);
+		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_inx, root);
 		// Append new edge to the end of the edge list for the given tree
-		Edges::<T, I>::append(id, e_meta);
+		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
 		Ok(())
 	}
 
@@ -296,6 +333,19 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 		root: T::Element,
 		height: T::BlockNumber
 	) -> Result<(), DispatchError> {
+		ensure!(EdgeList::<T, I>::contains_key(id, src_chain_id), Error::<T, I>::EdgeDoesntExists);
+		let e_meta = EdgeMetadata::<T::ChainId, T::Element, T::BlockNumber> {
+			src_chain_id: src_chain_id,
+			root: root,
+			height: height,
+		};
+		let neighbor_root_inx = NextNeighborRootIndex::<T, I>::get((id, src_chain_id));
+		NextNeighborRootIndex::<T, I>::insert(
+			(id, src_chain_id),
+			neighbor_root_inx + T::RootIndex::one() % T::HistoryLength::get(),
+		);
+		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_inx, root);
+		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
 		Ok(())
 	}
 }
