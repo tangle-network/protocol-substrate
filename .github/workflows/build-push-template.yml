@@ -3,7 +3,7 @@ name: Build and Push template
 on:
   push:
     branches:
-    - master
+    - main
 
 jobs:
   build-push-template:
