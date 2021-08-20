@@ -1,0 +1,56 @@
+[package]
+authors = ["Webb Technologies Inc."]
+description = "FRAME pallet for Webb bridge."
+edition = "2018"
+homepage = "https://substrate.dev"
+license = "Unlicense"
+name = "pallet-anchor-handler"
+repository = "https://github.com/substrate-developer-hub/substrate-node-template/"
+version = "3.0.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+# alias "parity-scale-code" to "codec"
+[dependencies.codec]
+default-features = false
+features = ["derive"]
+package = "parity-scale-codec"
+version = "2.0.0"
+
+[dependencies]
+# third-party dependencies
+serde = { version = "1.0.101", optional = true }
+
+# frame dependencies
+frame-support = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+frame-system = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+sp-std = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+sp-runtime = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+sp-io = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+sp-core = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+sp-arithmetic = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+
+
+[dev-dependencies]
+serde = { version = "1.0.119" }
+sp-core = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+sp-io = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+sp-runtime = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+pallet-balances = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+
+[build-dependencies]
+wasm-builder-runner = { version = "2.0.0", package = "substrate-wasm-builder-runner" }
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"serde",
+	"sp-std/std",
+	"sp-runtime/std",
+    "sp-io/std",
+    "sp-core/std",
+    "sp-arithmetic/std",
+	"frame-support/std",
+	"frame-system/std",
+]
