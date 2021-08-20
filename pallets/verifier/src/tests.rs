@@ -1,9 +1,13 @@
+use super::*;
 use crate::mock::*;
+use frame_support::{assert_err, assert_ok, instances::Instance1};
 
 #[test]
-fn verify_nothing_with_test_verifier() {
+fn should_fail_to_verify_without_parameters() {
 	new_test_ext().execute_with(|| {
-		// Read pallet storage and assert an expected result.
-		assert_eq!(<VerifierPallet as VerifierModule>::verify(&[1u8; 32]), true);
+		// Pass arbitrary 
+		assert_err!(
+			<VerifierPallet as VerifierModule>::verify(&[1u8; 32], &[1u8; 32]),
+			Error::<Test, _>::ParametersNotInitialized);
 	});
 }

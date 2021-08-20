@@ -1,11 +1,9 @@
 [package]
 authors = ["Webb Technologies Inc."]
-description = "FRAME pallet template for defining custom runtime logic."
 edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
-name = "pallet-verifier"
-repository = "https://github.com/substrate-developer-hub/substrate-node-template/"
+name = "pallet-anchor"
 version = "3.0.0"
 
 [package.metadata.docs.rs]
@@ -23,6 +21,10 @@ frame-support = { default-features = false, version = "3.0.0", git = "https://gi
 frame-system = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 sp-runtime = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 sp-std = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+pallet-hasher = { path = "../hasher", default-features = false }
+pallet-mixer = { path = "../mixer", default-features = false }
+pallet-mt = { path = "../mt", default-features = false }
+pallet-verifier = { path = "../verifier", default-features = false }
 darkwebb-primitives = { path = "../../primitives", default-features = false }
 
 [dev-dependencies]
@@ -41,6 +43,10 @@ std = [
     "frame-system/std",
     "sp-runtime/std",
     "sp-std/std",
+    "pallet-hasher/std",
+    "pallet-mt/std",
+    "pallet-mixer/std",
+    "pallet-verifier/std",
     "darkwebb-primitives/std",
     "ark-crypto-primitives/std",
 ]

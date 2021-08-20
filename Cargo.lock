@@ -1477,6 +1477,7 @@ dependencies = [
  "ark-crypto-primitives",
  "ark-ec",
  "ark-ff",
+ "ark-groth16",
  "ark-relations",
  "ark-serialize",
  "ark-std",
@@ -4258,6 +4259,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-anchor"
+version = "3.0.0"
+dependencies = [
+ "ark-crypto-primitives",
+ "darkwebb-primitives",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-hasher",
+ "pallet-mixer",
+ "pallet-mt",
+ "pallet-verifier",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-aura"
 version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.7#9c572625f6557dfdb19f47474369a0327d51dfbc"
@@ -4504,6 +4526,7 @@ dependencies = [
 name = "pallet-verifier"
 version = "3.0.0"
 dependencies = [
+ "ark-crypto-primitives",
  "darkwebb-primitives",
  "frame-support",
  "frame-system",

@@ -20,13 +20,14 @@ ark-serialize = { version = "^0.3.0", default-features = false, features = [ "de
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ], optional = true }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
+ark-groth16 = { version = "^0.3.0", default-features = false }
 tracing = { version = "0.1", default-features = false, features = [ "attributes" ], optional = true }
 
 blake2 = { version = "0.9", default-features = false }
 digest = "0.9"
 
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
-arkworks-gadgets = { version = "^0.3", default-features = false, optional = true }
+arkworks-gadgets = { version = "^0.3", features = ["default_poseidon", "default_mimc", "r1cs"], default-features = false, optional = true }
 
 [dependencies.codec]
 default-features = false
@@ -35,7 +36,7 @@ package = "parity-scale-codec"
 version = "2.0.0"
 
 [features]
-default = ["std", "hashing"]
+default = ["std", "hashing", "verifying"]
 std = [
 	"codec/std",
 	"frame-support/std",
