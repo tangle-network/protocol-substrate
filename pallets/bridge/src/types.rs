@@ -1,7 +1,7 @@
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, EncodeLike};
 
 const DEFAULT_RELAYER_THRESHOLD: u32 = 1;
 
@@ -23,6 +23,9 @@ pub struct ProposalVotes<AccountId, BlockNumber> {
 	pub status: ProposalStatus,
 	pub expiry: BlockNumber,
 }
+
+// impl<AccountId, BlockNumber> EncodeLike for ProposalVotes<AccountId,
+// BlockNumber> {}
 
 impl<A: PartialEq, B: PartialOrd + Default> ProposalVotes<A, B> {
 	/// Attempts to mark the proposal as approve or rejected.

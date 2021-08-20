@@ -1,20 +1,4 @@
-use frame_support::{
-	decl_error, decl_event, decl_module, decl_storage,
-	dispatch::DispatchResult,
-	ensure,
-	traits::{EnsureOrigin, Get},
-	weights::{GetDispatchInfo, Pays},
-	Parameter,
-};
-
-use frame_system::{self as system, ensure_root, ensure_signed};
-use sp_runtime::{
-	traits::{AccountIdConversion, Dispatchable},
-	ModuleId, RuntimeDebug,
-};
-use sp_std::prelude::*;
-
-use codec::{Decode, Encode, EncodeLike};
+use crate::types::ResourceId;
 
 /// Helper function to concatenate a chain ID and some bytes to produce a
 /// resource ID. The common format is (31 bytes unique ID + 1 byte chain ID).
