@@ -31,7 +31,7 @@ parameter_types! {
 }
 
 impl system::Config for Test {
-	type AccountData = pallet_balances::AccountData<u64>;
+	type AccountData = pallet_balances::AccountData<u128>;
 	type AccountId = u64;
 	type BaseCallFilter = ();
 	type BlockHashCount = BlockHashCount;
@@ -62,7 +62,7 @@ parameter_types! {
 
 impl pallet_balances::Config for Test {
 	type AccountStore = System;
-	type Balance = u64;
+	type Balance = u128;
 	type DustRemoval = ();
 	type Event = Event;
 	type ExistentialDeposit = ExistentialDeposit;
@@ -70,13 +70,6 @@ impl pallet_balances::Config for Test {
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 	type WeightInfo = ();
-}
-
-pub struct TestVerifier;
-impl InstanceVerifier for TestVerifier {
-	fn verify(pub_inps: &[u8], data: &[u8], _params: &[u8]) -> Result<bool, ark_crypto_primitives::Error> {
-		Ok(true)
-	}
 }
 
 parameter_types! {
@@ -94,10 +87,15 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = TestVerifier;
+	type Verifier = darkwebb_primitives::verifying::ArkworksBn254Verifier;
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+	let mut storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let _ = pallet_balances::GenesisConfig::<Test> {
+		balances: vec![(1, 10u128.pow(18)), (2, 20u128.pow(18)), (3, 30u128.pow(18))],
+	}
+	.assimilate_storage(&mut storage);
+	storage.into()
 }
