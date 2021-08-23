@@ -30,7 +30,7 @@ serde = { version = "1.0.119" }
 sp-core = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 sp-io = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 sp-runtime = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
-pallet-balances = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+pallet-balances = { version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
 
 [features]
@@ -42,5 +42,4 @@ std = [
     "sp-runtime/std",
     "sp-std/std",
     "darkwebb-primitives/std",
-    "ark-crypto-primitives/std",
 ]
