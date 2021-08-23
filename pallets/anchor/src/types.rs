@@ -6,13 +6,9 @@ use frame_support::dispatch;
 /// Anchor trait definition to be used in other pallets
 pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
 	// Creates a new anchor
-	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, dispatch::DispatchError>;
+	fn create(creator: T::AccountId, depth: u8, max_edges: u32) -> Result<T::TreeId, dispatch::DispatchError>;
 	/// Deposit into the anchor
-	fn deposit(
-		account: T::AccountId,
-		id: T::TreeId,
-		leaf: T::Element
-	) -> Result<(), dispatch::DispatchError>;
+	fn deposit(account: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), dispatch::DispatchError>;
 	/// Withdraw from the anchor
 	fn withdraw(
 		id: T::TreeId,
@@ -29,14 +25,14 @@ pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
 		root: T::Element,
-		height: T::BlockNumber
+		height: T::BlockNumber,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this anchor
 	fn update_edge(
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
 		root: T::Element,
-		height: T::BlockNumber
+		height: T::BlockNumber,
 	) -> Result<(), dispatch::DispatchError>;
 }
 
@@ -44,16 +40,17 @@ pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
 pub trait AnchorInspector<T: Config<I>, I: 'static = ()> {
 	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
 	fn get_neighbor_roots(id: T::TreeId) -> Result<Vec<T::Element>, dispatch::DispatchError>;
-	/// Checks if a merkle root is in a tree's cached history or returns `TreeDoesntExist
+	/// Checks if a merkle root is in a tree's cached history or returns
+	/// `TreeDoesntExist
 	fn is_known_neighbor_root(
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
-		target: T::Element
+		target: T::Element,
 	) -> Result<bool, dispatch::DispatchError>;
 	fn ensure_known_neighbor_root(
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
-		target: T::Element
+		target: T::Element,
 	) -> Result<(), dispatch::DispatchError> {
 		let is_known = Self::is_known_neighbor_root(id, src_chain_id, target)?;
 		ensure!(is_known, Error::<T, I>::InvalidNeighborWithdrawRoot);
@@ -78,5 +75,3 @@ pub struct EdgeMetadata<ChainID, Element, BlockNumber> {
 	/// height of source chain anchor's native merkle tree
 	pub height: BlockNumber,
 }
-
-

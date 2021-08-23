@@ -1,10 +1,14 @@
+#![allow(clippy::zero_prefixed_literal)]
+
 use super::*;
 use crate as pallet_mixer;
+use codec::Decode;
 use sp_core::H256;
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
 use frame_support::parameter_types;
 use frame_system as system;
+use pallet_mt::types::ElementTrait;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -24,7 +28,7 @@ frame_support::construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
 		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
-		MT: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -35,7 +39,7 @@ parameter_types! {
 }
 
 impl system::Config for Test {
-	type AccountData = pallet_balances::AccountData<u64>;
+	type AccountData = pallet_balances::AccountData<u128>;
 	type AccountId = u64;
 	type BaseCallFilter = ();
 	type BlockHashCount = BlockHashCount;
@@ -66,7 +70,7 @@ parameter_types! {
 
 impl pallet_balances::Config for Test {
 	type AccountStore = System;
-	type Balance = u64;
+	type Balance = u128;
 	type DustRemoval = ();
 	type Event = Event;
 	type ExistentialDeposit = ExistentialDeposit;
@@ -74,13 +78,6 @@ impl pallet_balances::Config for Test {
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 	type WeightInfo = ();
-}
-
-pub struct TestHasher;
-impl InstanceHasher for TestHasher {
-	fn hash(data: &[u8], _params: &[u8]) -> Result<Vec<u8>, ark_crypto_primitives::Error> {
-		return Ok(data.to_vec());
-	}
 }
 
 parameter_types! {
@@ -94,7 +91,7 @@ impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
-	type Hasher = TestHasher;
+	type Hasher = darkwebb_primitives::hashing::BN254CircomPoseidon3x5Hasher;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
@@ -106,21 +103,28 @@ parameter_types! {
 	pub const LeafDepositBase: u64 = 1;
 	pub const LeafDepositPerByte: u64 = 1;
 	pub const Two: u64 = 2;
-	pub const MaxTreeDepth: u8 = 255;
+	pub const MaxTreeDepth: u8 = 32;
 	pub const RootHistorySize: u32 = 1096;
-	pub const DefaultZeroElement: Element = Element([0u8; 32]);
+	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
+	pub const DefaultZeroElement: Element = Element([
+		047, 229, 076, 096, 211, 172, 171, 243,
+		052, 058, 053, 182, 235, 161, 093, 180,
+		130, 027, 052, 015, 118, 231, 065, 226,
+		036, 150, 133, 237, 072, 153, 175, 108,
+	]);
 }
 
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq)]
 pub struct Element([u8; 32]);
+
 impl ElementTrait for Element {
 	fn to_bytes(&self) -> &[u8] {
 		&self.0
 	}
 
-	fn from_bytes(mut input: &[u8]) -> Self {
+	fn from_bytes(input: &[u8]) -> Self {
 		let mut buf = [0u8; 32];
-		let _ = input.read(&mut buf);
+		buf.copy_from_slice(input);
 		Self(buf)
 	}
 }
@@ -129,6 +133,7 @@ impl pallet_mt::Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
+	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
@@ -141,7 +146,6 @@ impl pallet_mt::Config for Test {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
-	type DefaultZeroElement = DefaultZeroElement;
 }
 
 impl pallet_verifier::Config for Test {
@@ -152,17 +156,22 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBls381Verifier;
+	type Verifier = darkwebb_primitives::verifying::ArkworksBn254Verifier;
 }
 
 impl Config for Test {
 	type Currency = Balances;
 	type Event = Event;
-	type Tree = MT;
+	type Tree = MerkleTree;
 	type Verifier = VerifierPallet;
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+	let mut storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let _ = pallet_balances::GenesisConfig::<Test> {
+		balances: vec![(1, 10u128.pow(18)), (2, 20u128.pow(18)), (3, 30u128.pow(18))],
+	}
+	.assimilate_storage(&mut storage);
+	storage.into()
 }

@@ -52,16 +52,15 @@ pub mod mock;
 mod tests;
 
 pub mod types;
-use types::{MixerInterface, MixerMetadata, MixerInspector};
+use types::{MixerInspector, MixerInterface, MixerMetadata};
 
-use codec::{Decode, Encode, Input};
+use codec::Encode;
 use frame_support::{ensure, pallet_prelude::DispatchError};
-use pallet_mt::types::{ElementTrait, TreeInspector, TreeInterface, TreeMetadata};
+use pallet_mt::types::{TreeInspector, TreeInterface};
 
 use darkwebb_primitives::verifier::*;
-use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get, ReservableCurrency};
+use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, ReservableCurrency};
 use frame_system::Config as SystemConfig;
-use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
 use sp_std::prelude::*;
 
 pub use pallet::*;
@@ -108,15 +107,8 @@ pub mod pallet {
 	/// The map of trees to their spent nullifier hashes
 	#[pallet::storage]
 	#[pallet::getter(fn nullifier_hashes)]
-	pub type NullifierHashes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		T::TreeId,
-		Blake2_128Concat,
-		T::Element,
-		bool,
-		ValueQuery
-	>;
+	pub type NullifierHashes<T: Config<I>, I: 'static = ()> =
+		StorageDoubleMap<_, Blake2_128Concat, T::TreeId, Blake2_128Concat, T::Element, bool, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -134,7 +126,7 @@ pub mod pallet {
 		/// Invalid withdraw proof
 		InvalidWithdrawProof,
 		/// Invalid nullifier that is already used
-		/// (this error is thrown when a nullifier is used twice)
+		/// (this error is returned when a nullifier is used twice)
 		AlreadyRevealedNullifier,
 		/// Invalid root used in withdrawal
 		InvalidWithdrawRoot,
@@ -146,10 +138,9 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
-		pub fn create(origin: OriginFor<T>, depth: u8) -> DispatchResultWithPostInfo {
+		pub fn create(origin: OriginFor<T>, deposit_size: BalanceOf<T, I>, depth: u8) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id = <Self as MixerInterface<_,_>>::create(T::AccountId::default(), depth)?;
-
+			let tree_id = <Self as MixerInterface<_, _>>::create(T::AccountId::default(), deposit_size, depth)?;
 			Self::deposit_event(Event::MixerCreation(tree_id));
 			Ok(().into())
 		}
@@ -157,7 +148,7 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			<Self as MixerInterface<_, _>>::deposit(origin, tree_id, leaf);
+			<Self as MixerInterface<_, _>>::deposit(origin, tree_id, leaf)?;
 			Ok(().into())
 		}
 
@@ -187,20 +178,11 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	fn two() -> T::LeafIndex {
-		let two: T::LeafIndex = {
-			let one: T::LeafIndex = One::one();
-			one.saturating_add(One::one())
-		};
-
-		two
-	}
-}
-
 impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
-	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, DispatchError> {
-		T::Tree::create(T::AccountId::default(), depth)
+	fn create(creator: T::AccountId, deposit_size: BalanceOf<T, I>, depth: u8) -> Result<T::TreeId, DispatchError> {
+		let id = T::Tree::create(creator.clone(), depth)?;
+		Mixers::<T, I>::insert(id, MixerMetadata { creator, deposit_size });
+		Ok(id)
 	}
 
 	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {
@@ -229,15 +211,19 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 		fee: BalanceOf<T, I>,
 		refund: BalanceOf<T, I>,
 	) -> Result<(), DispatchError> {
+		let mixer = Self::mixers(id);
 		// Check if local root is known
-		ensure!(T::Tree::is_known_root(id, roots[0])?, Error::<T, I>::InvalidWithdrawRoot);
+		ensure!(
+			T::Tree::is_known_root(id, roots[0])?,
+			Error::<T, I>::InvalidWithdrawRoot
+		);
 		// Check nullifier and add or return `AlreadyRevealedNullifier`
 		ensure!(
-			!<Self as MixerInspector<_,_>>::is_nullifier_used(id, nullifier_hash),
+			!Self::is_nullifier_used(id, nullifier_hash),
 			Error::<T, I>::AlreadyRevealedNullifier
 		);
-		Self::add_nullifier_hash(id, nullifier_hash);
-		// Format proof public inputs for verification 
+		Self::add_nullifier_hash(id, nullifier_hash)?;
+		// Format proof public inputs for verification
 		// FIXME: This is for a specfic gadget so we ought to create a generic handler
 		// FIXME: Such as a unpack/pack public inputs trait
 		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
@@ -250,9 +236,14 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 		// TODO: This is not currently included in
 		// arkworks_gadgets::setup::mixer::get_public_inputs bytes.extend_from_slice(&
 		// fee.encode());
-		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
+		let result = T::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
-		// TODO: Transfer assets to the recipient
+		<T as pallet::Config<I>>::Currency::transfer(
+			&T::AccountId::default(),
+			&recipient,
+			mixer.deposit_size,
+			AllowDeath,
+		)?;
 		Ok(())
 	}
 

@@ -6,7 +6,11 @@ use frame_support::{dispatch, ensure};
 /// Mixer trait definition to be used in other pallets
 pub trait MixerInterface<T: Config<I>, I: 'static = ()> {
 	// Creates a new mixer
-	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, dispatch::DispatchError>;
+	fn create(
+		creator: T::AccountId,
+		deposit_size: BalanceOf<T, I>,
+		depth: u8,
+	) -> Result<T::TreeId, dispatch::DispatchError>;
 	/// Deposit into the mixer
 	fn deposit(account: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), dispatch::DispatchError>;
 	/// Withdraw from the mixer
@@ -36,10 +40,14 @@ pub trait MixerInspector<T: Config<I>, I: 'static = ()> {
 		ensure!(is_known, Error::<T, I>::InvalidWithdrawRoot);
 		Ok(())
 	}
-	/// Check if a nullifier has been used in a tree or returns `InvalidNullifier`
+	/// Check if a nullifier has been used in a tree or returns
+	/// `InvalidNullifier`
 	fn is_nullifier_used(id: T::TreeId, nullifier: T::Element) -> bool;
-	fn ensure_nullifier_unused(id : T::TreeId, nullifier: T::Element) -> Result<(), dispatch::DispatchError> {
-		ensure!(Self::is_nullifier_used(id, nullifier), Error::<T, I>::AlreadyRevealedNullifier);
+	fn ensure_nullifier_unused(id: T::TreeId, nullifier: T::Element) -> Result<(), dispatch::DispatchError> {
+		ensure!(
+			Self::is_nullifier_used(id, nullifier),
+			Error::<T, I>::AlreadyRevealedNullifier
+		);
 		Ok(())
 	}
 }
