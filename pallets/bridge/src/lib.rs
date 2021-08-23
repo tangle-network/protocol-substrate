@@ -45,15 +45,14 @@
 pub mod mock;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+pub mod utils;
 
-use codec::{Decode, Encode, EncodeLike};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
-	weights::{GetDispatchInfo, Pays},
-	PalletId, Parameter,
 };
-use frame_system::{self as system, ensure_root, ensure_signed};
+use frame_system::{self as system, ensure_root};
 use sp_runtime::traits::{AccountIdConversion, Dispatchable};
 use sp_std::prelude::*;
 
@@ -64,7 +63,7 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use crate::types::{ChainId, DepositNonce, ProposalVotes, ResourceId};
+	use crate::types::{ChainId, DepositNonce, ProposalVotes, ResourceId, DEFAULT_RELAYER_THRESHOLD};
 	use codec::EncodeLike;
 	use frame_support::{
 		dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
@@ -89,31 +88,35 @@ pub mod pallet {
 		/// The identifier for this chain.
 		/// This must be unique and must not collide with existing IDs within a
 		/// set of bridged chains.
-		type ChainId: Get<u8>;
+		#[pallet::constant]
+		type ChainIdentity: Get<ChainId>;
 
+		#[pallet::constant]
 		type ProposalLifetime: Get<Self::BlockNumber>;
 
 		#[pallet::constant]
-		type PalletId: Get<PalletId>;
+		type BridgeAccountId: Get<PalletId>;
 	}
 
 	/// All whitelisted chains and their respective transaction counts
 	#[pallet::storage]
 	#[pallet::getter(fn chains)]
-	pub type ChainNonces<T: Config> = StorageMap<_, Blake2_128Concat, ChainId, Option<DepositNonce>, ValueQuery>;
+	pub(super) type ChainNonces<T: Config> = StorageMap<_, Blake2_256, ChainId, DepositNonce>;
+
+	#[pallet::type_value]
+	pub(super) fn DefaultForRelayerThreshold() -> u32 {
+		DEFAULT_RELAYER_THRESHOLD
+	}
 
 	/// Number of votes required for a proposal to execute
 	#[pallet::storage]
 	#[pallet::getter(fn relayer_threshold)]
-	pub type RelayerThreshold<T: Config> = StorageValue<_, u32, ValueQuery>; //TODO default value
-
-	/// Number of votes required for a proposal to execute
-	// RelayerThreshold get(fn relayer_threshold): u32 = DEFAULT_RELAYER_THRESHOLD;
+	pub(super) type RelayerThreshold<T: Config> = StorageValue<_, u32, ValueQuery, DefaultForRelayerThreshold>;
 
 	/// Tracks current relayer set
 	#[pallet::storage]
 	#[pallet::getter(fn relayers)]
-	pub type Relayers<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, bool, ValueQuery>;
+	pub type Relayers<T: Config> = StorageMap<_, Blake2_256, T::AccountId, bool, ValueQuery>;
 
 	/// Number of relayers in set
 	#[pallet::storage]
@@ -125,20 +128,19 @@ pub mod pallet {
 	/// unique.
 	#[pallet::storage]
 	#[pallet::getter(fn votes)]
-	pub(super) type Votes<T: Config> = StorageDoubleMap<
+	pub type Votes<T: Config> = StorageDoubleMap<
 		_,
-		Blake2_128Concat,
+		Blake2_256,
 		ChainId,
-		Blake2_128Concat,
+		Blake2_256,
 		(DepositNonce, T::Proposal),
-		Option<ProposalVotes<T::AccountId, T::BlockNumber>>,
-		ValueQuery,
+		ProposalVotes<T::AccountId, T::BlockNumber>,
 	>;
 
 	/// Utilized by the bridge software to map resource IDs to actual methods
 	#[pallet::storage]
 	#[pallet::getter(fn resources)]
-	pub type Resources<T: Config> = StorageMap<_, Blake2_128Concat, ResourceId, Option<Vec<u8>>, ValueQuery>;
+	pub type Resources<T: Config> = StorageMap<_, Blake2_256, ResourceId, Vec<u8>>;
 
 	// Pallets use events to inform users when important changes are made.
 	#[pallet::event]
@@ -207,11 +209,6 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		// FIXME
-		//const BridgeAccountId: T::AccountId = MODULE_ID.into_account();
-		//const ChainIdentity: ChainId = T::ChainId::get();
-		//const ProposalLifetime: T::BlockNumber = T::ProposalLifetime::get();
-
 		/// Sets the vote threshold for proposals.
 		///
 		/// This threshold is used to determine how many votes are required
@@ -294,9 +291,7 @@ pub mod pallet {
 		/// - weight of proposed call, regardless of whether execution is
 		///   performed
 		/// # </weight>
-		// FIXME #[pallet::weight(call.get_dispatch_info().weight + 195_000_000, call.get_dispatch_info().class,
-		// Pays::Yes)]
-		#[pallet::weight(call.get_dispatch_info().weight + 195_000_000)]
+		#[pallet::weight((call.get_dispatch_info().weight + 195_000_000, call.get_dispatch_info().class, Pays::Yes))]
 		pub fn acknowledge_proposal(
 			origin: OriginFor<T>,
 			nonce: DepositNonce,
@@ -342,9 +337,7 @@ pub mod pallet {
 		/// - weight of proposed call, regardless of whether execution is
 		///   performed
 		/// # </weight>
-		// FIXME #[pallet::weight(prop.get_dispatch_info().weight + 195_000_000, prop.get_dispatch_info().class,
-		// Pays::Yes)]
-		#[pallet::weight(prop.get_dispatch_info().weight + 195_000_000)]
+		#[pallet::weight((prop.get_dispatch_info().weight + 195_000_000, prop.get_dispatch_info().class, Pays::Yes))]
 		pub fn eval_vote_state(
 			origin: OriginFor<T>,
 			nonce: DepositNonce,
@@ -374,7 +367,7 @@ impl<T: Config> Pallet<T> {
 	/// Provides an AccountId for the pallet.
 	/// This is used both as an origin check and deposit/withdrawal account.
 	pub fn account_id() -> T::AccountId {
-		T::PalletId::get().into_account()
+		T::BridgeAccountId::get().into_account()
 	}
 
 	/// Asserts if a resource is registered
@@ -412,7 +405,7 @@ impl<T: Config> Pallet<T> {
 	/// Whitelist a chain ID for transfer
 	pub fn whitelist(id: ChainId) -> DispatchResultWithPostInfo {
 		// Cannot whitelist this chain
-		ensure!(id != T::ChainId::get(), Error::<T>::InvalidChainId);
+		ensure!(id != T::ChainIdentity::get(), Error::<T>::InvalidChainId);
 		// Cannot whitelist with an existing entry
 		ensure!(!Self::chain_whitelisted(id), Error::<T>::ChainAlreadyWhitelisted);
 		ChainNonces::<T>::insert(&id, 0);
@@ -450,7 +443,7 @@ impl<T: Config> Pallet<T> {
 		prop: Box<T::Proposal>,
 		in_favour: bool,
 	) -> DispatchResultWithPostInfo {
-		let now = <frame_system::Module<T>>::block_number();
+		let now = <frame_system::Pallet<T>>::block_number();
 		let mut votes = match Votes::<T>::get(src_id, (nonce, prop.clone())) {
 			Some(v) => v,
 			None => {
@@ -485,7 +478,7 @@ impl<T: Config> Pallet<T> {
 		prop: Box<T::Proposal>,
 	) -> DispatchResultWithPostInfo {
 		if let Some(mut votes) = Votes::<T>::get(src_id, (nonce, prop.clone())) {
-			let now = <frame_system::Module<T>>::block_number();
+			let now = <frame_system::Pallet<T>>::block_number();
 			ensure!(!votes.is_complete(), Error::<T>::ProposalAlreadyComplete);
 			ensure!(!votes.is_expired(now), Error::<T>::ProposalExpired);
 
@@ -549,7 +542,7 @@ impl<T: Config> EnsureOrigin<T::Origin> for EnsureBridge<T> {
 	type Success = T::AccountId;
 
 	fn try_origin(o: T::Origin) -> Result<Self::Success, T::Origin> {
-		let bridge_id = T::PalletId::get().into_account();
+		let bridge_id = T::BridgeAccountId::get().into_account();
 		o.into().and_then(|o| match o {
 			system::RawOrigin::Signed(who) if who == bridge_id => Ok(bridge_id),
 			r => Err(T::Origin::from(r)),

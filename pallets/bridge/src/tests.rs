@@ -1,9 +1,11 @@
 #![cfg(test)]
 
+use core::panic;
+
 use super::{
 	mock::{
-		assert_events, new_test_ext, Balances, Bridge, Call, Event, Origin, ProposalLifetime, System, Test,
-		TestChainId, ENDOWED_BALANCE, RELAYER_A, RELAYER_B, RELAYER_C, TEST_THRESHOLD,
+		assert_events, new_test_ext, Balances, Bridge, Call, ChainIdentity, Event, Origin, ProposalLifetime, System,
+		Test, ENDOWED_BALANCE, RELAYER_A, RELAYER_B, RELAYER_C, TEST_THRESHOLD,
 	},
 	*,
 };
@@ -103,7 +105,7 @@ fn whitelist_chain() {
 
 		assert_ok!(Bridge::whitelist_chain(Origin::root(), 0));
 		assert_noop!(
-			Bridge::whitelist_chain(Origin::root(), TestChainId::get()),
+			Bridge::whitelist_chain(Origin::root(), ChainIdentity::get()),
 			Error::<Test>::InvalidChainId
 		);
 

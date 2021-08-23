@@ -2,13 +2,12 @@
 
 use super::*;
 
-use frame_support::{assert_ok, ord_parameter_types, parameter_types, weights::Weight};
+use frame_support::{assert_ok, ord_parameter_types, parameter_types, PalletId};
 use frame_system::{self as system};
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
-	Perbill,
 };
 
 use crate::{self as pallet_bridge, Config};
@@ -82,16 +81,16 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
-	pub const TestChainId: u8 = 5;
+	pub const ChainIdentity: u8 = 5;
 	pub const ProposalLifetime: u64 = 50;
-	pub const BridgePalletId: PalletId = PalletId(*b"dw/bridg");
+	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
 
 impl Config for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
-	type ChainId = TestChainId;
+	type BridgeAccountId = BridgeAccountId;
+	type ChainIdentity = ChainIdentity;
 	type Event = Event;
-	type PalletId = BridgePalletId;
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 }
@@ -139,7 +138,7 @@ pub fn new_test_ext_initialized(src_id: ChainId, r_id: ResourceId, resource: Vec
 // provided. They must include the most recent event, but do not have to include
 // every past event.
 pub fn assert_events(mut expected: Vec<Event>) {
-	let mut actual: Vec<Event> = system::Module::<Test>::events()
+	let mut actual: Vec<Event> = system::Pallet::<Test>::events()
 		.iter()
 		.map(|e| e.event.clone())
 		.collect();
