@@ -51,3 +51,17 @@ fn shout_be_able_to_deposit() {
 		assert_eq!(tree.leaf_count, 1);
 	});
 }
+
+#[test]
+fn shout_be_able_to_change_the_maintainer() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(Mixer::create(Origin::root(), One::one(), 3));
+		let default_maintainer_account_id = 0;
+		let current_maintainer_account_id = Mixer::maintainer();
+		assert_eq!(current_maintainer_account_id, default_maintainer_account_id);
+		let new_maintainer_account_id = 1;
+		assert_ok!(Mixer::force_set_maintainer(Origin::root(), new_maintainer_account_id));
+		let current_maintainer_account_id = Mixer::maintainer();
+		assert_eq!(current_maintainer_account_id, new_maintainer_account_id);
+	});
+}
