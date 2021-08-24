@@ -17,7 +17,7 @@ pub trait MixerInterface<T: Config<I>, I: 'static = ()> {
 	fn withdraw(
 		id: T::TreeId,
 		proof_bytes: &[u8],
-		roots: Vec<T::Element>,
+		root: T::Element,
 		nullifier_hash: T::Element,
 		recipient: T::AccountId,
 		relayer: T::AccountId,

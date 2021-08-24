@@ -1,6 +1,12 @@
+use ark_ff::{BigInteger, PrimeField, ToBytes};
+use ark_std::Zero;
 use arkworks_gadgets::{
 	poseidon::PoseidonParameters,
-	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
+	setup::{
+		common::setup_tree_and_create_path_x5,
+		mixer::{prove_groth16_x5, setup_arbitrary_data, setup_groth16_x5, setup_leaf_x5, Circuit_x5},
+	},
+	utils::{get_mds_poseidon_circom_bn254_x5_5, get_rounds_poseidon_circom_bn254_x5_5},
 };
 use frame_support::{assert_ok, traits::OnInitialize};
 use pallet_mt::types::ElementTrait;
@@ -9,14 +15,14 @@ use sp_runtime::traits::One;
 use crate::mock::*;
 
 fn hasher_params() -> Vec<u8> {
-	let rounds = get_rounds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-	let mds = get_mds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
+	let rounds = get_rounds_poseidon_circom_bn254_x5_5::<ark_bn254::Fr>();
+	let mds = get_mds_poseidon_circom_bn254_x5_5::<ark_bn254::Fr>();
 	let params = PoseidonParameters::new(rounds, mds);
 	params.to_bytes()
 }
 
 #[test]
-fn shout_create_new_mixer() {
+fn should_create_new_mixer() {
 	new_test_ext().execute_with(|| {
 		// init hasher pallet first.
 		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
@@ -27,7 +33,7 @@ fn shout_create_new_mixer() {
 }
 
 #[test]
-fn shout_be_able_to_deposit() {
+fn should_be_able_to_deposit() {
 	new_test_ext().execute_with(|| {
 		// init hasher pallet first.
 		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
@@ -53,7 +59,7 @@ fn shout_be_able_to_deposit() {
 }
 
 #[test]
-fn shout_be_able_to_change_the_maintainer() {
+fn should_be_able_to_change_the_maintainer() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Mixer::create(Origin::root(), One::one(), 3));
 		let default_maintainer_account_id = 0;
@@ -63,5 +69,63 @@ fn shout_be_able_to_change_the_maintainer() {
 		assert_ok!(Mixer::force_set_maintainer(Origin::root(), new_maintainer_account_id));
 		let current_maintainer_account_id = Mixer::maintainer();
 		assert_eq!(current_maintainer_account_id, new_maintainer_account_id);
+	});
+}
+
+#[test]
+fn mixer_works() {
+	new_test_ext().execute_with(|| {
+		type Bn254Fr = ark_bn254::Fr;
+		let mut rng = ark_std::test_rng();
+		// init hasher pallet first.
+		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
+		// then the merkle tree.
+		<MerkleTree as OnInitialize<u64>>::on_initialize(1);
+		// now let's create the mixer.
+		let deposit_size = One::one();
+		assert_ok!(Mixer::create(Origin::root(), deposit_size, 3));
+		// now with mixer created, we should setup the circuit.
+		let tree_id = MerkleTree::next_tree_id() - 1;
+		let sender_account_id = 1;
+		let recipient_account_id = 2;
+		let relayer_account_id = 0;
+		let fee_value = 0;
+		let refund_value = 0;
+
+		let rounds = get_rounds_poseidon_circom_bn254_x5_5::<Bn254Fr>();
+		let mds = get_mds_poseidon_circom_bn254_x5_5::<Bn254Fr>();
+		let params = PoseidonParameters::new(rounds, mds);
+		// inputs
+		let recipient = Bn254Fr::from(recipient_account_id);
+		let relayer = Bn254Fr::from(relayer_account_id);
+		let fee = Bn254Fr::from(fee_value);
+		let refund = Bn254Fr::from(refund_value);
+		let (leaf_private, leaf, nullifier_hash) = setup_leaf_x5(&params, &mut rng);
+		let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_be());
+		let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_be());
+		assert_ok!(Mixer::deposit(Origin::signed(sender_account_id), tree_id, leaf_element));
+
+		// now we start to generate the proof.
+		let arbitrary_input = setup_arbitrary_data(recipient, relayer);
+		let (mt, path) = setup_tree_and_create_path_x5(&[leaf], 0, &params);
+		let root = mt.root().inner();
+		let root_element = Element::from_bytes(&root.into_repr().to_bytes_be());
+		let circuit = Circuit_x5::new(arbitrary_input, leaf_private, (), params, path, root, nullifier_hash);
+
+		let (pk, _) = setup_groth16_x5::<_, ark_bn254::Bn254>(&mut rng, circuit.clone());
+		let proof = prove_groth16_x5::<_, ark_bn254::Bn254>(&pk, circuit, &mut rng);
+		let mut proof_bytes = Vec::new();
+		proof.write(&mut proof_bytes).unwrap();
+		assert_ok!(Mixer::withdraw(
+			Origin::signed(sender_account_id),
+			tree_id,
+			proof_bytes,
+			root_element,
+			nullifier_hash_element,
+			recipient_account_id,
+			relayer_account_id,
+			fee_value,
+			refund_value,
+		));
 	});
 }

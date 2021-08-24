@@ -146,13 +146,6 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(0)]
-		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
-			let origin = ensure_signed(origin)?;
-			<Self as MixerInterface<_, _>>::deposit(origin, tree_id, leaf)?;
-			Ok(().into())
-		}
-
-		#[pallet::weight(0)]
 		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			// ensure parameter setter is the maintainer
@@ -174,6 +167,39 @@ pub mod pallet {
 				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
 				Ok(().into())
 			})
+		}
+
+		#[pallet::weight(0)]
+		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
+			let origin = ensure_signed(origin)?;
+			<Self as MixerInterface<_, _>>::deposit(origin, tree_id, leaf)?;
+			Ok(().into())
+		}
+
+		#[pallet::weight(0)]
+		pub fn withdraw(
+			origin: OriginFor<T>,
+			id: T::TreeId,
+			proof_bytes: Vec<u8>,
+			root: T::Element,
+			nullifier_hash: T::Element,
+			recipient: T::AccountId,
+			relayer: T::AccountId,
+			fee: BalanceOf<T, I>,
+			refund: BalanceOf<T, I>,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin)?;
+			<Self as MixerInterface<_, _>>::withdraw(
+				id,
+				&proof_bytes,
+				root,
+				nullifier_hash,
+				recipient,
+				relayer,
+				fee,
+				refund,
+			)?;
+			Ok(().into())
 		}
 	}
 }
@@ -204,7 +230,7 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 	fn withdraw(
 		id: T::TreeId,
 		proof_bytes: &[u8],
-		roots: Vec<T::Element>,
+		root: T::Element,
 		nullifier_hash: T::Element,
 		recipient: T::AccountId,
 		relayer: T::AccountId,
@@ -213,10 +239,7 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 	) -> Result<(), DispatchError> {
 		let mixer = Self::mixers(id);
 		// Check if local root is known
-		ensure!(
-			T::Tree::is_known_root(id, roots[0])?,
-			Error::<T, I>::InvalidWithdrawRoot
-		);
+		ensure!(T::Tree::is_known_root(id, root)?, Error::<T, I>::InvalidWithdrawRoot);
 		// Check nullifier and add or return `AlreadyRevealedNullifier`
 		ensure!(
 			!Self::is_nullifier_used(id, nullifier_hash),
@@ -229,7 +252,7 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
 		let mut bytes = vec![];
 		bytes.extend_from_slice(&nullifier_hash.encode());
-		bytes.extend_from_slice(&roots[0].encode());
+		bytes.extend_from_slice(&root.encode());
 		bytes.extend_from_slice(&recipient.encode());
 		bytes.extend_from_slice(&relayer.encode());
 		// TODO: Update gadget being used to include fee as well
