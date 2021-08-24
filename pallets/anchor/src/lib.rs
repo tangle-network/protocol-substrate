@@ -343,4 +343,3 @@ impl<T: Config<I>, I: 'static> AnchorInspector<T, I> for Pallet<T, I> {
 		Ok(true)
 	}
 }
-
