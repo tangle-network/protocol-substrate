@@ -30,7 +30,7 @@ sp-runtime = { default-features = false, version = "3.0.0", git = "https://githu
 sp-io = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 sp-core = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 sp-arithmetic = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
-
+pallet-bridge = { path = "../bridge" , default-features = false}
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
@@ -53,4 +53,5 @@ std = [
     "sp-arithmetic/std",
 	"frame-support/std",
 	"frame-system/std",
+	"pallet-bridge/std",
 ]
