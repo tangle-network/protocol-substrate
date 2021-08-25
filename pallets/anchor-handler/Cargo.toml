@@ -40,6 +40,12 @@ sp-core = { default-features = false, version = "3.0.0", git = "https://github.c
 sp-io = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 sp-runtime = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 pallet-balances = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+pallet-hasher = { path = "../hasher", default-features = false }
+pallet-mixer = { path = "../mixer", default-features = false }
+pallet-mt = { path = "../mt", default-features = false }
+pallet-verifier = { path = "../verifier", default-features = false }
+darkwebb-primitives = { path = "../../primitives", default-features = false }
+ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { version = "2.0.0", package = "substrate-wasm-builder-runner" }
@@ -56,4 +62,9 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-bridge/std",
+	"pallet-hasher/std",
+    "pallet-mt/std",
+    "pallet-mixer/std",
+    "pallet-verifier/std",
+    "darkwebb-primitives/std",
 ]

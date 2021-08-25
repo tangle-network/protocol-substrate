@@ -61,7 +61,7 @@ use darkwebb_primitives::verifier::*;
 use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get, ReservableCurrency};
 use frame_system::Config as SystemConfig;
 use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
-use sp_std::prelude::*;
+use sp_std::{prelude::*, vec};
 
 pub use pallet::*;
 

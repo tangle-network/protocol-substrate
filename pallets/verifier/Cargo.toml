@@ -42,5 +42,4 @@ std = [
     "sp-runtime/std",
     "sp-std/std",
     "darkwebb-primitives/std",
-    "ark-crypto-primitives/std",
 ]
