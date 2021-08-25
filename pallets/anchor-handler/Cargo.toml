@@ -1,10 +1,10 @@
 [package]
 authors = ["Webb Technologies Inc."]
-description = "FRAME pallet template for defining custom runtime logic."
+description = "FRAME pallet for Webb bridge."
 edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
-name = "pallet-verifier"
+name = "pallet-anchor-handler"
 repository = "https://github.com/substrate-developer-hub/substrate-node-template/"
 version = "3.0.0"
 
@@ -19,11 +19,20 @@ package = "parity-scale-codec"
 version = "2.0.0"
 
 [dependencies]
+# third-party dependencies
+serde = { version = "1.0.101", optional = true }
+
+# frame dependencies
 frame-support = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 frame-system = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
-sp-runtime = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 sp-std = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
-darkwebb-primitives = { path = "../../primitives", default-features = false }
+sp-runtime = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+sp-io = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+sp-core = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+sp-arithmetic = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+pallet-mt = { path = "../mt" , default-features = false}
+pallet-anchor = { path = "../anchor" , default-features = false}
+pallet-bridge = { path = "../bridge" , default-features = false}
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
@@ -31,15 +40,31 @@ sp-core = { default-features = false, version = "3.0.0", git = "https://github.c
 sp-io = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 sp-runtime = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
 pallet-balances = { default-features = false, version = "3.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.7" }
+pallet-hasher = { path = "../hasher", default-features = false }
+pallet-mixer = { path = "../mixer", default-features = false }
+pallet-mt = { path = "../mt", default-features = false }
+pallet-verifier = { path = "../verifier", default-features = false }
+darkwebb-primitives = { path = "../../primitives", default-features = false }
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
 
+[build-dependencies]
+wasm-builder-runner = { version = "2.0.0", package = "substrate-wasm-builder-runner" }
 [features]
 default = ["std"]
 std = [
-    "codec/std",
-    "frame-support/std",
-    "frame-system/std",
-    "sp-runtime/std",
-    "sp-std/std",
+	"codec/std",
+	"serde",
+	"sp-std/std",
+	"sp-runtime/std",
+    "sp-io/std",
+    "sp-core/std",
+    "sp-arithmetic/std",
+	"frame-support/std",
+	"frame-system/std",
+	"pallet-bridge/std",
+	"pallet-hasher/std",
+    "pallet-mt/std",
+    "pallet-mixer/std",
+    "pallet-verifier/std",
     "darkwebb-primitives/std",
 ]

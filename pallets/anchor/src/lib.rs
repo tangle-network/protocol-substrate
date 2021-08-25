@@ -51,17 +51,17 @@
 // mod tests;
 
 pub mod types;
-use types::*;
 use codec::{Decode, Encode, Input};
 use frame_support::{ensure, pallet_prelude::DispatchError};
-use pallet_mt::types::{ElementTrait};
 use pallet_mixer::types::{MixerInspector, MixerInterface, MixerMetadata};
+use pallet_mt::types::ElementTrait;
+use types::*;
 
 use darkwebb_primitives::verifier::*;
 use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get, ReservableCurrency};
 use frame_system::Config as SystemConfig;
 use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
-use sp_std::prelude::*;
+use sp_std::{prelude::*, vec};
 
 pub use pallet::*;
 
@@ -113,8 +113,7 @@ pub mod pallet {
 	/// The map of trees to the maximum number of anchor edges they can have
 	#[pallet::storage]
 	#[pallet::getter(fn max_edges)]
-	pub type MaxEdges<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, T::TreeId, u32, ValueQuery>;
+	pub type MaxEdges<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_128Concat, T::TreeId, u32, ValueQuery>;
 
 	/// The map of trees and chain ids to their edge metadata
 	#[pallet::storage]
@@ -126,43 +125,26 @@ pub mod pallet {
 		Blake2_128Concat,
 		T::ChainId,
 		EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>,
-		ValueQuery
+		ValueQuery,
 	>;
 
 	/// A helper map for denoting whether an anchor is bridged to given chain
 	#[pallet::storage]
 	#[pallet::getter(fn anchor_has_edge)]
-	pub type AnchorHasEdge<T: Config<I>, I: 'static = ()> = StorageMap<
-		_,
-		Blake2_128Concat,
-		(T::TreeId, T::ChainId),
-		bool,
-		ValueQuery
-	>;
+	pub type AnchorHasEdge<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, (T::TreeId, T::ChainId), bool, ValueQuery>;
 
 	/// The map of (tree, chain id) pairs to their latest recorded merkle root
 	#[pallet::storage]
 	#[pallet::getter(fn neighbor_roots)]
-	pub type NeighborRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		(T::TreeId, T::ChainId),
-		Blake2_128Concat,
-		T::RootIndex,
-		T::Element,
-	>;
+	pub type NeighborRoots<T: Config<I>, I: 'static = ()> =
+		StorageDoubleMap<_, Blake2_128Concat, (T::TreeId, T::ChainId), Blake2_128Concat, T::RootIndex, T::Element>;
 
 	/// The next neighbor root index to store the merkle root update record
 	#[pallet::storage]
 	#[pallet::getter(fn next_neighbor_root_index)]
-	pub type NextNeighborRootIndex<T: Config<I>, I: 'static = ()> = StorageMap<
-		_,
-		Blake2_128Concat,
-		(T::TreeId, T::ChainId),
-		T::RootIndex,
-		ValueQuery
-	>;
-
+	pub type NextNeighborRootIndex<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, (T::TreeId, T::ChainId), T::RootIndex, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -195,11 +177,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
-		pub fn create(
-			origin: OriginFor<T>,
-			max_edges: u32,	
-			depth: u8,		
-		) -> DispatchResultWithPostInfo {
+		pub fn create(origin: OriginFor<T>, max_edges: u32, depth: u8) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			let tree_id = T::Mixer::create(T::AccountId::default(), depth)?;
 			MaxEdges::<T, I>::insert(tree_id, max_edges);
@@ -264,18 +242,14 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 		T::Mixer::ensure_known_root(id, roots[0])?;
 		if roots.len() > 1 {
 			for i in 1..roots.len() {
-				<Self as AnchorInspector<_,_>>::ensure_known_neighbor_root(
-					id,
-					T::ChainId::from(i as u32),
-					roots[i]
-				)?;
+				<Self as AnchorInspector<_, _>>::ensure_known_neighbor_root(id, T::ChainId::from(i as u32), roots[i])?;
 			}
 		}
 
 		// Check nullifier and add or return `InvalidNullifier`
 		T::Mixer::ensure_nullifier_unused(id, nullifier_hash)?;
 		T::Mixer::add_nullifier_hash(id, nullifier_hash);
-		// Format proof public inputs for verification 
+		// Format proof public inputs for verification
 		// FIXME: This is for a specfic gadget so we ought to create a generic handler
 		// FIXME: Such as a unpack/pack public inputs trait
 		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
@@ -300,19 +274,22 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
 		root: T::Element,
-		height: T::BlockNumber
+		height: T::BlockNumber,
 	) -> Result<(), DispatchError> {
 		// ensure edge doesn't exists
-		ensure!(!EdgeList::<T, I>::contains_key(id, src_chain_id), Error::<T, I>::EdgeAlreadyExists);
+		ensure!(
+			!EdgeList::<T, I>::contains_key(id, src_chain_id),
+			Error::<T, I>::EdgeAlreadyExists
+		);
 		// ensure anchor isn't at maximum edges
 		let max_edges: u32 = Self::max_edges(id);
 		let curr_length = EdgeList::<T, I>::iter_prefix_values(id).into_iter().count();
 		ensure!(max_edges > curr_length as u32, Error::<T, I>::TooManyEdges);
 		// craft edge
 		let e_meta = EdgeMetadata::<T::ChainId, T::Element, T::BlockNumber> {
-			src_chain_id: src_chain_id,
-			root: root,
-			height: height,
+			src_chain_id,
+			root,
+			height,
 		};
 		// update historical neighbor list for this edge's root
 		let neighbor_root_inx = NextNeighborRootIndex::<T, I>::get((id, src_chain_id));
@@ -330,13 +307,16 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
 		root: T::Element,
-		height: T::BlockNumber
+		height: T::BlockNumber,
 	) -> Result<(), DispatchError> {
-		ensure!(EdgeList::<T, I>::contains_key(id, src_chain_id), Error::<T, I>::EdgeDoesntExists);
+		ensure!(
+			EdgeList::<T, I>::contains_key(id, src_chain_id),
+			Error::<T, I>::EdgeDoesntExists
+		);
 		let e_meta = EdgeMetadata::<T::ChainId, T::Element, T::BlockNumber> {
-			src_chain_id: src_chain_id,
-			root: root,
-			height: height,
+			src_chain_id,
+			root,
+			height,
 		};
 		let neighbor_root_inx = NextNeighborRootIndex::<T, I>::get((id, src_chain_id));
 		NextNeighborRootIndex::<T, I>::insert(
@@ -357,8 +337,13 @@ impl<T: Config<I>, I: 'static> AnchorInspector<T, I> for Pallet<T, I> {
 	fn is_known_neighbor_root(
 		tree_id: T::TreeId,
 		src_chain_id: T::ChainId,
-		target_root: T::Element
+		target_root: T::Element,
 	) -> Result<bool, DispatchError> {
 		Ok(true)
+	}
+
+	/// Check if this anchor has this edge
+	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
+		EdgeList::<T, I>::contains_key(id, src_chain_id)
 	}
 }
