@@ -1,6 +1,6 @@
 [package]
 authors = ["Webb Technologies Inc."]
-description = "FRAME pallet for Webb bridge."
+description = "FRAME pallet for Webb anchor-handler."
 edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
@@ -56,7 +56,7 @@ std = [
 	"serde",
 	"sp-std/std",
 	"sp-runtime/std",
-    "sp-io/std",
+	"sp-io/std",
     "sp-core/std",
     "sp-arithmetic/std",
 	"frame-support/std",
