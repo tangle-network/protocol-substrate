@@ -138,7 +138,7 @@ pub mod pallet {
 		/// This will be called by bridge when proposal to create an
 		/// anchor has been successfully voted on.
 		#[pallet::weight(195_000_000)]
-		pub fn execute_anchor_creation_proposal(origin: OriginFor<T>, r_id: ResourceId) -> DispatchResultWithPostInfo {
+		pub fn execute_anchor_create_proposal(origin: OriginFor<T>, r_id: ResourceId) -> DispatchResultWithPostInfo {
 			Self::ensure_bridge_origin(origin)?;
 			Self::create_anchor(r_id)
 		}
@@ -146,7 +146,7 @@ pub mod pallet {
 		/// This will be called by bridge when proposal to add/update edge of an
 		/// anchor has been successfully voted on.
 		#[pallet::weight(195_000_000)]
-		pub fn execute_anchor_updatation_proposal(
+		pub fn execute_anchor_update_proposal(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
 			anchor_metadata: EdgeMetadata<ChainId<T>, T::Element, T::BlockNumber>,
