@@ -98,6 +98,11 @@ pub mod pallet {
 		type BridgeAccountId: Get<PalletId>;
 	}
 
+	/// The parameter maintainer who can change the parameters
+	#[pallet::storage]
+	#[pallet::getter(fn maintainer)]
+	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
+
 	/// All whitelisted chains and their respective transaction counts
 	#[pallet::storage]
 	#[pallet::getter(fn chains)]
@@ -148,6 +153,8 @@ pub mod pallet {
 	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
+		/// Maintainer is set
+		MaintainerSet(T::AccountId, T::AccountId),
 		/// Vote threshold has changed (new_threshold)
 		RelayerThresholdChanged(u32),
 		/// Chain now available for transfers (chain_id)
@@ -173,6 +180,8 @@ pub mod pallet {
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
+		/// Account does not have correct permissions
+		InvalidPermissions,
 		/// Relayer threshold not set
 		ThresholdNotSet,
 		/// Provided chain Id is not valid
@@ -210,6 +219,33 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
+		/// Sets the maintainer.
+		#[pallet::weight(0)]
+		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
+			Self::ensure_admin(origin.clone())?;
+			let origin = ensure_signed(origin)?;
+			// ensure parameter setter is the maintainer
+			ensure!(origin == Self::maintainer(), Error::<T, I>::InvalidPermissions);
+			// set the new maintainer
+			Maintainer::<T, I>::try_mutate(|maintainer| {
+				*maintainer = new_maintainer.clone();
+				Self::deposit_event(Event::MaintainerSet(origin, new_maintainer));
+				Ok(().into())
+			})
+		}
+
+		// Forcefully set the maintainer.
+		#[pallet::weight(0)]
+		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
+			Self::ensure_admin(origin)?;
+			// set the new maintainer
+			Maintainer::<T, I>::try_mutate(|maintainer| {
+				*maintainer = new_maintainer.clone();
+				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
+				Ok(().into())
+			})
+		}
+
 		/// Sets the vote threshold for proposals.
 		///
 		/// This threshold is used to determine how many votes are required
