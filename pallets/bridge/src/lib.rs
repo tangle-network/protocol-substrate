@@ -45,7 +45,6 @@
 pub mod mock;
 #[cfg(test)]
 mod tests;
-#[cfg(test)]
 pub mod utils;
 
 use frame_support::{
@@ -63,7 +62,7 @@ pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use crate::types::{DepositNonce, ProposalVotes, ResourceId, DEFAULT_RELAYER_THRESHOLD};
+	use crate::types::{DepositNonce, ProposalVotes, ResourceId, DARKWEBB_DEFAULT_RELAYER_THRESHOLD};
 	use codec::EncodeLike;
 	use frame_support::{
 		dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
@@ -113,7 +112,7 @@ pub mod pallet {
 
 	#[pallet::type_value]
 	pub(super) fn DefaultForRelayerThreshold() -> u32 {
-		DEFAULT_RELAYER_THRESHOLD
+		DARKWEBB_DEFAULT_RELAYER_THRESHOLD
 	}
 
 	/// Number of votes required for a proposal to execute
