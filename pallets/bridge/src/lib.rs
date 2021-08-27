@@ -74,13 +74,13 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
-	pub struct Pallet<T>(PhantomData<T>);
+	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
 	/// The module configuration trait.
-	pub trait Config: frame_system::Config {
+	pub trait Config<I: 'static = ()>: frame_system::Config {
 		/// The overarching event type.
-		type Event: IsType<<Self as frame_system::Config>::Event> + From<Event<Self>>;
+		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 		/// Origin used to administer the pallet
 		type AdminOrigin: EnsureOrigin<Self::Origin>;
 		/// Proposed dispatchable call
@@ -101,7 +101,7 @@ pub mod pallet {
 	/// All whitelisted chains and their respective transaction counts
 	#[pallet::storage]
 	#[pallet::getter(fn chains)]
-	pub(super) type ChainNonces<T: Config> = StorageMap<_, Blake2_256, ChainId, DepositNonce>;
+	pub(super) type ChainNonces<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, ChainId, DepositNonce>;
 
 	#[pallet::type_value]
 	pub(super) fn DefaultForRelayerThreshold() -> u32 {
@@ -111,24 +111,25 @@ pub mod pallet {
 	/// Number of votes required for a proposal to execute
 	#[pallet::storage]
 	#[pallet::getter(fn relayer_threshold)]
-	pub(super) type RelayerThreshold<T: Config> = StorageValue<_, u32, ValueQuery, DefaultForRelayerThreshold>;
+	pub(super) type RelayerThreshold<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, u32, ValueQuery, DefaultForRelayerThreshold>;
 
 	/// Tracks current relayer set
 	#[pallet::storage]
 	#[pallet::getter(fn relayers)]
-	pub type Relayers<T: Config> = StorageMap<_, Blake2_256, T::AccountId, bool, ValueQuery>;
+	pub type Relayers<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, T::AccountId, bool, ValueQuery>;
 
 	/// Number of relayers in set
 	#[pallet::storage]
 	#[pallet::getter(fn relayer_count)]
-	pub type RelayerCount<T: Config> = StorageValue<_, u32, ValueQuery>;
+	pub type RelayerCount<T: Config<I>, I: 'static = ()> = StorageValue<_, u32, ValueQuery>;
 
 	/// All known proposals.
 	/// The key is the hash of the call and the deposit ID, to ensure it's
 	/// unique.
 	#[pallet::storage]
 	#[pallet::getter(fn votes)]
-	pub type Votes<T: Config> = StorageDoubleMap<
+	pub type Votes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
 		_,
 		Blake2_256,
 		ChainId,
@@ -140,13 +141,13 @@ pub mod pallet {
 	/// Utilized by the bridge software to map resource IDs to actual methods
 	#[pallet::storage]
 	#[pallet::getter(fn resources)]
-	pub type Resources<T: Config> = StorageMap<_, Blake2_256, ResourceId, Vec<u8>>;
+	pub type Resources<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, ResourceId, Vec<u8>>;
 
 	// Pallets use events to inform users when important changes are made.
 	#[pallet::event]
 	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
+	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// Vote threshold has changed (new_threshold)
 		RelayerThresholdChanged(u32),
 		/// Chain now available for transfers (chain_id)
@@ -171,7 +172,7 @@ pub mod pallet {
 
 	// Errors inform users that something went wrong.
 	#[pallet::error]
-	pub enum Error<T> {
+	pub enum Error<T, I = ()> {
 		/// Relayer threshold not set
 		ThresholdNotSet,
 		/// Provided chain Id is not valid
@@ -205,10 +206,10 @@ pub mod pallet {
 	}
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		/// Sets the vote threshold for proposals.
 		///
 		/// This threshold is used to determine how many votes are required
@@ -297,12 +298,12 @@ pub mod pallet {
 			nonce: DepositNonce,
 			src_id: ChainId,
 			r_id: ResourceId,
-			call: Box<<T as Config>::Proposal>,
+			call: Box<<T as Config<I>>::Proposal>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			ensure!(Self::is_relayer(&who), Error::<T>::MustBeRelayer);
-			ensure!(Self::chain_whitelisted(src_id), Error::<T>::ChainNotWhitelisted);
-			ensure!(Self::resource_exists(r_id), Error::<T>::ResourceDoesNotExist);
+			ensure!(Self::is_relayer(&who), Error::<T, I>::MustBeRelayer);
+			ensure!(Self::chain_whitelisted(src_id), Error::<T, I>::ChainNotWhitelisted);
+			ensure!(Self::resource_exists(r_id), Error::<T, I>::ResourceDoesNotExist);
 
 			Self::vote_for(who, nonce, src_id, call)
 		}
@@ -318,12 +319,12 @@ pub mod pallet {
 			nonce: DepositNonce,
 			src_id: ChainId,
 			r_id: ResourceId,
-			call: Box<<T as Config>::Proposal>,
+			call: Box<<T as Config<I>>::Proposal>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-			ensure!(Self::is_relayer(&who), Error::<T>::MustBeRelayer);
-			ensure!(Self::chain_whitelisted(src_id), Error::<T>::ChainNotWhitelisted);
-			ensure!(Self::resource_exists(r_id), Error::<T>::ResourceDoesNotExist);
+			ensure!(Self::is_relayer(&who), Error::<T, I>::MustBeRelayer);
+			ensure!(Self::chain_whitelisted(src_id), Error::<T, I>::ChainNotWhitelisted);
+			ensure!(Self::resource_exists(r_id), Error::<T, I>::ResourceDoesNotExist);
 
 			Self::vote_against(who, nonce, src_id, call)
 		}
@@ -342,7 +343,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			nonce: DepositNonce,
 			src_id: ChainId,
-			prop: Box<<T as Config>::Proposal>,
+			prop: Box<<T as Config<I>>::Proposal>,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 
@@ -351,7 +352,7 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config> Pallet<T> {
+impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	// *** Utility methods ***
 
 	pub fn ensure_admin(o: T::Origin) -> DispatchResultWithPostInfo {
@@ -384,40 +385,40 @@ impl<T: Config> Pallet<T> {
 
 	/// Set a new voting threshold
 	pub fn set_relayer_threshold(threshold: u32) -> DispatchResultWithPostInfo {
-		ensure!(threshold > 0, Error::<T>::InvalidThreshold);
-		RelayerThreshold::<T>::put(threshold);
+		ensure!(threshold > 0, Error::<T, I>::InvalidThreshold);
+		RelayerThreshold::<T, I>::put(threshold);
 		Self::deposit_event(Event::RelayerThresholdChanged(threshold));
 		Ok(().into())
 	}
 
 	/// Register a method for a resource Id, enabling associated transfers
 	pub fn register_resource(id: ResourceId, method: Vec<u8>) -> DispatchResultWithPostInfo {
-		Resources::<T>::insert(id, method);
+		Resources::<T, I>::insert(id, method);
 		Ok(().into())
 	}
 
 	/// Removes a resource ID, disabling associated transfer
 	pub fn unregister_resource(id: ResourceId) -> DispatchResultWithPostInfo {
-		Resources::<T>::remove(id);
+		Resources::<T, I>::remove(id);
 		Ok(().into())
 	}
 
 	/// Whitelist a chain ID for transfer
 	pub fn whitelist(id: ChainId) -> DispatchResultWithPostInfo {
 		// Cannot whitelist this chain
-		ensure!(id != T::ChainIdentity::get(), Error::<T>::InvalidChainId);
+		ensure!(id != T::ChainIdentity::get(), Error::<T, I>::InvalidChainId);
 		// Cannot whitelist with an existing entry
-		ensure!(!Self::chain_whitelisted(id), Error::<T>::ChainAlreadyWhitelisted);
-		ChainNonces::<T>::insert(&id, 0);
+		ensure!(!Self::chain_whitelisted(id), Error::<T, I>::ChainAlreadyWhitelisted);
+		ChainNonces::<T, I>::insert(&id, 0);
 		Self::deposit_event(Event::ChainWhitelisted(id));
 		Ok(().into())
 	}
 
 	/// Adds a new relayer to the set
 	pub fn register_relayer(relayer: T::AccountId) -> DispatchResultWithPostInfo {
-		ensure!(!Self::is_relayer(&relayer), Error::<T>::RelayerAlreadyExists);
-		Relayers::<T>::insert(&relayer, true);
-		RelayerCount::<T>::mutate(|i| *i += 1);
+		ensure!(!Self::is_relayer(&relayer), Error::<T, I>::RelayerAlreadyExists);
+		Relayers::<T, I>::insert(&relayer, true);
+		RelayerCount::<T, I>::mutate(|i| *i += 1);
 
 		Self::deposit_event(Event::RelayerAdded(relayer));
 		Ok(().into())
@@ -425,9 +426,9 @@ impl<T: Config> Pallet<T> {
 
 	/// Removes a relayer from the set
 	pub fn unregister_relayer(relayer: T::AccountId) -> DispatchResultWithPostInfo {
-		ensure!(Self::is_relayer(&relayer), Error::<T>::RelayerInvalid);
-		Relayers::<T>::remove(&relayer);
-		RelayerCount::<T>::mutate(|i| *i -= 1);
+		ensure!(Self::is_relayer(&relayer), Error::<T, I>::RelayerInvalid);
+		Relayers::<T, I>::remove(&relayer);
+		RelayerCount::<T, I>::mutate(|i| *i -= 1);
 		Self::deposit_event(Event::RelayerRemoved(relayer));
 		Ok(().into())
 	}
@@ -444,7 +445,7 @@ impl<T: Config> Pallet<T> {
 		in_favour: bool,
 	) -> DispatchResultWithPostInfo {
 		let now = <frame_system::Pallet<T>>::block_number();
-		let mut votes = match Votes::<T>::get(src_id, (nonce, prop.clone())) {
+		let mut votes = match Votes::<T, I>::get(src_id, (nonce, prop.clone())) {
 			Some(v) => v,
 			None => {
 				let mut v = ProposalVotes::default();
@@ -454,9 +455,9 @@ impl<T: Config> Pallet<T> {
 		};
 
 		// Ensure the proposal isn't complete and relayer hasn't already voted
-		ensure!(!votes.is_complete(), Error::<T>::ProposalAlreadyComplete);
-		ensure!(!votes.is_expired(now), Error::<T>::ProposalExpired);
-		ensure!(!votes.has_voted(&who), Error::<T>::RelayerAlreadyVoted);
+		ensure!(!votes.is_complete(), Error::<T, I>::ProposalAlreadyComplete);
+		ensure!(!votes.is_expired(now), Error::<T, I>::ProposalExpired);
+		ensure!(!votes.has_voted(&who), Error::<T, I>::RelayerAlreadyVoted);
 
 		if in_favour {
 			votes.votes_for.push(who.clone());
@@ -466,7 +467,7 @@ impl<T: Config> Pallet<T> {
 			Self::deposit_event(Event::VoteAgainst(src_id, nonce, who.clone()));
 		}
 
-		Votes::<T>::insert(src_id, (nonce, prop.clone()), votes.clone());
+		Votes::<T, I>::insert(src_id, (nonce, prop.clone()), votes.clone());
 
 		Ok(().into())
 	}
@@ -477,13 +478,13 @@ impl<T: Config> Pallet<T> {
 		src_id: ChainId,
 		prop: Box<T::Proposal>,
 	) -> DispatchResultWithPostInfo {
-		if let Some(mut votes) = Votes::<T>::get(src_id, (nonce, prop.clone())) {
+		if let Some(mut votes) = Votes::<T, I>::get(src_id, (nonce, prop.clone())) {
 			let now = <frame_system::Pallet<T>>::block_number();
-			ensure!(!votes.is_complete(), Error::<T>::ProposalAlreadyComplete);
-			ensure!(!votes.is_expired(now), Error::<T>::ProposalExpired);
+			ensure!(!votes.is_complete(), Error::<T, I>::ProposalAlreadyComplete);
+			ensure!(!votes.is_expired(now), Error::<T, I>::ProposalExpired);
 
-			let status = votes.try_to_complete(RelayerThreshold::<T>::get(), RelayerCount::<T>::get());
-			Votes::<T>::insert(src_id, (nonce, prop.clone()), votes.clone());
+			let status = votes.try_to_complete(RelayerThreshold::<T, I>::get(), RelayerCount::<T, I>::get());
+			Votes::<T, I>::insert(src_id, (nonce, prop.clone()), votes.clone());
 
 			match status {
 				ProposalStatus::Approved => Self::finalize_execution(src_id, nonce, prop),
@@ -491,7 +492,7 @@ impl<T: Config> Pallet<T> {
 				_ => Ok(().into()),
 			}
 		} else {
-			Err(Error::<T>::ProposalDoesNotExist)?
+			Err(Error::<T, I>::ProposalDoesNotExist)?
 		}
 	}
 
