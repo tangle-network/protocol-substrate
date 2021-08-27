@@ -91,7 +91,7 @@ pub mod pallet {
 		/// This must be unique and must not collide with existing IDs within a
 		/// set of bridged chains.
 		#[pallet::constant]
-		type ChainIdentity: Get<Self::ChainId>;
+		type ChainIdentifier: Get<Self::ChainId>;
 
 		#[pallet::constant]
 		type ProposalLifetime: Get<Self::BlockNumber>;
@@ -444,7 +444,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Whitelist a chain ID for transfer
 	pub fn whitelist(id: T::ChainId) -> DispatchResultWithPostInfo {
 		// Cannot whitelist this chain
-		ensure!(id != T::ChainIdentity::get(), Error::<T, I>::InvalidChainId);
+		ensure!(id != T::ChainIdentifier::get(), Error::<T, I>::InvalidChainId);
 		// Cannot whitelist with an existing entry
 		ensure!(!Self::chain_whitelisted(id), Error::<T, I>::ChainAlreadyWhitelisted);
 		ChainNonces::<T, I>::insert(&id, 0);

@@ -191,7 +191,7 @@ impl pallet_anchor::Config for Test {
 }
 
 parameter_types! {
-	pub const ChainIdentity: u8 = 5;
+	pub const ChainIdentifier: u8 = 5;
 	pub const ProposalLifetime: u64 = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
@@ -200,7 +200,7 @@ impl pallet_bridge::Config for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
 	type ChainId = u32;
-	type ChainIdentity = ChainIdentity;
+	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
