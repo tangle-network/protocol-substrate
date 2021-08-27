@@ -199,6 +199,7 @@ parameter_types! {
 impl pallet_bridge::Config for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
+	type ChainId = u32;
 	type ChainIdentity = ChainIdentity;
 	type Event = Event;
 	type Proposal = Call;

@@ -52,11 +52,14 @@ use sp_std::prelude::*;
 
 pub use pallet::*;
 
-use pallet_bridge::types::{ChainId, ResourceId};
+use pallet_bridge::types::ResourceId;
 pub mod types;
 use types::*;
 
 type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+// ChainId is available in both bridge and anchor pallet
+type ChainId<T> = <T as pallet_anchor::Config>::ChainId;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -82,6 +85,8 @@ pub mod pallet {
 		/// The currency mechanism.
 		type Currency: Currency<Self::AccountId>;
 
+		//type ChainId: <<Self as pallet_bridge::Config>>::ChainId;
+
 		/// Anchor Interface
 		type Anchor: AnchorInterface<Self> + AnchorInspector<Self>;
 	}
@@ -97,17 +102,17 @@ pub mod pallet {
 	pub type UpdateRecords<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		T::ChainId,
+		ChainId<T>,
 		Blake2_128Concat,
 		T::BlockNumber,
-		UpdateRecord<T::AccountId, ResourceId, T::ChainId, T::Element, T::BlockNumber>,
+		UpdateRecord<T::AccountId, ResourceId, ChainId<T>, T::Element, T::BlockNumber>,
 		ValueQuery,
 	>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn counts)]
 	/// The number of updates
-	pub(super) type Counts<T: Config> = StorageMap<_, Blake2_128Concat, T::ChainId, u64, ValueQuery>;
+	pub(super) type Counts<T: Config> = StorageMap<_, Blake2_128Concat, ChainId<T>, u64, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -137,7 +142,7 @@ pub mod pallet {
 		pub fn execute_proposal(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
-			anchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>,
+			anchor_metadata: EdgeMetadata<ChainId<T>, T::Element, T::BlockNumber>,
 		) -> DispatchResultWithPostInfo {
 			T::BridgeOrigin::ensure_origin(origin)?;
 			let tree_id = Anchors::<T>::get(r_id);

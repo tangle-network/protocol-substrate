@@ -57,13 +57,13 @@ use sp_runtime::traits::{AccountIdConversion, Dispatchable};
 use sp_std::prelude::*;
 
 pub mod types;
-use crate::types::{ChainId, DepositNonce, ProposalStatus, ProposalVotes, ResourceId};
+use crate::types::{DepositNonce, ProposalStatus, ProposalVotes, ResourceId};
 
 pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use crate::types::{ChainId, DepositNonce, ProposalVotes, ResourceId, DEFAULT_RELAYER_THRESHOLD};
+	use crate::types::{DepositNonce, ProposalVotes, ResourceId, DEFAULT_RELAYER_THRESHOLD};
 	use codec::EncodeLike;
 	use frame_support::{
 		dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
@@ -71,6 +71,7 @@ pub mod pallet {
 		PalletId,
 	};
 	use frame_system::pallet_prelude::*;
+	use sp_runtime::traits::AtLeast32Bit;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -85,11 +86,13 @@ pub mod pallet {
 		type AdminOrigin: EnsureOrigin<Self::Origin>;
 		/// Proposed dispatchable call
 		type Proposal: Parameter + Dispatchable<Origin = Self::Origin> + EncodeLike + GetDispatchInfo;
+		/// ChainID for anchor edges
+		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 		/// The identifier for this chain.
 		/// This must be unique and must not collide with existing IDs within a
 		/// set of bridged chains.
 		#[pallet::constant]
-		type ChainIdentity: Get<ChainId>;
+		type ChainIdentity: Get<Self::ChainId>;
 
 		#[pallet::constant]
 		type ProposalLifetime: Get<Self::BlockNumber>;
@@ -106,7 +109,7 @@ pub mod pallet {
 	/// All whitelisted chains and their respective transaction counts
 	#[pallet::storage]
 	#[pallet::getter(fn chains)]
-	pub(super) type ChainNonces<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, ChainId, DepositNonce>;
+	pub(super) type ChainNonces<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, T::ChainId, DepositNonce>;
 
 	#[pallet::type_value]
 	pub(super) fn DefaultForRelayerThreshold() -> u32 {
@@ -137,7 +140,7 @@ pub mod pallet {
 	pub type Votes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
 		_,
 		Blake2_256,
-		ChainId,
+		T::ChainId,
 		Blake2_256,
 		(DepositNonce, T::Proposal),
 		ProposalVotes<T::AccountId, T::BlockNumber>,
@@ -150,7 +153,7 @@ pub mod pallet {
 
 	// Pallets use events to inform users when important changes are made.
 	#[pallet::event]
-	#[pallet::metadata(T::AccountId = "AccountId")]
+	#[pallet::metadata(T::AccountId = "AccountId", T::ChainId = "ChainId", DepositNonce = "DepositNonce")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// Maintainer is set
@@ -158,23 +161,23 @@ pub mod pallet {
 		/// Vote threshold has changed (new_threshold)
 		RelayerThresholdChanged(u32),
 		/// Chain now available for transfers (chain_id)
-		ChainWhitelisted(ChainId),
+		ChainWhitelisted(T::ChainId),
 		/// Relayer added to set
 		RelayerAdded(T::AccountId),
 		/// Relayer removed from set
 		RelayerRemoved(T::AccountId),
 		/// Vote submitted in favour of proposal
-		VoteFor(ChainId, DepositNonce, T::AccountId),
+		VoteFor(T::ChainId, DepositNonce, T::AccountId),
 		/// Vot submitted against proposal
-		VoteAgainst(ChainId, DepositNonce, T::AccountId),
+		VoteAgainst(T::ChainId, DepositNonce, T::AccountId),
 		/// Voting successful for a proposal
-		ProposalApproved(ChainId, DepositNonce),
+		ProposalApproved(T::ChainId, DepositNonce),
 		/// Voting rejected a proposal
-		ProposalRejected(ChainId, DepositNonce),
+		ProposalRejected(T::ChainId, DepositNonce),
 		/// Execution of call succeeded
-		ProposalSucceeded(ChainId, DepositNonce),
+		ProposalSucceeded(T::ChainId, DepositNonce),
 		/// Execution of call failed
-		ProposalFailed(ChainId, DepositNonce),
+		ProposalFailed(T::ChainId, DepositNonce),
 	}
 
 	// Errors inform users that something went wrong.
@@ -291,7 +294,7 @@ pub mod pallet {
 		/// - O(1) lookup and insert
 		/// # </weight>
 		#[pallet::weight(195_000_000)]
-		pub fn whitelist_chain(origin: OriginFor<T>, id: ChainId) -> DispatchResultWithPostInfo {
+		pub fn whitelist_chain(origin: OriginFor<T>, id: T::ChainId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::whitelist(id)
 		}
@@ -332,7 +335,7 @@ pub mod pallet {
 		pub fn acknowledge_proposal(
 			origin: OriginFor<T>,
 			nonce: DepositNonce,
-			src_id: ChainId,
+			src_id: T::ChainId,
 			r_id: ResourceId,
 			call: Box<<T as Config<I>>::Proposal>,
 		) -> DispatchResultWithPostInfo {
@@ -353,7 +356,7 @@ pub mod pallet {
 		pub fn reject_proposal(
 			origin: OriginFor<T>,
 			nonce: DepositNonce,
-			src_id: ChainId,
+			src_id: T::ChainId,
 			r_id: ResourceId,
 			call: Box<<T as Config<I>>::Proposal>,
 		) -> DispatchResultWithPostInfo {
@@ -378,7 +381,7 @@ pub mod pallet {
 		pub fn eval_vote_state(
 			origin: OriginFor<T>,
 			nonce: DepositNonce,
-			src_id: ChainId,
+			src_id: T::ChainId,
 			prop: Box<<T as Config<I>>::Proposal>,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
@@ -413,7 +416,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Checks if a chain exists as a whitelisted destination
-	pub fn chain_whitelisted(id: ChainId) -> bool {
+	pub fn chain_whitelisted(id: T::ChainId) -> bool {
 		return Self::chains(id) != None;
 	}
 
@@ -440,7 +443,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Whitelist a chain ID for transfer
-	pub fn whitelist(id: ChainId) -> DispatchResultWithPostInfo {
+	pub fn whitelist(id: T::ChainId) -> DispatchResultWithPostInfo {
 		// Cannot whitelist this chain
 		ensure!(id != T::ChainIdentity::get(), Error::<T, I>::InvalidChainId);
 		// Cannot whitelist with an existing entry
@@ -476,7 +479,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	fn commit_vote(
 		who: T::AccountId,
 		nonce: DepositNonce,
-		src_id: ChainId,
+		src_id: T::ChainId,
 		prop: Box<T::Proposal>,
 		in_favour: bool,
 	) -> DispatchResultWithPostInfo {
@@ -511,7 +514,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Attempts to finalize or cancel the proposal if the vote count allows.
 	fn try_resolve_proposal(
 		nonce: DepositNonce,
-		src_id: ChainId,
+		src_id: T::ChainId,
 		prop: Box<T::Proposal>,
 	) -> DispatchResultWithPostInfo {
 		if let Some(mut votes) = Votes::<T, I>::get(src_id, (nonce, prop.clone())) {
@@ -537,7 +540,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	fn vote_for(
 		who: T::AccountId,
 		nonce: DepositNonce,
-		src_id: ChainId,
+		src_id: T::ChainId,
 		prop: Box<T::Proposal>,
 	) -> DispatchResultWithPostInfo {
 		Self::commit_vote(who, nonce, src_id, prop.clone(), true)?;
@@ -549,7 +552,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	fn vote_against(
 		who: T::AccountId,
 		nonce: DepositNonce,
-		src_id: ChainId,
+		src_id: T::ChainId,
 		prop: Box<T::Proposal>,
 	) -> DispatchResultWithPostInfo {
 		Self::commit_vote(who, nonce, src_id, prop.clone(), false)?;
@@ -557,7 +560,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Execute the proposal and signals the result as an event
-	fn finalize_execution(src_id: ChainId, nonce: DepositNonce, call: Box<T::Proposal>) -> DispatchResultWithPostInfo {
+	fn finalize_execution(
+		src_id: T::ChainId,
+		nonce: DepositNonce,
+		call: Box<T::Proposal>,
+	) -> DispatchResultWithPostInfo {
 		Self::deposit_event(Event::ProposalApproved(src_id, nonce));
 		call.dispatch(frame_system::RawOrigin::Signed(Self::account_id()).into())
 			.map(|_| ())
@@ -567,7 +574,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Cancels a proposal.
-	fn cancel_execution(src_id: ChainId, nonce: DepositNonce) -> DispatchResultWithPostInfo {
+	fn cancel_execution(src_id: T::ChainId, nonce: DepositNonce) -> DispatchResultWithPostInfo {
 		Self::deposit_event(Event::ProposalRejected(src_id, nonce));
 		Ok(().into())
 	}

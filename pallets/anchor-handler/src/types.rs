@@ -1,7 +1,5 @@
 use codec::{Decode, Encode};
 use pallet_anchor::types::EdgeMetadata;
-use pallet_bridge::types::{ChainId, ResourceId};
-use pallet_mt::types::ElementTrait;
 
 use sp_std::prelude::*;
 
