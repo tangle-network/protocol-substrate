@@ -179,17 +179,14 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn create(origin: OriginFor<T>, max_edges: u32, depth: u8) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id = T::Mixer::create(T::AccountId::default(), depth)?;
-			MaxEdges::<T, I>::insert(tree_id, max_edges);
-
-			Self::deposit_event(Event::AnchorCreation(tree_id));
+			let tree_id = <Self as AnchorInterface<_, _>>::create(T::AccountId::default(), max_edges, depth)?;
 			Ok(().into())
 		}
 
 		#[pallet::weight(0)]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			T::Mixer::deposit(origin, tree_id, leaf);
+			<Self as AnchorInterface<_, _>>::deposit(origin, tree_id, leaf)?;
 			Ok(().into())
 		}
 
@@ -220,8 +217,11 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
-	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, DispatchError> {
-		T::Mixer::create(T::AccountId::default(), depth)
+	fn create(creator: T::AccountId, max_edges: u32, depth: u8) -> Result<T::TreeId, DispatchError> {
+		let tree_id = T::Mixer::create(creator, depth)?;
+		MaxEdges::<T, I>::insert(tree_id, max_edges);
+		Self::deposit_event(Event::AnchorCreation(tree_id));
+		Ok(tree_id)
 	}
 
 	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {

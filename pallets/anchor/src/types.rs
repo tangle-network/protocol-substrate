@@ -6,7 +6,7 @@ use frame_support::dispatch;
 /// Anchor trait definition to be used in other pallets
 pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
 	// Creates a new anchor
-	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, dispatch::DispatchError>;
+	fn create(creator: T::AccountId, max_edges: u32, depth: u8) -> Result<T::TreeId, dispatch::DispatchError>;
 	/// Deposit into the anchor
 	fn deposit(account: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), dispatch::DispatchError>;
 	/// Withdraw from the anchor
