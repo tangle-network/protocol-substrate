@@ -119,7 +119,8 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		MaintainerSet(T::AccountId, T::AccountId),
 		AnchorCreated,
-		AnchorUpdated,
+		AnchorEdgeAdded,
+		AnchorEdgeUpdated,
 	}
 
 	#[pallet::error]
@@ -138,9 +139,14 @@ pub mod pallet {
 		/// This will be called by bridge when proposal to create an
 		/// anchor has been successfully voted on.
 		#[pallet::weight(195_000_000)]
-		pub fn execute_anchor_create_proposal(origin: OriginFor<T>, r_id: ResourceId) -> DispatchResultWithPostInfo {
+		pub fn execute_anchor_create_proposal(
+			origin: OriginFor<T>,
+			r_id: ResourceId,
+			max_edges: u32,
+			tree_depth: u8,
+		) -> DispatchResultWithPostInfo {
 			Self::ensure_bridge_origin(origin)?;
-			Self::create_anchor(r_id)
+			Self::create_anchor(r_id, max_edges, tree_depth)
 		}
 
 		/// This will be called by bridge when proposal to add/update edge of an
@@ -158,20 +164,19 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn ensure_bridge_origin(origin: T::Origin) -> DispatchResultWithPostInfo {
+	fn ensure_bridge_origin(origin: T::Origin) -> DispatchResultWithPostInfo {
 		T::BridgeOrigin::ensure_origin(origin)?;
 		Ok(().into())
 	}
 
-	pub fn create_anchor(r_id: ResourceId) -> DispatchResultWithPostInfo {
-		let account_id = T::AccountId::default();
-		let tree_id = T::Anchor::create(account_id.clone(), DARKWEBB_DEFAULT_TREE_DEPTH)?;
+	fn create_anchor(r_id: ResourceId, max_edges: u32, tree_depth: u8) -> DispatchResultWithPostInfo {
+		let tree_id = T::Anchor::create(T::AccountId::default(), max_edges, tree_depth)?;
 		Anchors::<T>::insert(r_id, tree_id);
 		Self::deposit_event(Event::AnchorCreated);
 		Ok(().into())
 	}
 
-	pub fn update_anchor(
+	fn update_anchor(
 		r_id: ResourceId,
 		anchor_metadata: EdgeMetadata<ChainId<T>, T::Element, T::BlockNumber>,
 	) -> DispatchResultWithPostInfo {
@@ -184,8 +189,10 @@ impl<T: Config> Pallet<T> {
 
 		if T::Anchor::has_edge(tree_id, src_chain_id) {
 			T::Anchor::update_edge(tree_id, src_chain_id, merkle_root, block_height)?;
+			Self::deposit_event(Event::AnchorEdgeUpdated);
 		} else {
 			T::Anchor::add_edge(tree_id, src_chain_id, merkle_root, block_height)?;
+			Self::deposit_event(Event::AnchorEdgeAdded);
 		}
 		let old = Counts::<T>::get(src_chain_id);
 		let nonce = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
@@ -196,7 +203,6 @@ impl<T: Config> Pallet<T> {
 		};
 		// UpdateRecords::<T>::insert(src_chain_id, nonce, record);
 
-		Self::deposit_event(Event::AnchorUpdated);
 		Ok(().into())
 	}
 }
