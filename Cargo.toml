@@ -6,4 +6,7 @@ members = [
     'node',
     'pallets/*',
     'runtime',
+    'webb-mp-ecdsa-gadget',
+    'webb-primitives',
+    'webb-test',
 ]
