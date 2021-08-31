@@ -124,11 +124,11 @@ where
 		.map(metrics::Metrics::register)
 		.and_then(|result| match result {
 			Ok(metrics) => {
-				debug!(target: "webb", "🥩 Registered metrics");
+				debug!(target: "webb", "🕸️  Registered metrics");
 				Some(metrics)
 			}
 			Err(err) => {
-				debug!(target: "webb", "🥩 Failed to register metrics: {:?}", err);
+				debug!(target: "webb", "🕸️  Failed to register metrics: {:?}", err);
 				None
 			}
 		});

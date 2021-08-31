@@ -98,13 +98,13 @@ where
 			.map(|tracker| tracker.is_done(threshold(self.validator_set.validators.len())))
 			.unwrap_or(false);
 
-		debug!(target: "webb", "🥩 Round #{} done: {}", round.1, done);
+		debug!(target: "webb", "🕸️  Round #{} done: {}", round.1, done);
 
 		done
 	}
 
 	pub(crate) fn drop(&mut self, round: &(H, N)) -> Option<Vec<Option<Signature>>> {
-		trace!(target: "webb", "🥩 About to drop round #{}", round.1);
+		trace!(target: "webb", "🕸️  About to drop round #{}", round.1);
 
 		let signatures = self.rounds.remove(round)?.votes;
 

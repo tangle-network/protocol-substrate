@@ -36,6 +36,7 @@ mod commitment;
 pub mod mmr;
 pub mod witness;
 pub mod dkg;
+pub use dkg::*;
 
 pub use commitment::{Commitment, SignedCommitment, VersionedCommitment};
 

@@ -49,7 +49,7 @@ impl WebbKeystore {
 			.collect();
 
 		if public.len() > 1 {
-			warn!(target: "webb", "🥩 Multiple private keys found for: {:?} ({})", public, public.len());
+			warn!(target: "webb", "🕸️  Multiple private keys found for: {:?} ({})", public, public.len());
 		}
 
 		public.get(0).cloned()

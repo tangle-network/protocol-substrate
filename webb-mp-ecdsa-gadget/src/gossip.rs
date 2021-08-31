@@ -28,12 +28,12 @@ use wasm_timer::Instant;
 
 use webb_primitives::{
 	crypto::{Public, Signature},
-	MmrRootHash, VoteMessage,
+	MmrRootHash, VoteMessage, DKGMessage,
 };
 
 use crate::keystore::WebbKeystore;
 
-// Limit BEEFY gossip by keeping only a bound number of voting rounds alive.
+// Limit WEBB gossip by keeping only a bound number of voting rounds alive.
 const MAX_LIVE_GOSSIP_ROUNDS: usize = 3;
 
 // Timeout for rebroadcasting messages.
@@ -52,14 +52,14 @@ pub type MessageHash = [u8; 8];
 
 type KnownVotes<B> = BTreeMap<NumberFor<B>, fnv::FnvHashSet<MessageHash>>;
 
-/// BEEFY gossip validator
+/// WEBB gossip validator
 ///
-/// Validate BEEFY gossip messages and limit the number of live BEEFY voting rounds.
+/// Validate WEBB gossip messages and limit the number of live WEBB voting rounds.
 ///
 /// Allows messages from last [`MAX_LIVE_GOSSIP_ROUNDS`] to flow, everything else gets
 /// rejected/expired.
 ///
-///All messaging is handled in a single BEEFY global topic.
+///All messaging is handled in a single WEBB global topic.
 pub(crate) struct GossipValidator<B>
 where
 	B: Block,
@@ -88,7 +88,7 @@ where
 	/// We retain the [`MAX_LIVE_GOSSIP_ROUNDS`] most **recent** voting rounds as live.
 	/// As long as a voting round is live, it will be gossiped to peer nodes.
 	pub(crate) fn note_round(&self, round: NumberFor<B>) {
-		debug!(target: "webb", "🥩 About to note round #{}", round);
+		debug!(target: "webb", "🕸️  About to note round #{}", round);
 
 		let mut live = self.known_votes.write();
 
@@ -132,6 +132,50 @@ where
 			.map(|known| known.contains(hash))
 			.unwrap_or(false)
 	}
+
+	fn handle_vote_message(
+		&self,
+		sender: &PeerId,
+		msg: VoteMessage<MmrRootHash, NumberFor<B>, Public, Signature>,
+		msg_hash: MessageHash,
+	) -> ValidationResult<B::Hash> {
+		let round = msg.commitment.block_number;
+
+		// Verify general usefulness of the message.
+		// We are going to discard old votes right away (without verification)
+		// Also we keep track of already received votes to avoid verifying duplicates.
+		{
+			let known_votes = self.known_votes.read();
+
+			if !GossipValidator::<B>::is_live(&known_votes, &round) {
+				return ValidationResult::Discard;
+			}
+
+			if GossipValidator::<B>::is_known(&known_votes, &round, &msg_hash) {
+				return ValidationResult::ProcessAndKeep(self.topic);
+			}
+		}
+
+		if WebbKeystore::verify(&msg.id, &msg.signature, &msg.commitment.encode()) {
+			GossipValidator::<B>::add_known(&mut *self.known_votes.write(), &round, msg_hash);
+			return ValidationResult::ProcessAndKeep(self.topic);
+		} else {
+			// TODO: report peer
+			debug!(target: "webb", "🕸️  Bad signature on message: {:?}, from: {:?}", msg, sender);
+		}
+
+		ValidationResult::Discard
+	}
+
+	fn handle_dkg_message(
+		&self,
+		sender: &PeerId,
+		msg: DKGMessage<Public>,
+		msg_hash: MessageHash,
+	) -> ValidationResult<B::Hash> {
+		debug!(target: "webb", "🕸️  Bad signature on message: {:?}, from: {:?}", msg, sender);
+		ValidationResult::Discard
+	}
 }
 
 impl<B> Validator<B> for GossipValidator<B>
@@ -144,32 +188,13 @@ where
 		sender: &PeerId,
 		mut data: &[u8],
 	) -> ValidationResult<B::Hash> {
+		let msg_hash = twox_64(data);
 		if let Ok(msg) = VoteMessage::<MmrRootHash, NumberFor<B>, Public, Signature>::decode(&mut data) {
-			let msg_hash = twox_64(data);
-			let round = msg.commitment.block_number;
+			return self.handle_vote_message(sender, msg, msg_hash);
+		}
 
-			// Verify general usefulness of the message.
-			// We are going to discard old votes right away (without verification)
-			// Also we keep track of already received votes to avoid verifying duplicates.
-			{
-				let known_votes = self.known_votes.read();
-
-				if !GossipValidator::<B>::is_live(&known_votes, &round) {
-					return ValidationResult::Discard;
-				}
-
-				if GossipValidator::<B>::is_known(&known_votes, &round, &msg_hash) {
-					return ValidationResult::ProcessAndKeep(self.topic);
-				}
-			}
-
-			if WebbKeystore::verify(&msg.id, &msg.signature, &msg.commitment.encode()) {
-				GossipValidator::<B>::add_known(&mut *self.known_votes.write(), &round, msg_hash);
-				return ValidationResult::ProcessAndKeep(self.topic);
-			} else {
-				// TODO: report peer
-				debug!(target: "webb", "🥩 Bad signature on message: {:?}, from: {:?}", msg, sender);
-			}
+		if let Ok(msg) = DKGMessage::<Public>::decode(&mut data) {
+			return self.handle_dkg_message(sender, msg, msg_hash);
 		}
 
 		ValidationResult::Discard
@@ -186,7 +211,7 @@ where
 			let round = msg.commitment.block_number;
 			let expired = !GossipValidator::<B>::is_live(&known_votes, &round);
 
-			trace!(target: "webb", "🥩 Message for round #{} expired: {}", round, expired);
+			trace!(target: "webb", "🕸️  Message for round #{} expired: {}", round, expired);
 
 			expired
 		})
@@ -219,7 +244,7 @@ where
 			let round = msg.commitment.block_number;
 			let allowed = GossipValidator::<B>::is_live(&known_votes, &round);
 
-			debug!(target: "webb", "🥩 Message for round #{} allowed: {}", round, allowed);
+			debug!(target: "webb", "🕸️  Message for round #{} allowed: {}", round, allowed);
 
 			allowed
 		})

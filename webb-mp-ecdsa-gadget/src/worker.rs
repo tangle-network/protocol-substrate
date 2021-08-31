@@ -147,13 +147,13 @@ where
 		let best_webb_block = if let Some(block) = self.best_webb_block {
 			block
 		} else {
-			debug!(target: "webb", "🥩 Missing best WEBB block - won't vote for: {:?}", number);
+			debug!(target: "webb", "🕸️  Missing best WEBB block - won't vote for: {:?}", number);
 			return false;
 		};
 
 		let target = vote_target(self.best_grandpa_block, best_webb_block, self.min_block_delta);
 
-		trace!(target: "webb", "🥩 should_vote_on: #{:?}, next_block_to_vote_on: #{:?}", number, target);
+		trace!(target: "webb", "🕸️  should_vote_on: #{:?}, next_block_to_vote_on: #{:?}", number, target);
 
 		metric_set!(self, webb_should_vote_on, target);
 
@@ -175,7 +175,7 @@ where
 			self.client.runtime_api().validator_set(&at).ok()
 		};
 
-		trace!(target: "webb", "🥩 active validator set: {:?}", new);
+		trace!(target: "webb", "🕸️  active validator set: {:?}", new);
 
 		new
 	}
@@ -195,14 +195,14 @@ where
 		let missing: Vec<_> = store.difference(&active).cloned().collect();
 
 		if !missing.is_empty() {
-			debug!(target: "webb", "🥩 for block {:?} public key missing in validator set: {:?}", block, missing);
+			debug!(target: "webb", "🕸️  for block {:?} public key missing in validator set: {:?}", block, missing);
 		}
 
 		Ok(())
 	}
 
 	fn handle_finality_notification(&mut self, notification: FinalityNotification<B>) {
-		trace!(target: "webb", "🥩 Finality notification: {:?}", notification);
+		trace!(target: "webb", "🕸️  Finality notification: {:?}", notification);
 
 		// update best GRANDPA finalized block we have seen
 		self.best_grandpa_block = *notification.header.number();
@@ -216,7 +216,7 @@ where
 			if active.id != self.rounds.validator_set_id()
 				|| (active.id == GENESIS_AUTHORITY_SET_ID && self.best_webb_block.is_none())
 			{
-				debug!(target: "webb", "🥩 New active validator set id: {:?}", active);
+				debug!(target: "webb", "🕸️  New active validator set id: {:?}", active);
 				metric_set!(self, webb_validator_set_id, active.id);
 
 				// WEBB should produce a signed commitment for each session
@@ -229,7 +229,7 @@ where
 
 				self.rounds = round::Rounds::new(active.clone());
 
-				debug!(target: "webb", "🥩 New Rounds for id: {:?}", active.id);
+				debug!(target: "webb", "🕸️  New Rounds for id: {:?}", active.id);
 
 				self.best_webb_block = Some(*notification.header.number());
 
@@ -241,17 +241,17 @@ where
 
 		if self.should_vote_on(*notification.header.number()) {
 			let authority_id = if let Some(id) = self.key_store.authority_id(self.rounds.validators().as_slice()) {
-				debug!(target: "webb", "🥩 Local authority id: {:?}", id);
+				debug!(target: "webb", "🕸️  Local authority id: {:?}", id);
 				id
 			} else {
-				debug!(target: "webb", "🥩 Missing validator id - can't vote for: {:?}", notification.header.hash());
+				debug!(target: "webb", "🕸️  Missing validator id - can't vote for: {:?}", notification.header.hash());
 				return;
 			};
 
 			let mmr_root = if let Some(hash) = find_mmr_root_digest::<B, Public>(&notification.header) {
 				hash
 			} else {
-				warn!(target: "webb", "🥩 No MMR root digest found for: {:?}", notification.header.hash());
+				warn!(target: "webb", "🕸️  No MMR root digest found for: {:?}", notification.header.hash());
 				return;
 			};
 
@@ -265,14 +265,14 @@ where
 			let signature = match self.key_store.sign(&authority_id, &*encoded_commitment) {
 				Ok(sig) => sig,
 				Err(err) => {
-					warn!(target: "webb", "🥩 Error signing commitment: {:?}", err);
+					warn!(target: "webb", "🕸️  Error signing commitment: {:?}", err);
 					return;
 				}
 			};
 
 			trace!(
 				target: "webb",
-				"🥩 Produced signature using {:?}, is_valid: {:?}",
+				"🕸️  Produced signature using {:?}, is_valid: {:?}",
 				authority_id,
 				WebbKeystore::verify(&authority_id, &signature, &*encoded_commitment)
 			);
@@ -287,7 +287,7 @@ where
 
 			metric_inc!(self, webb_votes_sent);
 
-			debug!(target: "webb", "🥩 Sent vote message: {:?}", message);
+			debug!(target: "webb", "🕸️  Sent vote message: {:?}", message);
 
 			self.handle_vote(
 				(message.commitment.payload, *message.commitment.block_number),
@@ -320,7 +320,7 @@ where
 
 				metric_set!(self, webb_round_concluded, round.1);
 
-				info!(target: "webb", "🥩 Round #{} concluded, committed: {:?}.", round.1, signed_commitment);
+				info!(target: "webb", "🕸️  Round #{} concluded, committed: {:?}.", round.1, signed_commitment);
 
 				if self
 					.backend
@@ -335,7 +335,7 @@ where
 				{
 					// just a trace, because until the round lifecycle is improved, we will
 					// conclude certain rounds multiple times.
-					trace!(target: "webb", "🥩 Failed to append justification: {:?}", signed_commitment);
+					trace!(target: "webb", "🕸️  Failed to append justification: {:?}", signed_commitment);
 				}
 
 				self.signed_commitment_sender.notify(signed_commitment);
@@ -349,7 +349,7 @@ where
 	pub(crate) async fn run(mut self) {
 		let mut votes = Box::pin(self.gossip_engine.lock().messages_for(topic::<B>()).filter_map(
 			|notification| async move {
-				debug!(target: "webb", "🥩 Got vote message: {:?}", notification);
+				debug!(target: "webb", "🕸️  Got vote message: {:?}", notification);
 
 				VoteMessage::<MmrRootHash, NumberFor<B>, Public, Signature>::decode(&mut &notification.message[..]).ok()
 			},
@@ -378,7 +378,7 @@ where
 					}
 				},
 				_ = gossip_engine.fuse() => {
-					error!(target: "webb", "🥩 Gossip engine has terminated.");
+					error!(target: "webb", "🕸️  Gossip engine has terminated.");
 					return;
 				}
 			}
@@ -427,7 +427,7 @@ where
 
 	trace!(
 		target: "webb",
-		"🥩 vote target - diff: {:?}, next_power_of_two: {:?}, target block: #{:?}",
+		"🕸️  vote target - diff: {:?}, next_power_of_two: {:?}, target block: #{:?}",
 		diff,
 		diff.next_power_of_two(),
 		target,

@@ -1,7 +1,5 @@
 use codec::{Decode, Encode};
 
-
-
 #[derive(Debug, Decode, Encode)]
 #[cfg_attr(feature = "scale-info", derive(scale_info::TypeInfo))]
 pub enum DKGType {

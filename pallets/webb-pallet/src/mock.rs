@@ -49,7 +49,7 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Webb: pallet_webb::{Pallet, Call, Config<T>, Storage},
+		Webb: pallet_webb::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
 	}
 );
@@ -87,6 +87,8 @@ impl frame_system::Config for Test {
 
 impl pallet_webb::Config for Test {
 	type WebbId = WebbId;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<u64>;
 }
 
 parameter_types! {

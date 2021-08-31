@@ -45,8 +45,14 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
+		/// The overarching event type.
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// Authority identifier type
 		type WebbId: Member + Parameter + RuntimeAppPublic + Default + MaybeSerializeDeserialize;
+		/// The origin which may forcibly reset parameters or otherwise alter
+		/// privileged attributes.
+		type ForceOrigin: EnsureOrigin<Self::Origin>;
+
 	}
 
 	#[pallet::pallet]
@@ -56,7 +62,62 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {}
+	impl<T: Config> Pallet<T> {
+		#[pallet::weight(0)]
+		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
+			let origin = ensure_signed(origin)?;
+			// ensure parameter setter is the maintainer
+			ensure!(origin == Self::maintainer(), Error::<T>::InvalidPermissions);
+			// set the new maintainer
+			Maintainer::<T>::try_mutate(|maintainer| {
+				*maintainer = new_maintainer.clone();
+				Self::deposit_event(Event::MaintainerSet(origin, new_maintainer));
+				Ok(().into())
+			})
+		}
+
+		#[pallet::weight(0)]
+		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
+			T::ForceOrigin::ensure_origin(origin)?;
+			// set the new maintainer
+			Maintainer::<T>::try_mutate(|maintainer| {
+				*maintainer = new_maintainer.clone();
+				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
+				Ok(().into())
+			})
+		}
+
+		#[pallet::weight(0)]
+		pub fn set_threshold(origin: OriginFor<T>, new_threshold: u32) -> DispatchResultWithPostInfo {
+			let origin = ensure_signed(origin)?;
+			ensure!(new_threshold <= Authorities::<T>::get().len() as u32, Error::<T>::InvalidThreshold);
+			// ensure parameter setter is the maintainer
+			ensure!(origin == Self::maintainer(), Error::<T>::InvalidPermissions);
+			// set the new maintainer
+			SignatureThreshold::<T>::try_mutate(|threshold| {
+				*threshold = new_threshold.clone();
+				Self::deposit_event(Event::ThresholdSet(new_threshold));
+				Ok(().into())
+			})
+		}
+
+		#[pallet::weight(0)]
+		pub fn force_set_threshold(origin: OriginFor<T>, new_threshold: u32) -> DispatchResultWithPostInfo {
+			T::ForceOrigin::ensure_origin(origin)?;
+			ensure!(new_threshold <= Authorities::<T>::get().len() as u32, Error::<T>::InvalidThreshold);
+			// set the new maintainer
+			SignatureThreshold::<T>::try_mutate(|threshold| {
+				*threshold = new_threshold.clone();
+				Self::deposit_event(Event::ThresholdSet(new_threshold));
+				Ok(().into())
+			})
+		}
+	}
+
+	/// The current signature threshold (i.e. the `t` in t-of-n)
+	#[pallet::storage]
+	#[pallet::getter(fn signature_threshold)]
+	pub(super) type SignatureThreshold<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	/// The current authorities set
 	#[pallet::storage]
@@ -72,6 +133,27 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn next_authorities)]
 	pub(super) type NextAuthorities<T: Config> = StorageValue<_, Vec<T::WebbId>, ValueQuery>;
+
+	/// The parameter maintainer who can change the parameters
+	#[pallet::storage]
+	#[pallet::getter(fn maintainer)]
+	pub(super) type Maintainer<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
+
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::metadata(T::AccountId = "AccountId")]
+	pub enum Event<T: Config> {
+		ThresholdSet(u32),
+		MaintainerSet(T::AccountId, T::AccountId),
+	}
+
+	#[pallet::error]
+	pub enum Error<T> {
+		/// Account does not have correct permissions
+		InvalidPermissions,
+		/// Invalid threshold
+		InvalidThreshold,
+	}
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
