@@ -31,18 +31,19 @@ fn should_initialize_parameters() {
 
 #[test]
 fn should_output_correct_hash() {
-	type Fq = ark_bn254::Fq;
+	type Fr = ark_bn254::Fr;
 	new_test_ext().execute_with(|| {
-		let rounds = get_rounds_poseidon_circom_bn254_x5_3::<Fq>();
-		let mds = get_mds_poseidon_circom_bn254_x5_3::<Fq>();
+		let rounds = get_rounds_poseidon_circom_bn254_x5_3::<Fr>();
+		let mds = get_mds_poseidon_circom_bn254_x5_3::<Fr>();
 		let params = PoseidonParameters::new(rounds, mds);
 		let res = BN254CircomPoseidon3x5Hasher::force_set_parameters(Origin::root(), params.to_bytes());
 		assert_ok!(res);
-		let left = Fq::one().into_repr().to_bytes_be(); // one
-		let right = Fq::one().double().into_repr().to_bytes_be(); // two
-		let hash = BN254CircomPoseidon3x5Hasher::hash_two(&left, &right);
-		assert_ok!(
-			hash,
+		let left = Fr::one().into_repr().to_bytes_le(); // one
+		let right = Fr::one().double().into_repr().to_bytes_le(); // two
+		let hash = BN254CircomPoseidon3x5Hasher::hash_two(&left, &right).unwrap();
+		let f = Fr::from_le_bytes_mod_order(&hash).into_repr().to_bytes_be();
+		assert_eq!(
+			f,
 			bytes::from_hex("0x115cc0f5e7d690413df64c6b9662e9cf2a3617f2743245519e19607a4417189a").unwrap()
 		);
 	});

@@ -435,9 +435,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-gadgets"
-version = "0.3.8"
+version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "954b0d142bce41280dd3ce2882d0ccc1990ea996f7583a58ae6ee669b6e8cfc5"
+checksum = "46b35a7e5d04df1c4517a8ceef0bd16efdc77ad6709530364eddd71f0bedbf56"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -4264,29 +4264,36 @@ version = "3.0.0"
 dependencies = [
  "ark-crypto-primitives",
  "darkwebb-primitives",
- "frame-support 3.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.7)",
- "frame-system 3.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.7)",
- "pallet-balances 3.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.7)",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
  "pallet-hasher",
  "pallet-mixer",
  "pallet-mt",
  "pallet-verifier",
  "parity-scale-codec",
  "serde",
- "sp-core 3.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.7)",
- "sp-io 3.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.7)",
- "sp-runtime 3.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.7)",
- "sp-std 3.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.7)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-anchor-handler"
 version = "3.0.0"
 dependencies = [
+ "ark-crypto-primitives",
+ "darkwebb-primitives",
  "frame-support",
  "frame-system",
+ "pallet-anchor",
  "pallet-balances",
  "pallet-bridge",
+ "pallet-hasher",
+ "pallet-mixer",
+ "pallet-mt",
+ "pallet-verifier",
  "parity-scale-codec",
  "serde",
  "sp-arithmetic",
@@ -4409,7 +4416,16 @@ dependencies = [
 name = "pallet-mixer"
 version = "3.0.0"
 dependencies = [
+ "ark-bls12-377",
+ "ark-bls12-381",
+ "ark-bn254",
  "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ff",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "arkworks-gadgets",
  "darkwebb-primitives",
  "frame-support",
  "frame-system",
