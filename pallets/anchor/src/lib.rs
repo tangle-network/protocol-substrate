@@ -342,4 +342,8 @@ impl<T: Config<I>, I: 'static> AnchorInspector<T, I> for Pallet<T, I> {
 	) -> Result<bool, DispatchError> {
 		Ok(true)
 	}
+
+	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
+		true
+	}
 }
