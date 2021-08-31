@@ -1,7 +1,7 @@
 use crate::*;
 use ark_crypto_primitives::{Error, CRH as CRHTrait};
 use ark_ff::{BigInteger, PrimeField};
-use arkworks_gadgets::poseidon::{sbox::PoseidonSbox, CircomCRH, PoseidonParameters, Rounds, CRH};
+use arkworks_gadgets::poseidon::{circom::CircomCRH, sbox::PoseidonSbox, PoseidonParameters, Rounds, CRH};
 use sp_std::{marker::PhantomData, vec::Vec};
 
 #[derive(Default, Clone, Copy)]
@@ -29,9 +29,7 @@ impl<F: PrimeField, P: Rounds> InstanceHasher for ArkworksPoseidonHasher<F, P> {
 	fn hash(input: &[u8], param_bytes: &[u8]) -> Result<Vec<u8>, Error> {
 		let params = PoseidonParameters::<F>::from_bytes(param_bytes)?;
 		let output: F = <CRH<F, P> as CRHTrait>::evaluate(&params, input)?;
-		// we use big-endian because it the same for
-		// solidity contracts and javascript circom implementations.
-		let value = output.into_repr().to_bytes_be();
+		let value = output.into_repr().to_bytes_le();
 		Ok(value)
 	}
 }
@@ -42,9 +40,7 @@ impl<F: PrimeField, P: Rounds> InstanceHasher for CircomPoseidonHasher<F, P> {
 	fn hash(input: &[u8], param_bytes: &[u8]) -> Result<Vec<u8>, Error> {
 		let params = PoseidonParameters::<F>::from_bytes(param_bytes)?;
 		let output: F = <CircomCRH<F, P> as CRHTrait>::evaluate(&params, input)?;
-		// we use big-endian because it the same for
-		// solidity contracts and javascript circom implementations.
-		let value = output.into_repr().to_bytes_be();
+		let value = output.into_repr().to_bytes_le();
 		Ok(value)
 	}
 }

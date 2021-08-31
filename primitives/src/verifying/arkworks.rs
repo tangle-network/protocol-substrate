@@ -19,6 +19,8 @@ impl<E: PairingEngine> InstanceVerifier for ArkworksMixerVerifierGroth16<E> {
 			public_input_field_elts[1], // root
 			public_input_field_elts[2], // recipient
 			public_input_field_elts[3], // relayer
+			public_input_field_elts[4], // fee
+			public_input_field_elts[5], // refund
 		);
 		let vk = VerifyingKey::<E>::deserialize(vk_bytes)?;
 		let proof = Proof::<E>::deserialize(proof_bytes)?;
