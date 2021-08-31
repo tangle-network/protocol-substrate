@@ -55,5 +55,4 @@ std = [
     "pallet-mt/std",
     "pallet-verifier/std",
     "darkwebb-primitives/std",
-    "ark-crypto-primitives/std",
 ]

@@ -56,6 +56,8 @@ pub trait AnchorInspector<T: Config<I>, I: 'static = ()> {
 		ensure!(is_known, Error::<T, I>::InvalidNeighborWithdrawRoot);
 		Ok(())
 	}
+	/// Check if this anchor has this edge
+	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool;
 }
 
 #[derive(Default, Clone, Encode, Decode)]
@@ -66,7 +68,7 @@ pub struct AnchorMetadata<AccountId, Balance> {
 	pub deposit_size: Balance,
 }
 
-#[derive(Default, Clone, Encode, Decode)]
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug)]
 pub struct EdgeMetadata<ChainID, Element, BlockNumber> {
 	/// chain id
 	pub src_chain_id: ChainID,
