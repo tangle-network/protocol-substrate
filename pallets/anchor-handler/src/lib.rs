@@ -86,11 +86,6 @@ pub mod pallet {
 		type Anchor: AnchorInterface<Self> + AnchorInspector<Self>;
 	}
 
-	#[pallet::storage]
-	#[pallet::getter(fn maintainer)]
-	/// The parameter maintainer who can change the parameters
-	pub(super) type Maintainer<T: Config> = StorageValue<_, T::AccountId, ValueQuery>;
-
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
 	#[pallet::getter(fn anchors)]
@@ -138,31 +133,6 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(195_000_000)]
-		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
-			T::BridgeOrigin::ensure_origin(origin.clone())?;
-			let origin = ensure_signed(origin)?;
-			// ensure parameter setter is the maintainer
-			ensure!(origin == Self::maintainer(), Error::<T>::InvalidPermissions);
-			// set the new maintainer
-			Maintainer::<T>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(origin, new_maintainer));
-				Ok(().into())
-			})
-		}
-
-		#[pallet::weight(195_000_000)]
-		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
-			T::BridgeOrigin::ensure_origin(origin)?;
-			// set the new maintainer
-			Maintainer::<T>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
-				Ok(().into())
-			})
-		}
-
 		#[pallet::weight(195_000_000)]
 		pub fn execute_proposal(
 			origin: OriginFor<T>,

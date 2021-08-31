@@ -410,9 +410,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-gadgets"
-version = "0.3.10"
+version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cdd3103817714935d4a1a1b6c3a0cbfb030535ead854244d8f144160d76a26b8"
+checksum = "46b35a7e5d04df1c4517a8ceef0bd16efdc77ad6709530364eddd71f0bedbf56"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -4304,7 +4304,16 @@ dependencies = [
 name = "pallet-mixer"
 version = "3.0.0"
 dependencies = [
+ "ark-bls12-377",
+ "ark-bls12-381",
+ "ark-bn254",
  "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ff",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "arkworks-gadgets",
  "darkwebb-primitives",
  "frame-support",
  "frame-system",

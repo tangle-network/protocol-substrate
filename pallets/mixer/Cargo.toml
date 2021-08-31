@@ -33,6 +33,15 @@ sp-io = { default-features = false, git = "https://github.com/paritytech/substra
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
+ark-ff = { version = "^0.3.0", default-features = false }
+ark-ec = { version = "^0.3.0", default-features = false }
+ark-std = { version = "^0.3.0", default-features = false }
+ark-relations = { version = "^0.3.0", default-features = false }
+ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ] }
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ] }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+arkworks-gadgets = { version = "^0.3" } # just for testing we will enclude everything.
 
 [features]
 default = ["std"]
