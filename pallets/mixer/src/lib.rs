@@ -251,10 +251,21 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 		// FIXME: Such as a unpack/pack public inputs trait
 		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
 		let mut bytes = vec![];
+		let element_encoder = |v: &[u8]| {
+			let mut output = [0u8; 32];
+			output.iter_mut().zip(v).for_each(|(b1, b2)| *b1 = *b2);
+			output
+		};
+		let recipient_bytes = recipient.using_encoded(element_encoder);
+		let relayer_bytes = relayer.using_encoded(element_encoder);
+		let fee_bytes = fee.using_encoded(element_encoder);
+		let refund_bytes = refund.using_encoded(element_encoder);
 		bytes.extend_from_slice(&nullifier_hash.encode());
 		bytes.extend_from_slice(&root.encode());
-		bytes.extend_from_slice(&recipient.encode());
-		bytes.extend_from_slice(&relayer.encode());
+		bytes.extend_from_slice(&recipient_bytes);
+		bytes.extend_from_slice(&relayer_bytes);
+		bytes.extend_from_slice(&fee_bytes);
+		bytes.extend_from_slice(&refund_bytes);
 		// TODO: Update gadget being used to include fee as well
 		// TODO: This is not currently included in
 		// arkworks_gadgets::setup::mixer::get_public_inputs bytes.extend_from_slice(&

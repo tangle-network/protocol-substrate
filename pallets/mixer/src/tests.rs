@@ -1,22 +1,25 @@
-use ark_ff::{BigInteger, PrimeField, ToBytes};
-use ark_std::Zero;
+use ark_ff::{BigInteger, PrimeField};
+use ark_serialize::CanonicalSerialize;
 use arkworks_gadgets::{
 	poseidon::PoseidonParameters,
 	setup::{
-		common::setup_tree_and_create_path_x5,
-		mixer::{prove_groth16_x5, setup_arbitrary_data, setup_groth16_x5, setup_leaf_x5, Circuit_x5},
+		common::{setup_circom_params_x5_3, setup_circom_params_x5_5, setup_circom_tree_and_create_path_x5, Curve},
+		mixer::{
+			prove_circom_groth16_x5, setup_arbitrary_data, setup_circom_groth16_x5, setup_circom_leaf_x5,
+			CircomCircuit_x5,
+		},
 	},
-	utils::{get_mds_poseidon_circom_bn254_x5_5, get_rounds_poseidon_circom_bn254_x5_5},
+	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
 };
 use frame_support::{assert_ok, traits::OnInitialize};
-use pallet_mt::types::ElementTrait;
+use pallet_mt::types::{ElementTrait, TreeInspector};
 use sp_runtime::traits::One;
 
 use crate::mock::*;
 
 fn hasher_params() -> Vec<u8> {
-	let rounds = get_rounds_poseidon_circom_bn254_x5_5::<ark_bn254::Fr>();
-	let mds = get_mds_poseidon_circom_bn254_x5_5::<ark_bn254::Fr>();
+	let rounds = get_rounds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
+	let mds = get_mds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
 	let params = PoseidonParameters::new(rounds, mds);
 	params.to_bytes()
 }
@@ -77,13 +80,16 @@ fn mixer_works() {
 	new_test_ext().execute_with(|| {
 		type Bn254Fr = ark_bn254::Fr;
 		let mut rng = ark_std::test_rng();
+		let curve = Curve::Bn254;
+		let params3 = setup_circom_params_x5_3::<Bn254Fr>(curve);
+		let params5 = setup_circom_params_x5_5::<Bn254Fr>(curve);
 		// init hasher pallet first.
-		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
+		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
 		// then the merkle tree.
 		<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 		// now let's create the mixer.
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 3));
+		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30));
 		// now with mixer created, we should setup the circuit.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let sender_account_id = 1;
@@ -92,30 +98,35 @@ fn mixer_works() {
 		let fee_value = 0;
 		let refund_value = 0;
 
-		let rounds = get_rounds_poseidon_circom_bn254_x5_5::<Bn254Fr>();
-		let mds = get_mds_poseidon_circom_bn254_x5_5::<Bn254Fr>();
-		let params = PoseidonParameters::new(rounds, mds);
 		// inputs
 		let recipient = Bn254Fr::from(recipient_account_id);
 		let relayer = Bn254Fr::from(relayer_account_id);
 		let fee = Bn254Fr::from(fee_value);
 		let refund = Bn254Fr::from(refund_value);
-		let (leaf_private, leaf, nullifier_hash) = setup_leaf_x5(&params, &mut rng);
-		let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_be());
-		let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_be());
+		let (leaf_private, leaf, nullifier_hash) = setup_circom_leaf_x5(&params5, &mut rng);
+		let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_le());
+		let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
 		assert_ok!(Mixer::deposit(Origin::signed(sender_account_id), tree_id, leaf_element));
+		// check the balance before the withdraw.
+		let balance_before = Balances::free_balance(recipient_account_id);
 
 		// now we start to generate the proof.
-		let arbitrary_input = setup_arbitrary_data(recipient, relayer);
-		let (mt, path) = setup_tree_and_create_path_x5(&[leaf], 0, &params);
+		let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
+		let (mt, path) = setup_circom_tree_and_create_path_x5(&[leaf], 0, &params3);
 		let root = mt.root().inner();
-		let root_element = Element::from_bytes(&root.into_repr().to_bytes_be());
-		let circuit = Circuit_x5::new(arbitrary_input, leaf_private, (), params, path, root, nullifier_hash);
+		let root_element = Element::from_bytes(&root.into_repr().to_bytes_le());
+		let mixer_tree_root = MerkleTree::get_root(tree_id).unwrap();
+		assert_eq!(root_element, mixer_tree_root);
 
-		let (pk, _) = setup_groth16_x5::<_, ark_bn254::Bn254>(&mut rng, circuit.clone());
-		let proof = prove_groth16_x5::<_, ark_bn254::Bn254>(&pk, circuit, &mut rng);
+		let circuit = CircomCircuit_x5::new(arbitrary_input, leaf_private, (), params5, path, root, nullifier_hash);
+		let (pk, vk) = setup_circom_groth16_x5::<_, ark_bn254::Bn254>(&mut rng, circuit.clone());
+		let proof = prove_circom_groth16_x5::<_, ark_bn254::Bn254>(&pk, circuit, &mut rng);
 		let mut proof_bytes = Vec::new();
-		proof.write(&mut proof_bytes).unwrap();
+		proof.serialize(&mut proof_bytes).unwrap();
+		// setup the vk
+		let mut verifier_key_bytes = Vec::new();
+		vk.serialize(&mut verifier_key_bytes).unwrap();
+		assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes));
 		assert_ok!(Mixer::withdraw(
 			Origin::signed(sender_account_id),
 			tree_id,
@@ -127,5 +138,9 @@ fn mixer_works() {
 			fee_value,
 			refund_value,
 		));
+		// now we check the recipient balance again.
+		let balance_after = Balances::free_balance(recipient_account_id);
+		assert_eq!(balance_after, balance_before + deposit_size);
+		// perfect
 	});
 }
