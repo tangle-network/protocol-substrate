@@ -51,17 +51,16 @@
 // mod tests;
 
 pub mod types;
-use codec::{Decode, Encode, Input};
+use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchError};
-use pallet_mixer::types::{MixerInspector, MixerInterface, MixerMetadata};
-use pallet_mt::types::ElementTrait;
+use pallet_mixer::types::{MixerInspector, MixerInterface};
 use types::*;
 
 use darkwebb_primitives::verifier::*;
-use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, Get, ReservableCurrency};
+use frame_support::traits::{Currency, Get, ReservableCurrency};
 use frame_system::Config as SystemConfig;
-use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
-use sp_std::{prelude::*, vec};
+use sp_runtime::traits::{AtLeast32Bit, One, Zero};
+use sp_std::prelude::*;
 
 pub use pallet::*;
 
@@ -179,7 +178,8 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn create(origin: OriginFor<T>, max_edges: u32, depth: u8) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id = <Self as AnchorInterface<_, _>>::create(T::AccountId::default(), max_edges, depth)?;
+			let tree_id = <Self as AnchorInterface<_, _>>::create(T::AccountId::default(), depth, max_edges)?;
+			Self::deposit_event(Event::AnchorCreation(tree_id));
 			Ok(().into())
 		}
 
@@ -217,11 +217,12 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
-	fn create(creator: T::AccountId, max_edges: u32, depth: u8) -> Result<T::TreeId, DispatchError> {
-		let tree_id = T::Mixer::create(creator, depth)?;
-		MaxEdges::<T, I>::insert(tree_id, max_edges);
-		Self::deposit_event(Event::AnchorCreation(tree_id));
-		Ok(tree_id)
+	fn create(creator: T::AccountId, depth: u8, max_edges: u32) -> Result<T::TreeId, DispatchError> {
+		// FIXME: is that even correct?
+		let deposit_size = Zero::zero();
+		let id = T::Mixer::create(creator, deposit_size, depth)?;
+		MaxEdges::<T, I>::insert(id, max_edges);
+		Ok(id)
 	}
 
 	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {
@@ -342,7 +343,6 @@ impl<T: Config<I>, I: 'static> AnchorInspector<T, I> for Pallet<T, I> {
 		Ok(true)
 	}
 
-	/// Check if this anchor has this edge
 	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
 		EdgeList::<T, I>::contains_key(id, src_chain_id)
 	}

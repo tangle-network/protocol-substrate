@@ -237,7 +237,7 @@ impl<T: Config<I>, I: 'static> HasherModule for Pallet<T, I> {
 		ensure!(!params.is_empty(), Error::<T, I>::ParametersNotInitialized);
 		match T::Hasher::hash(data, &params) {
 			Ok(hash) => Ok(hash),
-			Err(_) => {
+			Err(_e) => {
 				// TODO: Handle properly
 				ensure!(false, Error::<T, I>::HashError);
 				Ok(vec![])
