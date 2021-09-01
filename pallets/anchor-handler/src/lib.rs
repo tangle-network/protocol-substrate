@@ -187,7 +187,7 @@ impl<T: Config> Pallet<T> {
 			!AnchorHandlers::<T>::contains_key(r_id),
 			Error::<T>::ResourceIsAlreadyAnchored
 		);
-		let tree_id = T::Anchor::create(T::AccountId::default(), max_edges, tree_depth)?;
+		let tree_id = T::Anchor::create(T::AccountId::default(), tree_depth, max_edges)?;
 		AnchorHandlers::<T>::insert(r_id, tree_id);
 		Counts::<T>::insert(src_chain_id, 0);
 		Self::deposit_event(Event::AnchorCreated);
