@@ -3,9 +3,8 @@ use sp_std::prelude::*;
 
 use codec::{Decode, Encode};
 
-pub const DEFAULT_RELAYER_THRESHOLD: u32 = 1;
+pub const DARKWEBB_DEFAULT_RELAYER_THRESHOLD: u32 = 1;
 
-pub type ChainId = u8;
 pub type DepositNonce = u64;
 pub type ResourceId = [u8; 32];
 

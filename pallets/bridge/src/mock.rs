@@ -81,7 +81,7 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
-	pub const ChainIdentity: u8 = 5;
+	pub const ChainIdentifier: u32 = 5;
 	pub const ProposalLifetime: u64 = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
@@ -89,7 +89,8 @@ parameter_types! {
 impl Config for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
-	type ChainIdentity = ChainIdentity;
+	type ChainId = u32;
+	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
@@ -115,7 +116,11 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext
 }
 
-pub fn new_test_ext_initialized(src_id: ChainId, r_id: ResourceId, resource: Vec<u8>) -> sp_io::TestExternalities {
+pub fn new_test_ext_initialized(
+	src_id: <Test as pallet::Config>::ChainId,
+	r_id: ResourceId,
+	resource: Vec<u8>,
+) -> sp_io::TestExternalities {
 	let mut t = new_test_ext();
 	t.execute_with(|| {
 		// Set and check threshold

@@ -4,7 +4,7 @@ use core::panic;
 
 use super::{
 	mock::{
-		assert_events, new_test_ext, Balances, Bridge, Call, ChainIdentity, Event, Origin, ProposalLifetime, System,
+		assert_events, new_test_ext, Balances, Bridge, Call, ChainIdentifier, Event, Origin, ProposalLifetime, System,
 		Test, ENDOWED_BALANCE, RELAYER_A, RELAYER_B, RELAYER_C, TEST_THRESHOLD,
 	},
 	*,
@@ -18,15 +18,15 @@ use crate::utils::derive_resource_id;
 
 #[test]
 fn derive_ids() {
-	let chain = 1;
+	let chain: u32 = 0xaabbccdd;
 	let id = [
 		0x21, 0x60, 0x5f, 0x71, 0x84, 0x5f, 0x37, 0x2a, 0x9e, 0xd8, 0x42, 0x53, 0xd2, 0xd0, 0x24, 0xb7, 0xb1, 0x09,
 		0x99, 0xf4,
 	];
 	let r_id = derive_resource_id(chain, &id);
 	let expected = [
-		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x21, 0x60, 0x5f, 0x71, 0x84, 0x5f, 0x37, 0x2a, 0x9e,
-		0xd8, 0x42, 0x53, 0xd2, 0xd0, 0x24, 0xb7, 0xb1, 0x09, 0x99, 0xf4, chain,
+		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x21, 0x60, 0x5f, 0x71, 0x84, 0x5f, 0x37, 0x2a, 0x9e, 0xd8, 0x42, 0x53,
+		0xd2, 0xd0, 0x24, 0xb7, 0xb1, 0x09, 0x99, 0xf4, 0xdd, 0xcc, 0xbb, 0xaa,
 	];
 	assert_eq!(r_id, expected);
 }
@@ -105,7 +105,7 @@ fn whitelist_chain() {
 
 		assert_ok!(Bridge::whitelist_chain(Origin::root(), 0));
 		assert_noop!(
-			Bridge::whitelist_chain(Origin::root(), ChainIdentity::get()),
+			Bridge::whitelist_chain(Origin::root(), ChainIdentifier::get()),
 			Error::<Test>::InvalidChainId
 		);
 
@@ -172,7 +172,7 @@ fn make_proposal(r: Vec<u8>) -> mock::Call {
 
 #[test]
 fn create_sucessful_proposal() {
-	let src_id = 1;
+	let src_id = 1u32;
 	let r_id = derive_resource_id(src_id, b"remark");
 
 	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
