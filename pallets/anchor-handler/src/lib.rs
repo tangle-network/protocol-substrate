@@ -48,6 +48,7 @@ mod tests;
 
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
+	ensure,
 	traits::{Currency, EnsureOrigin},
 };
 use frame_system::pallet_prelude::OriginFor;
@@ -92,19 +93,19 @@ pub mod pallet {
 
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
-	#[pallet::getter(fn anchors)]
-	pub type Anchors<T: Config> = StorageMap<_, Blake2_128Concat, ResourceId, T::TreeId, ValueQuery>;
+	#[pallet::getter(fn anchor_handlers)]
+	pub type AnchorHandlers<T: Config> = StorageMap<_, Blake2_128Concat, ResourceId, T::TreeId, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn update_records)]
-	/// sourceChainID => height => Update Record
+	/// sourceChainID => nonce => Update Record
 	pub type UpdateRecords<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
 		ChainId<T>,
 		Blake2_128Concat,
-		T::BlockNumber,
-		UpdateRecord<T::AccountId, ResourceId, ChainId<T>, T::Element, T::BlockNumber>,
+		u64,
+		UpdateRecord<T::TreeId, ResourceId, ChainId<T>, T::Element, T::BlockNumber>,
 		ValueQuery,
 	>;
 
@@ -127,6 +128,12 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Access violation.
 		InvalidPermissions,
+		// Anchor handler already exists for specified resource Id.
+		ResourceIsAlreadyAnchored,
+		// Anchor handler doesn't exist for specified resoure Id.
+		AnchorHandlerNotFound,
+		// Source chain Id is not registered.
+		SourceChainIdNotFound,
 		/// Storage overflowed.
 		StorageOverflow,
 	}
@@ -141,12 +148,13 @@ pub mod pallet {
 		#[pallet::weight(195_000_000)]
 		pub fn execute_anchor_create_proposal(
 			origin: OriginFor<T>,
+			src_chain_id: ChainId<T>,
 			r_id: ResourceId,
 			max_edges: u32,
 			tree_depth: u8,
 		) -> DispatchResultWithPostInfo {
 			Self::ensure_bridge_origin(origin)?;
-			Self::create_anchor(r_id, max_edges, tree_depth)
+			Self::create_anchor(src_chain_id, r_id, max_edges, tree_depth)
 		}
 
 		/// This will be called by bridge when proposal to add/update edge of an
@@ -169,9 +177,19 @@ impl<T: Config> Pallet<T> {
 		Ok(().into())
 	}
 
-	fn create_anchor(r_id: ResourceId, max_edges: u32, tree_depth: u8) -> DispatchResultWithPostInfo {
+	fn create_anchor(
+		src_chain_id: ChainId<T>,
+		r_id: ResourceId,
+		max_edges: u32,
+		tree_depth: u8,
+	) -> DispatchResultWithPostInfo {
+		ensure!(
+			!AnchorHandlers::<T>::contains_key(r_id),
+			Error::<T>::ResourceIsAlreadyAnchored
+		);
 		let tree_id = T::Anchor::create(T::AccountId::default(), max_edges, tree_depth)?;
-		Anchors::<T>::insert(r_id, tree_id);
+		AnchorHandlers::<T>::insert(r_id, tree_id);
+		Counts::<T>::insert(src_chain_id, 0);
 		Self::deposit_event(Event::AnchorCreated);
 		Ok(().into())
 	}
@@ -180,7 +198,7 @@ impl<T: Config> Pallet<T> {
 		r_id: ResourceId,
 		anchor_metadata: EdgeMetadata<ChainId<T>, T::Element, T::BlockNumber>,
 	) -> DispatchResultWithPostInfo {
-		let tree_id = Anchors::<T>::get(r_id);
+		let tree_id = AnchorHandlers::<T>::try_get(r_id).map_err(|_| Error::<T>::AnchorHandlerNotFound)?;
 		let (src_chain_id, merkle_root, block_height) = (
 			anchor_metadata.src_chain_id,
 			anchor_metadata.root,
@@ -194,15 +212,16 @@ impl<T: Config> Pallet<T> {
 			T::Anchor::add_edge(tree_id, src_chain_id, merkle_root, block_height)?;
 			Self::deposit_event(Event::AnchorEdgeAdded);
 		}
-		let old = Counts::<T>::get(src_chain_id);
-		let nonce = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
+		let nonce = Counts::<T>::try_get(src_chain_id).map_err(|_| Error::<T>::SourceChainIdNotFound)?;
 		let record = UpdateRecord {
 			tree_id,
 			resource_id: r_id,
 			edge_metadata: anchor_metadata,
 		};
-		// UpdateRecords::<T>::insert(src_chain_id, nonce, record);
-
-		Ok(().into())
+		UpdateRecords::<T>::insert(src_chain_id, nonce, record);
+		Counts::<T>::mutate(src_chain_id, |val| -> DispatchResultWithPostInfo {
+			*val = val.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
+			Ok(().into())
+		})
 	}
 }
