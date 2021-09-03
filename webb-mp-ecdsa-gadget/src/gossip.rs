@@ -28,7 +28,7 @@ use wasm_timer::Instant;
 
 use webb_primitives::{
 	crypto::{Public, Signature},
-	MmrRootHash, VoteMessage, DKGMessage,
+	MmrRootHash, VoteMessage, dkg::DKGMessage,
 };
 
 use crate::keystore::WebbKeystore;
@@ -81,7 +81,7 @@ where
 		}
 	}
 
-	/// Note a voting round.
+	/// Note a dkg round.
 	///
 	/// Noting `round` will keep `round` live.
 	///

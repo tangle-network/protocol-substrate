@@ -36,7 +36,6 @@ mod commitment;
 pub mod mmr;
 pub mod witness;
 pub mod dkg;
-pub use dkg::*;
 
 pub use commitment::{Commitment, SignedCommitment, VersionedCommitment};
 
@@ -60,6 +59,11 @@ pub const KEY_TYPE: sp_application_crypto::KeyTypeId = sp_application_crypto::Ke
 /// The current underlying crypto scheme used is ECDSA. This can be changed,
 /// without affecting code restricted against the above listed crypto types.
 pub mod crypto {
+	use sp_keystore::{SyncCryptoStore, Error};
+	use sc_keystore::LocalKeystore;
+	use crate::dkg::keystore::{MultiPartyECDSAKeyStore, Keys};
+	use curv::{BigInt, elliptic::curves::{secp256_k1::Secp256k1Scalar, traits::{ECPoint, ECScalar}}};
+	use curv::arithmetic::Converter;
 	use sp_application_crypto::{app_crypto, ecdsa};
 	app_crypto!(ecdsa, crate::KEY_TYPE);
 
@@ -68,6 +72,19 @@ pub mod crypto {
 
 	/// Signature for a WEBB authority using ECDSA as its crypto.
 	pub type AuthoritySignature = Signature;
+
+	impl MultiPartyECDSAKeyStore for LocalKeystore {
+		fn generate(&self) -> Result<Keys, Error> {
+			let public: ecdsa::Public = SyncCryptoStore::ecdsa_generate_new(self, crate::KEY_TYPE, None)?;
+			let key_pair = self.key_pair::<Pair>(&public.into())?
+				.unwrap_or_else(|| panic!("No key pair found for public key"));
+			let secret_key = key_pair.0.seed();
+			let secret_key_slice: &[u8] = &secret_key[..];
+			let secret_key_bigint = BigInt::from_bytes(secret_key_slice);
+			let secret_key_scalar: Secp256k1Scalar = <Secp256k1Scalar as ECScalar>::from(&secret_key_bigint);
+			Ok(Keys::create_safe_prime(0))
+		}
+	}
 }
 
 /// The `ConsensusEngineId` of WEBB.

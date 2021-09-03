@@ -12,8 +12,15 @@ scale-info = { version = "0.10.0", default-features = false, features = ["derive
 sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 sp-application-crypto = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
+sp-externalities = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
+
+sc-keystore = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-keystore = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+
+multi-party-ecdsa = { git = "https://github.com/ZenGo-X/multi-party-ecdsa.git" }
+curv = { package = "curv-kzen", version = "0.7.1" }
 
 [dev-dependencies]
 hex-literal = "0.3"
@@ -27,6 +34,7 @@ std = [
 	"sp-api/std",
 	"sp-application-crypto/std",
 	"sp-core/std",
+	"sp-externalities/std",
 	"sp-runtime/std",
 	"sp-std/std",
 ]

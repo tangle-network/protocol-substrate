@@ -33,7 +33,6 @@ sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "ma
 sc-network-gossip = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 webb-primitives = { path = "../webb-primitives" }
-
 multi-party-ecdsa = { git = "https://github.com/ZenGo-X/multi-party-ecdsa.git" }
 
 [dev-dependencies]

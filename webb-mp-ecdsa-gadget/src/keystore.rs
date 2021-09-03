@@ -26,6 +26,8 @@ use webb_primitives::{
 
 use crate::error;
 
+use multi_party_ecdsa::protocols::multi_party_ecdsa::gg_2020::party_i;
+
 /// A BEEFY specific keystore implemented as a `Newtype`. This is basically a
 /// wrapper around [`sp_keystore::SyncCryptoStore`] and allows to customize
 /// common cryptographic functionality.
