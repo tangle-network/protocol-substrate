@@ -74,7 +74,7 @@ pub mod crypto {
 	pub type AuthoritySignature = Signature;
 
 	impl MultiPartyECDSAKeyStore for LocalKeystore {
-		fn generate(&self) -> Result<Keys, Error> {
+		fn generate(&self, index: usize) -> Result<Keys, Error> {
 			let public: ecdsa::Public = SyncCryptoStore::ecdsa_generate_new(self, crate::KEY_TYPE, None)?;
 			let key_pair = self.key_pair::<Pair>(&public.into())?
 				.unwrap_or_else(|| panic!("No key pair found for public key"));
@@ -82,7 +82,7 @@ pub mod crypto {
 			let secret_key_slice: &[u8] = &secret_key[..];
 			let secret_key_bigint = BigInt::from_bytes(secret_key_slice);
 			let secret_key_scalar: Secp256k1Scalar = <Secp256k1Scalar as ECScalar>::from(&secret_key_bigint);
-			Ok(Keys::create_safe_prime(0))
+			Ok(Keys::create_from(secret_key_scalar, index))
 		}
 	}
 }
