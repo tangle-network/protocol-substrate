@@ -26,6 +26,9 @@ serde = { features = ["derive"], optional = true, version = "1.0.119" }
 
 # local dependencies
 pallet-hasher = { path = "../pallets/hasher", default-features = false }
+pallet-verifier = { path = "../pallets/verifier", default-features = false }
+pallet-mt = { path = "../pallets/mt", default-features = false }
+pallet-mixer = { path = "../pallets/mixer", default-features = false }
 darkwebb-primitives = { path = "../primitives", default-features = false, features = ["hashing"] }
 
 # Substrate dependencies

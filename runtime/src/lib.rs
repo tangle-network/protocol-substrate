@@ -35,9 +35,12 @@ pub use frame_support::{
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
-#[cfg(any(feature = "std", test))]
+#[cfg(any(feature = "std", Runtime))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
+
+use pallet_mt::types::ElementTrait;
+use codec::{Encode, Decode};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -339,6 +342,75 @@ impl pallet_hasher::Config<Instance5> for Runtime {
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
 
+parameter_types! {
+	pub const TreeDeposit: u64 = 1;
+	pub const LeafDepositBase: u64 = 1;
+	pub const LeafDepositPerByte: u64 = 1;
+	pub const Two: u64 = 2;
+	pub const MaxTreeDepth: u8 = 30;
+	pub const RootHistorySize: u32 = 1096;
+	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
+	pub const DefaultZeroElement: Element = Element([
+		108, 175, 153, 072, 237, 133, 150, 036,
+		226, 065, 231, 118, 015, 052, 027, 130,
+		180, 093, 161, 235, 182, 053, 058, 052,
+		243, 171, 172, 211, 096, 076, 229, 047,
+	]);
+	pub const NewDefaultZeroElement: Element = Element([0u8; 32]);
+}
+
+#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq)]
+pub struct Element([u8; 32]);
+
+impl ElementTrait for Element {
+	fn to_bytes(&self) -> &[u8] {
+		&self.0
+	}
+
+	fn from_bytes(input: &[u8]) -> Self {
+		let mut buf = [0u8; 32];
+		buf.copy_from_slice(input);
+		Self(buf)
+	}
+}
+
+impl pallet_mt::Config for Runtime {
+	type Currency = Balances;
+	type DataDepositBase = LeafDepositBase;
+	type DataDepositPerByte = LeafDepositPerByte;
+	type DefaultZeroElement = NewDefaultZeroElement;
+	type Element = Element;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Hasher = BN254CircomPoseidon3x5Hasher;
+	type LeafIndex = u32;
+	type MaxTreeDepth = MaxTreeDepth;
+	type RootHistorySize = RootHistorySize;
+	type RootIndex = u32;
+	type StringLimit = StringLimit;
+	type TreeDeposit = TreeDeposit;
+	type TreeId = u32;
+	type Two = Two;
+}
+
+impl pallet_verifier::Config for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ();
+	type StringLimit = StringLimit;
+	type Verifier = darkwebb_primitives::verifying::ArkworksBn254Verifier;
+}
+
+impl pallet_mixer::Config for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+	type Tree = MerkleTree;
+	type Verifier = VerifierPallet;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously
 // configured.
 construct_runtime!(
@@ -361,6 +433,10 @@ construct_runtime!(
 		BN254Poseidon3x5Hasher: pallet_hasher::<Instance3>::{Pallet, Call, Storage, Event<T>},
 		BN254Poseidon5x5Hasher: pallet_hasher::<Instance4>::{Pallet, Call, Storage, Event<T>},
 		BN254CircomPoseidon3x5Hasher: pallet_hasher::<Instance5>::{Pallet, Call, Storage, Event<T>},
+
+		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
+		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
