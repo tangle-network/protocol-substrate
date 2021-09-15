@@ -1,6 +1,7 @@
 use node_template_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig, SystemConfig,
-	WASM_BINARY,
+	AccountId, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
+	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig,
+	GenesisConfig, GrandpaConfig, Signature, SudoConfig, SystemConfig, VerifierConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -150,6 +151,30 @@ fn testnet_genesis(
 		sudo: SudoConfig {
 			// Assign network admin rights.
 			key: root_key,
+		},
+		bls381_poseidon_3x_5_hasher: BLS381Poseidon3x5HasherConfig {
+			parameters: None,
+			phantom: Default::default(),
+		},
+		bls381_poseidon_5x_5_hasher: BLS381Poseidon5x5HasherConfig {
+			parameters: None,
+			phantom: Default::default(),
+		},
+		bn254_poseidon_3x_5_hasher: BN254Poseidon3x5HasherConfig {
+			parameters: None,
+			phantom: Default::default(),
+		},
+		bn254_poseidon_5x_5_hasher: BN254Poseidon5x5HasherConfig {
+			parameters: None,
+			phantom: Default::default(),
+		},
+		bn254_circom_poseidon_3x_5_hasher: BN254CircomPoseidon3x5HasherConfig {
+			parameters: None,
+			phantom: Default::default(),
+		},
+		verifier: VerifierConfig {
+			parameters: None,
+			phantom: Default::default(),
 		},
 	}
 }
