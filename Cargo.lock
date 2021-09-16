@@ -3858,6 +3858,7 @@ dependencies = [
 name = "node-template"
 version = "3.0.0"
 dependencies = [
+ "arkworks-gadgets",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "jsonrpc-core",

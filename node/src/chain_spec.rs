@@ -1,3 +1,13 @@
+use arkworks_gadgets::{
+	poseidon::PoseidonParameters,
+	utils::{
+		get_mds_poseidon_bls381_x3_5, get_rounds_poseidon_bls381_x3_5,
+		get_mds_poseidon_bls381_x5_5, get_rounds_poseidon_bls381_x5_5,
+		get_mds_poseidon_bn254_x5_5, get_rounds_poseidon_bn254_x5_5,
+		get_mds_poseidon_bn254_x3_5, get_rounds_poseidon_bn254_x3_5,
+		get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3,
+	},
+};
 use node_template_runtime::{
 	AccountId, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
 	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig,
@@ -8,7 +18,6 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -132,6 +141,36 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	_enable_println: bool,
 ) -> GenesisConfig {
+	let circom_params = {
+		let rounds = get_rounds_poseidon_circom_bn254_x5_3::<arkworks_gadgets::prelude::ark_bn254::Fr>();
+		let mds = get_mds_poseidon_circom_bn254_x5_3::<arkworks_gadgets::prelude::ark_bn254::Fr>();
+		PoseidonParameters::new(rounds, mds)
+	};
+
+	let bls381_3x_5_params = {
+		let rounds = get_rounds_poseidon_bls381_x3_5::<arkworks_gadgets::prelude::ark_bls12_381::Fr>();
+		let mds = get_mds_poseidon_bls381_x3_5::<arkworks_gadgets::prelude::ark_bls12_381::Fr>();
+		PoseidonParameters::new(rounds, mds)
+	};
+
+	let bls381_5x_5_params = {
+		let rounds = get_rounds_poseidon_bls381_x5_5::<arkworks_gadgets::prelude::ark_bls12_381::Fr>();
+		let mds = get_mds_poseidon_bls381_x5_5::<arkworks_gadgets::prelude::ark_bls12_381::Fr>();
+		PoseidonParameters::new(rounds, mds)
+	};
+
+	let bn254_3x_5_params = {
+		let rounds = get_rounds_poseidon_bn254_x3_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
+		let mds = get_mds_poseidon_bn254_x3_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
+		PoseidonParameters::new(rounds, mds)
+	};
+
+	let bn254_5x_5_params = {
+		let rounds = get_rounds_poseidon_bn254_x5_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
+		let mds = get_mds_poseidon_bn254_x5_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
+		PoseidonParameters::new(rounds, mds)
+	};
+
 	GenesisConfig {
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
@@ -153,23 +192,23 @@ fn testnet_genesis(
 			key: root_key,
 		},
 		bls381_poseidon_3x_5_hasher: BLS381Poseidon3x5HasherConfig {
-			parameters: None,
+			parameters: Some(bls381_3x_5_params.to_bytes()),
 			phantom: Default::default(),
 		},
 		bls381_poseidon_5x_5_hasher: BLS381Poseidon5x5HasherConfig {
-			parameters: None,
+			parameters: Some(bls381_5x_5_params.to_bytes()),
 			phantom: Default::default(),
 		},
 		bn254_poseidon_3x_5_hasher: BN254Poseidon3x5HasherConfig {
-			parameters: None,
+			parameters: Some(bn254_3x_5_params.to_bytes()),
 			phantom: Default::default(),
 		},
 		bn254_poseidon_5x_5_hasher: BN254Poseidon5x5HasherConfig {
-			parameters: None,
+			parameters: Some(bn254_5x_5_params.to_bytes()),
 			phantom: Default::default(),
 		},
 		bn254_circom_poseidon_3x_5_hasher: BN254CircomPoseidon3x5HasherConfig {
-			parameters: None,
+			parameters: Some(circom_params.to_bytes()),
 			phantom: Default::default(),
 		},
 		verifier: VerifierConfig {
