@@ -1,11 +1,15 @@
 use arkworks_gadgets::{
 	poseidon::PoseidonParameters,
+	prelude::ark_bn254::Bn254,
+	setup::{
+		common::Curve,
+		mixer::{setup_groth16_circuit_circomx5, setup_groth16_random_circuit_circomx5, setup_random_circuit_circomx5},
+	},
 	utils::{
-		get_mds_poseidon_bls381_x3_5, get_rounds_poseidon_bls381_x3_5,
-		get_mds_poseidon_bls381_x5_5, get_rounds_poseidon_bls381_x5_5,
-		get_mds_poseidon_bn254_x5_5, get_rounds_poseidon_bn254_x5_5,
-		get_mds_poseidon_bn254_x3_5, get_rounds_poseidon_bn254_x3_5,
-		get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3,
+		get_mds_poseidon_bls381_x3_5, get_mds_poseidon_bls381_x5_5, get_mds_poseidon_bn254_x3_5,
+		get_mds_poseidon_bn254_x5_5, get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_bls381_x3_5,
+		get_rounds_poseidon_bls381_x5_5, get_rounds_poseidon_bn254_x3_5, get_rounds_poseidon_bn254_x5_5,
+		get_rounds_poseidon_circom_bn254_x5_3,
 	},
 };
 use node_template_runtime::{
@@ -141,6 +145,9 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	_enable_println: bool,
 ) -> GenesisConfig {
+	use ark_serialize::CanonicalSerialize;
+	use ark_std::test_rng;
+
 	let circom_params = {
 		let rounds = get_rounds_poseidon_circom_bn254_x5_3::<arkworks_gadgets::prelude::ark_bn254::Fr>();
 		let mds = get_mds_poseidon_circom_bn254_x5_3::<arkworks_gadgets::prelude::ark_bn254::Fr>();
@@ -169,6 +176,18 @@ fn testnet_genesis(
 		let rounds = get_rounds_poseidon_bn254_x5_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
 		let mds = get_mds_poseidon_bn254_x5_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
 		PoseidonParameters::new(rounds, mds)
+	};
+
+	let verifier_params = {
+		let mut rng = test_rng();
+		pub const LEN: usize = 30;
+		let curve = Curve::Bn254;
+		let (pk, vk) = setup_groth16_random_circuit_circomx5::<_, Bn254, LEN>(&mut rng, curve);
+
+		let mut serialized = vec![0; vk.serialized_size()];
+		vk.serialize(&mut serialized[..]).unwrap();
+
+		serialized
 	};
 
 	GenesisConfig {
@@ -212,7 +231,7 @@ fn testnet_genesis(
 			phantom: Default::default(),
 		},
 		verifier: VerifierConfig {
-			parameters: None,
+			parameters: Some(verifier_params),
 			phantom: Default::default(),
 		},
 	}

@@ -115,7 +115,7 @@ parameter_types! {
 	pub const RootHistorySize: u32 = 1096;
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
 pub struct Element([u8; 32]);
 impl ElementTrait for Element {
 	fn to_bytes(&self) -> &[u8] {
@@ -161,12 +161,12 @@ parameter_types! {
 }
 
 impl pallet_anchor::Config for Test {
-	type Event = Event;
 	type ChainId = u32;
-	type Mixer = Mixer;
 	type Currency = Balances;
-	type Verifier = VerifierPallet;
+	type Event = Event;
 	type HistoryLength = HistoryLength;
+	type Mixer = Mixer;
+	type Verifier = VerifierPallet;
 }
 
 // Build genesis storage according to the mock runtime.

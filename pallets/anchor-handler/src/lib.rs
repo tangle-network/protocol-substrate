@@ -116,7 +116,6 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	#[pallet::metadata(T::AccountId = "AccountId", ResourceId = "ResourceId")]
 	pub enum Event<T: Config> {
 		MaintainerSet(T::AccountId, T::AccountId),
 		AnchorCreated,

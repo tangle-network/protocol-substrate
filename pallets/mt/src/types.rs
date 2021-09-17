@@ -2,8 +2,8 @@
 use crate::*;
 use codec::{Decode, Encode};
 use frame_support::{dispatch, Parameter};
-
-pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy {
+use scale_info::TypeInfo;
+pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy + TypeInfo {
 	/// converts type to byte slice
 	fn to_bytes(&self) -> &[u8];
 	/// converts type to Vec
@@ -36,7 +36,7 @@ pub trait TreeInspector<T: Config<I>, I: 'static = ()> {
 	fn is_known_root(id: T::TreeId, target: T::Element) -> Result<bool, dispatch::DispatchError>;
 }
 
-#[derive(Default, Clone, Encode, Decode)]
+#[derive(Default, Clone, Encode, Decode, TypeInfo)]
 pub struct TreeMetadata<AccountId, LeafIndex, Element> {
 	/// Creator account
 	pub creator: AccountId,

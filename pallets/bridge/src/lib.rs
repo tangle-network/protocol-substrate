@@ -152,7 +152,6 @@ pub mod pallet {
 
 	// Pallets use events to inform users when important changes are made.
 	#[pallet::event]
-	#[pallet::metadata(T::AccountId = "AccountId", T::ChainId = "ChainId", DepositNonce = "DepositNonce")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// Maintainer is set

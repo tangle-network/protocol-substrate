@@ -1,21 +1,21 @@
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
-
-use codec::{Decode, Encode};
 
 pub const DARKWEBB_DEFAULT_RELAYER_THRESHOLD: u32 = 1;
 
 pub type DepositNonce = u64;
 pub type ResourceId = [u8; 32];
 
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum ProposalStatus {
 	Initiated,
 	Approved,
 	Rejected,
 }
 
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct ProposalVotes<AccountId, BlockNumber> {
 	pub votes_for: Vec<AccountId>,
 	pub votes_against: Vec<AccountId>,
