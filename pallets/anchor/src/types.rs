@@ -2,6 +2,7 @@
 use crate::*;
 use codec::{Decode, Encode};
 use frame_support::dispatch;
+use scale_info::TypeInfo;
 
 /// Anchor trait definition to be used in other pallets
 pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
@@ -60,7 +61,7 @@ pub trait AnchorInspector<T: Config<I>, I: 'static = ()> {
 	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool;
 }
 
-#[derive(Default, Clone, Encode, Decode)]
+#[derive(Default, Clone, Encode, Decode, TypeInfo)]
 pub struct AnchorMetadata<AccountId, Balance> {
 	/// Creator account
 	pub creator: AccountId,
@@ -68,7 +69,7 @@ pub struct AnchorMetadata<AccountId, Balance> {
 	pub deposit_size: Balance,
 }
 
-#[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug)]
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
 pub struct EdgeMetadata<ChainID, Element, BlockNumber> {
 	/// chain id
 	pub src_chain_id: ChainID,

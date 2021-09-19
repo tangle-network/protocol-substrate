@@ -9,12 +9,12 @@ const TEST_MAX_EDGES: u32 = 100;
 const TEST_TREE_DEPTH: u8 = 32;
 
 fn make_anchor_create_proposal(src_chain_id: u32, resource_id: &[u8; 32]) -> Call {
-	Call::AnchorHandler(crate::Call::execute_anchor_create_proposal(
+	Call::AnchorHandler(crate::Call::execute_anchor_create_proposal {
 		src_chain_id,
-		*resource_id,
-		TEST_MAX_EDGES,
-		TEST_TREE_DEPTH,
-	))
+		r_id: *resource_id,
+		max_edges: TEST_MAX_EDGES,
+		tree_depth: TEST_TREE_DEPTH,
+	})
 }
 
 fn make_anchor_update_proposal(
@@ -25,10 +25,10 @@ fn make_anchor_update_proposal(
 		<Test as frame_system::Config>::BlockNumber,
 	>,
 ) -> Call {
-	Call::AnchorHandler(crate::Call::execute_anchor_update_proposal(
-		*resource_id,
+	Call::AnchorHandler(crate::Call::execute_anchor_update_proposal {
+		r_id: *resource_id,
 		anchor_metadata,
-	))
+	})
 }
 
 fn setup_relayers(src_id: u32) {

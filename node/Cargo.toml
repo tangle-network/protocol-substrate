@@ -55,6 +55,9 @@ sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/subst
 sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"] }
+ark-std = { version = "^0.3.0" }
+ark-serialize = { version = "^0.3.0" }
 
 [features]
 default = []

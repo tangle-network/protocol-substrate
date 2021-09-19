@@ -32,6 +32,7 @@ pallet-mixer = { path = "../pallets/mixer", default-features = false }
 darkwebb-primitives = { path = "../primitives", default-features = false, features = ["hashing"] }
 
 # Substrate dependencies
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 frame-benchmarking = { default-features = false, optional = true, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 frame-executive = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 frame-support = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }

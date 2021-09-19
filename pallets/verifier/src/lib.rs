@@ -114,6 +114,31 @@ pub mod pallet {
 		type StringLimit: Get<u32>;
 	}
 
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+		pub phantom: (PhantomData<T>, PhantomData<I>),
+		pub parameters: Option<Vec<u8>>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+		fn default() -> Self {
+			Self {
+				phantom: Default::default(),
+				parameters: None,
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+		fn build(&self) {
+			if let Some(params) = &self.parameters {
+				Parameters::<T, I>::put(params);
+			}
+		}
+	}
+
 	#[pallet::storage]
 	#[pallet::getter(fn parameters)]
 	/// Details of the module's parameters
@@ -132,7 +157,6 @@ pub mod pallet {
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	#[pallet::metadata(T::AccountId = "AccountId")]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		ParametersSet(T::AccountId, Vec<u8>),
 		MaintainerSet(T::AccountId, T::AccountId),

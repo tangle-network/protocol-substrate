@@ -3,10 +3,10 @@ use ark_serialize::CanonicalSerialize;
 use arkworks_gadgets::{
 	poseidon::PoseidonParameters,
 	setup::{
-		common::{setup_circom_params_x5_3, setup_circom_params_x5_5, setup_circom_tree_and_create_path_x5, Curve},
+		common::{setup_circom_params_x5_3, setup_circom_params_x5_5, setup_tree_and_create_path_tree_circomx5, Curve},
 		mixer::{
-			prove_circom_groth16_x5, setup_arbitrary_data, setup_circom_groth16_x5, setup_circom_leaf_x5,
-			CircomCircuit_x5,
+			prove_groth16_circuit_circomx5, setup_arbitrary_data, setup_groth16_circuit_circomx5, setup_leaf_circomx5,
+			Circuit_Circomx5,
 		},
 	},
 	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
@@ -16,6 +16,8 @@ use pallet_mt::types::{ElementTrait, TreeInspector};
 use sp_runtime::traits::One;
 
 use crate::mock::*;
+
+const LEN: usize = 30;
 
 fn hasher_params() -> Vec<u8> {
 	let rounds = get_rounds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
@@ -103,7 +105,7 @@ fn mixer_works() {
 		let relayer = Bn254Fr::from(relayer_account_id);
 		let fee = Bn254Fr::from(fee_value);
 		let refund = Bn254Fr::from(refund_value);
-		let (leaf_private, leaf, nullifier_hash) = setup_circom_leaf_x5(&params5, &mut rng);
+		let (leaf_private, leaf, nullifier_hash) = setup_leaf_circomx5(&params5, &mut rng);
 		let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_le());
 		let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
 		assert_ok!(Mixer::deposit(Origin::signed(sender_account_id), tree_id, leaf_element));
@@ -112,15 +114,15 @@ fn mixer_works() {
 
 		// now we start to generate the proof.
 		let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
-		let (mt, path) = setup_circom_tree_and_create_path_x5(&[leaf], 0, &params3);
+		let (mt, path) = setup_tree_and_create_path_tree_circomx5(&[leaf], 0, &params3);
 		let root = mt.root().inner();
 		let root_element = Element::from_bytes(&root.into_repr().to_bytes_le());
 		let mixer_tree_root = MerkleTree::get_root(tree_id).unwrap();
 		assert_eq!(root_element, mixer_tree_root);
 
-		let circuit = CircomCircuit_x5::new(arbitrary_input, leaf_private, (), params5, path, root, nullifier_hash);
-		let (pk, vk) = setup_circom_groth16_x5::<_, ark_bn254::Bn254>(&mut rng, circuit.clone());
-		let proof = prove_circom_groth16_x5::<_, ark_bn254::Bn254>(&pk, circuit, &mut rng);
+		let circuit = Circuit_Circomx5::new(arbitrary_input, leaf_private, (), params5, path, root, nullifier_hash);
+		let (pk, vk) = setup_groth16_circuit_circomx5::<_, ark_bn254::Bn254, LEN>(&mut rng, circuit.clone());
+		let proof = prove_groth16_circuit_circomx5::<_, ark_bn254::Bn254, LEN>(&pk, circuit, &mut rng);
 		let mut proof_bytes = Vec::new();
 		proof.serialize(&mut proof_bytes).unwrap();
 		// setup the vk

@@ -115,7 +115,7 @@ parameter_types! {
 	pub const NewDefaultZeroElement: Element = Element([0u8; 32]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {

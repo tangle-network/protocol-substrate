@@ -2,6 +2,7 @@
 use crate::*;
 use codec::{Decode, Encode};
 use frame_support::{dispatch, ensure};
+use scale_info::TypeInfo;
 
 /// Mixer trait definition to be used in other pallets
 pub trait MixerInterface<T: Config<I>, I: 'static = ()> {
@@ -52,7 +53,7 @@ pub trait MixerInspector<T: Config<I>, I: 'static = ()> {
 	}
 }
 
-#[derive(Default, Clone, Encode, Decode)]
+#[derive(Default, Clone, Encode, Decode, TypeInfo)]
 pub struct MixerMetadata<AccountId, Balance> {
 	/// Creator account
 	pub creator: AccountId,
