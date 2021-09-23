@@ -20,6 +20,7 @@ use crate::{
 	service::{
 		new_partial, Block,
 		DarkwebbParachainRuntimeExecutor,
+		ShellRuntimeExecutor
 	},
 };
 use codec::Encode;
@@ -35,7 +36,6 @@ use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
-use node_template::service::ShellRuntimeExecutor;
 
 const DEFAULT_PARA_ID: u32 = 33333;
 
@@ -68,9 +68,9 @@ fn load_spec(
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
 		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id)),
-		"darkwebb-dev" => Box::new(chain_spec::darkwebb_development_config(para_id)),
-		"darkwebb-local" => Box::new(chain_spec::darkwebb_local_testnet_config(para_id)),
-		"" => Box::new(chain_spec::get_chain_spec(para_id)),
+		"darkwebb-dev" => Box::new(chain_spec::darkwebb_development_config(para_id)?),
+		"darkwebb-local" => Box::new(chain_spec::darkwebb_local_testnet_config(para_id)?),
+		"" => Box::new(chain_spec::darkwebb_local_testnet_config(para_id)?),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
 			if chain_spec.is_darkwebb() {
@@ -120,7 +120,13 @@ impl SubstrateCli for Cli {
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&darkwebb_parachain_runtime::VERSION
+		if chain_spec.is_shell() {
+			&shell_runtime::VERSION
+		} else if chain_spec.is_darkwebb() {
+			&darkwebb_runtime::VERSION
+		} else {
+			&darkwebb_runtime::VERSION
+		}
 	}
 }
 
@@ -161,13 +167,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		if chain_spec.is_shell() {
-			&shell_runtime::VERSION
-		} else if chain_spec.is_darkwebb() {
-			&darkwebb_runtime::VERSION
-		} else {
-			polkadot_cli::Cli::native_runtime_version(chain_spec)
-		}
+		polkadot_cli::Cli::native_runtime_version(chain_spec)
 	}
 }
 
@@ -187,7 +187,7 @@ macro_rules! construct_async_run {
 			runner.async_run(|$config| {
 				let $components = new_partial::<darkwebb_runtime::RuntimeApi, DarkwebbParachainRuntimeExecutor, _>(
 					&$config,
-					crate::service::darkwebb_build_import_queue,
+					crate::service::darkwebb_parachain_build_import_queue,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -209,7 +209,7 @@ macro_rules! construct_async_run {
 					_
 				>(
 					&$config,
-					crate::service::darkwewbb_parachain_build_import_queue,
+					crate::service::darkwebb_parachain_build_import_queue,
 				)?;
 				let task_manager = $components.task_manager;
 				{ $( $code )* }.map(|v| (v, task_manager))
@@ -321,7 +321,7 @@ pub fn run() -> Result<()> {
 				let runner = cli.create_runner(cmd)?;
 				if runner.config().chain_spec.is_darkwebb() {
 					runner.sync_run(|config| cmd.run::<Block, DarkwebbParachainRuntimeExecutor>(config))
-				} else if config.chain_spec.is_shell() {
+				} else if runner.config().chain_spec.is_shell() {
 					runner.sync_run(|config| cmd.run::<Block, ShellRuntimeExecutor>(config))
 				} else {
 					Err("Chain doesn't support benchmarking".into())

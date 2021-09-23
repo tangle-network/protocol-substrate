@@ -111,8 +111,6 @@ pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
 }
 
 pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
-	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm binary not available".to_string())?;
-
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -165,8 +163,6 @@ pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
 }
 
 pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
-	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm binary not available".to_string())?;
-
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Local Testnet",
