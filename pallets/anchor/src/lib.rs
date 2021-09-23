@@ -235,8 +235,8 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 		nullifier_hash: T::Element,
 		recipient: T::AccountId,
 		relayer: T::AccountId,
-		fee: BalanceOf<T, I>,
-		refund: BalanceOf<T, I>,
+		_fee: BalanceOf<T, I>,
+		_refund: BalanceOf<T, I>,
 	) -> Result<(), DispatchError> {
 		// Check if local root is known
 		T::Mixer::ensure_known_root(id, roots[0])?;
@@ -248,7 +248,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 
 		// Check nullifier and add or return `InvalidNullifier`
 		T::Mixer::ensure_nullifier_unused(id, nullifier_hash)?;
-		T::Mixer::add_nullifier_hash(id, nullifier_hash);
+		T::Mixer::add_nullifier_hash(id, nullifier_hash)?;
 		// Format proof public inputs for verification
 		// FIXME: This is for a specfic gadget so we ought to create a generic handler
 		// FIXME: Such as a unpack/pack public inputs trait
@@ -330,14 +330,14 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 }
 
 impl<T: Config<I>, I: 'static> AnchorInspector<T, I> for Pallet<T, I> {
-	fn get_neighbor_roots(tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
+	fn get_neighbor_roots(_tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
 		Ok(vec![T::Element::default()])
 	}
 
 	fn is_known_neighbor_root(
-		tree_id: T::TreeId,
-		src_chain_id: T::ChainId,
-		target_root: T::Element,
+		_tree_id: T::TreeId,
+		_src_chain_id: T::ChainId,
+		_target_root: T::Element,
 	) -> Result<bool, DispatchError> {
 		Ok(true)
 	}

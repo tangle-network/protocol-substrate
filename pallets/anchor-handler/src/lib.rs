@@ -54,7 +54,6 @@ use frame_support::{
 use frame_system::pallet_prelude::OriginFor;
 pub use pallet::*;
 use pallet_anchor::types::{AnchorInspector, AnchorInterface, EdgeMetadata};
-use sp_std::prelude::*;
 
 use pallet_bridge::types::ResourceId;
 pub mod types;
