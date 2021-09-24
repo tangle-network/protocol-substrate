@@ -12,36 +12,36 @@ use arkworks_gadgets::{
 		get_rounds_poseidon_circom_bn254_x5_3,
 	},
 };
-use common::{AccountId, AuraId, Signature};
-use darkwebb_runtime::{
-	AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig, BN254CircomPoseidon3x5HasherConfig,
-	BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig, GenesisConfig, SudoConfig,
-	SystemConfig, VerifierConfig, WASM_BINARY,
-};
+use common::{AccountId, AuraId, BabeId, Balance, Signature};
 
-use cumulus_primitives_core::ParaId;
+use darkwebb_runtime::{
+	constants::{currency::*, time::*},
+	AuthorityDiscoveryConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
+	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BabeConfig,
+	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig,
+	SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig, VerifierConfig, WASM_BINARY,
+};
 use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_runtime::{
+	traits::{IdentifyAccount, Verify},
+	Perbill,
+};
+
+use darkwebb_runtime::MAX_NOMINATIONS;
+
+// ImOnline consensus authority.
+pub type ImOnlineId = pallet_im_online::sr25519::AuthorityId;
+
+// AuthorityDiscovery consensus authority.
+pub type AuthorityDiscoveryId = sp_authority_discovery::AuthorityId;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<darkwebb_runtime::GenesisConfig, Extensions>;
-
-/// Specialized `ChainSpec` for the normal parachain runtime.
-pub type DarkwebbChainSpec = sc_service::GenericChainSpec<darkwebb_runtime::GenesisConfig, Extensions>;
-
-/// Specialized `ChainSpec` for the shell parachain runtime.
-pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
-
-/// Helper function to generate a crypto pair from seed
-pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-	TPublic::Pair::from_string(&format!("//{}", seed), None)
-		.expect("static values are valid; qed")
-		.public()
-}
 
 /// The extensions for the [`ChainSpec`].
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
@@ -62,6 +62,13 @@ impl Extensions {
 
 type AccountPublic = <Signature as Verify>::Signer;
 
+/// Helper function to generate a crypto pair from seed
+pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+	TPublic::Pair::from_string(&format!("//{}", seed), None)
+		.expect("static values are valid; qed")
+		.public()
+}
+
 /// Helper function to generate an account ID from seed
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where
@@ -70,47 +77,46 @@ where
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
-/// Helper function to generate a crypto pair from seed
-pub fn get_pair_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-	TPublic::Pair::from_string(&format!("//{}", seed), None)
-		.expect("static values are valid; qed")
-		.public()
-}
-
-/// Generate collator keys from seed.
-///
-/// This function's return type must always match the session keys of the chain
-/// in tuple format.
-pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
-	get_pair_from_seed::<AuraId>(seed)
+/// Helper function to generate stash, controller and session key from seed
+pub fn authority_keys_from_seed(
+	seed: &str,
+) -> (
+	AccountId,
+	AccountId,
+	GrandpaId,
+	BabeId,
+	ImOnlineId,
+	AuthorityDiscoveryId,
+) {
+	(
+		get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
+		get_account_id_from_seed::<sr25519::Public>(seed),
+		get_from_seed::<GrandpaId>(seed),
+		get_from_seed::<BabeId>(seed),
+		get_from_seed::<ImOnlineId>(seed),
+		get_from_seed::<AuthorityDiscoveryId>(seed),
+	)
 }
 
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we
 /// have just one key).
-pub fn darkwebb_session_keys(keys: AuraId) -> darkwebb_runtime::SessionKeys {
-	darkwebb_runtime::SessionKeys { aura: keys }
+fn darkwebb_session_keys(
+	grandpa: GrandpaId,
+	babe: BabeId,
+	im_online: ImOnlineId,
+	authority_discovery: AuthorityDiscoveryId,
+) -> darkwebb_runtime::SessionKeys {
+	darkwebb_runtime::SessionKeys {
+		grandpa,
+		babe,
+		im_online,
+		authority_discovery,
+	}
 }
 
-pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
-	ShellChainSpec::from_genesis(
-		"Shell Local Testnet",
-		"shell_local_testnet",
-		ChainType::Local,
-		move || shell_testnet_genesis(id),
-		vec![],
-		None,
-		None,
-		None,
-		Extensions {
-			relay_chain: "westend".into(),
-			para_id: id.into(),
-		},
-	)
-}
-
-pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
+pub fn darkwebb_development_config() -> Result<ChainSpec, String> {
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -119,17 +125,7 @@ pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
 		ChainType::Development,
 		move || {
 			testnet_genesis(
-				// initial collators.
-				vec![
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
-					),
-				],
+				vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -144,7 +140,8 @@ pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				id,
+				vec![],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
 		// Bootnodes
@@ -156,13 +153,13 @@ pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
 		// Properties
 		None,
 		Extensions {
-			relay_chain: "kusama".into(),
-			para_id: id.into(),
+			relay_chain: "none".into(),
+			para_id: 0,
 		},
 	))
 }
 
-pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
+pub fn darkwebb_local_testnet_config() -> Result<ChainSpec, String> {
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Local Testnet",
@@ -171,17 +168,7 @@ pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 		ChainType::Local,
 		move || {
 			testnet_genesis(
-				// initial collators.
-				vec![
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
-					),
-				],
+				vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -196,7 +183,8 @@ pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				id,
+				vec![],
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
 		// Bootnodes
@@ -209,17 +197,25 @@ pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 		None,
 		// Extensions
 		Extensions {
-			relay_chain: "rococo".into(),
-			para_id: id.into(),
+			relay_chain: "none".into(),
+			para_id: 0,
 		},
 	))
 }
 
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
-	invulnerables: Vec<(AccountId, AuraId)>,
+	initial_authorities: Vec<(
+		AccountId,
+		AccountId,
+		GrandpaId,
+		BabeId,
+		ImOnlineId,
+		AuthorityDiscoveryId,
+	)>,
+	initial_nominators: Vec<AccountId>,
 	endowed_accounts: Vec<AccountId>,
-	id: ParaId,
+	root_key: AccountId,
 ) -> GenesisConfig {
 	use ark_serialize::CanonicalSerialize;
 	use ark_std::test_rng;
@@ -266,6 +262,42 @@ fn testnet_genesis(
 		serialized
 	};
 
+	let mut endowed_accounts: Vec<AccountId> = endowed_accounts.into();
+	// endow all authorities and nominators.
+	initial_authorities
+		.iter()
+		.map(|x| &x.0)
+		.chain(initial_nominators.iter())
+		.for_each(|x| {
+			if !endowed_accounts.contains(&x) {
+				endowed_accounts.push(x.clone())
+			}
+		});
+
+	// stakers: all validators and nominators.
+	let mut rng = rand::thread_rng();
+	let stakers = initial_authorities
+		.iter()
+		.map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
+		.chain(initial_nominators.iter().map(|x| {
+			use rand::{seq::SliceRandom, Rng};
+			let limit = (MAX_NOMINATIONS as usize).min(initial_authorities.len());
+			let count = rng.gen::<usize>() % limit;
+			let nominations = initial_authorities
+				.as_slice()
+				.choose_multiple(&mut rng, count)
+				.into_iter()
+				.map(|choice| choice.0.clone())
+				.collect::<Vec<_>>();
+			(x.clone(), x.clone(), STASH, StakerStatus::Nominator(nominations))
+		}))
+		.collect::<Vec<_>>();
+
+	let num_endowed_accounts = endowed_accounts.len();
+
+	const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
+	const STASH: Balance = ENDOWMENT / 1000;
+
 	GenesisConfig {
 		system: darkwebb_runtime::SystemConfig {
 			code: darkwebb_runtime::WASM_BINARY
@@ -280,32 +312,46 @@ fn testnet_genesis(
 				.map(|k| (k, darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT * 4096))
 				.collect(),
 		},
-		parachain_info: darkwebb_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: darkwebb_runtime::CollatorSelectionConfig {
-			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT * 16,
-			..Default::default()
-		},
-		session: darkwebb_runtime::SessionConfig {
-			keys: invulnerables
+		indices: IndicesConfig { indices: vec![] },
+		session: SessionConfig {
+			keys: initial_authorities
 				.iter()
-				.cloned()
-				.map(|(acc, aura)| {
+				.map(|x| {
 					(
-						acc.clone(),                 // account id
-						acc.clone(),                 // validator id
-						darkwebb_session_keys(aura), // session keys
+						x.0.clone(),
+						x.0.clone(),
+						darkwebb_session_keys(x.2.clone(), x.3.clone(), x.4.clone(), x.5.clone()),
 					)
 				})
+				.collect::<Vec<_>>(),
+		},
+		staking: StakingConfig {
+			validator_count: initial_authorities.len() as u32,
+			minimum_validator_count: initial_authorities.len() as u32,
+			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
+			slash_reward_fraction: Perbill::from_percent(10),
+			stakers,
+			..Default::default()
+		},
+		democracy: DemocracyConfig::default(),
+		elections: ElectionsConfig {
+			members: endowed_accounts
+				.iter()
+				.take((num_endowed_accounts + 1) / 2)
+				.cloned()
+				.map(|member| (member, STASH))
 				.collect(),
 		},
-		aura: Default::default(),
-		aura_ext: Default::default(),
-		parachain_system: Default::default(),
-		sudo: SudoConfig {
-			// Assign network admin rights.
-			key: get_account_id_from_seed::<sr25519::Public>("Alice"),
+		council: CouncilConfig::default(),
+		sudo: SudoConfig { key: root_key },
+		babe: BabeConfig {
+			authorities: vec![],
+			epoch_config: Some(darkwebb_runtime::BABE_GENESIS_EPOCH_CONFIG),
 		},
+		im_online: ImOnlineConfig { keys: vec![] },
+		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
+		grandpa: GrandpaConfig { authorities: vec![] },
+		treasury: Default::default(),
 		bls381_poseidon_3x_5_hasher: BLS381Poseidon3x5HasherConfig {
 			parameters: Some(bls381_3x_5_params.to_bytes()),
 			phantom: Default::default(),
@@ -330,18 +376,5 @@ fn testnet_genesis(
 			parameters: Some(verifier_params),
 			phantom: Default::default(),
 		},
-	}
-}
-
-fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
-	shell_runtime::GenesisConfig {
-		system: shell_runtime::SystemConfig {
-			code: shell_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			changes_trie_config: Default::default(),
-		},
-		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
-		parachain_system: Default::default(),
 	}
 }

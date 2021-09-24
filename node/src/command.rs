@@ -338,6 +338,7 @@ pub fn run() -> Result<()> {
 				let para_id =
 					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
 
+				log::info!("Starting node {:?}", para_id);
 				let polkadot_cli = RelayChainCli::new(
 					&config,
 					[RelayChainCli::executable_name().to_string()]
@@ -350,10 +351,13 @@ pub fn run() -> Result<()> {
 				let parachain_account =
 					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
 
+				log::info!("Parachain account: {:?}", parachain_account);
+				log::info!("Config chain spec: {:?}", config.chain_spec);
 				let block: crate::service::Block =
 					generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
+				log::info!("Starting block {:?}", block);
 				let tokio_handle = config.tokio_handle.clone();
 				let polkadot_config =
 					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)

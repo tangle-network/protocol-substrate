@@ -53,6 +53,7 @@ use sp_runtime::{
 };
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
+use log::{error, warn, info, debug, trace};
 
 /// Native executor instance.
 pub struct DarkwebbParachainRuntimeExecutor;
@@ -136,6 +137,8 @@ where
 		sc_service::Error,
 	>,
 {
+	log::info!("New partial");
+
 	let telemetry = config
 		.telemetry_endpoints
 		.clone()
