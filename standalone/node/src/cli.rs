@@ -55,4 +55,3 @@ pub enum Subcommand {
 	#[structopt(name = "benchmark", about = "Benchmark runtime pallets.")]
 	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 }
-

@@ -93,20 +93,26 @@ pub fn new_partial(
 		})
 		.transpose()?;
 
+	log::info!("Setting up executor");
 	let executor = NativeElseWasmExecutor::<ExecutorDispatch>::new(
 		config.wasm_method,
 		config.default_heap_pages,
 		config.max_runtime_instances,
 	);
 
+	log::info!("Setting up new full parts");
+	log::info!("Telemetry {:?}", telemetry);
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(
 			&config,
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 			executor,
 		)?;
+
+	log::info!("Creating client");
 	let client = Arc::new(client);
 
+	log::info!("Setting up telemetry");
 	let telemetry = telemetry.map(|(worker, telemetry)| {
 		task_manager.spawn_handle().spawn("telemetry", worker.run());
 		telemetry
@@ -114,6 +120,7 @@ pub fn new_partial(
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
+	log::info!("Setting up tx pool");
 	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
 		config.transaction_pool.clone(),
 		config.role.is_authority().into(),
@@ -122,6 +129,7 @@ pub fn new_partial(
 		client.clone(),
 	);
 
+	log::info!("Setting up grandpa block import");
 	let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
 		client.clone(),
 		&(client.clone() as Arc<_>),
@@ -130,6 +138,7 @@ pub fn new_partial(
 	)?;
 	let justification_import = grandpa_block_import.clone();
 
+	log::info!("Setting up babe block importt");
 	let (block_import, babe_link) = sc_consensus_babe::block_import(
 		sc_consensus_babe::Config::get_or_compute(&*client)?,
 		grandpa_block_import,
@@ -256,11 +265,13 @@ pub fn new_full_base(
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
 
 	config.network.extra_sets.push(sc_finality_grandpa::grandpa_peers_set_config());
+	log::info!("Setting up warp sync");
 	let warp_sync = Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
 		backend.clone(),
 		import_setup.1.shared_authority_set().clone(),
 	));
 
+	log::info!("Build network params");
 	let (network, system_rpc_tx, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &config,
@@ -274,6 +285,7 @@ pub fn new_full_base(
 		})?;
 
 	if config.offchain_worker.enabled {
+		log::info!("Build offchain params");
 		sc_service::build_offchain_workers(
 			&config,
 			task_manager.spawn_handle(),
@@ -290,6 +302,7 @@ pub fn new_full_base(
 	let enable_grandpa = !config.disable_grandpa;
 	let prometheus_registry = config.prometheus_registry().cloned();
 
+	log::info!("Spawn rpc handlers");
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		config,
 		backend: backend.clone(),
@@ -310,6 +323,7 @@ pub fn new_full_base(
 	(with_startup_data)(&block_import, &babe_link);
 
 	if let sc_service::config::Role::Authority { .. } = &role {
+		log::info!("Build proposer");
 		let proposer = sc_basic_authorship::ProposerFactory::new(
 			task_manager.spawn_handle(),
 			client.clone(),
@@ -323,6 +337,7 @@ pub fn new_full_base(
 
 		let client_clone = client.clone();
 		let slot_duration = babe_link.config().slot_duration();
+		log::info!("Build BABE");
 		let babe_config = sc_consensus_babe::BabeParams {
 			keystore: keystore_container.sync_keystore(),
 			client: client.clone(),
@@ -365,12 +380,14 @@ pub fn new_full_base(
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
 		};
 
+		log::info!("Spawn BABE worker");
 		let babe = sc_consensus_babe::start_babe(babe_config)?;
 		task_manager.spawn_essential_handle().spawn_blocking("babe-proposer", babe);
 	}
 
 	// Spawn authority discovery module.
 	if role.is_authority() {
+		log::info!("Build authority discovery");
 		let authority_discovery_role =
 			sc_authority_discovery::Role::PublishAndDiscover(keystore_container.keystore());
 		let dht_event_stream =
@@ -392,7 +409,8 @@ pub fn new_full_base(
 				authority_discovery_role,
 				prometheus_registry.clone(),
 			);
-
+		
+		log::info!("Spawn authority discovery worker");
 		task_manager
 			.spawn_handle()
 			.spawn("authority-discovery-worker", authority_discovery_worker.run());
