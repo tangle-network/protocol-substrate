@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use ark_crypto_primitives::Error;
 use frame_support::pallet_prelude::DispatchError;
 use sp_std::vec::Vec;

@@ -5,7 +5,7 @@ edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
 name = "pallet-anchor-handler"
-repository = "https://github.com/substrate-developer-hub/substrate-darkwebb-node/"
+repository = "https://github.com/webb-tools/darkwebb-substrate/"
 version = "1.0.0"
 
 [package.metadata.docs.rs]

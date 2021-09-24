@@ -52,11 +52,23 @@ mod types {
 
 	// Aura consensus authority.
 	pub type AuraId = sp_consensus_aura::sr25519::AuthorityId;
+
+	// Babe consensus authority.
+	pub type BabeId = sp_consensus_babe::AuthorityId;
+
+	// ImOnline consensus authority.
+	pub type ImOnlineId = pallet_im_online::sr25519::AuthorityId;
+
+	// AuthorityDiscovery consensus authority.
+	pub type AuthorityDiscoveryId = sp_authority_discovery::AuthorityId;
+
+	/// Type used for expressing timestamp.
+	pub type Moment = u64;
 }
 
 /// Common constants of parachains.
 mod constants {
-	use super::types::BlockNumber;
+	use super::types::{BlockNumber, Moment};
 	use frame_support::weights::{constants::WEIGHT_PER_SECOND, Weight};
 	use sp_runtime::Perbill;
 	/// This determines the average expected block time that we are targeting.
@@ -67,7 +79,9 @@ mod constants {
 	///
 	/// Change this to adjust the block time.
 	pub const MILLISECS_PER_BLOCK: u64 = 12000;
-	pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
+	// NOTE: Currently it is not possible to change the slot duration after the
+	// chain has started.       Attempting to do so will brick block production.
+	pub const SLOT_DURATION: Moment = MILLISECS_PER_BLOCK;
 
 	// Time is measured by number of blocks.
 	pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
@@ -84,6 +98,19 @@ mod constants {
 
 	/// We allow for 0.5 seconds of compute with a 6 second average block time.
 	pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+
+	// 1 in 4 blocks (on average, not counting collisions) will be primary BABE
+	// blocks.
+	pub const PRIMARY_PROBABILITY: (u64, u64) = (1, 4);
+
+	// NOTE: Currently it is not possible to change the epoch duration after the
+	// chain has started.       Attempting to do so will brick block production.
+	pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 10 * MINUTES;
+	pub const EPOCH_DURATION_IN_SLOTS: u64 = {
+		const SLOT_FILL_RATE: f64 = MILLISECS_PER_BLOCK as f64 / SLOT_DURATION as f64;
+
+		(EPOCH_DURATION_IN_BLOCKS as f64 * SLOT_FILL_RATE) as u64
+	};
 }
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't

@@ -15,6 +15,7 @@ scale-info = { version = "1.0.0", default-features = false, features = ["derive"
 
 # Substrate dependencies
 sp-consensus-aura = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
+sp-consensus-babe = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
 sp-std = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
 sp-io = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
 frame-executive = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
@@ -24,6 +25,8 @@ pallet-balances = { git = 'https://github.com/paritytech/substrate', branch = "m
 sp-runtime = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
 sp-core = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
 node-primitives = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
+pallet-im-online = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-authority-discovery = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 # Polkadot dependencies
 polkadot-runtime-common = { git = 'https://github.com/paritytech/polkadot', branch = "master", default-features = false }
@@ -45,6 +48,7 @@ std = [
 	'codec/std',
 	'scale-info/std',
 	'sp-consensus-aura/std',
+	'sp-consensus-babe/std',
 	'sp-std/std',
 	'sp-io/std',
 	'frame-support/std',
@@ -55,4 +59,6 @@ std = [
 	'node-primitives/std',
 	'polkadot-runtime-common/std',
 	'polkadot-primitives/std',
+	"pallet-im-online/std",
+	"sp-authority-discovery/std",
 ]

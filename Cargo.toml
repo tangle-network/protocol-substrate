@@ -7,4 +7,3 @@ members = [
     'pallets/*',
     'runtime',
 ]
-
