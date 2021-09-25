@@ -3910,6 +3910,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex-literal",
+ "pallet-assets",
  "pallet-aura",
  "pallet-balances",
  "pallet-grandpa",
@@ -4157,6 +4158,22 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "substrate-wasm-builder-runner",
+]
+
+[[package]]
+name = "pallet-assets"
+version = "4.0.0-dev"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]

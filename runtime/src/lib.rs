@@ -414,6 +414,27 @@ impl pallet_mixer::Config for Runtime {
 	type Verifier = Verifier;
 }
 
+parameter_types! {
+	pub const AssetDeposit: Balance = 100 * DOLLARS;
+	pub const ApprovalDeposit: Balance = 1 * DOLLARS;
+}
+
+impl pallet_assets::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = u32;
+	type Currency = Balances;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type AssetDeposit = AssetDeposit;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously
 // configured.
 construct_runtime!(
@@ -440,6 +461,7 @@ construct_runtime!(
 		Verifier: pallet_verifier::{Pallet, Call, Storage, Event<T>, Config<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -637,6 +659,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+			add_benchmark!(params, batches, pallet_assets, Assets);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
