@@ -14,9 +14,9 @@ use arkworks_gadgets::{
 };
 use common::{AccountId, AuraId, Signature};
 use darkwebb_runtime::{
-	AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig, BN254CircomPoseidon3x5HasherConfig,
-	BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig, GenesisConfig, SudoConfig,
-	SystemConfig, VerifierConfig, WASM_BINARY,
+	wasm_binary_unwrap, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
+	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig,
+	GenesisConfig, SudoConfig, SystemConfig, VerifierConfig,
 };
 
 use cumulus_primitives_core::ParaId;
@@ -268,9 +268,7 @@ fn testnet_genesis(
 
 	GenesisConfig {
 		system: darkwebb_runtime::SystemConfig {
-			code: darkwebb_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
+			code: wasm_binary_unwrap().to_vec(),
 			changes_trie_config: Default::default(),
 		},
 		balances: darkwebb_runtime::BalancesConfig {

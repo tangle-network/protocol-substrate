@@ -16,10 +16,10 @@ use common::{AccountId, AuraId, BabeId, Balance, Signature};
 
 use darkwebb_runtime::{
 	constants::{currency::*, time::*},
-	AuthorityDiscoveryConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
+	wasm_binary_unwrap, AuthorityDiscoveryConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
 	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BabeConfig,
 	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig,
-	SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig, VerifierConfig, WASM_BINARY,
+	SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig, VerifierConfig,
 };
 use hex_literal::hex;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -300,9 +300,7 @@ fn testnet_genesis(
 
 	GenesisConfig {
 		system: darkwebb_runtime::SystemConfig {
-			code: darkwebb_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
+			code: wasm_binary_unwrap().to_vec(),
 			changes_trie_config: Default::default(),
 		},
 		balances: darkwebb_runtime::BalancesConfig {
