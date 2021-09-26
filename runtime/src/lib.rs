@@ -53,6 +53,9 @@ pub type Signature = MultiSignature;
 /// equivalent to the public key of our transaction signing scheme.
 pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
+/// The type for fungible user made assets. Default is reserved to indicate the native asset.
+pub type AssetId = u32;
+
 /// The type for looking up accounts. We don't expect more than 4 billion of
 /// them, but you never know...
 pub type AccountIndex = u32;
@@ -409,6 +412,8 @@ impl pallet_verifier::Config for Runtime {
 
 impl pallet_mixer::Config for Runtime {
 	type Currency = Balances;
+	type AssetId = AssetId;
+	type Assets = Assets;
 	type Event = Event;
 	type Tree = MerkleTree;
 	type Verifier = Verifier;
@@ -422,7 +427,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
-	type AssetId = u32;
+	type AssetId = AssetId;
 	type Currency = Balances;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;

@@ -11,9 +11,10 @@ pub trait MixerInterface<T: Config<I>, I: 'static = ()> {
 		creator: T::AccountId,
 		deposit_size: BalanceOf<T, I>,
 		depth: u8,
+		asset: T::AssetId,
 	) -> Result<T::TreeId, dispatch::DispatchError>;
 	/// Deposit into the mixer
-	fn deposit(account: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), dispatch::DispatchError>;
+	fn deposit(account: T::AccountId, id: T::TreeId, leaf: T::Element, asset: T::AssetId) -> Result<(), dispatch::DispatchError>;
 	/// Withdraw from the mixer
 	fn withdraw(
 		id: T::TreeId,
@@ -24,6 +25,7 @@ pub trait MixerInterface<T: Config<I>, I: 'static = ()> {
 		relayer: T::AccountId,
 		fee: BalanceOf<T, I>,
 		refund: BalanceOf<T, I>,
+		asset: T::AssetId,
 	) -> Result<(), dispatch::DispatchError>;
 	// Stores nullifier hash from a spend tx
 	fn add_nullifier_hash(id: T::TreeId, nullifier_hash: T::Element) -> Result<(), dispatch::DispatchError>;
@@ -54,9 +56,11 @@ pub trait MixerInspector<T: Config<I>, I: 'static = ()> {
 }
 
 #[derive(Default, Clone, Encode, Decode, TypeInfo)]
-pub struct MixerMetadata<AccountId, Balance> {
+pub struct MixerMetadata<AccountId, Balance, AssetId> {
 	/// Creator account
 	pub creator: AccountId,
 	/// Balance size of deposit
 	pub deposit_size: Balance,
+	/// Option of specifying a fungible asset. When None, the asset is the native currency.
+	pub asset: AssetId,
 }

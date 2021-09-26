@@ -151,9 +151,10 @@ pub mod pallet {
 			r_id: ResourceId,
 			max_edges: u32,
 			tree_depth: u8,
+			asset: pallet_anchor::AssetIdOf<T>,
 		) -> DispatchResultWithPostInfo {
 			Self::ensure_bridge_origin(origin)?;
-			Self::create_anchor(src_chain_id, r_id, max_edges, tree_depth)
+			Self::create_anchor(src_chain_id, r_id, max_edges, tree_depth, asset)
 		}
 
 		/// This will be called by bridge when proposal to add/update edge of an
@@ -181,12 +182,13 @@ impl<T: Config> Pallet<T> {
 		r_id: ResourceId,
 		max_edges: u32,
 		tree_depth: u8,
+		asset: pallet_anchor::AssetIdOf<T>,
 	) -> DispatchResultWithPostInfo {
 		ensure!(
 			!AnchorHandlers::<T>::contains_key(r_id),
 			Error::<T>::ResourceIsAlreadyAnchored
 		);
-		let tree_id = T::Anchor::create(T::AccountId::default(), tree_depth, max_edges)?;
+		let tree_id = T::Anchor::create(T::AccountId::default(), tree_depth, max_edges, asset)?;
 		AnchorHandlers::<T>::insert(r_id, tree_id);
 		Counts::<T>::insert(src_chain_id, 0);
 		Self::deposit_event(Event::AnchorCreated);
