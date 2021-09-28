@@ -45,8 +45,8 @@
 pub mod mock;
 #[cfg(test)]
 mod tests;
+pub mod types;
 pub mod utils;
-
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
@@ -55,7 +55,6 @@ use frame_system::{self as system, ensure_root};
 use sp_runtime::traits::{AccountIdConversion, Dispatchable};
 use sp_std::prelude::*;
 
-pub mod types;
 use crate::types::{DepositNonce, ProposalStatus, ProposalVotes, ResourceId};
 
 pub use pallet::*;
@@ -103,22 +102,22 @@ pub mod pallet {
 	/// The parameter maintainer who can change the parameters
 	#[pallet::storage]
 	#[pallet::getter(fn maintainer)]
-	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
+	pub type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
 
 	/// All whitelisted chains and their respective transaction counts
 	#[pallet::storage]
 	#[pallet::getter(fn chains)]
-	pub(super) type ChainNonces<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, T::ChainId, DepositNonce>;
+	pub type ChainNonces<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, T::ChainId, DepositNonce>;
 
 	#[pallet::type_value]
-	pub(super) fn DefaultForRelayerThreshold() -> u32 {
+	pub fn DefaultForRelayerThreshold() -> u32 {
 		DARKWEBB_DEFAULT_RELAYER_THRESHOLD
 	}
 
 	/// Number of votes required for a proposal to execute
 	#[pallet::storage]
 	#[pallet::getter(fn relayer_threshold)]
-	pub(super) type RelayerThreshold<T: Config<I>, I: 'static = ()> =
+	pub type RelayerThreshold<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, u32, ValueQuery, DefaultForRelayerThreshold>;
 
 	/// Tracks current relayer set
@@ -152,7 +151,7 @@ pub mod pallet {
 
 	// Pallets use events to inform users when important changes are made.
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	#[pallet::generate_deposit(pub fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// Maintainer is set
 		MaintainerSet(T::AccountId, T::AccountId),
@@ -579,8 +578,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 }
 
 /// Simple ensure origin for the bridge account
-pub struct EnsureBridge<T>(sp_std::marker::PhantomData<T>);
-impl<T: Config> EnsureOrigin<T::Origin> for EnsureBridge<T> {
+pub struct EnsureBridge<T, I>(sp_std::marker::PhantomData<T>, sp_std::marker::PhantomData<I>);
+impl<T: Config<I>, I: 'static> EnsureOrigin<T::Origin> for EnsureBridge<T, I> {
 	type Success = T::AccountId;
 
 	fn try_origin(o: T::Origin) -> Result<Self::Success, T::Origin> {

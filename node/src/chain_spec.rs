@@ -1,10 +1,7 @@
 use arkworks_gadgets::{
 	poseidon::PoseidonParameters,
 	prelude::ark_bn254::Bn254,
-	setup::{
-		common::Curve,
-		mixer::{setup_groth16_circuit_circomx5, setup_groth16_random_circuit_circomx5, setup_random_circuit_circomx5},
-	},
+	setup::{common::Curve, mixer::setup_groth16_random_circuit_circomx5},
 	utils::{
 		get_mds_poseidon_bls381_x3_5, get_mds_poseidon_bls381_x5_5, get_mds_poseidon_bn254_x3_5,
 		get_mds_poseidon_bn254_x5_5, get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_bls381_x3_5,

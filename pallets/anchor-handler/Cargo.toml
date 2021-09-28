@@ -11,16 +11,11 @@ version = "3.0.0"
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
-# alias "parity-scale-code" to "codec"
-[dependencies.codec]
-default-features = false
-features = ["derive"]
-package = "parity-scale-codec"
-version = "2.0.0"
 
 [dependencies]
 # third-party dependencies
 serde = { version = "1.0.101", optional = true }
+codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "2.2.0" }
 
 # frame dependencies
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
@@ -31,9 +26,12 @@ sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://g
 sp-io = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-core = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-arithmetic = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-pallet-mt = { path = "../mt" , default-features = false}
-pallet-anchor = { path = "../anchor" , default-features = false}
-pallet-bridge = { path = "../bridge" , default-features = false}
+pallet-mt = { path = "../mt", default-features = false }
+pallet-mixer = { path = "../mixer", default-features = false }
+pallet-anchor = { path = "../anchor", default-features = false }
+pallet-bridge = { path = "../bridge", default-features = false }
+orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
+darkwebb-primitives = { path = "../../primitives", default-features = false }
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
@@ -47,9 +45,12 @@ pallet-mt = { path = "../mt", default-features = false }
 pallet-verifier = { path = "../verifier", default-features = false }
 darkwebb-primitives = { path = "../../primitives", default-features = false }
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
+orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false }
+orml-currencies = { path = "../../open-runtime-module-library/currencies", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { version = "2.0.0", package = "substrate-wasm-builder-runner" }
+
 [features]
 default = ["std"]
 std = [
@@ -58,14 +59,15 @@ std = [
 	"sp-std/std",
 	"sp-runtime/std",
 	"sp-io/std",
-    "sp-core/std",
-    "sp-arithmetic/std",
+  "sp-core/std",
+  "sp-arithmetic/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-bridge/std",
 	"pallet-hasher/std",
-    "pallet-mt/std",
-    "pallet-mixer/std",
-    "pallet-verifier/std",
-    "darkwebb-primitives/std",
+	"pallet-mt/std",
+	"pallet-mixer/std",
+	"pallet-anchor/std",
+	"pallet-bridge/std",
+	"orml-traits/std",
+  "darkwebb-primitives/std",
 ]

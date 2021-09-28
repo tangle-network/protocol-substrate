@@ -1,9 +1,30 @@
 [profile.release]
-panic = 'unwind'
+panic = "unwind"
 
 [workspace]
 members = [
-    'node',
-    'pallets/*',
-    'runtime',
+    "node",
+    "pallets/*",
+    "runtime",
+		# "open-runtime-module-library/auction",
+		# "open-runtime-module-library/authority",
+		# "open-runtime-module-library/bencher",
+		# "open-runtime-module-library/benchmarking",
+		"open-runtime-module-library/currencies",
+		# "open-runtime-module-library/gradually-update",
+		# "open-runtime-module-library/nft",
+		# "open-runtime-module-library/oracle",
+		# "open-runtime-module-library/oracle/rpc",
+		# "open-runtime-module-library/oracle/rpc/runtime-api",
+		# "open-runtime-module-library/rewards",
+		"open-runtime-module-library/tokens",
+		"open-runtime-module-library/traits",
+		"open-runtime-module-library/utilities",
+		# "open-runtime-module-library/vesting",
+		# "open-runtime-module-library/weight-gen",
+		# "open-runtime-module-library/weight-meter",
+		# "open-runtime-module-library/xcm",
+		# "open-runtime-module-library/xtokens",
+		# "open-runtime-module-library/xcm-support",
+		# "open-runtime-module-library/unknown-tokens",
 ]

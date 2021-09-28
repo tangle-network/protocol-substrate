@@ -1,8 +1,7 @@
-use crate::{mock::*, types::UpdateRecord, AnchorHandlers, ChainId, Counts, UpdateRecords};
+use crate::{mock::*, types::UpdateRecord, AnchorHandlers, Counts, UpdateRecords};
 use frame_support::{assert_err, assert_noop, assert_ok, dispatch::DispatchError};
 use pallet_anchor::types::EdgeMetadata;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
-use pallet_mt::types::ElementTrait;
 
 const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 100;
@@ -14,13 +13,14 @@ fn make_anchor_create_proposal(src_chain_id: u32, resource_id: &[u8; 32]) -> Cal
 		r_id: *resource_id,
 		max_edges: TEST_MAX_EDGES,
 		tree_depth: TEST_TREE_DEPTH,
+		asset: NativeCurrencyId::get(),
 	})
 }
 
 fn make_anchor_update_proposal(
 	resource_id: &[u8; 32],
 	anchor_metadata: EdgeMetadata<
-		ChainId<Test>,
+		ChainId,
 		<Test as pallet_mt::Config>::Element,
 		<Test as frame_system::Config>::BlockNumber,
 	>,
@@ -47,7 +47,7 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: u32, resource_id: &[u8; 
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert_eq!(false, <pallet_mt::Trees<Test>>::contains_key(0));
-	assert_ok!(Anchor::create(Origin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH));
+	assert_ok!(Anchor::create(Origin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 	// hack: insert an entry in AnchorsList with tree-id=0
 	AnchorHandlers::<Test>::insert(resource_id, 0);
 	Counts::<Test>::insert(src_chain_id, 0);
@@ -62,7 +62,7 @@ fn relay_anchor_update_proposal(
 	src_chain_id: u32,
 	resource_id: &[u8; 32],
 	prop_id: u64,
-	edge_metadata: EdgeMetadata<ChainId<Test>, Element, <Test as frame_system::Config>::BlockNumber>,
+	edge_metadata: EdgeMetadata<ChainId, Element, <Test as frame_system::Config>::BlockNumber>,
 ) {
 	// create anchor update proposal
 	let resource = b"AnchorHandler.execute_anchor_update_proposal".to_vec();

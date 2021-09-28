@@ -1,8 +1,8 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
+use sp_std::vec::Vec;
+
 // Deposit details used in hasher / verifier pallets for
 // tracking the reserved deposits of maintainers of various
 // parameters
@@ -52,4 +52,19 @@ pub enum Backend {
 pub struct Setup {
 	pub hasher: HashFunction,
 	pub backend: Backend,
+}
+
+pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy + TypeInfo {
+	/// converts type to byte slice
+	fn to_bytes(&self) -> &[u8];
+	/// converts type to Vec
+	fn to_vec(&self) -> Vec<u8> {
+		self.to_bytes().to_vec()
+	}
+	/// converts slice to type
+	fn from_bytes(bytes: &[u8]) -> Self;
+	/// converts Vec to type
+	fn from_vec(vec: Vec<u8>) -> Self {
+		Self::from_bytes(&vec)
+	}
 }
