@@ -65,6 +65,7 @@ use sp_std::prelude::*;
 pub use pallet::*;
 
 type BalanceOf<T, I = ()> = <<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
+pub type AssetIdOf<T, I = ()> = <T as pallet_mixer::Config<I>>::AssetId;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -175,17 +176,17 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
-		pub fn create(origin: OriginFor<T>, max_edges: u32, depth: u8) -> DispatchResultWithPostInfo {
+		pub fn create(origin: OriginFor<T>, max_edges: u32, depth: u8, asset: AssetIdOf<T, I>) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id = <Self as AnchorInterface<_, _>>::create(T::AccountId::default(), depth, max_edges)?;
+			let tree_id = <Self as AnchorInterface<_, _>>::create(T::AccountId::default(), depth, max_edges, asset)?;
 			Self::deposit_event(Event::AnchorCreation(tree_id));
 			Ok(().into())
 		}
 
 		#[pallet::weight(0)]
-		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
+		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element, asset: AssetIdOf<T, I>) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			<Self as AnchorInterface<_, _>>::deposit(origin, tree_id, leaf)?;
+			<Self as AnchorInterface<_, _>>::deposit(origin, tree_id, leaf, asset)?;
 			Ok(().into())
 		}
 
@@ -216,16 +217,16 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
-	fn create(creator: T::AccountId, depth: u8, max_edges: u32) -> Result<T::TreeId, DispatchError> {
+	fn create(creator: T::AccountId, depth: u8, max_edges: u32, asset: AssetIdOf<T, I>) -> Result<T::TreeId, DispatchError> {
 		// FIXME: is that even correct?
 		let deposit_size = Zero::zero();
-		let id = T::Mixer::create(creator, deposit_size, depth)?;
+		let id = T::Mixer::create(creator, deposit_size, depth, asset)?;
 		MaxEdges::<T, I>::insert(id, max_edges);
 		Ok(id)
 	}
 
-	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {
-		T::Mixer::deposit(depositor, id, leaf)
+	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element, asset: AssetIdOf<T, I>) -> Result<(), DispatchError> {
+		T::Mixer::deposit(depositor, id, leaf, asset)
 	}
 
 	fn withdraw(
@@ -237,6 +238,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 		relayer: T::AccountId,
 		fee: BalanceOf<T, I>,
 		refund: BalanceOf<T, I>,
+		asset: AssetIdOf<T, I>,
 	) -> Result<(), DispatchError> {
 		// Check if local root is known
 		T::Mixer::ensure_known_root(id, roots[0])?;

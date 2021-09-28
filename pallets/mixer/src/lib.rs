@@ -60,6 +60,7 @@ use pallet_mt::types::{TreeInspector, TreeInterface};
 
 use darkwebb_primitives::verifier::*;
 use frame_support::traits::{Currency, ExistenceRequirement::AllowDeath, ReservableCurrency};
+use frame_support::traits::fungibles::Transfer;
 use frame_system::Config as SystemConfig;
 use sp_std::prelude::*;
 
@@ -91,6 +92,12 @@ pub mod pallet {
 
 		/// The currency mechanism.
 		type Currency: ReservableCurrency<Self::AccountId>;
+
+		/// Id of custom asset
+		type AssetId: Member + Parameter + Default + Copy;
+
+		/// Custom assets
+		type Assets: Transfer<Self::AccountId, Balance=BalanceOf<Self, I>, AssetId=Self::AssetId>;
 	}
 
 	#[pallet::storage]
@@ -102,7 +109,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn mixers)]
 	pub type Mixers<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, T::TreeId, MixerMetadata<T::AccountId, BalanceOf<T, I>>, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, T::TreeId, MixerMetadata<T::AccountId, BalanceOf<T, I>, T::AssetId>, ValueQuery>;
 
 	/// The map of trees to their spent nullifier hashes
 	#[pallet::storage]
@@ -137,9 +144,9 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
-		pub fn create(origin: OriginFor<T>, deposit_size: BalanceOf<T, I>, depth: u8) -> DispatchResultWithPostInfo {
+		pub fn create(origin: OriginFor<T>, deposit_size: BalanceOf<T, I>, depth: u8, asset: T::AssetId) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id = <Self as MixerInterface<_, _>>::create(T::AccountId::default(), deposit_size, depth)?;
+			let tree_id = <Self as MixerInterface<_, _>>::create(T::AccountId::default(), deposit_size, depth, asset)?;
 			Self::deposit_event(Event::MixerCreation(tree_id));
 			Ok(().into())
 		}
@@ -169,9 +176,9 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(0)]
-		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
+		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element, asset: T::AssetId) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			<Self as MixerInterface<_, _>>::deposit(origin, tree_id, leaf)?;
+			<Self as MixerInterface<_, _>>::deposit(origin, tree_id, leaf, asset)?;
 			Ok(().into())
 		}
 
@@ -186,6 +193,7 @@ pub mod pallet {
 			relayer: T::AccountId,
 			fee: BalanceOf<T, I>,
 			refund: BalanceOf<T, I>,
+			asset: T::AssetId,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			<Self as MixerInterface<_, _>>::withdraw(
@@ -197,6 +205,7 @@ pub mod pallet {
 				relayer,
 				fee,
 				refund,
+				asset,
 			)?;
 			Ok(().into())
 		}
@@ -204,24 +213,43 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
-	fn create(creator: T::AccountId, deposit_size: BalanceOf<T, I>, depth: u8) -> Result<T::TreeId, DispatchError> {
+	fn create(creator: T::AccountId, deposit_size: BalanceOf<T, I>, depth: u8, asset: T::AssetId) -> Result<T::TreeId, DispatchError> {
 		let id = T::Tree::create(creator.clone(), depth)?;
-		Mixers::<T, I>::insert(id, MixerMetadata { creator, deposit_size });
+		Mixers::<T, I>::insert(id, MixerMetadata { creator, deposit_size, asset });
 		Ok(id)
 	}
 
-	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {
+	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element, asset: T::AssetId) -> Result<(), DispatchError> {
 		// insert the leaf
 		T::Tree::insert_in_order(id, leaf)?;
 
 		let mixer = Self::mixers(id);
+
+		// verify the depositor has enough balance
+		let balance = Balances::free_balance(depositor);
+		let deposit_size = mixer.deposit_size;
+		ensure!(deposit_size > balance, Error::<T, I>::InsufficientBalance);
+
+		// verify that the asset mastches the AssetId of mixer
+		ensure!(asset != mixer.asset, Error::<T, I>::InvalidPermission)
+		
 		// transfer tokens to the pallet
-		<T as pallet::Config<I>>::Currency::transfer(
-			&depositor,
-			&T::AccountId::default(),
-			mixer.deposit_size,
-			AllowDeath,
-		)?;
+		if asset == Default::default() {
+			<T as pallet::Config<I>>::Currency::transfer(
+				&depositor,
+				&T::AccountId::default(),
+				deposit_size,
+				AllowDeath,
+			)?;
+		} else {
+			<T as pallet::Config<I>>::Assets::transfer(
+				asset,
+				&depositor,
+				&T::AccountId::default(),
+				mixer.deposit_size,
+				false,
+			)?;
+		}
 
 		Ok(())
 	}
@@ -235,6 +263,7 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 		relayer: T::AccountId,
 		fee: BalanceOf<T, I>,
 		refund: BalanceOf<T, I>,
+		asset: T::AssetId,
 	) -> Result<(), DispatchError> {
 		let mixer = Self::mixers(id);
 		// Check if local root is known
@@ -271,12 +300,23 @@ impl<T: Config<I>, I: 'static> MixerInterface<T, I> for Pallet<T, I> {
 		// fee.encode());
 		let result = T::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
-		<T as pallet::Config<I>>::Currency::transfer(
-			&T::AccountId::default(),
-			&recipient,
-			mixer.deposit_size,
-			AllowDeath,
-		)?;
+		if asset === Default::default() {
+			<T as pallet::Config<I>>::Currency::transfer(
+				&T::AccountId::default(),
+				&recipient,
+				mixer.deposit_size,
+				AllowDeath,
+			)?;
+		} else {
+			<T as pallet::Config<I>>::Assets::transfer(
+				asset,
+				&T::AccountId::default(),
+				&recipient,
+				mixer.deposit_size,
+				false,
+			)?;
+		}
+		
 		Ok(())
 	}
 

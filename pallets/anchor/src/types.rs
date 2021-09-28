@@ -7,9 +7,9 @@ use scale_info::TypeInfo;
 /// Anchor trait definition to be used in other pallets
 pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
 	// Creates a new anchor
-	fn create(creator: T::AccountId, depth: u8, max_edges: u32) -> Result<T::TreeId, dispatch::DispatchError>;
+	fn create(creator: T::AccountId, depth: u8, max_edges: u32, asset: AssetIdOf<T, I>) -> Result<T::TreeId, dispatch::DispatchError>;
 	/// Deposit into the anchor
-	fn deposit(account: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), dispatch::DispatchError>;
+	fn deposit(account: T::AccountId, id: T::TreeId, leaf: T::Element, asset: AssetIdOf<T, I>) -> Result<(), dispatch::DispatchError>;
 	/// Withdraw from the anchor
 	fn withdraw(
 		id: T::TreeId,
@@ -20,6 +20,7 @@ pub trait AnchorInterface<T: Config<I>, I: 'static = ()> {
 		relayer: T::AccountId,
 		fee: BalanceOf<T, I>,
 		refund: BalanceOf<T, I>,
+		asset: AssetIdOf<T, I>, 
 	) -> Result<(), dispatch::DispatchError>;
 	/// Add an edge to this anchor
 	fn add_edge(
