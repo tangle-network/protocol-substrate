@@ -29,7 +29,6 @@ pallet-hasher = { path = "../pallets/hasher", default-features = false }
 pallet-verifier = { path = "../pallets/verifier", default-features = false }
 pallet-mt = { path = "../pallets/mt", default-features = false }
 pallet-mixer = { path = "../pallets/mixer", default-features = false }
-pallet-assets = { path = "../pallets/assets", default-features = false }
 darkwebb-primitives = { path = "../primitives", default-features = false, features = ["hashing"] }
 
 # Substrate dependencies
@@ -48,6 +47,7 @@ pallet-sudo = { default-features = false, version = "4.0.0-dev", git = "https://
 pallet-timestamp = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-transaction-payment = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-transaction-payment-rpc-runtime-api = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-assets = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-api = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-block-builder = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-consensus-aura = { default-features = false, version = "0.10.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
