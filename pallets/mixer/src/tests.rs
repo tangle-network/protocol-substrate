@@ -49,10 +49,12 @@ fn should_be_able_to_deposit() {
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let account_id = 1;
 		let leaf = Element::from_bytes(&[1u8; 32]);
+		let asset_id = 2; // pallet-asset id
+		
 		// check the balance before the deposit.
 		let balance_before = Balances::free_balance(account_id);
 		// and we do the deposit
-		assert_ok!(Mixer::deposit(Origin::signed(account_id), tree_id, leaf));
+		assert_ok!(Mixer::deposit(Origin::signed(account_id), tree_id, leaf, asset_id));
 		// now we check the balance after the deposit.
 		let balance_after = Balances::free_balance(account_id);
 		// the balance should be less now with `deposit_size`
@@ -91,7 +93,8 @@ fn mixer_works() {
 		<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 		// now let's create the mixer.
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30));
+		let asset_id = 3;
+		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, asset_id));
 		// now with mixer created, we should setup the circuit.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let sender_account_id = 1;
@@ -108,7 +111,12 @@ fn mixer_works() {
 		let (leaf_private, leaf, nullifier_hash) = setup_leaf_circomx5(&params5, &mut rng);
 		let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_le());
 		let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
-		assert_ok!(Mixer::deposit(Origin::signed(sender_account_id), tree_id, leaf_element));
+		assert_ok!(Mixer::deposit(
+			Origin::signed(sender_account_id),
+			tree_id,
+			leaf_element,
+			asset_id
+		));
 		// check the balance before the withdraw.
 		let balance_before = Balances::free_balance(recipient_account_id);
 
@@ -139,6 +147,7 @@ fn mixer_works() {
 			relayer_account_id,
 			fee_value,
 			refund_value,
+			asset_id
 		));
 		// now we check the recipient balance again.
 		let balance_after = Balances::free_balance(recipient_account_id);
