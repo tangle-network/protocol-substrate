@@ -29,6 +29,7 @@ pallet-hasher = { path = "../pallets/hasher", default-features = false }
 pallet-verifier = { path = "../pallets/verifier", default-features = false }
 pallet-mt = { path = "../pallets/mt", default-features = false }
 pallet-mixer = { path = "../pallets/mixer", default-features = false }
+pallet-assets = { path = "../pallets/assets", default-features = false }
 darkwebb-primitives = { path = "../primitives", default-features = false, features = ["hashing"] }
 
 # Substrate dependencies
@@ -69,6 +70,7 @@ runtime-benchmarks = [
     "frame-system/runtime-benchmarks",
     "pallet-balances/runtime-benchmarks",
     "pallet-timestamp/runtime-benchmarks",
+    "pallet-assets/runtime-benchmarks",
     "sp-runtime/runtime-benchmarks",
 ]
 std = [
@@ -99,5 +101,6 @@ std = [
     "sp-version/std",
 
     "pallet-hasher/std",
+    "pallet-assets/std",
     "darkwebb-primitives/std",
 ]
