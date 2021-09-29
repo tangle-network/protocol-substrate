@@ -11,8 +11,8 @@ use arkworks_gadgets::{
 	},
 	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
 };
+use darkwebb_primitives::{merkle_tree::TreeInspector, ElementTrait};
 use frame_support::{assert_ok, traits::OnInitialize};
-use pallet_mt::types::{ElementTrait, TreeInspector};
 use sp_runtime::traits::One;
 
 use crate::mock::*;
@@ -33,7 +33,7 @@ fn should_create_new_mixer() {
 		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
 		// then the merkle tree.
 		<MerkleTree as OnInitialize<u64>>::on_initialize(1);
-		assert_ok!(Mixer::create(Origin::root(), One::one(), 3));
+		assert_ok!(Mixer::create(Origin::root(), One::one(), 3, 0));
 	});
 }
 
@@ -45,7 +45,7 @@ fn should_be_able_to_deposit() {
 		// then the merkle tree.
 		<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 3));
+		assert_ok!(Mixer::create(Origin::root(), deposit_size, 3, 0));
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let account_id = 1;
 		let leaf = Element::from_bytes(&[1u8; 32]);
@@ -66,7 +66,7 @@ fn should_be_able_to_deposit() {
 #[test]
 fn should_be_able_to_change_the_maintainer() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(Mixer::create(Origin::root(), One::one(), 3));
+		assert_ok!(Mixer::create(Origin::root(), One::one(), 3, 0));
 		let default_maintainer_account_id = 0;
 		let current_maintainer_account_id = Mixer::maintainer();
 		assert_eq!(current_maintainer_account_id, default_maintainer_account_id);
@@ -79,6 +79,8 @@ fn should_be_able_to_change_the_maintainer() {
 
 #[test]
 fn mixer_works() {
+	use std::fs;
+
 	new_test_ext().execute_with(|| {
 		type Bn254Fr = ark_bn254::Fr;
 		let mut rng = ark_std::test_rng();
@@ -91,7 +93,7 @@ fn mixer_works() {
 		<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 		// now let's create the mixer.
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30));
+		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
 		// now with mixer created, we should setup the circuit.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let sender_account_id = 1;
@@ -108,7 +110,7 @@ fn mixer_works() {
 		let (leaf_private, leaf, nullifier_hash) = setup_leaf_circomx5(&params5, &mut rng);
 		let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_le());
 		let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
-		assert_ok!(Mixer::deposit(Origin::signed(sender_account_id), tree_id, leaf_element));
+		assert_ok!(Mixer::deposit(Origin::signed(sender_account_id), tree_id, leaf_element,));
 		// check the balance before the withdraw.
 		let balance_before = Balances::free_balance(recipient_account_id);
 
@@ -122,7 +124,16 @@ fn mixer_works() {
 
 		let circuit = Circuit_Circomx5::new(arbitrary_input, leaf_private, (), params5, path, root, nullifier_hash);
 		let (pk, vk) = setup_groth16_circuit_circomx5::<_, ark_bn254::Bn254, LEN>(&mut rng, circuit.clone());
+
+		let mut proving_key_bytes = Vec::new();
+		pk.serialize(&mut proving_key_bytes).unwrap();
+		let mut verifying_key_bytes = Vec::new();
+		vk.serialize(&mut verifying_key_bytes).unwrap();
+		println!("proving_key_bytes: {:?}", proving_key_bytes);
+		println!("verifying_key_bytes: {:?}", verifying_key_bytes);
+
 		let proof = prove_groth16_circuit_circomx5::<_, ark_bn254::Bn254, LEN>(&pk, circuit, &mut rng);
+
 		let mut proof_bytes = Vec::new();
 		proof.serialize(&mut proof_bytes).unwrap();
 		// setup the vk

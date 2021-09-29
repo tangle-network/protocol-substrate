@@ -1,10 +1,7 @@
 use arkworks_gadgets::{
 	poseidon::PoseidonParameters,
 	prelude::ark_bn254::Bn254,
-	setup::{
-		common::Curve,
-		mixer::{setup_groth16_circuit_circomx5, setup_groth16_random_circuit_circomx5, setup_random_circuit_circomx5},
-	},
+	setup::{common::Curve, mixer::setup_groth16_random_circuit_circomx5},
 	utils::{
 		get_mds_poseidon_bls381_x3_5, get_mds_poseidon_bls381_x5_5, get_mds_poseidon_bn254_x3_5,
 		get_mds_poseidon_bn254_x5_5, get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_bls381_x3_5,
@@ -12,6 +9,7 @@ use arkworks_gadgets::{
 		get_rounds_poseidon_circom_bn254_x5_3,
 	},
 };
+use log;
 use node_template_runtime::{
 	AccountId, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
 	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig,
@@ -22,6 +20,7 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use std::fs;
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -53,7 +52,7 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 
 pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm binary not available".to_string())?;
-
+	log::info!("Using development configuration");
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -147,49 +146,54 @@ fn testnet_genesis(
 ) -> GenesisConfig {
 	use ark_serialize::CanonicalSerialize;
 	use ark_std::test_rng;
-
+	log::info!("Circom params");
 	let circom_params = {
 		let rounds = get_rounds_poseidon_circom_bn254_x5_3::<arkworks_gadgets::prelude::ark_bn254::Fr>();
 		let mds = get_mds_poseidon_circom_bn254_x5_3::<arkworks_gadgets::prelude::ark_bn254::Fr>();
 		PoseidonParameters::new(rounds, mds)
 	};
 
+	log::info!("BLS381 3x 5 params");
 	let bls381_3x_5_params = {
 		let rounds = get_rounds_poseidon_bls381_x3_5::<arkworks_gadgets::prelude::ark_bls12_381::Fr>();
 		let mds = get_mds_poseidon_bls381_x3_5::<arkworks_gadgets::prelude::ark_bls12_381::Fr>();
 		PoseidonParameters::new(rounds, mds)
 	};
 
+	log::info!("BLS381 5x 5 params");
 	let bls381_5x_5_params = {
 		let rounds = get_rounds_poseidon_bls381_x5_5::<arkworks_gadgets::prelude::ark_bls12_381::Fr>();
 		let mds = get_mds_poseidon_bls381_x5_5::<arkworks_gadgets::prelude::ark_bls12_381::Fr>();
 		PoseidonParameters::new(rounds, mds)
 	};
 
+	log::info!("BN254 3x 5 params");
 	let bn254_3x_5_params = {
 		let rounds = get_rounds_poseidon_bn254_x3_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
 		let mds = get_mds_poseidon_bn254_x3_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
 		PoseidonParameters::new(rounds, mds)
 	};
 
+	log::info!("BN254 5x 5 params");
 	let bn254_5x_5_params = {
 		let rounds = get_rounds_poseidon_bn254_x5_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
 		let mds = get_mds_poseidon_bn254_x5_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
 		PoseidonParameters::new(rounds, mds)
 	};
 
+	log::info!("Verifier params");
 	let verifier_params = {
 		let mut rng = test_rng();
 		pub const LEN: usize = 30;
 		let curve = Curve::Bn254;
-		let (pk, vk) = setup_groth16_random_circuit_circomx5::<_, Bn254, LEN>(&mut rng, curve);
 
-		let mut serialized = vec![0; vk.serialized_size()];
-		vk.serialize(&mut serialized[..]).unwrap();
+		// let pk_bytes = fs::read("../../fixtures/proving_key.bin").unwrap();
+		let vk_bytes = fs::read("./fixtures/verifying_key.bin").unwrap();
 
-		serialized
+		vk_bytes
 	};
 
+	log::info!("Genesis Config");
 	GenesisConfig {
 		system: SystemConfig {
 			// Add Wasm runtime to storage.

@@ -42,7 +42,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Check Build
         run: |
-          SKIP_WASM_BUILD=1 cargo check --release
+          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo check --release
       - name: Test
         run: |
-          SKIP_WASM_BUILD=1 cargo test --release
+          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo test --release

@@ -21,7 +21,7 @@ substrate-build-script-utils = "3.0.0"
 [dependencies]
 jsonrpc-core = "18.0.0"
 structopt = "0.3.8"
-
+log = "0.4.14"
 # local dependencies
 node-template-runtime = { path = "../runtime", version = "0.1.0" }
 
@@ -55,7 +55,7 @@ sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/subst
 sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"] }
+arkworks-gadgets = { version = "^0.3", features = ["default_poseidon", "r1cs"] }
 ark-std = { version = "^0.3.0" }
 ark-serialize = { version = "^0.3.0" }
 

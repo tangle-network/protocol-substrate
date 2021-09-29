@@ -54,9 +54,13 @@ mod tests;
 pub mod types;
 use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchError};
-use types::{ElementTrait, TreeInspector, TreeInterface, TreeMetadata};
+use types::TreeMetadata;
 
-use darkwebb_primitives::{hasher::*, types::DepositDetails};
+use darkwebb_primitives::{
+	hasher::*,
+	traits::merkle_tree::{TreeInspector, TreeInterface},
+	types::{DepositDetails, ElementTrait},
+};
 use frame_support::traits::{Currency, Get, ReservableCurrency};
 use frame_system::Config as SystemConfig;
 use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
@@ -237,7 +241,7 @@ pub mod pallet {
 
 			T::Currency::reserve(&origin, deposit)?;
 
-			let tree_id = <Self as TreeInterface<_, _>>::create(origin.clone(), depth)?;
+			let tree_id = <Self as TreeInterface<_, _, _>>::create(origin.clone(), depth)?;
 
 			Self::deposit_event(Event::TreeCreation(tree_id, origin));
 			Ok(().into())
@@ -255,7 +259,7 @@ pub mod pallet {
 				Error::<T, I>::ExceedsMaxLeaves
 			);
 			// insert the leaf
-			<Self as TreeInterface<_, _>>::insert_in_order(tree_id, leaf)?;
+			<Self as TreeInterface<_, _, _>>::insert_in_order(tree_id, leaf)?;
 
 			Ok(().into())
 		}
@@ -308,9 +312,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 }
 
-impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
-	type TreeId = T::TreeId;
-
+impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element> for Pallet<T, I> {
 	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, DispatchError> {
 		// Setting the next tree id
 		let tree_id = Self::next_tree_id();
@@ -381,7 +383,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T, I> for Pallet<T, I> {
 	}
 }
 
-impl<T: Config<I>, I: 'static> TreeInspector<T, I> for Pallet<T, I> {
+impl<T: Config<I>, I: 'static> TreeInspector<T::AccountId, T::TreeId, T::Element> for Pallet<T, I> {
 	fn get_root(tree_id: T::TreeId) -> Result<T::Element, DispatchError> {
 		ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T, I>::TreeDoesntExist);
 		Ok(Trees::<T, I>::get(tree_id).root)

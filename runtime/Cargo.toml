@@ -11,25 +11,26 @@ version = "0.1.0"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [build-dependencies]
-substrate-wasm-builder = "4.0.0"
-
-# alias "parity-scale-code" to "codec"
-[dependencies.codec]
-default-features = false
-features = ["derive"]
-package = "parity-scale-codec"
-version = "2.0.0"
+substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 [dependencies]
 hex-literal = { optional = true, version = "0.3.1" }
 serde = { features = ["derive"], optional = true, version = "1.0.119" }
+codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "2.2.0" }
 
 # local dependencies
 pallet-hasher = { path = "../pallets/hasher", default-features = false }
 pallet-verifier = { path = "../pallets/verifier", default-features = false }
 pallet-mt = { path = "../pallets/mt", default-features = false }
 pallet-mixer = { path = "../pallets/mixer", default-features = false }
+pallet-anchor = { path = "../pallets/anchor", default-features = false }
+pallet-bridge = { path = "../pallets/bridge", default-features = false }
+pallet-asset-registry = { path = "../pallets/asset-registry", default-features = false }
+pallet-anchor-handler = { path = "../pallets/anchor-handler", default-features = false }
 darkwebb-primitives = { path = "../primitives", default-features = false, features = ["hashing"] }
+orml-traits = { path = "../open-runtime-module-library/traits", default-features = false }
+orml-tokens = { path = "../open-runtime-module-library/tokens", default-features = false }
+orml-currencies = { path = "../open-runtime-module-library/currencies", default-features = false }
 
 # Substrate dependencies
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
@@ -98,6 +99,16 @@ std = [
     "sp-transaction-pool/std",
     "sp-version/std",
 
-    "pallet-hasher/std",
     "darkwebb-primitives/std",
+    "pallet-hasher/std",
+    "pallet-verifier/std",
+    "pallet-mt/std",
+    "pallet-mixer/std",
+    "pallet-anchor/std",
+    "pallet-bridge/std",
+    "pallet-asset-registry/std",
+    "pallet-anchor-handler/std",
+    "orml-traits/std",
+    "orml-tokens/std",
+    "orml-currencies/std",
 ]

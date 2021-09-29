@@ -7,21 +7,21 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use frame_support::{traits::Nothing, PalletId};
 use pallet_grandpa::{fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount, NumberFor, Verify},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, NumberFor},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiSignature,
+	ApplyExtrinsicResult,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types,
@@ -32,6 +32,8 @@ pub use frame_support::{
 	},
 	StorageValue,
 };
+use orml_currencies::BasicCurrencyAdapter;
+
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
@@ -40,57 +42,12 @@ pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
 use codec::{Decode, Encode};
-use pallet_mt::types::ElementTrait;
+pub use darkwebb_primitives::{runtime::*, types::ElementTrait};
 
-/// An index to a block.
-pub type BlockNumber = u32;
-
-/// Alias to 512-bit hash when used in the context of a transaction signature on
-/// the chain.
-pub type Signature = MultiSignature;
-
-/// Some way of identifying an account on the chain. We intentionally make it
-/// equivalent to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
-
-/// The type for looking up accounts. We don't expect more than 4 billion of
-/// them, but you never know...
-pub type AccountIndex = u32;
-
-/// Balance of an account.
-pub type Balance = u128;
-
-/// Index of a transaction in the chain.
-pub type Index = u32;
-
-/// A hash of some data used by the chain.
-pub type Hash = sp_core::H256;
-
-/// Digest item type.
-pub type DigestItem = generic::DigestItem<Hash>;
-
-/// Opaque types. These are used by the CLI to instantiate machinery that don't
-/// need to know the specifics of the runtime. They can then be made to be
-/// agnostic over specific formats of data like extrinsics, allowing for them to
-/// continue syncing the network through upgrades to even the core data
-/// structures.
-pub mod opaque {
-	use super::*;
-
-	pub use sp_runtime::OpaqueExtrinsic as UncheckedExtrinsic;
-
-	/// Opaque block header type.
-	pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-	/// Opaque block type.
-	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-	/// Opaque block identifier type.
-	pub type BlockId = generic::BlockId<Block>;
-
-	impl_opaque_keys! {
-		pub struct SessionKeys {
-			pub aura: Aura,
-			pub grandpa: Grandpa,
-		}
+impl_opaque_keys! {
+	pub struct SessionKeys {
+		pub aura: Aura,
+		pub grandpa: Grandpa,
 	}
 }
 
@@ -230,6 +187,7 @@ impl pallet_grandpa::Config for Runtime {
 		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::IdentificationTuple;
 	type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
 	type KeyOwnerProofSystem = ();
+	type MaxAuthorities = MaxAuthorities;
 	type WeightInfo = ();
 }
 
@@ -407,11 +365,86 @@ impl pallet_verifier::Config for Runtime {
 	type Verifier = darkwebb_primitives::verifying::ArkworksBn254Verifier;
 }
 
-impl pallet_mixer::Config for Runtime {
-	type Currency = Balances;
+impl pallet_asset_registry::Config for Runtime {
+	type AssetId = AssetId;
+	type AssetNativeLocation = ();
+	type Balance = Balance;
 	type Event = Event;
+	type NativeAssetId = NativeCurrencyId;
+	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
+	type StringLimit = RegistryStringLimit;
+	type WeightInfo = ();
+}
+
+impl orml_tokens::Config for Runtime {
+	type Amount = Amount;
+	type Balance = Balance;
+	type CurrencyId = AssetId;
+	type DustRemovalWhitelist = Nothing;
+	type Event = Event;
+	type ExistentialDeposits = AssetRegistry;
+	type MaxLocks = ();
+	type OnDust = ();
+	type WeightInfo = ();
+}
+
+impl orml_currencies::Config for Runtime {
+	type Event = Event;
+	type GetNativeCurrencyId = NativeCurrencyId;
+	type MultiCurrency = Tokens;
+	type NativeCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const MixerPalletId: PalletId = PalletId(*b"py/mixer");
+	pub const NativeCurrencyId: AssetId = 0;
+	pub const RegistryStringLimit: u32 = 10;
+}
+
+impl pallet_mixer::Config for Runtime {
+	type Currency = Currencies;
+	type Event = Event;
+	type NativeCurrencyId = NativeCurrencyId;
+	type PalletId = MixerPalletId;
 	type Tree = MerkleTree;
 	type Verifier = Verifier;
+}
+
+parameter_types! {
+	pub const HistoryLength: u32 = 30;
+}
+
+impl pallet_anchor::Config for Runtime {
+	type ChainId = ChainId;
+	type Currency = Currencies;
+	type Event = Event;
+	type HistoryLength = HistoryLength;
+	type Mixer = Mixer;
+	type Verifier = Verifier;
+}
+
+impl pallet_anchor_handler::Config for Runtime {
+	type Anchor = Anchor;
+	type BridgeOrigin = pallet_bridge::EnsureBridge<Runtime, BridgeInstance>;
+	type Event = Event;
+}
+
+parameter_types! {
+	pub const ChainIdentifier: u8 = 5;
+	pub const ProposalLifetime: BlockNumber = 50;
+	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
+}
+
+type BridgeInstance = pallet_bridge::Instance1;
+impl pallet_bridge::Config<BridgeInstance> for Runtime {
+	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type BridgeAccountId = BridgeAccountId;
+	type ChainId = ChainId;
+	type ChainIdentifier = ChainIdentifier;
+	type Event = Event;
+	type Proposal = Call;
+	type ProposalLifetime = ProposalLifetime;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously
@@ -437,9 +470,16 @@ construct_runtime!(
 		BN254Poseidon5x5Hasher: pallet_hasher::<Instance4>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		BN254CircomPoseidon3x5Hasher: pallet_hasher::<Instance5>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
+		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
+		Currencies: orml_currencies::{Pallet, Call, Event<T>},
+		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
+
 		Verifier: pallet_verifier::{Pallet, Call, Storage, Event<T>, Config<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
+		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
+		AnchorHandler: pallet_anchor_handler::{Pallet, Call, Storage, Event<T>},
+		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -449,10 +489,6 @@ pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-/// A Block signed with a Justification
-pub type SignedBlock = generic::SignedBlock<Block>;
-/// BlockId type as expected by this runtime.
-pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
 	frame_system::CheckSpecVersion<Runtime>,
@@ -469,7 +505,7 @@ pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signatu
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive =
-	frame_executive::Executive<Runtime, Block, frame_system::ChainContext<Runtime>, Runtime, AllModules>;
+	frame_executive::Executive<Runtime, Block, frame_system::ChainContext<Runtime>, Runtime, AllPallets>;
 
 impl_runtime_apis! {
 	impl sp_api::Core<Block> for Runtime {
@@ -542,13 +578,13 @@ impl_runtime_apis! {
 
 	impl sp_session::SessionKeys<Block> for Runtime {
 		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
-			opaque::SessionKeys::generate(seed)
+			SessionKeys::generate(seed)
 		}
 
 		fn decode_session_keys(
 			encoded: Vec<u8>,
 		) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
-			opaque::SessionKeys::decode_into_raw_public_keys(&encoded)
+			SessionKeys::decode_into_raw_public_keys(&encoded)
 		}
 	}
 

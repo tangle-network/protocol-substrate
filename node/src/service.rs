@@ -11,6 +11,7 @@ use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_consensus::SlotData;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use std::{sync::Arc, time::Duration};
+use log;
 
 // Our native executor instance.
 pub struct ExecutorDispatch;
@@ -69,12 +70,14 @@ pub fn new_partial(
 		})
 		.transpose()?;
 
+	log::info!("Executor");
 	let executor = NativeElseWasmExecutor::<ExecutorDispatch>::new(
 		config.wasm_method,
 		config.default_heap_pages,
 		config.max_runtime_instances,
 	);
 
+	log::info!("New full parts");
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(
 			&config,
@@ -83,6 +86,7 @@ pub fn new_partial(
 		)?;
 	let client = Arc::new(client);
 
+	log::info!("Telemetry");
 	let telemetry = telemetry.map(|(worker, telemetry)| {
 		task_manager.spawn_handle().spawn("telemetry", worker.run());
 		telemetry

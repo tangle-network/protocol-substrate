@@ -3,12 +3,14 @@
 use super::*;
 use crate as pallet_mixer;
 use codec::Decode;
+use pallet_balances::Pallet;
 use sp_core::H256;
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
-use frame_support::parameter_types;
+use darkwebb_primitives::types::ElementTrait;
+use frame_support::{parameter_types, traits::Nothing};
 use frame_system as system;
-use pallet_mt::types::ElementTrait;
+use orml_currencies::BasicCurrencyAdapter;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -16,6 +18,7 @@ use sp_runtime::{
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
+type BlockNumber = u64;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -30,6 +33,9 @@ frame_support::construct_runtime!(
 		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
+		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
+		Currencies: orml_currencies::{Pallet, Call, Event<T>},
+		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 	}
 );
 
@@ -44,7 +50,7 @@ impl system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	type BlockNumber = u64;
+	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type Call = Call;
 	type DbWeight = ();
@@ -160,9 +166,58 @@ impl pallet_verifier::Config for Test {
 	type Verifier = darkwebb_primitives::verifying::ArkworksBn254Verifier;
 }
 
-impl Config for Test {
-	type Currency = Balances;
+parameter_types! {
+	pub const NativeAssetId: AssetId = 0;
+	pub const RegistryStringLimit: u32 = 10;
+}
+
+/// Type for storing the id of an asset.
+pub type AssetId = u32;
+/// Signed version of Balance
+pub type Amount = i128;
+
+impl pallet_asset_registry::Config for Test {
+	type AssetId = AssetId;
+	type AssetNativeLocation = ();
+	type Balance = u128;
 	type Event = Event;
+	type NativeAssetId = NativeAssetId;
+	type RegistryOrigin = frame_system::EnsureRoot<u64>;
+	type StringLimit = RegistryStringLimit;
+	type WeightInfo = ();
+}
+
+/// Tokens Configurations
+impl orml_tokens::Config for Test {
+	type Amount = Amount;
+	type Balance = u128;
+	type CurrencyId = AssetId;
+	type DustRemovalWhitelist = Nothing;
+	type Event = Event;
+	type ExistentialDeposits = AssetRegistry;
+	type MaxLocks = ();
+	type OnDust = ();
+	type WeightInfo = ();
+}
+
+impl orml_currencies::Config for Test {
+	type Event = Event;
+	type GetNativeCurrencyId = NativeAssetId;
+	type MultiCurrency = Tokens;
+	type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const MixerPalletId: PalletId = PalletId(*b"py/mixer");
+	pub const NativeCurrencyId: AssetId = 0;
+}
+
+impl Config for Test {
+	type Currency = Currencies;
+	type Event = Event;
+	type NativeCurrencyId = NativeCurrencyId;
+	type PalletId = MixerPalletId;
 	type Tree = MerkleTree;
 	type Verifier = VerifierPallet;
 }
