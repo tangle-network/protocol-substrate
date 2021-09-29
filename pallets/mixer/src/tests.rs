@@ -79,6 +79,8 @@ fn should_be_able_to_change_the_maintainer() {
 
 #[test]
 fn mixer_works() {
+	use std::fs;
+
 	new_test_ext().execute_with(|| {
 		type Bn254Fr = ark_bn254::Fr;
 		let mut rng = ark_std::test_rng();
@@ -122,7 +124,16 @@ fn mixer_works() {
 
 		let circuit = Circuit_Circomx5::new(arbitrary_input, leaf_private, (), params5, path, root, nullifier_hash);
 		let (pk, vk) = setup_groth16_circuit_circomx5::<_, ark_bn254::Bn254, LEN>(&mut rng, circuit.clone());
+
+		let mut proving_key_bytes = Vec::new();
+		pk.serialize(&mut proving_key_bytes).unwrap();
+		let mut verifying_key_bytes = Vec::new();
+		vk.serialize(&mut verifying_key_bytes).unwrap();
+		println!("proving_key_bytes: {:?}", proving_key_bytes);
+		println!("verifying_key_bytes: {:?}", verifying_key_bytes);
+
 		let proof = prove_groth16_circuit_circomx5::<_, ark_bn254::Bn254, LEN>(&pk, circuit, &mut rng);
+
 		let mut proof_bytes = Vec::new();
 		proof.serialize(&mut proof_bytes).unwrap();
 		// setup the vk
