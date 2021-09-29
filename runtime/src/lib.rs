@@ -424,27 +424,28 @@ impl pallet_anchor::Config for Runtime {
 	type Verifier = Verifier;
 }
 
-// impl pallet_anchor_handler::Config for Runtime {
-// 	type Anchor = Anchor;
-// 	type BridgeOrigin = pallet_bridge::EnsureBridge<Runtime>;
-// 	type Event = Event;
-// }
+impl pallet_anchor_handler::Config for Runtime {
+	type Anchor = Anchor;
+	type BridgeOrigin = pallet_bridge::EnsureBridge<Runtime, BridgeInstance>;
+	type Event = Event;
+}
 
-// parameter_types! {
-// 	pub const ChainIdentifier: u8 = 5;
-// 	pub const ProposalLifetime: u64 = 50;
-// 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
-// }
+parameter_types! {
+	pub const ChainIdentifier: u8 = 5;
+	pub const ProposalLifetime: BlockNumber = 50;
+	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
+}
 
-// impl pallet_bridge::Config for Runtime {
-// 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
-// 	type BridgeAccountId = BridgeAccountId;
-// 	type ChainId = ChainId;
-// 	type ChainIdentifier = ChainIdentifier;
-// 	type Event = Event;
-// 	type Proposal = Call;
-// 	type ProposalLifetime = ProposalLifetime;
-// }
+type BridgeInstance = pallet_bridge::Instance1;
+impl pallet_bridge::Config<BridgeInstance> for Runtime {
+	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type BridgeAccountId = BridgeAccountId;
+	type ChainId = ChainId;
+	type ChainIdentifier = ChainIdentifier;
+	type Event = Event;
+	type Proposal = Call;
+	type ProposalLifetime = ProposalLifetime;
+}
 
 // Create the runtime by composing the FRAME pallets that were previously
 // configured.
@@ -477,8 +478,8 @@ construct_runtime!(
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
-		// AnchorHandler: pallet_anchor_handler::{Pallet, Call, Storage, Event<T>},
-		// Bridge: pallet_bridge::{Pallet, Call, Storage, Event<T>},
+		AnchorHandler: pallet_anchor_handler::{Pallet, Call, Storage, Event<T>},
+		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 	}
 );
 

@@ -47,22 +47,25 @@ pub mod mock;
 mod tests;
 pub mod types;
 pub mod utils;
+use crate::types::{DepositNonce, ProposalStatus, ProposalVotes, ResourceId};
+use codec::{Decode, Encode, EncodeLike};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
 };
 use frame_system::{self as system, ensure_root};
-use sp_runtime::traits::{AccountIdConversion, Dispatchable};
-use sp_std::prelude::*;
-
-use crate::types::{DepositNonce, ProposalStatus, ProposalVotes, ResourceId};
-
 pub use pallet::*;
+use scale_info::TypeInfo;
+use sp_runtime::{
+	traits::{AccountIdConversion, Dispatchable},
+	RuntimeDebug,
+};
+use sp_std::prelude::*;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use super::*;
 	use crate::types::{DepositNonce, ProposalVotes, ResourceId, DARKWEBB_DEFAULT_RELAYER_THRESHOLD};
-	use codec::EncodeLike;
 	use frame_support::{
 		dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
 		pallet_prelude::*,
@@ -578,6 +581,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 }
 
 /// Simple ensure origin for the bridge account
+#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo, RuntimeDebug)]
 pub struct EnsureBridge<T, I>(sp_std::marker::PhantomData<(T, I)>);
 impl<T: Config<I>, I: 'static> EnsureOrigin<T::Origin> for EnsureBridge<T, I> {
 	type Success = T::AccountId;
