@@ -59,8 +59,8 @@ std = [
 	"sp-std/std",
 	"sp-runtime/std",
 	"sp-io/std",
-  "sp-core/std",
-  "sp-arithmetic/std",
+	"sp-core/std",
+	"sp-arithmetic/std",
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-hasher/std",
@@ -69,5 +69,5 @@ std = [
 	"pallet-anchor/std",
 	"pallet-bridge/std",
 	"orml-traits/std",
-  "darkwebb-primitives/std",
+	"darkwebb-primitives/std",
 ]

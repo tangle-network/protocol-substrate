@@ -1,4 +1,4 @@
-use crate::{mock::*, types::UpdateRecord, AnchorHandlers, Counts, UpdateRecords};
+use crate::{mock::*, types::UpdateRecord, AnchorList, Counts, UpdateRecords};
 use frame_support::{assert_err, assert_noop, assert_ok, dispatch::DispatchError};
 use pallet_anchor::types::EdgeMetadata;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
@@ -49,7 +49,7 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: u32, resource_id: &[u8; 
 	assert_eq!(false, <pallet_mt::Trees<Test>>::contains_key(0));
 	assert_ok!(Anchor::create(Origin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 	// hack: insert an entry in AnchorsList with tree-id=0
-	AnchorHandlers::<Test>::insert(resource_id, 0);
+	AnchorList::<Test>::insert(resource_id, 0);
 	Counts::<Test>::insert(src_chain_id, 0);
 	// make sure Tree(with id=0) exists in `pallet_mt` storage
 	assert_eq!(true, <pallet_mt::Trees<Test>>::contains_key(0));

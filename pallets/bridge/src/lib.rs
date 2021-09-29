@@ -578,7 +578,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 }
 
 /// Simple ensure origin for the bridge account
-pub struct EnsureBridge<T, I>(sp_std::marker::PhantomData<T>, sp_std::marker::PhantomData<I>);
+pub struct EnsureBridge<T, I>(sp_std::marker::PhantomData<(T, I)>);
 impl<T: Config<I>, I: 'static> EnsureOrigin<T::Origin> for EnsureBridge<T, I> {
 	type Success = T::AccountId;
 

@@ -41,7 +41,7 @@ frame_support::construct_runtime!(
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
 		AnchorHandler: pallet_anchor_handler::{Pallet, Call, Storage, Event<T>},
-		Bridge: pallet_bridge::{Pallet, Call, Storage, Event<T>},
+		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -245,7 +245,8 @@ parameter_types! {
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
 
-impl pallet_bridge::Config for Test {
+type BridgeInstance = pallet_bridge::Instance1;
+impl pallet_bridge::Config<BridgeInstance> for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
 	type ChainId = ChainId;
@@ -257,7 +258,7 @@ impl pallet_bridge::Config for Test {
 
 impl pallet_anchor_handler::Config for Test {
 	type Anchor = Anchor;
-	type BridgeOrigin = pallet_bridge::EnsureBridge<Test>;
+	type BridgeOrigin = pallet_bridge::EnsureBridge<Test, BridgeInstance>;
 	type Event = Event;
 }
 

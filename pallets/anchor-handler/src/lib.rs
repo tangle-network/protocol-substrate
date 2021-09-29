@@ -51,11 +51,9 @@ use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::Ensure
 use frame_system::pallet_prelude::OriginFor;
 use orml_traits::MultiCurrency;
 use pallet_anchor::types::EdgeMetadata;
-
-use pallet_bridge::types::ResourceId;
 pub mod types;
+use pallet_bridge::types::ResourceId;
 use types::*;
-
 pub type BalanceOf<T, I> =
 	<<T as pallet_anchor::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
 /// Type alias for the orml_traits::MultiCurrency::CurrencyId type
@@ -81,8 +79,6 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// Specifies the origin check provided by the bridge for calls that can
-		/// only be called by the bridge pallet
 		type BridgeOrigin: EnsureOrigin<Self::Origin, Success = Self::AccountId>;
 
 		/// Anchor Interface
@@ -99,8 +95,8 @@ pub mod pallet {
 
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
-	#[pallet::getter(fn anchor_handlers)]
-	pub type AnchorHandlers<T: Config<I>, I: 'static = ()> =
+	#[pallet::getter(fn anchor_list)]
+	pub type AnchorList<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, ResourceId, T::TreeId, ValueQuery>;
 
 	#[pallet::storage]
@@ -161,7 +157,7 @@ pub mod pallet {
 			tree_depth: u8,
 			asset: CurrencyIdOf<T, I>,
 		) -> DispatchResultWithPostInfo {
-			Self::ensure_bridge_origin(origin)?;
+			T::BridgeOrigin::ensure_origin(origin)?;
 			Self::create_anchor(src_chain_id, r_id, max_edges, tree_depth, asset)
 		}
 
@@ -173,18 +169,13 @@ pub mod pallet {
 			r_id: ResourceId,
 			anchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>,
 		) -> DispatchResultWithPostInfo {
-			Self::ensure_bridge_origin(origin)?;
+			T::BridgeOrigin::ensure_origin(origin)?;
 			Self::update_anchor(r_id, anchor_metadata)
 		}
 	}
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	fn ensure_bridge_origin(origin: T::Origin) -> DispatchResultWithPostInfo {
-		T::BridgeOrigin::ensure_origin(origin)?;
-		Ok(().into())
-	}
-
 	fn create_anchor(
 		src_chain_id: T::ChainId,
 		r_id: ResourceId,
@@ -193,11 +184,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		asset: CurrencyIdOf<T, I>,
 	) -> DispatchResultWithPostInfo {
 		ensure!(
-			!AnchorHandlers::<T, I>::contains_key(r_id),
+			!AnchorList::<T, I>::contains_key(r_id),
 			Error::<T, I>::ResourceIsAlreadyAnchored
 		);
 		let tree_id = T::Anchor::create(T::AccountId::default(), tree_depth, max_edges, asset)?;
-		AnchorHandlers::<T, I>::insert(r_id, tree_id);
+		AnchorList::<T, I>::insert(r_id, tree_id);
 		Counts::<T, I>::insert(src_chain_id, 0);
 		Self::deposit_event(Event::AnchorCreated);
 		Ok(().into())
@@ -207,7 +198,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		r_id: ResourceId,
 		anchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>,
 	) -> DispatchResultWithPostInfo {
-		let tree_id = AnchorHandlers::<T, I>::try_get(r_id).map_err(|_| Error::<T, I>::AnchorHandlerNotFound)?;
+		let tree_id = AnchorList::<T, I>::try_get(r_id).map_err(|_| Error::<T, I>::AnchorHandlerNotFound)?;
 		let (src_chain_id, merkle_root, block_height) = (
 			anchor_metadata.src_chain_id,
 			anchor_metadata.root,
