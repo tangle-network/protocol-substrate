@@ -26,7 +26,7 @@ pub struct ProposalVotes<AccountId, BlockNumber> {
 impl<A: PartialEq, B: PartialOrd + Default> ProposalVotes<A, B> {
 	/// Attempts to mark the proposal as approve or rejected.
 	/// Returns true if the status changes from active.
-	pub(crate) fn try_to_complete(&mut self, threshold: u32, total: u32) -> ProposalStatus {
+	pub fn try_to_complete(&mut self, threshold: u32, total: u32) -> ProposalStatus {
 		if self.votes_for.len() >= threshold as usize {
 			self.status = ProposalStatus::Approved;
 			ProposalStatus::Approved
@@ -40,17 +40,17 @@ impl<A: PartialEq, B: PartialOrd + Default> ProposalVotes<A, B> {
 
 	/// Returns true if the proposal has been rejected or approved, otherwise
 	/// false.
-	pub(crate) fn is_complete(&self) -> bool {
+	pub fn is_complete(&self) -> bool {
 		self.status != ProposalStatus::Initiated
 	}
 
 	/// Returns true if `who` has voted for or against the proposal
-	pub(crate) fn has_voted(&self, who: &A) -> bool {
+	pub fn has_voted(&self, who: &A) -> bool {
 		self.votes_for.contains(&who) || self.votes_against.contains(&who)
 	}
 
 	/// Return true if the expiry time has been reached
-	pub(crate) fn is_expired(&self, now: B) -> bool {
+	pub fn is_expired(&self, now: B) -> bool {
 		self.expiry <= now
 	}
 }

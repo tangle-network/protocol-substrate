@@ -23,12 +23,19 @@ static_assertions = "1.1.0"
 smallvec = "1.6.1"
 
 # local dependencies
+darkwebb-primitives = { path = "../../primitives", default-features = false, features = ["hashing"] }
+common = { path = "../../common", default-features = false }
 pallet-hasher = { path = "../../pallets/hasher", default-features = false }
 pallet-verifier = { path = "../../pallets/verifier", default-features = false }
 pallet-mt = { path = "../../pallets/mt", default-features = false }
 pallet-mixer = { path = "../../pallets/mixer", default-features = false }
-darkwebb-primitives = { path = "../../primitives", default-features = false, features = ["hashing"] }
-common = { path = "../../common", default-features = false }
+pallet-anchor = { path = "../../pallets/anchor", default-features = false }
+pallet-bridge = { path = "../../pallets/bridge", default-features = false }
+pallet-asset-registry = { path = "../../pallets/asset-registry", default-features = false }
+pallet-anchor-handler = { path = "../../pallets/anchor-handler", default-features = false }
+orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
+orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false }
+orml-currencies = { path = "../../open-runtime-module-library/currencies", default-features = false }
 
 # Substrate dependencies
 sp-authority-discovery = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }

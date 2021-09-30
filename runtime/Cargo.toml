@@ -26,7 +26,14 @@ pallet-hasher = { path = "../pallets/hasher", default-features = false }
 pallet-verifier = { path = "../pallets/verifier", default-features = false }
 pallet-mt = { path = "../pallets/mt", default-features = false }
 pallet-mixer = { path = "../pallets/mixer", default-features = false }
+pallet-anchor = { path = "../pallets/anchor", default-features = false }
+pallet-bridge = { path = "../pallets/bridge", default-features = false }
+pallet-asset-registry = { path = "../pallets/asset-registry", default-features = false }
+pallet-anchor-handler = { path = "../pallets/anchor-handler", default-features = false }
 darkwebb-primitives = { path = "../primitives", default-features = false, features = ["hashing"] }
+orml-traits = { path = "../open-runtime-module-library/traits", default-features = false }
+orml-tokens = { path = "../open-runtime-module-library/tokens", default-features = false }
+orml-currencies = { path = "../open-runtime-module-library/currencies", default-features = false }
 
 # Substrate dependencies
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -144,7 +151,6 @@ std = [
 	"xcm-executor/std",
 	"sp-consensus-aura/std",
 
-    "pallet-hasher/std",
     "darkwebb-primitives/std",
     "common/std",
 ]

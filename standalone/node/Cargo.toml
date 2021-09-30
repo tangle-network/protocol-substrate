@@ -27,6 +27,7 @@ serde = { version = "1.0.101", features = ["derive"] }
 hex-literal = "0.2.1"
 async-trait = "0.1.42"
 rand = "0.7.2"
+itertools = "0.10.0"
 
 # Standalone runtimes
 darkwebb-runtime = { package = "darkwebb-standalone-runtime", path = "../runtime", version = "0.1.0" }

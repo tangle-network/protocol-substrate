@@ -19,11 +19,6 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 
-use sp_std::prelude::*;
-#[cfg(feature = "std")]
-use sp_version::NativeVersion;
-use sp_version::RuntimeVersion;
-
 use codec::{Decode, Encode, MaxEncodedLen};
 use common::{
 	impls::DealWithFees, opaque, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
@@ -43,6 +38,10 @@ use frame_system::{
 	EnsureOneOf, EnsureRoot,
 };
 use sp_runtime::Perbill;
+use sp_std::prelude::*;
+#[cfg(feature = "std")]
+use sp_version::NativeVersion;
+use sp_version::RuntimeVersion;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -60,7 +59,9 @@ use xcm_builder::{
 };
 use xcm_executor::{Config, XcmExecutor};
 
-use pallet_mt::types::ElementTrait;
+use darkwebb_primitives::{types::ElementTrait, Amount, ChainId};
+use frame_support::traits::Nothing;
+use orml_currencies::BasicCurrencyAdapter;
 
 impl_opaque_keys! {
 	pub struct SessionKeys {
@@ -737,11 +738,86 @@ impl pallet_verifier::Config for Runtime {
 	type Verifier = darkwebb_primitives::verifying::ArkworksBn254Verifier;
 }
 
-impl pallet_mixer::Config for Runtime {
-	type Currency = Balances;
+impl pallet_asset_registry::Config for Runtime {
+	type AssetId = darkwebb_primitives::AssetId;
+	type AssetNativeLocation = ();
+	type Balance = Balance;
 	type Event = Event;
+	type NativeAssetId = NativeCurrencyId;
+	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
+	type StringLimit = RegistryStringLimit;
+	type WeightInfo = ();
+}
+
+impl orml_tokens::Config for Runtime {
+	type Amount = Amount;
+	type Balance = Balance;
+	type CurrencyId = darkwebb_primitives::AssetId;
+	type DustRemovalWhitelist = Nothing;
+	type Event = Event;
+	type ExistentialDeposits = AssetRegistry;
+	type MaxLocks = ();
+	type OnDust = ();
+	type WeightInfo = ();
+}
+
+impl orml_currencies::Config for Runtime {
+	type Event = Event;
+	type GetNativeCurrencyId = NativeCurrencyId;
+	type MultiCurrency = Tokens;
+	type NativeCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const MixerPalletId: PalletId = PalletId(*b"py/mixer");
+	pub const NativeCurrencyId: u32 = 0;
+	pub const RegistryStringLimit: u32 = 10;
+}
+
+impl pallet_mixer::Config for Runtime {
+	type Currency = Currencies;
+	type Event = Event;
+	type NativeCurrencyId = NativeCurrencyId;
+	type PalletId = MixerPalletId;
 	type Tree = MerkleTree;
 	type Verifier = Verifier;
+}
+
+parameter_types! {
+	pub const HistoryLength: u32 = 30;
+}
+
+impl pallet_anchor::Config for Runtime {
+	type ChainId = ChainId;
+	type Currency = Currencies;
+	type Event = Event;
+	type HistoryLength = HistoryLength;
+	type Mixer = Mixer;
+	type Verifier = Verifier;
+}
+
+impl pallet_anchor_handler::Config for Runtime {
+	type Anchor = Anchor;
+	type BridgeOrigin = pallet_bridge::EnsureBridge<Runtime, BridgeInstance>;
+	type Event = Event;
+}
+
+parameter_types! {
+	pub const ChainIdentifier: u8 = 5;
+	pub const ProposalLifetime: BlockNumber = 50;
+	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
+}
+
+type BridgeInstance = pallet_bridge::Instance1;
+impl pallet_bridge::Config<BridgeInstance> for Runtime {
+	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type BridgeAccountId = BridgeAccountId;
+	type ChainId = ChainId;
+	type ChainIdentifier = ChainIdentifier;
+	type Event = Event;
+	type Proposal = Call;
+	type ProposalLifetime = ProposalLifetime;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously
@@ -793,10 +869,17 @@ construct_runtime!(
 		BN254Poseidon5x5Hasher: pallet_hasher::<Instance4>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		BN254CircomPoseidon3x5Hasher: pallet_hasher::<Instance5>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
+		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
+		Currencies: orml_currencies::{Pallet, Call, Event<T>},
+		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
+
 		Verifier: pallet_verifier::{Pallet, Call, Storage, Event<T>, Config<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 
+		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
+		AnchorHandler: pallet_anchor_handler::{Pallet, Call, Storage, Event<T>},
+		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -804,10 +887,6 @@ construct_runtime!(
 pub type Address = sp_runtime::MultiAddress<AccountId, ()>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-/// A Block signed with a Justification
-pub type SignedBlock = generic::SignedBlock<Block>;
-/// BlockId type as expected by this runtime.
-pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
 	frame_system::CheckSpecVersion<Runtime>,

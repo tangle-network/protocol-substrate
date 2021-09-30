@@ -156,6 +156,7 @@ where
 		config.max_runtime_instances,
 	);
 
+	log::info!("New full parts");
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(
 			&config,

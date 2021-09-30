@@ -12,6 +12,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+
 frame-support = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 frame-system = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
@@ -20,6 +21,10 @@ pallet-hasher = { path = "../hasher", default-features = false }
 pallet-mt = { path = "../mt", default-features = false }
 pallet-verifier = { path = "../verifier", default-features = false }
 darkwebb-primitives = { path = "../../primitives", features = ["verifying"], default-features = false }
+orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
+orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false }
+orml-currencies = { path = "../../open-runtime-module-library/currencies", default-features = false }
+pallet-asset-registry = { path = "../asset-registry", default-features = false }
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
@@ -44,6 +49,9 @@ std = [
     "codec/std",
     "frame-support/std",
     "frame-system/std",
+    "orml-traits/std",
+    "orml-tokens/std",
+    "orml-currencies/std",
     "sp-runtime/std",
     "sp-std/std",
     "pallet-hasher/std",

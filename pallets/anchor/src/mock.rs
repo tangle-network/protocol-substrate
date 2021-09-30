@@ -1,10 +1,16 @@
 use super::*;
 use crate as pallet_anchor;
+use codec::{Decode, Encode, Input};
+use orml_traits::parameter_type_with_key;
 use sp_core::H256;
 
-pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
-use frame_support::parameter_types;
+pub use darkwebb_primitives::{
+	hasher::{HasherModule, InstanceHasher},
+	types::ElementTrait,
+};
+use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
+use orml_currencies::BasicCurrencyAdapter;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -12,6 +18,16 @@ use sp_runtime::{
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
+
+pub type AccountId = u64;
+pub type Balance = u128;
+
+pub type BlockNumber = u64;
+/// Type for storing the id of an asset.
+pub type AssetId = u32;
+/// Signed version of Balance
+pub type Amount = i128;
+pub type CurrencyId = u32;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -25,6 +41,8 @@ frame_support::construct_runtime!(
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
 		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
 		MT: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		Currencies: orml_currencies::{Pallet, Call, Event<T>},
+		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
 	}
@@ -36,12 +54,12 @@ parameter_types! {
 }
 
 impl system::Config for Test {
-	type AccountData = pallet_balances::AccountData<u64>;
-	type AccountId = u64;
+	type AccountData = pallet_balances::AccountData<Balance>;
+	type AccountId = AccountId;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
-	type BlockNumber = u64;
+	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
 	type Call = Call;
 	type DbWeight = ();
@@ -67,7 +85,7 @@ parameter_types! {
 
 impl pallet_balances::Config for Test {
 	type AccountStore = System;
-	type Balance = u64;
+	type Balance = Balance;
 	type DustRemoval = ();
 	type Event = Event;
 	type ExistentialDeposit = ExistentialDeposit;
@@ -95,6 +113,13 @@ impl pallet_verifier::Config for Test {
 	type Verifier = darkwebb_primitives::verifying::ArkworksBls381Verifier;
 }
 
+pub struct TestHasher;
+impl InstanceHasher for TestHasher {
+	fn hash(data: &[u8], _params: &[u8]) -> Result<Vec<u8>, ark_crypto_primitives::Error> {
+		return Ok(data.to_vec());
+	}
+}
+
 impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
@@ -113,6 +138,13 @@ parameter_types! {
 	pub const Two: u64 = 2;
 	pub const MaxTreeDepth: u8 = 255;
 	pub const RootHistorySize: u32 = 1096;
+	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
+	pub const DefaultZeroElement: Element = Element([
+		047, 229, 076, 096, 211, 172, 171, 243,
+		052, 058, 053, 182, 235, 161, 093, 180,
+		130, 027, 052, 015, 118, 231, 065, 226,
+		036, 150, 133, 237, 072, 153, 175, 108,
+	]);
 }
 
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
@@ -133,6 +165,7 @@ impl pallet_mt::Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
+	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
@@ -147,22 +180,58 @@ impl pallet_mt::Config for Test {
 	type Two = Two;
 }
 
-impl pallet_mixer::Config for Test {
-	type Currency = Balances;
+parameter_types! {
+	pub const NativeCurrencyId: AssetId = 0;
+	pub const RegistryStringLimit: u32 = 10;
+}
+
+parameter_type_with_key! {
+	pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
+		Default::default()
+	};
+}
+
+/// Tokens Configurations
+impl orml_tokens::Config for Test {
+	type Amount = Amount;
+	type Balance = u128;
+	type CurrencyId = AssetId;
+	type DustRemovalWhitelist = Nothing;
 	type Event = Event;
+	type ExistentialDeposits = ExistentialDeposits;
+	type MaxLocks = ();
+	type OnDust = ();
+	type WeightInfo = ();
+}
+
+impl orml_currencies::Config for Test {
+	type Event = Event;
+	type GetNativeCurrencyId = NativeCurrencyId;
+	type MultiCurrency = Tokens;
+	type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const MixerPalletId: PalletId = PalletId(*b"py/mixer");
+}
+
+impl pallet_mixer::Config for Test {
+	type Currency = Currencies;
+	type Event = Event;
+	type NativeCurrencyId = NativeCurrencyId;
+	type PalletId = MixerPalletId;
 	type Tree = MT;
+	type Verifier = VerifierPallet;
 }
 
 parameter_types! {
 	pub const HistoryLength: u32 = 30;
-	pub const StringLimit: u32 = 50;
-	pub const MetadataDepositBase: u64 = 1;
-	pub const MetadataDepositPerByte: u64 = 1;
 }
 
 impl pallet_anchor::Config for Test {
 	type ChainId = u32;
-	type Currency = Balances;
+	type Currency = Currencies;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;

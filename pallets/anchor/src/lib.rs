@@ -45,26 +45,33 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// #[cfg(test)]
-// pub mod mock;
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+pub mod mock;
+#[cfg(test)]
+mod tests;
 
 pub mod types;
 use codec::{Decode, Encode};
+use darkwebb_primitives::{
+	anchor::{AnchorInspector, AnchorInterface},
+	mixer::{MixerInspector, MixerInterface},
+};
 use frame_support::{ensure, pallet_prelude::DispatchError};
-use pallet_mixer::types::{MixerInspector, MixerInterface};
 use types::*;
 
 use darkwebb_primitives::verifier::*;
-use frame_support::traits::{Currency, Get, ReservableCurrency};
-use frame_system::Config as SystemConfig;
+use frame_support::traits::Get;
+use orml_traits::MultiCurrency;
 use sp_runtime::traits::{AtLeast32Bit, One, Zero};
 use sp_std::prelude::*;
 
 pub use pallet::*;
 
-type BalanceOf<T, I = ()> = <<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
+pub type BalanceOf<T, I> =
+	<<T as Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
+/// Type alias for the orml_traits::MultiCurrency::CurrencyId type
+pub type CurrencyIdOf<T, I> =
+	<<T as Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -86,13 +93,14 @@ pub mod pallet {
 		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 
 		/// The mixer type
-		type Mixer: MixerInterface<Self, I> + MixerInspector<Self, I>;
+		type Mixer: MixerInterface<Self::AccountId, BalanceOf<Self, I>, CurrencyIdOf<Self, I>, Self::TreeId, Self::Element>
+			+ MixerInspector<Self::AccountId, CurrencyIdOf<Self, I>, Self::TreeId, Self::Element>;
 
 		/// The verifier
 		type Verifier: VerifierModule;
 
-		/// The currency mechanism.
-		type Currency: ReservableCurrency<Self::AccountId>;
+		/// Currency type for taking deposits
+		type Currency: MultiCurrency<Self::AccountId>;
 
 		/// The pruning length for neighbor root histories
 		type HistoryLength: Get<Self::RootIndex>;
@@ -175,9 +183,19 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
-		pub fn create(origin: OriginFor<T>, max_edges: u32, depth: u8) -> DispatchResultWithPostInfo {
+		pub fn create(
+			origin: OriginFor<T>,
+			max_edges: u32,
+			depth: u8,
+			asset: CurrencyIdOf<T, I>,
+		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id = <Self as AnchorInterface<_, _>>::create(T::AccountId::default(), depth, max_edges)?;
+			let tree_id = <Self as AnchorInterface<_, _, _, _, _, _, _>>::create(
+				T::AccountId::default(),
+				depth,
+				max_edges,
+				asset,
+			)?;
 			Self::deposit_event(Event::AnchorCreation(tree_id));
 			Ok(().into())
 		}
@@ -185,7 +203,7 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			<Self as AnchorInterface<_, _>>::deposit(origin, tree_id, leaf)?;
+			<Self as AnchorInterface<_, _, _, _, _, _, _>>::deposit(origin, tree_id, leaf)?;
 			Ok(().into())
 		}
 
@@ -215,11 +233,26 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
-	fn create(creator: T::AccountId, depth: u8, max_edges: u32) -> Result<T::TreeId, DispatchError> {
+impl<T: Config<I>, I: 'static>
+	AnchorInterface<
+		T::BlockNumber,
+		T::AccountId,
+		BalanceOf<T, I>,
+		CurrencyIdOf<T, I>,
+		T::ChainId,
+		T::TreeId,
+		T::Element,
+	> for Pallet<T, I>
+{
+	fn create(
+		creator: T::AccountId,
+		depth: u8,
+		max_edges: u32,
+		asset: CurrencyIdOf<T, I>,
+	) -> Result<T::TreeId, DispatchError> {
 		// FIXME: is that even correct?
 		let deposit_size = Zero::zero();
-		let id = T::Mixer::create(creator, deposit_size, depth)?;
+		let id = T::Mixer::create(creator, deposit_size, depth, asset.into())?;
 		MaxEdges::<T, I>::insert(id, max_edges);
 		Ok(id)
 	}
@@ -242,7 +275,11 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 		T::Mixer::ensure_known_root(id, roots[0])?;
 		if roots.len() > 1 {
 			for i in 1..roots.len() {
-				<Self as AnchorInspector<_, _>>::ensure_known_neighbor_root(id, T::ChainId::from(i as u32), roots[i])?;
+				<Self as AnchorInspector<_, _, _, _, _>>::ensure_known_neighbor_root(
+					id,
+					T::ChainId::from(i as u32),
+					roots[i],
+				)?;
 			}
 		}
 
@@ -329,7 +366,9 @@ impl<T: Config<I>, I: 'static> AnchorInterface<T, I> for Pallet<T, I> {
 	}
 }
 
-impl<T: Config<I>, I: 'static> AnchorInspector<T, I> for Pallet<T, I> {
+impl<T: Config<I>, I: 'static> AnchorInspector<T::AccountId, CurrencyIdOf<T, I>, T::ChainId, T::TreeId, T::Element>
+	for Pallet<T, I>
+{
 	fn get_neighbor_roots(_tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
 		Ok(vec![T::Element::default()])
 	}
@@ -344,5 +383,15 @@ impl<T: Config<I>, I: 'static> AnchorInspector<T, I> for Pallet<T, I> {
 
 	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
 		EdgeList::<T, I>::contains_key(id, src_chain_id)
+	}
+
+	fn ensure_known_neighbor_root(
+		id: T::TreeId,
+		src_chain_id: T::ChainId,
+		target: T::Element,
+	) -> Result<(), DispatchError> {
+		let is_known = Self::is_known_neighbor_root(id, src_chain_id, target)?;
+		ensure!(is_known, Error::<T, I>::InvalidNeighborWithdrawRoot);
+		Ok(())
 	}
 }

@@ -46,76 +46,81 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
-use frame_support::{
-	dispatch::DispatchResultWithPostInfo,
-	ensure,
-	traits::{Currency, EnsureOrigin},
-};
+use darkwebb_primitives::traits::anchor::{AnchorInspector, AnchorInterface};
+use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;
-pub use pallet::*;
-use pallet_anchor::types::{AnchorInspector, AnchorInterface, EdgeMetadata};
-
-use pallet_bridge::types::ResourceId;
+use orml_traits::MultiCurrency;
+use pallet_anchor::types::EdgeMetadata;
 pub mod types;
+use pallet_bridge::types::ResourceId;
 use types::*;
+pub type BalanceOf<T, I> =
+	<<T as pallet_anchor::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
+/// Type alias for the orml_traits::MultiCurrency::CurrencyId type
+pub type CurrencyIdOf<T, I> =
+	<<T as pallet_anchor::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
 
-// ChainId is available in both bridge and anchor pallet
-type ChainId<T> = <T as pallet_anchor::Config>::ChainId;
+pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use pallet_anchor::types::{AnchorInspector, EdgeMetadata};
+	use pallet_anchor::types::EdgeMetadata;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
-	pub struct Pallet<T>(PhantomData<T>);
+	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
 	/// The module configuration trait.
-	pub trait Config: frame_system::Config + pallet_anchor::Config + pallet_bridge::Config {
+	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_anchor::Config<I> {
 		/// The overarching event type.
-		type Event: IsType<<Self as frame_system::Config>::Event> + From<Event<Self>>;
+		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// Specifies the origin check provided by the bridge for calls that can
-		/// only be called by the bridge pallet
 		type BridgeOrigin: EnsureOrigin<Self::Origin, Success = Self::AccountId>;
 
-		/// The currency mechanism.
-		type Currency: Currency<Self::AccountId>;
-
 		/// Anchor Interface
-		type Anchor: AnchorInterface<Self> + AnchorInspector<Self>;
+		type Anchor: AnchorInterface<
+				Self::BlockNumber,
+				Self::AccountId,
+				BalanceOf<Self, I>,
+				CurrencyIdOf<Self, I>,
+				Self::ChainId,
+				Self::TreeId,
+				Self::Element,
+			> + AnchorInspector<Self::AccountId, CurrencyIdOf<Self, I>, Self::ChainId, Self::TreeId, Self::Element>;
 	}
 
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
-	#[pallet::getter(fn anchor_handlers)]
-	pub type AnchorHandlers<T: Config> = StorageMap<_, Blake2_128Concat, ResourceId, T::TreeId, ValueQuery>;
+	#[pallet::getter(fn anchor_list)]
+	pub type AnchorList<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, ResourceId, T::TreeId, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn update_records)]
 	/// sourceChainID => nonce => Update Record
-	pub type UpdateRecords<T: Config> = StorageDoubleMap<
+	pub type UpdateRecords<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		ChainId<T>,
+		T::ChainId,
 		Blake2_128Concat,
 		u64,
-		UpdateRecord<T::TreeId, ResourceId, ChainId<T>, T::Element, T::BlockNumber>,
+		UpdateRecord<T::TreeId, ResourceId, T::ChainId, T::Element, T::BlockNumber>,
 		ValueQuery,
 	>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn counts)]
 	/// The number of updates
-	pub(super) type Counts<T: Config> = StorageMap<_, Blake2_128Concat, ChainId<T>, u64, ValueQuery>;
+	pub(super) type Counts<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::ChainId, u64, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
+	pub enum Event<T: Config<I>, I: 'static = ()> {
 		MaintainerSet(T::AccountId, T::AccountId),
 		AnchorCreated,
 		AnchorEdgeAdded,
@@ -123,7 +128,7 @@ pub mod pallet {
 	}
 
 	#[pallet::error]
-	pub enum Error<T> {
+	pub enum Error<T, I = ()> {
 		/// Access violation.
 		InvalidPermissions,
 		// Anchor handler already exists for specified resource Id.
@@ -137,22 +142,23 @@ pub mod pallet {
 	}
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
+	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		/// This will be called by bridge when proposal to create an
 		/// anchor has been successfully voted on.
 		#[pallet::weight(195_000_000)]
 		pub fn execute_anchor_create_proposal(
 			origin: OriginFor<T>,
-			src_chain_id: ChainId<T>,
+			src_chain_id: T::ChainId,
 			r_id: ResourceId,
 			max_edges: u32,
 			tree_depth: u8,
+			asset: CurrencyIdOf<T, I>,
 		) -> DispatchResultWithPostInfo {
-			Self::ensure_bridge_origin(origin)?;
-			Self::create_anchor(src_chain_id, r_id, max_edges, tree_depth)
+			T::BridgeOrigin::ensure_origin(origin)?;
+			Self::create_anchor(src_chain_id, r_id, max_edges, tree_depth, asset)
 		}
 
 		/// This will be called by bridge when proposal to add/update edge of an
@@ -161,42 +167,38 @@ pub mod pallet {
 		pub fn execute_anchor_update_proposal(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
-			anchor_metadata: EdgeMetadata<ChainId<T>, T::Element, T::BlockNumber>,
+			anchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>,
 		) -> DispatchResultWithPostInfo {
-			Self::ensure_bridge_origin(origin)?;
+			T::BridgeOrigin::ensure_origin(origin)?;
 			Self::update_anchor(r_id, anchor_metadata)
 		}
 	}
 }
 
-impl<T: Config> Pallet<T> {
-	fn ensure_bridge_origin(origin: T::Origin) -> DispatchResultWithPostInfo {
-		T::BridgeOrigin::ensure_origin(origin)?;
-		Ok(().into())
-	}
-
+impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	fn create_anchor(
-		src_chain_id: ChainId<T>,
+		src_chain_id: T::ChainId,
 		r_id: ResourceId,
 		max_edges: u32,
 		tree_depth: u8,
+		asset: CurrencyIdOf<T, I>,
 	) -> DispatchResultWithPostInfo {
 		ensure!(
-			!AnchorHandlers::<T>::contains_key(r_id),
-			Error::<T>::ResourceIsAlreadyAnchored
+			!AnchorList::<T, I>::contains_key(r_id),
+			Error::<T, I>::ResourceIsAlreadyAnchored
 		);
-		let tree_id = T::Anchor::create(T::AccountId::default(), tree_depth, max_edges)?;
-		AnchorHandlers::<T>::insert(r_id, tree_id);
-		Counts::<T>::insert(src_chain_id, 0);
+		let tree_id = T::Anchor::create(T::AccountId::default(), tree_depth, max_edges, asset)?;
+		AnchorList::<T, I>::insert(r_id, tree_id);
+		Counts::<T, I>::insert(src_chain_id, 0);
 		Self::deposit_event(Event::AnchorCreated);
 		Ok(().into())
 	}
 
 	fn update_anchor(
 		r_id: ResourceId,
-		anchor_metadata: EdgeMetadata<ChainId<T>, T::Element, T::BlockNumber>,
+		anchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>,
 	) -> DispatchResultWithPostInfo {
-		let tree_id = AnchorHandlers::<T>::try_get(r_id).map_err(|_| Error::<T>::AnchorHandlerNotFound)?;
+		let tree_id = AnchorList::<T, I>::try_get(r_id).map_err(|_| Error::<T, I>::AnchorHandlerNotFound)?;
 		let (src_chain_id, merkle_root, block_height) = (
 			anchor_metadata.src_chain_id,
 			anchor_metadata.root,
@@ -210,15 +212,15 @@ impl<T: Config> Pallet<T> {
 			T::Anchor::add_edge(tree_id, src_chain_id, merkle_root, block_height)?;
 			Self::deposit_event(Event::AnchorEdgeAdded);
 		}
-		let nonce = Counts::<T>::try_get(src_chain_id).map_err(|_| Error::<T>::SourceChainIdNotFound)?;
+		let nonce = Counts::<T, I>::try_get(src_chain_id).map_err(|_| Error::<T, I>::SourceChainIdNotFound)?;
 		let record = UpdateRecord {
 			tree_id,
 			resource_id: r_id,
 			edge_metadata: anchor_metadata,
 		};
-		UpdateRecords::<T>::insert(src_chain_id, nonce, record);
-		Counts::<T>::mutate(src_chain_id, |val| -> DispatchResultWithPostInfo {
-			*val = val.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
+		UpdateRecords::<T, I>::insert(src_chain_id, nonce, record);
+		Counts::<T, I>::mutate(src_chain_id, |val| -> DispatchResultWithPostInfo {
+			*val = val.checked_add(1).ok_or(Error::<T, I>::StorageOverflow)?;
 			Ok(().into())
 		})
 	}

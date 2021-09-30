@@ -17,11 +17,11 @@ use common::{AccountId, AuraId, BabeId, Balance, Signature};
 use darkwebb_runtime::{
 	constants::{currency::*, time::*},
 	wasm_binary_unwrap, AuthorityDiscoveryConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
-	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BabeConfig,
+	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BabeConfig, Block,
 	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig,
 	SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig, VerifierConfig,
 };
-use hex_literal::hex;
+use itertools::Itertools;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -32,8 +32,6 @@ use sp_runtime::{
 	Perbill,
 };
 
-use darkwebb_runtime::MAX_NOMINATIONS;
-
 // ImOnline consensus authority.
 pub type ImOnlineId = pallet_im_online::sr25519::AuthorityId;
 
@@ -43,14 +41,15 @@ pub type AuthorityDiscoveryId = sp_authority_discovery::AuthorityId;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<darkwebb_runtime::GenesisConfig, Extensions>;
 
-/// The extensions for the [`ChainSpec`].
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, ChainSpecGroup, ChainSpecExtension)]
-#[serde(deny_unknown_fields)]
+#[derive(Default, Clone, Serialize, Deserialize, ChainSpecExtension)]
+#[serde(rename_all = "camelCase")]
 pub struct Extensions {
-	/// The relay chain of the Parachain.
-	pub relay_chain: String,
-	/// The id of the Parachain.
-	pub para_id: u32,
+	/// Block numbers with known hashes.
+	pub fork_blocks: sc_client_api::ForkBlocks<Block>,
+	/// Known bad block hashes.
+	pub bad_blocks: sc_client_api::BadBlocks<Block>,
+	/// The light sync state extension used by the sync-state rpc.
+	pub light_sync_state: sc_sync_state_rpc::LightSyncStateExtension,
 }
 
 impl Extensions {
@@ -127,8 +126,6 @@ pub fn darkwebb_development_config() -> Result<ChainSpec, String> {
 			testnet_genesis(
 				vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
 				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
 					get_account_id_from_seed::<sr25519::Public>("Dave"),
 					get_account_id_from_seed::<sr25519::Public>("Eve"),
@@ -152,10 +149,7 @@ pub fn darkwebb_development_config() -> Result<ChainSpec, String> {
 		None,
 		// Properties
 		None,
-		Extensions {
-			relay_chain: "none".into(),
-			para_id: 0,
-		},
+		Default::default(),
 	))
 }
 
@@ -170,8 +164,6 @@ pub fn darkwebb_local_testnet_config() -> Result<ChainSpec, String> {
 			testnet_genesis(
 				vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
 				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Charlie"),
 					get_account_id_from_seed::<sr25519::Public>("Dave"),
 					get_account_id_from_seed::<sr25519::Public>("Eve"),
@@ -196,10 +188,7 @@ pub fn darkwebb_local_testnet_config() -> Result<ChainSpec, String> {
 		// Properties
 		None,
 		// Extensions
-		Extensions {
-			relay_chain: "none".into(),
-			para_id: 0,
-		},
+		Default::default(),
 	))
 }
 
@@ -217,9 +206,6 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	root_key: AccountId,
 ) -> GenesisConfig {
-	use ark_serialize::CanonicalSerialize;
-	use ark_std::test_rng;
-
 	let circom_params = {
 		let rounds = get_rounds_poseidon_circom_bn254_x5_3::<arkworks_gadgets::prelude::ark_bn254::Fr>();
 		let mds = get_mds_poseidon_circom_bn254_x5_3::<arkworks_gadgets::prelude::ark_bn254::Fr>();
@@ -251,15 +237,11 @@ fn testnet_genesis(
 	};
 
 	let verifier_params = {
-		let mut rng = test_rng();
-		pub const LEN: usize = 30;
-		let curve = Curve::Bn254;
-		let (pk, vk) = setup_groth16_random_circuit_circomx5::<_, Bn254, LEN>(&mut rng, curve);
+		use std::fs;
+		// let pk_bytes = fs::read("../../fixtures/proving_key.bin").unwrap();
+		let vk_bytes = fs::read("./fixtures/verifying_key.bin").unwrap();
 
-		let mut serialized = vec![0; vk.serialized_size()];
-		vk.serialize(&mut serialized[..]).unwrap();
-
-		serialized
+		vk_bytes
 	};
 
 	let mut endowed_accounts: Vec<AccountId> = endowed_accounts.into();
@@ -274,24 +256,25 @@ fn testnet_genesis(
 			}
 		});
 
+	let mut unique = vec![];
+	unique.append(&mut endowed_accounts);
+	unique.append(&mut initial_nominators.clone());
+	unique.append(
+		&mut initial_authorities
+			.iter()
+			.map(|x| &x.0)
+			.map(|x| x.clone())
+			.collect::<Vec<_>>(),
+	);
+	unique = unique
+		.into_iter()
+		.unique()
+		.into_iter()
+		.map(|x| x.clone())
+		.collect::<Vec<_>>();
+
 	// stakers: all validators and nominators.
 	let mut rng = rand::thread_rng();
-	let stakers = initial_authorities
-		.iter()
-		.map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
-		.chain(initial_nominators.iter().map(|x| {
-			use rand::{seq::SliceRandom, Rng};
-			let limit = (MAX_NOMINATIONS as usize).min(initial_authorities.len());
-			let count = rng.gen::<usize>() % limit;
-			let nominations = initial_authorities
-				.as_slice()
-				.choose_multiple(&mut rng, count)
-				.into_iter()
-				.map(|choice| choice.0.clone())
-				.collect::<Vec<_>>();
-			(x.clone(), x.clone(), STASH, StakerStatus::Nominator(nominations))
-		}))
-		.collect::<Vec<_>>();
 
 	let num_endowed_accounts = endowed_accounts.len();
 
@@ -304,11 +287,7 @@ fn testnet_genesis(
 			changes_trie_config: Default::default(),
 		},
 		balances: darkwebb_runtime::BalancesConfig {
-			balances: endowed_accounts
-				.iter()
-				.cloned()
-				.map(|k| (k, darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT * 4096))
-				.collect(),
+			balances: unique.iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
 		},
 		indices: IndicesConfig { indices: vec![] },
 		session: SessionConfig {
@@ -328,7 +307,10 @@ fn testnet_genesis(
 			minimum_validator_count: initial_authorities.len() as u32,
 			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
 			slash_reward_fraction: Perbill::from_percent(10),
-			stakers,
+			stakers: initial_authorities
+				.iter()
+				.map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
+				.collect(),
 			..Default::default()
 		},
 		democracy: DemocracyConfig::default(),
