@@ -23,16 +23,27 @@ pallet-mt = { path = "../mt", default-features = false }
 pallet-verifier = { path = "../verifier", default-features = false }
 darkwebb-primitives = { path = "../../primitives", default-features = false }
 orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
+pallet-asset-registry = { path = "../asset-registry", default-features = false }
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
 sp-core = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-io = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-pallet-balances = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false }
 orml-currencies = { path = "../../open-runtime-module-library/currencies", default-features = false }
+
+ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
+ark-ff = { version = "^0.3.0", default-features = false }
+ark-ec = { version = "^0.3.0", default-features = false }
+ark-std = { version = "^0.3.0", default-features = false }
+ark-relations = { version = "^0.3.0", default-features = false }
+ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ] }
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ] }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"] }
 
 [features]
 default = ["std"]
@@ -47,4 +58,5 @@ std = [
     "pallet-mixer/std",
     "pallet-verifier/std",
     "darkwebb-primitives/std",
+    "pallet-asset-registry/std",
 ]

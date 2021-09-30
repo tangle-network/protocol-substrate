@@ -55,15 +55,14 @@ use codec::{Decode, Encode};
 use darkwebb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
 	mixer::{MixerInspector, MixerInterface},
+	verifier::*,
+	ElementTrait,
 };
-use frame_support::{ensure, pallet_prelude::DispatchError};
-use types::*;
-
-use darkwebb_primitives::verifier::*;
-use frame_support::traits::Get;
+use frame_support::{ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::MultiCurrency;
-use sp_runtime::traits::{AtLeast32Bit, One, Zero};
+use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
 use sp_std::prelude::*;
+use types::*;
 
 pub use pallet::*;
 
@@ -150,7 +149,7 @@ pub mod pallet {
 	/// The next neighbor root index to store the merkle root update record
 	#[pallet::storage]
 	#[pallet::getter(fn next_neighbor_root_index)]
-	pub type NextNeighborRootIndex<T: Config<I>, I: 'static = ()> =
+	pub type CurrentNeighborRootIndex<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, (T::TreeId, T::ChainId), T::RootIndex, ValueQuery>;
 
 	#[pallet::event]
@@ -185,6 +184,7 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn create(
 			origin: OriginFor<T>,
+			deposit_size: BalanceOf<T, I>,
 			max_edges: u32,
 			depth: u8,
 			asset: CurrencyIdOf<T, I>,
@@ -192,6 +192,7 @@ pub mod pallet {
 			ensure_root(origin)?;
 			let tree_id = <Self as AnchorInterface<_, _, _, _, _, _, _>>::create(
 				T::AccountId::default(),
+				deposit_size,
 				depth,
 				max_edges,
 				asset,
@@ -246,12 +247,11 @@ impl<T: Config<I>, I: 'static>
 {
 	fn create(
 		creator: T::AccountId,
+		deposit_size: BalanceOf<T, I>,
 		depth: u8,
 		max_edges: u32,
 		asset: CurrencyIdOf<T, I>,
 	) -> Result<T::TreeId, DispatchError> {
-		// FIXME: is that even correct?
-		let deposit_size = Zero::zero();
 		let id = T::Mixer::create(creator, deposit_size, depth, asset.into())?;
 		MaxEdges::<T, I>::insert(id, max_edges);
 		Ok(id)
@@ -329,8 +329,8 @@ impl<T: Config<I>, I: 'static>
 			height,
 		};
 		// update historical neighbor list for this edge's root
-		let neighbor_root_inx = NextNeighborRootIndex::<T, I>::get((id, src_chain_id));
-		NextNeighborRootIndex::<T, I>::insert(
+		let neighbor_root_inx = CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id));
+		CurrentNeighborRootIndex::<T, I>::insert(
 			(id, src_chain_id),
 			neighbor_root_inx + T::RootIndex::one() % T::HistoryLength::get(),
 		);
@@ -355,11 +355,9 @@ impl<T: Config<I>, I: 'static>
 			root,
 			height,
 		};
-		let neighbor_root_inx = NextNeighborRootIndex::<T, I>::get((id, src_chain_id));
-		NextNeighborRootIndex::<T, I>::insert(
-			(id, src_chain_id),
-			neighbor_root_inx + T::RootIndex::one() % T::HistoryLength::get(),
-		);
+		let neighbor_root_inx =
+			CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id)) + T::RootIndex::one() % T::HistoryLength::get();
+		CurrentNeighborRootIndex::<T, I>::insert((id, src_chain_id), neighbor_root_inx);
 		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_inx, root);
 		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
 		Ok(())
@@ -374,11 +372,44 @@ impl<T: Config<I>, I: 'static> AnchorInspector<T::AccountId, CurrencyIdOf<T, I>,
 	}
 
 	fn is_known_neighbor_root(
-		_tree_id: T::TreeId,
-		_src_chain_id: T::ChainId,
-		_target_root: T::Element,
+		tree_id: T::TreeId,
+		src_chain_id: T::ChainId,
+		target_root: T::Element,
 	) -> Result<bool, DispatchError> {
-		Ok(true)
+		if target_root.is_zero() {
+			return Ok(false);
+		}
+
+		let get_next_inx = |inx: T::RootIndex| {
+			if inx.is_zero() {
+				T::HistoryLength::get().saturating_sub(One::one())
+			} else {
+				inx.saturating_sub(One::one())
+			}
+		};
+
+		let curr_root_inx = CurrentNeighborRootIndex::<T, I>::get((tree_id, src_chain_id));
+		let mut historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), curr_root_inx).unwrap();
+		if target_root == historical_root {
+			return Ok(true);
+		}
+
+		let mut i = get_next_inx(curr_root_inx);
+
+		while i != curr_root_inx {
+			historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), i).unwrap();
+			if target_root == historical_root {
+				return Ok(true);
+			}
+
+			if i == Zero::zero() {
+				i = T::HistoryLength::get();
+			}
+
+			i -= One::one();
+		}
+
+		Ok(false)
 	}
 
 	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
