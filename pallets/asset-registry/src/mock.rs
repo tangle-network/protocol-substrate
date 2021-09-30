@@ -17,16 +17,18 @@
 
 #![cfg(test)]
 use darkwebb_primitives::{AssetId, Balance};
-use frame_support::{parameter_types, traits::Everything};
+use frame_support::{
+	parameter_types,
+	traits::{Everything, GenesisBuild},
+};
 use frame_system as system;
+use polkadot_xcm::v0::MultiLocation;
+use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
-
-use frame_support::traits::GenesisBuild;
-use polkadot_xcm::v0::MultiLocation;
 
 // use polkadot_xcm::v0::MultiLocation;
 
@@ -82,7 +84,7 @@ impl system::Config for Test {
 
 use codec::{Decode, Encode};
 
-#[derive(Debug, Encode, Decode, Clone, PartialEq, Eq)]
+#[derive(Debug, Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
 pub struct AssetLocation(pub MultiLocation);
 
 impl Default for AssetLocation {
