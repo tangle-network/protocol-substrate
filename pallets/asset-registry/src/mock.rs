@@ -26,6 +26,7 @@ use sp_runtime::{
 };
 
 use frame_support::traits::GenesisBuild;
+use polkadot_xcm::v0::MultiLocation;
 
 // use polkadot_xcm::v0::MultiLocation;
 
@@ -81,9 +82,18 @@ impl system::Config for Test {
 
 use codec::{Decode, Encode};
 
+#[derive(Debug, Encode, Decode, Clone, PartialEq, Eq)]
+pub struct AssetLocation(pub MultiLocation);
+
+impl Default for AssetLocation {
+	fn default() -> Self {
+		AssetLocation(MultiLocation::Null)
+	}
+}
+
 impl Config for Test {
 	type AssetId = u32;
-	type AssetNativeLocation = ();
+	type AssetNativeLocation = AssetLocation;
 	type Balance = Balance;
 	type Event = Event;
 	type NativeAssetId = NativeAssetId;

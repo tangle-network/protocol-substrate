@@ -276,7 +276,7 @@ pub mod pallet {
 				}
 
 				detail.name = bounded_name.clone();
-				detail.asset_type = asset_type;
+				detail.asset_type = asset_type.clone();
 				detail.existential_deposit = existential_deposit.unwrap_or(detail.existential_deposit);
 
 				Self::deposit_event(Event::Updated(asset_id, bounded_name, asset_type));
@@ -383,7 +383,7 @@ impl<T: Config> Pallet<T> {
 
 			let details = AssetDetails {
 				name: name.clone(),
-				asset_type,
+				asset_type: asset_type.clone(),
 				existential_deposit,
 				locked: false,
 			};
@@ -458,12 +458,7 @@ impl<T: Config> ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchErro
 		assets: &[T::AssetId],
 		existential_deposit: T::Balance,
 	) -> Result<T::AssetId, DispatchError> {
-		ensure!(assets.len() == 2, Error::<T>::InvalidSharedAssetLen);
-		Self::get_or_create_asset(
-			name.clone(),
-			AssetType::PoolShare(assets[0], assets[1]),
-			existential_deposit,
-		)
+		Self::get_or_create_asset(name.clone(), AssetType::PoolShare(assets.to_vec()), existential_deposit)
 	}
 }
 

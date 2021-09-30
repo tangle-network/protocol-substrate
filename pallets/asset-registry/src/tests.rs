@@ -279,7 +279,7 @@ fn update_asset() {
 			Origin::root(),
 			btc_asset_id,
 			b"BTCUSD".to_vec(),
-			AssetType::PoolShare(btc_asset_id, usd_asset_id),
+			AssetType::PoolShare(vec![btc_asset_id, usd_asset_id]),
 			None
 		));
 
@@ -288,7 +288,7 @@ fn update_asset() {
 			Origin::root(),
 			btc_asset_id,
 			b"BTCUSD".to_vec(),
-			AssetType::PoolShare(btc_asset_id, usd_asset_id),
+			AssetType::PoolShare(vec![btc_asset_id, usd_asset_id]),
 			Some(1_234_567u128)
 		));
 
@@ -296,7 +296,7 @@ fn update_asset() {
 
 		assert_eq!(AssetRegistryPallet::assets(btc_asset_id).unwrap(), AssetDetails {
 			name: btcusd,
-			asset_type: AssetType::PoolShare(btc_asset_id, usd_asset_id),
+			asset_type: AssetType::PoolShare(vec![btc_asset_id, usd_asset_id]),
 			existential_deposit: 1_234_567u128,
 			locked: false
 		});
