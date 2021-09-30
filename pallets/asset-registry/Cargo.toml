@@ -36,7 +36,7 @@ sp-api = { default-features = false, version = "4.0.0-dev", git = "https://githu
 
 [dev-dependencies]
 sp-io = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-# polkadot-xcm = { package = "xcm", git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.9", default-features = false }
+polkadot-xcm = { package = "xcm", git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 
 [features]
 default = ["std"]

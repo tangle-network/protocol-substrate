@@ -1,5 +1,6 @@
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
+use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};

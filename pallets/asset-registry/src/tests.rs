@@ -21,9 +21,9 @@ use crate::{
 	types::{AssetDetails, AssetMetadata, AssetType},
 };
 use codec::Encode;
-use frame_support::{assert_noop, assert_ok, BoundedVec};
-// use polkadot_xcm::v0::{Junction::*, MultiLocation::*};
 use darkwebb_primitives::{AssetId, Balance};
+use frame_support::{assert_noop, assert_ok, BoundedVec};
+use polkadot_xcm::v0::{Junction::*, MultiLocation::*};
 use sp_std::convert::TryInto;
 
 #[test]
@@ -104,49 +104,47 @@ fn create_asset() {
 	});
 }
 
-// #[test]
-// fn location_mapping_works() {
-// 	new_test_ext().execute_with(|| {
-// 		let bn = AssetRegistryPallet::to_bounded_name(b"HDX".to_vec()).unwrap();
+#[test]
+fn location_mapping_works() {
+	new_test_ext().execute_with(|| {
+		let bn = AssetRegistryPallet::to_bounded_name(b"HDX".to_vec()).unwrap();
 
-// 		let ed = 1_000_000u128;
+		let ed = 1_000_000u128;
 
-// 		assert_ok!(AssetRegistryPallet::get_or_create_asset(
-// 			b"HDX".to_vec(),
-// 			AssetType::Token,
-// 			ed
-// 		));
-// 		let asset_id: AssetId =
-// 			AssetRegistryPallet::get_or_create_asset(b"HDX".to_vec(), AssetType::Token,
-// ed).unwrap();
+		assert_ok!(AssetRegistryPallet::get_or_create_asset(
+			b"HDX".to_vec(),
+			AssetType::Token,
+			ed
+		));
+		let asset_id: AssetId =
+			AssetRegistryPallet::get_or_create_asset(b"HDX".to_vec(), AssetType::Token, ed).unwrap();
 
-// 		crate::Assets::<Test>::insert(asset_id, AssetDetails::<
-// 			AssetId,
-// 			Balance,
-// 			BoundedVec<u8, RegistryStringLimit>,
-// 		> {
-// 			name: bn,
-// 			asset_type: AssetType::Token,
-// 			existential_deposit: ed,
-// 			locked: false,
-// 		});
+		crate::Assets::<Test>::insert(asset_id, AssetDetails::<
+			AssetId,
+			Balance,
+			BoundedVec<u8, RegistryStringLimit>,
+		> {
+			name: bn,
+			asset_type: AssetType::Token,
+			existential_deposit: ed,
+			locked: false,
+		});
 
-// 		let asset_location = AssetLocation(X3(Parent, Parachain(200),
-// GeneralKey(asset_id.encode())));
+		let asset_location = AssetLocation(X3(Parent, Parachain(200), GeneralKey(asset_id.encode())));
 
-// 		assert_ok!(AssetRegistryPallet::set_location(
-// 			Origin::root(),
-// 			asset_id,
-// 			asset_location.clone()
-// 		));
+		assert_ok!(AssetRegistryPallet::set_location(
+			Origin::root(),
+			asset_id,
+			asset_location.clone()
+		));
 
-// 		assert_eq!(
-// 			AssetRegistryPallet::location_to_asset(asset_location.clone()),
-// 			Some(asset_id)
-// 		);
-// 		assert_eq!(AssetRegistryPallet::asset_to_location(asset_id),
-// Some(asset_location)); 	});
-// }
+		assert_eq!(
+			AssetRegistryPallet::location_to_asset(asset_location.clone()),
+			Some(asset_id)
+		);
+		assert_eq!(AssetRegistryPallet::asset_to_location(asset_id), Some(asset_location));
+	});
+}
 
 #[test]
 fn genesis_config_works() {

@@ -177,7 +177,7 @@ pub type AssetId = u32;
 pub type Amount = i128;
 
 impl pallet_asset_registry::Config for Test {
-	type AssetId = AssetId;
+	type AssetId = darkwebb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
 	type Event = Event;
@@ -191,7 +191,7 @@ impl pallet_asset_registry::Config for Test {
 impl orml_tokens::Config for Test {
 	type Amount = Amount;
 	type Balance = u128;
-	type CurrencyId = AssetId;
+	type CurrencyId = darkwebb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
 	type Event = Event;
 	type ExistentialDeposits = AssetRegistry;
