@@ -1,7 +1,7 @@
 use super::*;
 use crate as pallet_hasher;
 
-pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
+//pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
 use frame_support::parameter_types;
 use frame_system as system;
 use sp_core::H256;
@@ -86,7 +86,7 @@ impl pallet_hasher::Config<Instance1> for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
-	type Hasher = darkwebb_primitives::hashing::BN254Poseidon3x5Hasher;
+	//type Hasher = darkwebb_primitives::hashing::BN254Poseidon3x5Hasher;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
@@ -97,7 +97,7 @@ impl pallet_hasher::Config<Instance2> for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
-	type Hasher = darkwebb_primitives::hashing::BN254Poseidon5x5Hasher;
+	//type Hasher = darkwebb_primitives::hashing::BN254Poseidon5x5Hasher;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
@@ -108,7 +108,7 @@ impl pallet_hasher::Config<Instance3> for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
-	type Hasher = darkwebb_primitives::hashing::BN254CircomPoseidon3x5Hasher;
+	//type Hasher = darkwebb_primitives::hashing::BN254CircomPoseidon3x5Hasher;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
