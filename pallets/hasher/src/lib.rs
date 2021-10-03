@@ -56,7 +56,8 @@
 #[cfg(test)]
 pub mod mock;
 #[cfg(test)]
-mod tests;
+//mod tests;
+mod benchmarking;
 
 use frame_support::{
 	pallet_prelude::{ensure, DispatchError},
