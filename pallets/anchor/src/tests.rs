@@ -2,7 +2,10 @@ use arkworks_gadgets::{
 	poseidon::PoseidonParameters,
 	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
 };
-use darkwebb_primitives::ElementTrait;
+use darkwebb_primitives::{
+	anchor::{AnchorInspector, AnchorInterface},
+	ElementTrait,
+};
 use frame_support::{assert_ok, traits::OnInitialize};
 
 use crate::mock::*;
@@ -81,5 +84,53 @@ fn should_be_able_to_change_the_maintainer() {
 		assert_ok!(Anchor::force_set_maintainer(Origin::root(), new_maintainer_account_id));
 		let current_maintainer_account_id = Anchor::maintainer();
 		assert_eq!(current_maintainer_account_id, new_maintainer_account_id);
+	});
+}
+
+#[test]
+fn should_be_able_to_add_neighbors_and_check_history() {
+	use rand::prelude::*;
+	let mut rng = rand::thread_rng();
+
+	new_test_ext().execute_with(|| {
+		let deposit_size = 10_000;
+		let max_edges = 2;
+		let depth = LEN as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), deposit_size, max_edges, depth, asset_id));
+		let tree_id = MerkleTree::next_tree_id() - 1;
+		let src_chain_id = 1;
+		let root = Element::from_bytes(&[1u8; 32]);
+		let height = 1;
+		let neighbor_index_before: u32 = Anchor::curr_neighbor_root_index((tree_id, src_chain_id));
+		assert_ok!(<Anchor as AnchorInterface<_, _, _, _, _, _, _>>::add_edge(
+			tree_id,
+			src_chain_id,
+			root,
+			height,
+		));
+		let neighbor_index_after: u32 = Anchor::curr_neighbor_root_index((tree_id, src_chain_id));
+		assert_eq!(neighbor_index_after, neighbor_index_before + 1);
+
+		for _ in 0..crate::mock::HistoryLength::get() {
+			assert_eq!(
+				Anchor::is_known_neighbor_root(tree_id, src_chain_id, root).unwrap(),
+				true
+			);
+
+			let val = thread_rng().gen::<[u8; 32]>();
+			let elt = Element::from_bytes(&val);
+			assert_ok!(<Anchor as AnchorInterface<_, _, _, _, _, _, _>>::update_edge(
+				tree_id,
+				src_chain_id,
+				elt,
+				height,
+			));
+		}
+
+		assert_eq!(
+			!Anchor::is_known_neighbor_root(tree_id, src_chain_id, root).unwrap(),
+			false
+		);
 	});
 }

@@ -148,7 +148,7 @@ pub mod pallet {
 
 	/// The next neighbor root index to store the merkle root update record
 	#[pallet::storage]
-	#[pallet::getter(fn next_neighbor_root_index)]
+	#[pallet::getter(fn curr_neighbor_root_index)]
 	pub type CurrentNeighborRootIndex<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, (T::TreeId, T::ChainId), T::RootIndex, ValueQuery>;
 
@@ -367,8 +367,12 @@ impl<T: Config<I>, I: 'static>
 impl<T: Config<I>, I: 'static> AnchorInspector<T::AccountId, CurrencyIdOf<T, I>, T::ChainId, T::TreeId, T::Element>
 	for Pallet<T, I>
 {
-	fn get_neighbor_roots(_tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
-		Ok(vec![T::Element::default()])
+	fn get_neighbor_roots(tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
+		let edges = EdgeList::<T, I>::iter_prefix_values(tree_id)
+			.into_iter()
+			.collect::<Vec<EdgeMetadata<_, _, _>>>();
+		let roots = edges.iter().map(|e| e.root).collect::<Vec<_>>();
+		Ok(roots)
 	}
 
 	fn is_known_neighbor_root(
@@ -389,7 +393,8 @@ impl<T: Config<I>, I: 'static> AnchorInspector<T::AccountId, CurrencyIdOf<T, I>,
 		};
 
 		let curr_root_inx = CurrentNeighborRootIndex::<T, I>::get((tree_id, src_chain_id));
-		let mut historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), curr_root_inx).unwrap();
+		let mut historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), curr_root_inx)
+			.unwrap_or(T::Element::from_bytes(&[0; 32]));
 		if target_root == historical_root {
 			return Ok(true);
 		}
@@ -397,7 +402,8 @@ impl<T: Config<I>, I: 'static> AnchorInspector<T::AccountId, CurrencyIdOf<T, I>,
 		let mut i = get_next_inx(curr_root_inx);
 
 		while i != curr_root_inx {
-			historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), i).unwrap();
+			historical_root =
+				NeighborRoots::<T, I>::get((tree_id, src_chain_id), i).unwrap_or(T::Element::from_bytes(&[0; 32]));
 			if target_root == historical_root {
 				return Ok(true);
 			}
