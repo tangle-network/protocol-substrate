@@ -47,9 +47,12 @@ fn should_be_able_to_deposit() {
 
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let account_id = 1;
+		let _ = Balances::set_balance(Origin::root(), account_id, 100_000_000, 0);
+
 		let leaf = Element::from_bytes(&[1u8; 32]);
 		// check the balance before the deposit.
 		let balance_before = Balances::free_balance(account_id);
+		println!("Balance before: {}", balance_before);
 		// and we do the deposit
 		assert_ok!(Anchor::deposit(Origin::signed(account_id), tree_id, leaf));
 		// now we check the balance after the deposit.
