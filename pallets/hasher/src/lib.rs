@@ -56,16 +56,19 @@
 #[cfg(test)]
 pub mod mock;
 #[cfg(test)]
-//mod tests;
+mod tests;
 mod benchmarking;
 
+use sp_runtime::traits::{Saturating, Zero};
+use sp_std::prelude::*;
+use sp_std::vec;
+
+use darkwebb_primitives::{hasher::*, types::DepositDetails};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchError},
 	traits::{Currency, ReservableCurrency},
 };
 use frame_system::Config as SystemConfig;
-use sp_runtime::traits::{Saturating, Zero};
-use sp_std::prelude::*;
 
 type DepositBalanceOf<T, I = ()> = <<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
@@ -87,8 +90,8 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
-		// / The hash instance trait
-		// type Hasher: InstanceHasher;
+		/// The hash instance trait
+		type Hasher: InstanceHasher;
 
 		/// The currency mechanism.
 		type Currency: ReservableCurrency<Self::AccountId>;
@@ -135,15 +138,6 @@ pub mod pallet {
 				Parameters::<T, I>::put(params);
 			}
 		}
-	}
-
-	// Deposit details used in hasher / verifier pallets for
-	// tracking the reserved deposits of maintainers of various
-	// parameters
-	#[derive(Clone, Default, Encode, Decode, Eq, PartialEq, RuntimeDebug)]
-	pub struct DepositDetails<AccountId, Balance> {
-		pub depositor: AccountId,
-		pub deposit: Balance,
 	}
 
 	#[pallet::storage]
@@ -256,31 +250,31 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
+				Self::deposit_event(Event::MaintainerSet(Default::default(), new_maintainer));
 				Ok(().into())
 			})
 		}
 	}
 }
 
-// impl<T: Config<I>, I: 'static> HasherModule for Pallet<T, I> {
-// 	fn hash(data: &[u8]) -> Result<Vec<u8>, DispatchError> {
-// 		let params = Self::parameters();
-// 		ensure!(!params.is_empty(), Error::<T, I>::ParametersNotInitialized);
-// 		match T::Hasher::hash(data, &params) {
-// 			Ok(hash) => Ok(hash),
-// 			Err(_e) => {
-// 				// TODO: Handle properly
-// 				ensure!(false, Error::<T, I>::HashError);
-// 				Ok(vec![])
-// 			}
-// 		}
-// 	}
+impl<T: Config<I>, I: 'static> HasherModule for Pallet<T, I> {
+	fn hash(data: &[u8]) -> Result<Vec<u8>, DispatchError> {
+		let params = Self::parameters();
+		ensure!(!params.is_empty(), Error::<T, I>::ParametersNotInitialized);
+		match T::Hasher::hash(data, &params) {
+			Ok(hash) => Ok(hash),
+			Err(_e) => {
+				// TODO: Handle properly
+				ensure!(false, Error::<T, I>::HashError);
+				Ok(vec![])
+			}
+		}
+	}
 
-// 	fn hash_two(left: &[u8], right: &[u8]) -> Result<Vec<u8>, DispatchError> {
-// 		let mut buf = vec![];
-// 		buf.extend_from_slice(left);
-// 		buf.extend_from_slice(right);
-// 		Self::hash(&buf)
-// 	}
-// }
+	fn hash_two(left: &[u8], right: &[u8]) -> Result<Vec<u8>, DispatchError> {
+		let mut buf = vec![];
+		buf.extend_from_slice(left);
+		buf.extend_from_slice(right);
+		Self::hash(&buf)
+	}
+}

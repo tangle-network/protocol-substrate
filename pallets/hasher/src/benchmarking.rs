@@ -21,28 +21,27 @@
 
 use super::*;
 
+use darkwebb_primitives::types::DepositDetails;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
-use frame_support::traits::{Currency, EnsureOrigin};
+use frame_support::traits::Currency;
 use frame_system::RawOrigin;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
-use crate::Pallet as HasherModule;
-
 const SEED: u32 = 0;
 
 benchmarks! {
-	// Benchmark `set_parameters` extrinsic with the worst case scenario:
+
 	set_parameters {
 		let caller: T::AccountId = whitelisted_caller();
 		let depositor: T::AccountId = account("depositor", 0, SEED);
 		whitelist_account!(depositor);
-		let parameters = vec![0u8;std::u32::MAX as usize];
+		let parameters = vec![0u8;100000 as usize];
 		Maintainer::<T>::put::<T::AccountId>(caller.clone());
 
-		<<T as Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller, std::u32::MAX.into());
+		<<T as Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller, 100_000_000u32.into());
 
 		Deposit::<T>::put::<Option<DepositDetails<T::AccountId, DepositBalanceOf<T>>>>(Some(DepositDetails{
 			depositor,
@@ -51,7 +50,7 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(caller.clone()), parameters.clone())
 	verify {
-		assert_last_event::<T>(Event::ParametersSet(caller.into(), parameters).into());
+		assert_last_event::<T>(Event::ParametersSet(caller, parameters).into());
 	}
 
 
@@ -62,14 +61,13 @@ benchmarks! {
 		Maintainer::<T>::put::<T::AccountId>(caller.clone());
 	}: _(RawOrigin::Signed(caller.clone()), new_maintainer.clone())
 	verify {
-		assert_last_event::<T>(Event::MaintainerSet(caller.into(), new_maintainer.into()).into());
+		assert_last_event::<T>(Event::MaintainerSet(caller, new_maintainer.into()).into());
 	}
 
 
 	force_set_parameters {
-		let caller = <T::ForceOrigin as EnsureOrigin<T::Origin>>::successful_origin();
 		let depositor: T::AccountId = account("depositor", 0, SEED);
-		let parameters = vec![0u8;std::u32::MAX as usize];
+		let parameters = vec![0u8;100000 as usize];
 
 		Deposit::<T>::put::<Option<DepositDetails<T::AccountId, DepositBalanceOf<T>>>>(Some(DepositDetails{
 			depositor,
@@ -77,19 +75,18 @@ benchmarks! {
 		}));
 
 
-	}: _(RawOrigin::Signed(caller.clone()), parameters.clone())
+	}: _(RawOrigin::Root, parameters.clone())
 	verify {
 		assert_last_event::<T>(Event::ParametersSet(Default::default(), parameters).into());
 	}
 
 
 	force_set_maintainer {
-		let caller = <T::ForceOrigin as EnsureOrigin<T::Origin>>::successful_origin();
 		let new_maintainer: T::AccountId = account("maintainer", 0, SEED);
-	}: _(RawOrigin::Signed(caller.clone()), new_maintainer.clone())
+	}: _(RawOrigin::Root, new_maintainer.clone())
 	verify {
 		assert_last_event::<T>(Event::MaintainerSet(Default::default(), new_maintainer.into()).into());
 	}
 }
 
-impl_benchmark_test_suite!(HasherModule, crate::mock::new_test_ext(), crate::mock::Test);
+impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);

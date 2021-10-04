@@ -5,7 +5,7 @@ use arkworks_gadgets::{
 	poseidon::PoseidonParameters,
 	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
 };
-use frame_support::{assert_err, assert_ok, instances::Instance1};
+use frame_support::{assert_err, assert_ok};
 use sp_core::bytes;
 
 #[test]
@@ -13,7 +13,7 @@ fn should_fail_with_params_not_initialized() {
 	new_test_ext().execute_with(|| {
 		assert_err!(
 			<BN254Poseidon3x5Hasher as HasherModule>::hash(&[1u8; 32]),
-			Error::<Test, Instance1>::ParametersNotInitialized
+			Error::<Test>::ParametersNotInitialized
 		);
 	});
 }
