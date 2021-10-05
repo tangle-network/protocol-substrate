@@ -5231,7 +5231,16 @@ dependencies = [
 name = "pallet-anchor"
 version = "1.0.0"
 dependencies = [
+ "ark-bls12-377",
+ "ark-bls12-381",
+ "ark-bn254",
  "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ff",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "arkworks-gadgets",
  "darkwebb-primitives",
  "frame-support",
  "frame-system",

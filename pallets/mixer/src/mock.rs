@@ -163,7 +163,7 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBn254Verifier;
+	type Verifier = darkwebb_primitives::verifying::ArkworksBn254MixerVerifier;
 }
 
 parameter_types! {

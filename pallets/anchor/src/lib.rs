@@ -53,7 +53,7 @@ mod tests;
 pub mod types;
 use codec::{Decode, Encode};
 use darkwebb_primitives::{
-	anchor::{AnchorInspector, AnchorInterface},
+	anchor::{AnchorConfig, AnchorInspector, AnchorInterface},
 	mixer::{MixerInspector, MixerInterface},
 };
 use frame_support::{ensure, pallet_prelude::DispatchError};
@@ -189,13 +189,9 @@ pub mod pallet {
 			depth: u8,
 			asset: CurrencyIdOf<T, I>,
 		) -> DispatchResultWithPostInfo {
+			// Should it only be the root who can create anchors?
 			ensure_root(origin)?;
-			let tree_id = <Self as AnchorInterface<_, _, _, _, _, _, _>>::create(
-				T::AccountId::default(),
-				depth,
-				max_edges,
-				asset,
-			)?;
+			let tree_id = <Self as AnchorInterface<_>>::create(T::AccountId::default(), depth, max_edges, asset)?;
 			Self::deposit_event(Event::AnchorCreation(tree_id));
 			Ok(().into())
 		}
@@ -203,7 +199,7 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			<Self as AnchorInterface<_, _, _, _, _, _, _>>::deposit(origin, tree_id, leaf)?;
+			<Self as AnchorInterface<_>>::deposit(origin, tree_id, leaf)?;
 			Ok(().into())
 		}
 
@@ -233,17 +229,19 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config<I>, I: 'static>
-	AnchorInterface<
-		T::BlockNumber,
-		T::AccountId,
-		BalanceOf<T, I>,
-		CurrencyIdOf<T, I>,
-		T::ChainId,
-		T::TreeId,
-		T::Element,
-	> for Pallet<T, I>
-{
+pub struct AnchorConfigration<T: Config<I>, I: 'static>(core::marker::PhantomData<T>, core::marker::PhantomData<I>);
+
+impl<T: Config<I>, I: 'static> AnchorConfig for AnchorConfigration<T, I> {
+	type AccountId = T::AccountId;
+	type Balance = BalanceOf<T, I>;
+	type BlockNumber = T::BlockNumber;
+	type ChainId = T::ChainId;
+	type CurrencyId = CurrencyIdOf<T, I>;
+	type Element = T::Element;
+	type TreeId = T::TreeId;
+}
+
+impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pallet<T, I> {
 	fn create(
 		creator: T::AccountId,
 		depth: u8,
@@ -264,22 +262,19 @@ impl<T: Config<I>, I: 'static>
 	fn withdraw(
 		id: T::TreeId,
 		proof_bytes: &[u8],
+		chain_id: T::ChainId,
 		roots: Vec<T::Element>,
 		nullifier_hash: T::Element,
 		recipient: T::AccountId,
 		relayer: T::AccountId,
-		_fee: BalanceOf<T, I>,
-		_refund: BalanceOf<T, I>,
+		fee: BalanceOf<T, I>,
+		refund: BalanceOf<T, I>,
 	) -> Result<(), DispatchError> {
 		// Check if local root is known
 		T::Mixer::ensure_known_root(id, roots[0])?;
 		if roots.len() > 1 {
 			for i in 1..roots.len() {
-				<Self as AnchorInspector<_, _, _, _, _>>::ensure_known_neighbor_root(
-					id,
-					T::ChainId::from(i as u32),
-					roots[i],
-				)?;
+				<Self as AnchorInspector<_>>::ensure_known_neighbor_root(id, T::ChainId::from(i as u32), roots[i])?;
 			}
 		}
 
@@ -290,17 +285,38 @@ impl<T: Config<I>, I: 'static>
 		// FIXME: This is for a specfic gadget so we ought to create a generic handler
 		// FIXME: Such as a unpack/pack public inputs trait
 		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
+		//
+		// nullifier_hash (0..32)
+		// recipient (32..64)
+		// relayer (64..96)
+		// fee (96..128)
+		// refund (128..160)
+		// chain_id (160..192)
+		// root[1] (224..256)
+		// root[2] (256..288)
 		let mut bytes = vec![];
+
+		let element_encoder = |v: &[u8]| {
+			let mut output = [0u8; 32];
+			output.iter_mut().zip(v).for_each(|(b1, b2)| *b1 = *b2);
+			output
+		};
+		let recipient_bytes = recipient.using_encoded(element_encoder);
+		let relayer_bytes = relayer.using_encoded(element_encoder);
+		let fee_bytes = fee.using_encoded(element_encoder);
+		let refund_bytes = refund.using_encoded(element_encoder);
+		let chain_id_bytes = chain_id.using_encoded(element_encoder);
+		const M: usize = 2;
+
 		bytes.extend_from_slice(&nullifier_hash.encode());
-		for i in 0..roots.len() {
+		bytes.extend_from_slice(&recipient_bytes);
+		bytes.extend_from_slice(&relayer_bytes);
+		bytes.extend_from_slice(&fee_bytes);
+		bytes.extend_from_slice(&refund_bytes);
+		bytes.extend_from_slice(&chain_id_bytes);
+		for i in 0..M {
 			bytes.extend_from_slice(&roots[i].encode());
 		}
-		bytes.extend_from_slice(&recipient.encode());
-		bytes.extend_from_slice(&relayer.encode());
-		// TODO: Update gadget being used to include fee as well
-		// TODO: This is not currently included in
-		// arkworks_gadgets::setup::mixer::get_public_inputs bytes.extend_from_slice(&
-		// fee.encode());
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 		// TODO: Transfer assets to the recipient
@@ -323,7 +339,7 @@ impl<T: Config<I>, I: 'static>
 		let curr_length = EdgeList::<T, I>::iter_prefix_values(id).into_iter().count();
 		ensure!(max_edges > curr_length as u32, Error::<T, I>::TooManyEdges);
 		// craft edge
-		let e_meta = EdgeMetadata::<T::ChainId, T::Element, T::BlockNumber> {
+		let e_meta = EdgeMetadata {
 			src_chain_id,
 			root,
 			height,
@@ -350,7 +366,7 @@ impl<T: Config<I>, I: 'static>
 			EdgeList::<T, I>::contains_key(id, src_chain_id),
 			Error::<T, I>::EdgeDoesntExists
 		);
-		let e_meta = EdgeMetadata::<T::ChainId, T::Element, T::BlockNumber> {
+		let e_meta = EdgeMetadata {
 			src_chain_id,
 			root,
 			height,
@@ -366,9 +382,7 @@ impl<T: Config<I>, I: 'static>
 	}
 }
 
-impl<T: Config<I>, I: 'static> AnchorInspector<T::AccountId, CurrencyIdOf<T, I>, T::ChainId, T::TreeId, T::Element>
-	for Pallet<T, I>
-{
+impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pallet<T, I> {
 	fn get_neighbor_roots(_tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
 		Ok(vec![T::Element::default()])
 	}

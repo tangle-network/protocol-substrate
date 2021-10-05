@@ -2,64 +2,75 @@
 use frame_support::dispatch;
 use sp_std::vec::Vec;
 
+pub trait AnchorConfig {
+	type BlockNumber;
+	type AccountId;
+	type Balance;
+	type CurrencyId;
+	type ChainId;
+	type TreeId;
+	type Element;
+}
+
 /// Anchor trait definition to be used in other pallets
-pub trait AnchorInterface<BlockNumber, AccountId, Balance, CurrencyId, ChainId, TreeId, Element> {
+pub trait AnchorInterface<C: AnchorConfig> {
 	// Creates a new anchor
 	fn create(
-		creator: AccountId,
+		creator: C::AccountId,
 		depth: u8,
 		max_edges: u32,
-		asset: CurrencyId,
-	) -> Result<TreeId, dispatch::DispatchError>;
+		asset: C::CurrencyId,
+	) -> Result<C::TreeId, dispatch::DispatchError>;
 	/// Deposit into the anchor
-	fn deposit(account: AccountId, id: TreeId, leaf: Element) -> Result<(), dispatch::DispatchError>;
+	fn deposit(account: C::AccountId, id: C::TreeId, leaf: C::Element) -> Result<(), dispatch::DispatchError>;
 	/// Withdraw from the anchor
 	fn withdraw(
-		id: TreeId,
+		id: C::TreeId,
 		proof_bytes: &[u8],
-		roots: Vec<Element>,
-		nullifier_hash: Element,
-		recipient: AccountId,
-		relayer: AccountId,
-		fee: Balance,
-		refund: Balance,
+		chain_id: C::ChainId,
+		roots: Vec<C::Element>,
+		nullifier_hash: C::Element,
+		recipient: C::AccountId,
+		relayer: C::AccountId,
+		fee: C::Balance,
+		refund: C::Balance,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Add an edge to this anchor
 	fn add_edge(
-		id: TreeId,
-		src_chain_id: ChainId,
-		root: Element,
-		height: BlockNumber,
+		id: C::TreeId,
+		src_chain_id: C::ChainId,
+		root: C::Element,
+		height: C::BlockNumber,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this anchor
 	fn update_edge(
-		id: TreeId,
-		src_chain_id: ChainId,
-		root: Element,
-		height: BlockNumber,
+		id: C::TreeId,
+		src_chain_id: C::ChainId,
+		root: C::Element,
+		height: C::BlockNumber,
 	) -> Result<(), dispatch::DispatchError>;
 }
 
 /// Anchor trait for inspecting tree state
-pub trait AnchorInspector<AccountId, CurrencyId, ChainId, TreeId, Element> {
+pub trait AnchorInspector<C: AnchorConfig> {
 	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
-	fn get_neighbor_roots(id: TreeId) -> Result<Vec<Element>, dispatch::DispatchError>;
+	fn get_neighbor_roots(id: C::TreeId) -> Result<Vec<C::Element>, dispatch::DispatchError>;
 	/// Checks if a merkle root is in a tree's cached history or returns
 	/// `TreeDoesntExist
 	fn is_known_neighbor_root(
-		id: TreeId,
-		src_chain_id: ChainId,
-		target: Element,
+		id: C::TreeId,
+		src_chain_id: C::ChainId,
+		target: C::Element,
 	) -> Result<bool, dispatch::DispatchError>;
 
 	// let is_known = Self::is_known_neighbor_root(id, src_chain_id, target)?;
 	// ensure!(is_known, Error::<T, I>::InvalidNeighborWithdrawRoot);
 	// Ok(())
 	fn ensure_known_neighbor_root(
-		id: TreeId,
-		src_chain_id: ChainId,
-		target: Element,
+		id: C::TreeId,
+		src_chain_id: C::ChainId,
+		target: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Check if this anchor has this edge
-	fn has_edge(id: TreeId, src_chain_id: ChainId) -> bool;
+	fn has_edge(id: C::TreeId, src_chain_id: C::ChainId) -> bool;
 }

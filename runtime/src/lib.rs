@@ -735,7 +735,7 @@ impl pallet_verifier::Config for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBn254Verifier;
+	type Verifier = darkwebb_primitives::verifying::ArkworksBn254MixerVerifier;
 }
 
 impl pallet_asset_registry::Config for Runtime {
