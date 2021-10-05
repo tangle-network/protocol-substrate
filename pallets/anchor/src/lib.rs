@@ -356,7 +356,9 @@ impl<T: Config<I>, I: 'static>
 			height,
 		};
 		let neighbor_root_inx =
-			CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id)) + T::RootIndex::one() % T::HistoryLength::get();
+			(CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id)) + T::RootIndex::one()) % T::HistoryLength::get();
+		#[cfg(feature = "std")]
+		println!("{:?}", neighbor_root_inx);
 		CurrentNeighborRootIndex::<T, I>::insert((id, src_chain_id), neighbor_root_inx);
 		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_inx, root);
 		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
