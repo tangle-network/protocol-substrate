@@ -273,13 +273,16 @@ impl<T: Config<I>, I: 'static>
 	) -> Result<(), DispatchError> {
 		// Check if local root is known
 		T::Mixer::ensure_known_root(id, roots[0])?;
+		// Check if neighbor roots are known
 		if roots.len() > 1 {
-			for i in 1..roots.len() {
-				<Self as AnchorInspector<_, _, _, _, _>>::ensure_known_neighbor_root(
-					id,
-					T::ChainId::from(i as u32),
-					roots[i],
-				)?;
+			// Get edges and corresponding chain IDs for the anchor
+			let edges = EdgeList::<T, I>::iter_prefix(id)
+				.into_iter()
+				.collect::<Vec<(T::ChainId, EdgeMetadata<_, _, _>)>>();
+
+			// Check membership of provided historical neighbor roots
+			for (i, edge) in edges.iter().enumerate() {
+				<Self as AnchorInspector<_, _, _, _, _>>::ensure_known_neighbor_root(id, edge.0, roots[i+1])?;
 			}
 		}
 
