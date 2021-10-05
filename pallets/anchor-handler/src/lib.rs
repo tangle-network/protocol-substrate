@@ -146,6 +146,7 @@ pub mod pallet {
 		#[pallet::weight(195_000_000)]
 		pub fn execute_anchor_create_proposal(
 			origin: OriginFor<T>,
+			deposit_size: BalanceOf<T, I>,
 			src_chain_id: T::ChainId,
 			r_id: ResourceId,
 			max_edges: u32,
@@ -153,7 +154,7 @@ pub mod pallet {
 			asset: CurrencyIdOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			T::BridgeOrigin::ensure_origin(origin)?;
-			Self::create_anchor(src_chain_id, r_id, max_edges, tree_depth, asset)
+			Self::create_anchor(deposit_size, src_chain_id, r_id, max_edges, tree_depth, asset)
 		}
 
 		/// This will be called by bridge when proposal to add/update edge of an
@@ -182,6 +183,7 @@ impl<T: Config<I>, I: 'static> AnchorConfig for Pallet<T, I> {
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	fn create_anchor(
+		deposit_size: BalanceOf<T, I>,
 		src_chain_id: T::ChainId,
 		r_id: ResourceId,
 		max_edges: u32,
@@ -192,7 +194,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			!AnchorList::<T, I>::contains_key(r_id),
 			Error::<T, I>::ResourceIsAlreadyAnchored
 		);
-		let tree_id = T::Anchor::create(T::AccountId::default(), tree_depth, max_edges, asset)?;
+		let tree_id = T::Anchor::create(T::AccountId::default(), deposit_size, tree_depth, max_edges, asset)?;
 		AnchorList::<T, I>::insert(r_id, tree_id);
 		Counts::<T, I>::insert(src_chain_id, 0);
 		Self::deposit_event(Event::AnchorCreated);

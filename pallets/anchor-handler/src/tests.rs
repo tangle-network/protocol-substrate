@@ -7,8 +7,9 @@ const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 100;
 const TEST_TREE_DEPTH: u8 = 32;
 
-fn make_anchor_create_proposal(src_chain_id: u32, resource_id: &[u8; 32]) -> Call {
+fn make_anchor_create_proposal(deposit_size: Balance, src_chain_id: u32, resource_id: &[u8; 32]) -> Call {
 	Call::AnchorHandler(crate::Call::execute_anchor_create_proposal {
+		deposit_size,
 		src_chain_id,
 		r_id: *resource_id,
 		max_edges: TEST_MAX_EDGES,
@@ -47,7 +48,15 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: u32, resource_id: &[u8; 
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert_eq!(false, <pallet_mt::Trees<Test>>::contains_key(0));
-	assert_ok!(Anchor::create(Origin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
+
+	let deposit_size = 100;
+	assert_ok!(Anchor::create(
+		Origin::root(),
+		deposit_size,
+		TEST_MAX_EDGES,
+		TEST_TREE_DEPTH,
+		0
+	));
 	// hack: insert an entry in AnchorsList with tree-id=0
 	AnchorList::<Test>::insert(resource_id, 0);
 	Counts::<Test>::insert(src_chain_id, 0);
@@ -97,7 +106,8 @@ fn anchor_create_proposal() {
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 		// make anchor create proposal
-		let create_proposal = make_anchor_create_proposal(src_chain_id, &resource_id);
+		let deposit_size = 100;
+		let create_proposal = make_anchor_create_proposal(deposit_size, src_chain_id, &resource_id);
 		let resource = b"AnchorHandler.execute_anchor_create_proposal".to_vec();
 		// set resource id
 		assert_ok!(Bridge::set_resource(Origin::root(), resource_id, resource.clone()));

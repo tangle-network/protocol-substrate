@@ -31,6 +31,7 @@ pallet-anchor = { path = "../anchor", default-features = false }
 pallet-bridge = { path = "../bridge", default-features = false }
 orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
 darkwebb-primitives = { path = "../../primitives", default-features = false }
+pallet-asset-registry = { path = "../asset-registry", default-features = false }
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
@@ -66,4 +67,5 @@ std = [
 	"pallet-bridge/std",
 	"orml-traits/std",
 	"darkwebb-primitives/std",
+	"pallet-asset-registry/std",
 ]

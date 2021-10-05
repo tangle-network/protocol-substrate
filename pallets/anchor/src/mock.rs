@@ -43,6 +43,7 @@ frame_support::construct_runtime!(
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
+		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
 	}
@@ -138,7 +139,6 @@ parameter_types! {
 		180, 093, 161, 235, 182, 053, 058, 052,
 		243, 171, 172, 211, 096, 076, 229, 047,
 	]);
-	pub const NewDefaultZeroElement: Element = Element([0u8; 32]);
 }
 
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
@@ -180,12 +180,6 @@ parameter_types! {
 	pub const RegistryStringLimit: u32 = 10;
 }
 
-parameter_type_with_key! {
-	pub ExistentialDeposits: |_currency_id: CurrencyId| -> Balance {
-		Default::default()
-	};
-}
-
 /// Tokens Configurations
 impl orml_tokens::Config for Test {
 	type Amount = Amount;
@@ -193,7 +187,7 @@ impl orml_tokens::Config for Test {
 	type CurrencyId = AssetId;
 	type DustRemovalWhitelist = Nothing;
 	type Event = Event;
-	type ExistentialDeposits = ExistentialDeposits;
+	type ExistentialDeposits = AssetRegistry;
 	type MaxLocks = ();
 	type OnDust = ();
 	type WeightInfo = ();
@@ -204,6 +198,17 @@ impl orml_currencies::Config for Test {
 	type GetNativeCurrencyId = NativeCurrencyId;
 	type MultiCurrency = Tokens;
 	type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+	type WeightInfo = ();
+}
+
+impl pallet_asset_registry::Config for Test {
+	type AssetId = darkwebb_primitives::AssetId;
+	type AssetNativeLocation = ();
+	type Balance = u128;
+	type Event = Event;
+	type NativeAssetId = NativeCurrencyId;
+	type RegistryOrigin = frame_system::EnsureRoot<u64>;
+	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
 }
 
