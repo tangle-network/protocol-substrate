@@ -55,15 +55,14 @@ use codec::{Decode, Encode};
 use darkwebb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
 	mixer::{MixerInspector, MixerInterface},
+	verifier::*,
+	ElementTrait,
 };
-use frame_support::{ensure, pallet_prelude::DispatchError};
-use types::*;
-
-use darkwebb_primitives::verifier::*;
-use frame_support::traits::Get;
+use frame_support::{ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::MultiCurrency;
-use sp_runtime::traits::{AtLeast32Bit, One, Zero};
+use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
 use sp_std::prelude::*;
+use types::*;
 
 pub use pallet::*;
 
@@ -149,8 +148,8 @@ pub mod pallet {
 
 	/// The next neighbor root index to store the merkle root update record
 	#[pallet::storage]
-	#[pallet::getter(fn next_neighbor_root_index)]
-	pub type NextNeighborRootIndex<T: Config<I>, I: 'static = ()> =
+	#[pallet::getter(fn curr_neighbor_root_index)]
+	pub type CurrentNeighborRootIndex<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, (T::TreeId, T::ChainId), T::RootIndex, ValueQuery>;
 
 	#[pallet::event]
@@ -185,6 +184,7 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn create(
 			origin: OriginFor<T>,
+			deposit_size: BalanceOf<T, I>,
 			max_edges: u32,
 			depth: u8,
 			asset: CurrencyIdOf<T, I>,
@@ -192,6 +192,7 @@ pub mod pallet {
 			ensure_root(origin)?;
 			let tree_id = <Self as AnchorInterface<_, _, _, _, _, _, _>>::create(
 				T::AccountId::default(),
+				deposit_size,
 				depth,
 				max_edges,
 				asset,
@@ -246,12 +247,11 @@ impl<T: Config<I>, I: 'static>
 {
 	fn create(
 		creator: T::AccountId,
+		deposit_size: BalanceOf<T, I>,
 		depth: u8,
 		max_edges: u32,
 		asset: CurrencyIdOf<T, I>,
 	) -> Result<T::TreeId, DispatchError> {
-		// FIXME: is that even correct?
-		let deposit_size = Zero::zero();
 		let id = T::Mixer::create(creator, deposit_size, depth, asset.into())?;
 		MaxEdges::<T, I>::insert(id, max_edges);
 		Ok(id)
@@ -273,13 +273,16 @@ impl<T: Config<I>, I: 'static>
 	) -> Result<(), DispatchError> {
 		// Check if local root is known
 		T::Mixer::ensure_known_root(id, roots[0])?;
+		// Check if neighbor roots are known
 		if roots.len() > 1 {
-			for i in 1..roots.len() {
-				<Self as AnchorInspector<_, _, _, _, _>>::ensure_known_neighbor_root(
-					id,
-					T::ChainId::from(i as u32),
-					roots[i],
-				)?;
+			// Get edges and corresponding chain IDs for the anchor
+			let edges = EdgeList::<T, I>::iter_prefix(id)
+				.into_iter()
+				.collect::<Vec<(T::ChainId, EdgeMetadata<_, _, _>)>>();
+
+			// Check membership of provided historical neighbor roots
+			for (i, edge) in edges.iter().enumerate() {
+				<Self as AnchorInspector<_, _, _, _, _>>::ensure_known_neighbor_root(id, edge.0, roots[i+1])?;
 			}
 		}
 
@@ -329,8 +332,8 @@ impl<T: Config<I>, I: 'static>
 			height,
 		};
 		// update historical neighbor list for this edge's root
-		let neighbor_root_inx = NextNeighborRootIndex::<T, I>::get((id, src_chain_id));
-		NextNeighborRootIndex::<T, I>::insert(
+		let neighbor_root_inx = CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id));
+		CurrentNeighborRootIndex::<T, I>::insert(
 			(id, src_chain_id),
 			neighbor_root_inx + T::RootIndex::one() % T::HistoryLength::get(),
 		);
@@ -355,11 +358,9 @@ impl<T: Config<I>, I: 'static>
 			root,
 			height,
 		};
-		let neighbor_root_inx = NextNeighborRootIndex::<T, I>::get((id, src_chain_id));
-		NextNeighborRootIndex::<T, I>::insert(
-			(id, src_chain_id),
-			neighbor_root_inx + T::RootIndex::one() % T::HistoryLength::get(),
-		);
+		let neighbor_root_inx =
+			(CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id)) + T::RootIndex::one()) % T::HistoryLength::get();
+		CurrentNeighborRootIndex::<T, I>::insert((id, src_chain_id), neighbor_root_inx);
 		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_inx, root);
 		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
 		Ok(())
@@ -369,16 +370,55 @@ impl<T: Config<I>, I: 'static>
 impl<T: Config<I>, I: 'static> AnchorInspector<T::AccountId, CurrencyIdOf<T, I>, T::ChainId, T::TreeId, T::Element>
 	for Pallet<T, I>
 {
-	fn get_neighbor_roots(_tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
-		Ok(vec![T::Element::default()])
+	fn get_neighbor_roots(tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
+		let edges = EdgeList::<T, I>::iter_prefix_values(tree_id)
+			.into_iter()
+			.collect::<Vec<EdgeMetadata<_, _, _>>>();
+		let roots = edges.iter().map(|e| e.root).collect::<Vec<_>>();
+		Ok(roots)
 	}
 
 	fn is_known_neighbor_root(
-		_tree_id: T::TreeId,
-		_src_chain_id: T::ChainId,
-		_target_root: T::Element,
+		tree_id: T::TreeId,
+		src_chain_id: T::ChainId,
+		target_root: T::Element,
 	) -> Result<bool, DispatchError> {
-		Ok(true)
+		if target_root.is_zero() {
+			return Ok(false);
+		}
+
+		let get_next_inx = |inx: T::RootIndex| {
+			if inx.is_zero() {
+				T::HistoryLength::get().saturating_sub(One::one())
+			} else {
+				inx.saturating_sub(One::one())
+			}
+		};
+
+		let curr_root_inx = CurrentNeighborRootIndex::<T, I>::get((tree_id, src_chain_id));
+		let mut historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), curr_root_inx)
+			.unwrap_or(T::Element::from_bytes(&[0; 32]));
+		if target_root == historical_root {
+			return Ok(true);
+		}
+
+		let mut i = get_next_inx(curr_root_inx);
+
+		while i != curr_root_inx {
+			historical_root =
+				NeighborRoots::<T, I>::get((tree_id, src_chain_id), i).unwrap_or(T::Element::from_bytes(&[0; 32]));
+			if target_root == historical_root {
+				return Ok(true);
+			}
+
+			if i == Zero::zero() {
+				i = T::HistoryLength::get();
+			}
+
+			i -= One::one();
+		}
+
+		Ok(false)
 	}
 
 	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {

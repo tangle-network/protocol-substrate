@@ -7,6 +7,7 @@ pub trait AnchorInterface<BlockNumber, AccountId, Balance, CurrencyId, ChainId, 
 	// Creates a new anchor
 	fn create(
 		creator: AccountId,
+		deposit_size: Balance,
 		depth: u8,
 		max_edges: u32,
 		asset: CurrencyId,

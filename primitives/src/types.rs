@@ -67,4 +67,15 @@ pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy + TypeInfo 
 	fn from_vec(vec: Vec<u8>) -> Self {
 		Self::from_bytes(&vec)
 	}
+
+	fn is_zero(&self) -> bool {
+		if self.to_vec().is_empty() {
+			return true;
+		} else {
+			let vec = self.to_vec();
+			let length = vec.len();
+			let buf: Vec<u8> = Vec::with_capacity(length);
+			return buf == vec;
+		}
+	}
 }

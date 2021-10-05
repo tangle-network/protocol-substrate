@@ -129,8 +129,6 @@ fn mixer_works() {
 		pk.serialize(&mut proving_key_bytes).unwrap();
 		let mut verifying_key_bytes = Vec::new();
 		vk.serialize(&mut verifying_key_bytes).unwrap();
-		println!("proving_key_bytes: {:?}", proving_key_bytes);
-		println!("verifying_key_bytes: {:?}", verifying_key_bytes);
 
 		let proof = prove_groth16_circuit_circomx5::<_, ark_bn254::Bn254, LEN>(&pk, circuit, &mut rng);
 
