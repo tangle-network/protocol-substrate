@@ -17,6 +17,7 @@ pub trait AnchorInterface<BlockNumber, AccountId, Balance, CurrencyId, ChainId, 
 	fn withdraw(
 		id: TreeId,
 		proof_bytes: &[u8],
+		chain_id: ChainId,
 		roots: Vec<Element>,
 		nullifier_hash: Element,
 		recipient: AccountId,
