@@ -111,7 +111,7 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBls381MixerVerifier;
+	type Verifier = darkwebb_primitives::verifying::ArkworksBls381BridgeVerifier;
 }
 
 pub struct TestHasher;
