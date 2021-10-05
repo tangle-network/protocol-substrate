@@ -40,7 +40,7 @@ frame_support::construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
 		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
-		MT: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
@@ -111,13 +111,6 @@ impl pallet_verifier::Config for Test {
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
 	type Verifier = darkwebb_primitives::verifying::ArkworksBls381BridgeVerifier;
-}
-
-pub struct TestHasher;
-impl InstanceHasher for TestHasher {
-	fn hash(data: &[u8], _params: &[u8]) -> Result<Vec<u8>, ark_crypto_primitives::Error> {
-		return Ok(data.to_vec());
-	}
 }
 
 impl pallet_hasher::Config for Test {
@@ -223,7 +216,7 @@ impl pallet_mixer::Config for Test {
 	type Event = Event;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = MixerPalletId;
-	type Tree = MT;
+	type Tree = MerkleTree;
 	type Verifier = VerifierPallet;
 }
 

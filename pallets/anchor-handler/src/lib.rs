@@ -46,7 +46,10 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
-use darkwebb_primitives::traits::anchor::{AnchorInspector, AnchorInterface};
+use darkwebb_primitives::{
+	anchor::AnchorConfig,
+	traits::anchor::{AnchorInspector, AnchorInterface},
+};
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;
 use orml_traits::MultiCurrency;
@@ -67,7 +70,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use pallet_anchor::types::EdgeMetadata;
+	use pallet_anchor::{types::EdgeMetadata, AnchorConfigration};
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -82,15 +85,7 @@ pub mod pallet {
 		type BridgeOrigin: EnsureOrigin<Self::Origin, Success = Self::AccountId>;
 
 		/// Anchor Interface
-		type Anchor: AnchorInterface<
-				Self::BlockNumber,
-				Self::AccountId,
-				BalanceOf<Self, I>,
-				CurrencyIdOf<Self, I>,
-				Self::ChainId,
-				Self::TreeId,
-				Self::Element,
-			> + AnchorInspector<Self::AccountId, CurrencyIdOf<Self, I>, Self::ChainId, Self::TreeId, Self::Element>;
+		type Anchor: AnchorInterface<AnchorConfigration<Self, I>> + AnchorInspector<AnchorConfigration<Self, I>>;
 	}
 
 	/// The map of trees to their anchor metadata
@@ -173,6 +168,16 @@ pub mod pallet {
 			Self::update_anchor(r_id, anchor_metadata)
 		}
 	}
+}
+
+impl<T: Config<I>, I: 'static> AnchorConfig for Pallet<T, I> {
+	type AccountId = T::AccountId;
+	type Balance = BalanceOf<T, I>;
+	type BlockNumber = T::BlockNumber;
+	type ChainId = T::ChainId;
+	type CurrencyId = CurrencyIdOf<T, I>;
+	type Element = T::Element;
+	type TreeId = T::TreeId;
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {

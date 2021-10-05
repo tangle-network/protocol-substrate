@@ -53,7 +53,7 @@ mod tests;
 pub mod types;
 use codec::{Decode, Encode};
 use darkwebb_primitives::{
-	anchor::{AnchorInspector, AnchorInterface},
+	anchor::{AnchorConfig, AnchorInspector, AnchorInterface},
 	mixer::{MixerInspector, MixerInterface},
 };
 use frame_support::{ensure, pallet_prelude::DispatchError};
@@ -189,13 +189,9 @@ pub mod pallet {
 			depth: u8,
 			asset: CurrencyIdOf<T, I>,
 		) -> DispatchResultWithPostInfo {
+			// Should it only be the root who can create anchors?
 			ensure_root(origin)?;
-			let tree_id = <Self as AnchorInterface<_, _, _, _, _, _, _>>::create(
-				T::AccountId::default(),
-				depth,
-				max_edges,
-				asset,
-			)?;
+			let tree_id = <Self as AnchorInterface<_>>::create(T::AccountId::default(), depth, max_edges, asset)?;
 			Self::deposit_event(Event::AnchorCreation(tree_id));
 			Ok(().into())
 		}
@@ -203,7 +199,7 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			<Self as AnchorInterface<_, _, _, _, _, _, _>>::deposit(origin, tree_id, leaf)?;
+			<Self as AnchorInterface<_>>::deposit(origin, tree_id, leaf)?;
 			Ok(().into())
 		}
 
@@ -233,17 +229,19 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config<I>, I: 'static>
-	AnchorInterface<
-		T::BlockNumber,
-		T::AccountId,
-		BalanceOf<T, I>,
-		CurrencyIdOf<T, I>,
-		T::ChainId,
-		T::TreeId,
-		T::Element,
-	> for Pallet<T, I>
-{
+pub struct AnchorConfigration<T: Config<I>, I: 'static>(core::marker::PhantomData<T>, core::marker::PhantomData<I>);
+
+impl<T: Config<I>, I: 'static> AnchorConfig for AnchorConfigration<T, I> {
+	type AccountId = T::AccountId;
+	type Balance = BalanceOf<T, I>;
+	type BlockNumber = T::BlockNumber;
+	type ChainId = T::ChainId;
+	type CurrencyId = CurrencyIdOf<T, I>;
+	type Element = T::Element;
+	type TreeId = T::TreeId;
+}
+
+impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pallet<T, I> {
 	fn create(
 		creator: T::AccountId,
 		depth: u8,
@@ -276,11 +274,7 @@ impl<T: Config<I>, I: 'static>
 		T::Mixer::ensure_known_root(id, roots[0])?;
 		if roots.len() > 1 {
 			for i in 1..roots.len() {
-				<Self as AnchorInspector<_, _, _, _, _>>::ensure_known_neighbor_root(
-					id,
-					T::ChainId::from(i as u32),
-					roots[i],
-				)?;
+				<Self as AnchorInspector<_>>::ensure_known_neighbor_root(id, T::ChainId::from(i as u32), roots[i])?;
 			}
 		}
 
@@ -345,7 +339,7 @@ impl<T: Config<I>, I: 'static>
 		let curr_length = EdgeList::<T, I>::iter_prefix_values(id).into_iter().count();
 		ensure!(max_edges > curr_length as u32, Error::<T, I>::TooManyEdges);
 		// craft edge
-		let e_meta = EdgeMetadata::<T::ChainId, T::Element, T::BlockNumber> {
+		let e_meta = EdgeMetadata {
 			src_chain_id,
 			root,
 			height,
@@ -372,7 +366,7 @@ impl<T: Config<I>, I: 'static>
 			EdgeList::<T, I>::contains_key(id, src_chain_id),
 			Error::<T, I>::EdgeDoesntExists
 		);
-		let e_meta = EdgeMetadata::<T::ChainId, T::Element, T::BlockNumber> {
+		let e_meta = EdgeMetadata {
 			src_chain_id,
 			root,
 			height,
@@ -388,9 +382,7 @@ impl<T: Config<I>, I: 'static>
 	}
 }
 
-impl<T: Config<I>, I: 'static> AnchorInspector<T::AccountId, CurrencyIdOf<T, I>, T::ChainId, T::TreeId, T::Element>
-	for Pallet<T, I>
-{
+impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pallet<T, I> {
 	fn get_neighbor_roots(_tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
 		Ok(vec![T::Element::default()])
 	}
