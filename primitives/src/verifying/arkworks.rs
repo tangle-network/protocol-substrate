@@ -1,16 +1,14 @@
-use core::convert::TryInto;
-
 use crate::*;
 use ark_crypto_primitives::Error;
 use ark_ec::PairingEngine;
-use ark_ff::{BigInteger, PrimeField, Zero};
+use ark_ff::Zero;
 use ark_groth16::{Proof, VerifyingKey};
 use ark_serialize::CanonicalDeserialize;
 use arkworks_gadgets::{
 	setup::{bridge, common::verify_groth16, mixer},
 	utils::to_field_elements,
 };
-use sp_std::{marker::PhantomData, mem, prelude::*};
+use sp_std::marker::PhantomData;
 
 pub struct ArkworksMixerVerifierGroth16<E: PairingEngine>(PhantomData<E>);
 pub struct ArkworksBridgeVerifierGroth16<E: PairingEngine>(PhantomData<E>);
@@ -42,26 +40,18 @@ impl<E: PairingEngine> InstanceVerifier for ArkworksBridgeVerifierGroth16<E> {
 		let fee = public_input_field_elts[3];
 		let refund = public_input_field_elts[4];
 		let chain_id = public_input_field_elts[5];
-		let roots_len = public_input_field_elts[6]
-			.into_repr()
-			.to_bytes_le()
-			.into_iter()
-			.take(mem::size_of::<u64>())
-			.collect::<Vec<_>>()
-			.try_into()
-			.unwrap();
-		let roots_len = u64::from_le_bytes(roots_len) as usize;
-		let mut roots = vec![E::Fr::zero(); roots_len];
-		roots.copy_from_slice(&public_input_field_elts[7..roots_len]);
-		// FIXME: why we do need to have a fixed size array of roots?
-		//
-		// TODO(@shekohex): change this to use the values form above
-		// instead of the hardcoded roots.
-		let public_inputs = bridge::get_public_inputs::<E::Fr, 1>(
+
+		const M: usize = 2;
+		let mut roots = [E::Fr::zero(); M];
+		for (i, root) in roots.iter_mut().enumerate() {
+			*root = *public_input_field_elts.get(i + 6).unwrap_or(&E::Fr::zero());
+		}
+
+		let public_inputs = bridge::get_public_inputs::<E::Fr, M>(
 			chain_id,
 			nullifier_hash,
-			[E::Fr::zero()],
-			E::Fr::zero(),
+			roots,
+			roots[0],
 			recipient,
 			relayer,
 			fee,

@@ -298,8 +298,8 @@ impl<T: Config<I>, I: 'static>
 		// fee (96..128)
 		// refund (128..160)
 		// chain_id (160..192)
-		// roots_len (192..224)
-		// roots (224..(roots_len * 32))
+		// root[1] (224..256)
+		// root[2] (256..288)
 		let mut bytes = vec![];
 
 		let element_encoder = |v: &[u8]| {
@@ -312,7 +312,7 @@ impl<T: Config<I>, I: 'static>
 		let fee_bytes = fee.using_encoded(element_encoder);
 		let refund_bytes = refund.using_encoded(element_encoder);
 		let chain_id_bytes = chain_id.using_encoded(element_encoder);
-		let roots_len_bytes = (roots.len() as u64).using_encoded(element_encoder);
+		const M: usize = 2;
 
 		bytes.extend_from_slice(&nullifier_hash.encode());
 		bytes.extend_from_slice(&recipient_bytes);
@@ -320,8 +320,7 @@ impl<T: Config<I>, I: 'static>
 		bytes.extend_from_slice(&fee_bytes);
 		bytes.extend_from_slice(&refund_bytes);
 		bytes.extend_from_slice(&chain_id_bytes);
-		bytes.extend_from_slice(&roots_len_bytes);
-		for i in 0..roots.len() {
+		for i in 0..M {
 			bytes.extend_from_slice(&roots[i].encode());
 		}
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
