@@ -112,7 +112,7 @@ fn should_be_able_to_add_neighbors_and_check_history() {
 		let neighbor_index_after: u32 = Anchor::curr_neighbor_root_index((tree_id, src_chain_id));
 		assert_eq!(neighbor_index_after, neighbor_index_before + 1);
 
-		for i in 0..(crate::mock::HistoryLength::get() - 1) {
+		for i in 0..(HistoryLength::get() - 1) {
 			assert_eq!(
 				Anchor::is_known_neighbor_root(tree_id, src_chain_id, root).unwrap(),
 				true

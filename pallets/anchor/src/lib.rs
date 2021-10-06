@@ -60,17 +60,12 @@ use darkwebb_primitives::{
 };
 use frame_support::{ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::MultiCurrency;
-use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
+use pallet_mixer::{types::MixerMetadata, BalanceOf, CurrencyIdOf};
+use sp_runtime::traits::{AccountIdConversion, AtLeast32Bit, One, Saturating, Zero};
 use sp_std::prelude::*;
 use types::*;
 
 pub use pallet::*;
-
-pub type BalanceOf<T, I> =
-	<<T as Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
-/// Type alias for the orml_traits::MultiCurrency::CurrencyId type
-pub type CurrencyIdOf<T, I> =
-	<<T as Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -97,9 +92,6 @@ pub mod pallet {
 
 		/// The verifier
 		type Verifier: VerifierModule;
-
-		/// Currency type for taking deposits
-		type Currency: MultiCurrency<Self::AccountId>;
 
 		/// The pruning length for neighbor root histories
 		type HistoryLength: Get<Self::RootIndex>;
@@ -166,6 +158,8 @@ pub mod pallet {
 		InvalidPermissions,
 		/// Invalid withdraw proof
 		InvalidWithdrawProof,
+		/// Mixer not found.
+		NoMixerFound,
 		/// Invalid neighbor root passed in withdrawal
 		/// (neighbor root is not in neighbor history)
 		InvalidNeighborWithdrawRoot,
@@ -173,6 +167,7 @@ pub mod pallet {
 		TooManyEdges,
 		/// Edge already exists
 		EdgeAlreadyExists,
+		/// Edge does not exist
 		EdgeDoesntExists,
 	}
 
@@ -270,18 +265,17 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		fee: BalanceOf<T, I>,
 		refund: BalanceOf<T, I>,
 	) -> Result<(), DispatchError> {
+		let mixer = Self::get_mixer(id)?;
 		// Check if local root is known
 		T::Mixer::ensure_known_root(id, roots[0])?;
 		// Check if neighbor roots are known
 		if roots.len() > 1 {
 			// Get edges and corresponding chain IDs for the anchor
-			let edges = EdgeList::<T, I>::iter_prefix(id)
-				.into_iter()
-				.collect::<Vec<(T::ChainId, EdgeMetadata<_, _, _>)>>();
+			let edges = EdgeList::<T, I>::iter_prefix(id).into_iter().collect::<Vec<_>>();
 
 			// Check membership of provided historical neighbor roots
-			for (i, edge) in edges.iter().enumerate() {
-				<Self as AnchorInspector<_>>::ensure_known_neighbor_root(id, edge.0, roots[i + 1])?;
+			for (i, (chain_id, _)) in edges.iter().enumerate() {
+				<Self as AnchorInspector<_>>::ensure_known_neighbor_root(id, *chain_id, roots[i + 1])?;
 			}
 		}
 
@@ -326,7 +320,13 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		}
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
-		// TODO: Transfer assets to the recipient
+		// transafer the assets
+		<T as pallet_mixer::Config<I>>::Currency::transfer(
+			mixer.asset,
+			&Self::account_id(),
+			&recipient,
+			mixer.deposit_size,
+		)?;
 		Ok(())
 	}
 
@@ -451,5 +451,19 @@ impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pal
 		let is_known = Self::is_known_neighbor_root(id, src_chain_id, target)?;
 		ensure!(is_known, Error::<T, I>::InvalidNeighborWithdrawRoot);
 		Ok(())
+	}
+}
+
+impl<T: Config<I>, I: 'static> Pallet<T, I> {
+	pub fn account_id() -> T::AccountId {
+		<T as pallet_mixer::Config<I>>::PalletId::get().into_account()
+	}
+
+	pub fn get_mixer(
+		id: T::TreeId,
+	) -> Result<MixerMetadata<T::AccountId, BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
+		let mixer = pallet_mixer::Mixers::<T, I>::get(id);
+		ensure!(mixer.is_some(), Error::<T, I>::NoMixerFound);
+		Ok(mixer.unwrap())
 	}
 }

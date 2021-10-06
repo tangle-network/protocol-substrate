@@ -231,7 +231,6 @@ parameter_types! {
 
 impl pallet_anchor::Config for Test {
 	type ChainId = u32;
-	type Currency = Currencies;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;

@@ -54,14 +54,10 @@ use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::Ensure
 use frame_system::pallet_prelude::OriginFor;
 use orml_traits::MultiCurrency;
 use pallet_anchor::types::EdgeMetadata;
+use pallet_mixer::{BalanceOf, CurrencyIdOf};
 pub mod types;
 use pallet_bridge::types::ResourceId;
 use types::*;
-pub type BalanceOf<T, I> =
-	<<T as pallet_anchor::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
-/// Type alias for the orml_traits::MultiCurrency::CurrencyId type
-pub type CurrencyIdOf<T, I> =
-	<<T as pallet_anchor::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
 
 pub use pallet::*;
 
