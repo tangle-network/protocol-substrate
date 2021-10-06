@@ -31,14 +31,24 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 }
 
 const SEED: u32 = 0;
+// Based on parameters generated from these functions below  using the
+// arkworks_gadgets package, 16k was the max parameter length, so it's safe to
+// benchmark with 20k poseidon_bls381_x5_5 poseidon_bn254_x3_5
+// poseidon_circom_bn254_x5_5
+// poseidon_circom_bn254_x5_3
+// poseidon_bls381_x3_5
+// poseidon_circom_bn254_x5_5
+// poseidon_circom_bn254_x5_3
+const MAX_PARAMETER_LENGTH: u32 = 20000;
 
 benchmarks! {
 
 	set_parameters {
+		let c in 0..MAX_PARAMETER_LENGTH;
 		let caller: T::AccountId = whitelisted_caller();
 		let depositor: T::AccountId = account("depositor", 0, SEED);
 		whitelist_account!(depositor);
-		let parameters = vec![0u8;100000 as usize];
+		let parameters = vec![0u8;c as usize];
 		Maintainer::<T>::put::<T::AccountId>(caller.clone());
 
 		<<T as Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller, 100_000_000u32.into());
@@ -66,8 +76,9 @@ benchmarks! {
 
 
 	force_set_parameters {
+		let c in 0..MAX_PARAMETER_LENGTH;
 		let depositor: T::AccountId = account("depositor", 0, SEED);
-		let parameters = vec![0u8;100000 as usize];
+		let parameters = vec![0u8;c as usize];
 
 		Deposit::<T>::put::<Option<DepositDetails<T::AccountId, DepositBalanceOf<T>>>>(Some(DepositDetails{
 			depositor,
