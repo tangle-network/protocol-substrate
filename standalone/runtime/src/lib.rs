@@ -1460,6 +1460,17 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl pallet_mt::MerkleTreeApi<Block, Element> for Runtime {
+		fn get_leaf(tree_id: u32, index: u32) -> Option<Element> {
+			let v = MerkleTree::leaves(tree_id, index);
+			if v == Element::default() {
+				None
+			} else {
+				Some(v)
+			}
+		}
+	}
+
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {
 		fn benchmark_metadata(extra: bool) -> (

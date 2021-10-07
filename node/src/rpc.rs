@@ -20,6 +20,7 @@
 
 use std::sync::Arc;
 
+use pallet_mt_rpc::{MerkleClient, MerkleTreeApi as MerkleApi};
 use sc_client_api::AuxStore;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool_api::TransactionPool;
@@ -55,6 +56,7 @@ where
 	C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BlockBuilder<Block>,
+	C::Api: MerkleApi<Block, Element>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use frame_rpc_system::{FullSystem, SystemApi};
@@ -75,6 +77,8 @@ where
 	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
 		client.clone(),
 	)));
+
+	io.extend_with(MerkleApi::to_delegate(MerkleClient::new(client.clone())));
 
 	io
 }

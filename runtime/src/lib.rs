@@ -1021,6 +1021,17 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl pallet_mt::MerkleTreeApi<Block, Element> for Runtime {
+		fn get_leaf(tree_id: u32, index: u32) -> Option<Element> {
+			let v = MerkleTree::leaves(tree_id, index);
+			if v == Element::default() {
+				None
+			} else {
+				Some(v)
+			}
+		}
+	}
+
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info()

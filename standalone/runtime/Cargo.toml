@@ -36,6 +36,7 @@ pallet-anchor-handler = { path = "../../pallets/anchor-handler", default-feature
 orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
 orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false }
 orml-currencies = { path = "../../open-runtime-module-library/currencies", default-features = false }
+pallet-mt-rpc = { path = "../../pallets/mt/rpc", optional = true }
 
 # Substrate dependencies
 sp-authority-discovery = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
@@ -165,4 +166,5 @@ std = [
   "pallet-hasher/std",
   "darkwebb-primitives/std",
   "common/std",
+	"pallet-mt-rpc",
 ]
