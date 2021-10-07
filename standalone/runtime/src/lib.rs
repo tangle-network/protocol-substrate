@@ -1038,6 +1038,7 @@ parameter_types! {
 }
 
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {
