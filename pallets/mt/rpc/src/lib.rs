@@ -22,8 +22,8 @@ pub trait MerkleApi<BlockHash, Element> {
 	/// specified.
 	///
 	/// Returns the (full) a Vec<[u8; 32]> of the leaves.
-	#[rpc(name = "merkle_treeLeaves")]
-	fn tree_leaves(&self, tree_id: u32, from: usize, to: usize, at: Option<BlockHash>) -> Result<Vec<Element>>;
+	#[rpc(name = "mt_getLeaves")]
+	fn get_leaves(&self, tree_id: u32, from: usize, to: usize, at: Option<BlockHash>) -> Result<Vec<Element>>;
 }
 
 /// A struct that implements the `MerkleApi`.
@@ -45,11 +45,11 @@ impl<C, M> MerkleClient<C, M> {
 impl<C, Block, Element> MerkleApi<<Block as BlockT>::Hash, Element> for MerkleClient<C, Block>
 where
 	Block: BlockT,
-	Element: ElementTrait,
+	Element: ElementTrait + Send + Sync + 'static,
 	C: HeaderBackend<Block> + ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	C::Api: MerkleRuntimeApi<Block, Element>,
 {
-	fn tree_leaves(
+	fn get_leaves(
 		&self,
 		tree_id: u32,
 		from: usize,

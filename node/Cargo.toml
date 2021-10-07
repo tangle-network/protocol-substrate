@@ -27,9 +27,11 @@ serde = { version = "1.0.101", features = ["derive"] }
 hex-literal = "0.2.1"
 async-trait = "0.1.42"
 
+pallet-mt-rpc = { path = "../pallets/mt/rpc", version = "0.1.0" }
+common = { path = "../common" }
+
 # Parachain runtimes
 darkwebb-runtime = { path = "../runtime", version = "0.1.0" }
-pallet-mt-rpc = { path = "../pallets/mt/rpc", version = "0.1.0" }
 shell-runtime = { git = "https://github.com/paritytech/cumulus", branch = "master" }
 
 # Substrate dependencies
@@ -84,7 +86,6 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch =
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
-common = { path = "../common" }
 
 arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"] }
 ark-std = { version = "^0.3.0" }
