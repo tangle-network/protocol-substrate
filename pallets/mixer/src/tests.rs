@@ -79,8 +79,6 @@ fn should_be_able_to_change_the_maintainer() {
 
 #[test]
 fn mixer_works() {
-	use std::fs;
-
 	new_test_ext().execute_with(|| {
 		type Bn254Fr = ark_bn254::Fr;
 		let mut rng = ark_std::test_rng();

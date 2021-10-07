@@ -280,10 +280,7 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 		// Check if local root is known
 		ensure!(T::Tree::is_known_root(id, root)?, Error::<T, I>::InvalidWithdrawRoot);
 		// Check nullifier and add or return `AlreadyRevealedNullifier`
-		ensure!(
-			!Self::is_nullifier_used(id, nullifier_hash),
-			Error::<T, I>::AlreadyRevealedNullifier
-		);
+		Self::ensure_nullifier_unused(id, nullifier_hash)?;
 		Self::add_nullifier_hash(id, nullifier_hash)?;
 		// Format proof public inputs for verification
 		// FIXME: This is for a specfic gadget so we ought to create a generic handler
@@ -346,7 +343,7 @@ impl<T: Config<I>, I: 'static> MixerInspector<T::AccountId, CurrencyIdOf<T, I>, 
 
 	fn ensure_nullifier_unused(id: T::TreeId, nullifier: T::Element) -> Result<(), DispatchError> {
 		ensure!(
-			Self::is_nullifier_used(id, nullifier),
+			!Self::is_nullifier_used(id, nullifier),
 			Error::<T, I>::AlreadyRevealedNullifier
 		);
 		Ok(())

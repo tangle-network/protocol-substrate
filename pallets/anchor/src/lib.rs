@@ -156,6 +156,8 @@ pub mod pallet {
 	pub enum Error<T, I = ()> {
 		/// Account does not have correct permissions
 		InvalidPermissions,
+		/// Invalid Merkle Roots
+		InvalidMerkleRoots,
 		/// Invalid withdraw proof
 		InvalidWithdrawProof,
 		/// Mixer not found.
@@ -222,6 +224,34 @@ pub mod pallet {
 				Ok(().into())
 			})
 		}
+
+		#[pallet::weight(0)]
+		pub fn withdraw(
+			origin: OriginFor<T>,
+			id: T::TreeId,
+			proof_bytes: Vec<u8>,
+			chain_id: T::ChainId,
+			roots: Vec<T::Element>,
+			nullifier_hash: T::Element,
+			recipient: T::AccountId,
+			relayer: T::AccountId,
+			fee: BalanceOf<T, I>,
+			refund: BalanceOf<T, I>,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin)?;
+			<Self as AnchorInterface<_>>::withdraw(
+				id,
+				proof_bytes.as_slice(),
+				chain_id,
+				roots,
+				nullifier_hash,
+				recipient,
+				relayer,
+				fee,
+				refund,
+			)?;
+			Ok(().into())
+		}
 	}
 }
 
@@ -265,6 +295,9 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		fee: BalanceOf<T, I>,
 		refund: BalanceOf<T, I>,
 	) -> Result<(), DispatchError> {
+		const M: usize = 2;
+		// double check the number of roots
+		ensure!(roots.len() == M, Error::<T, I>::InvalidMerkleRoots);
 		let mixer = Self::get_mixer(id)?;
 		// Check if local root is known
 		T::Mixer::ensure_known_root(id, roots[0])?;
@@ -307,7 +340,6 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		let fee_bytes = fee.using_encoded(element_encoder);
 		let refund_bytes = refund.using_encoded(element_encoder);
 		let chain_id_bytes = chain_id.using_encoded(element_encoder);
-		const M: usize = 2;
 
 		bytes.extend_from_slice(&nullifier_hash.encode());
 		bytes.extend_from_slice(&recipient_bytes);

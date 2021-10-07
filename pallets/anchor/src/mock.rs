@@ -111,7 +111,7 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBls381BridgeVerifier;
+	type Verifier = darkwebb_primitives::verifying::ArkworksBn254BridgeVerifier;
 }
 
 impl pallet_hasher::Config for Test {
@@ -139,6 +139,7 @@ parameter_types! {
 		180, 093, 161, 235, 182, 053, 058, 052,
 		243, 171, 172, 211, 096, 076, 229, 047,
 	]);
+	pub const MockZeroElement: Element = Element([0; 32]);
 }
 
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
@@ -160,7 +161,7 @@ impl pallet_mt::Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
-	type DefaultZeroElement = DefaultZeroElement;
+	type DefaultZeroElement = MockZeroElement;
 	type Element = Element;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
