@@ -91,6 +91,10 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "maste
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 
+[dependencies.polkadot-service]
+git = "https://github.com/paritytech/polkadot"
+branch = "master"
+
 [features]
 default = ["std"]
 runtime-benchmarks = [
@@ -102,6 +106,7 @@ runtime-benchmarks = [
     "pallet-balances/runtime-benchmarks",
     "pallet-timestamp/runtime-benchmarks",
     "sp-runtime/runtime-benchmarks",
+		"polkadot-service/runtime-benchmarks",
 ]
 std = [
 	"codec/std",
