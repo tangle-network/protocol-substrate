@@ -295,9 +295,9 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		fee: BalanceOf<T, I>,
 		refund: BalanceOf<T, I>,
 	) -> Result<(), DispatchError> {
-		const M: usize = 2;
+		let m = MaxEdges::<T, I>::get(id) as usize;
 		// double check the number of roots
-		ensure!(roots.len() == M, Error::<T, I>::InvalidMerkleRoots);
+		ensure!(roots.len() == m, Error::<T, I>::InvalidMerkleRoots);
 		let mixer = Self::get_mixer(id)?;
 		// Check if local root is known
 		T::Mixer::ensure_known_root(id, roots[0])?;
@@ -328,6 +328,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		// chain_id (160..192)
 		// root[1] (224..256)
 		// root[2] (256..288)
+		// root[m - 1] (...)
 		let mut bytes = vec![];
 
 		let element_encoder = |v: &[u8]| {
@@ -347,7 +348,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		bytes.extend_from_slice(&fee_bytes);
 		bytes.extend_from_slice(&refund_bytes);
 		bytes.extend_from_slice(&chain_id_bytes);
-		for i in 0..M {
+		for i in 0..m {
 			bytes.extend_from_slice(&roots[i].encode());
 		}
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
