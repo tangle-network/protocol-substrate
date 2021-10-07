@@ -97,21 +97,16 @@ branch = "master"
 
 [features]
 default = ["std"]
-
 runtime-benchmarks = [
+	"polkadot-service/runtime-benchmarks",
+	"hex-literal",
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
-	"frame-system/runtime-benchmarks",
-	"sp-runtime/runtime-benchmarks",
-	"pallet-assets/runtime-benchmarks",
-	"pallet-balances/runtime-benchmarks",
-	"pallet-multisig/runtime-benchmarks",
-	"pallet-proxy/runtime-benchmarks",
-	"pallet-timestamp/runtime-benchmarks",
-	"pallet-utility/runtime-benchmarks",
 	"frame-system-benchmarking",
-	"hex-literal",
-	"polkadot-service/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-balances/runtime-benchmarks",
+	"pallet-timestamp/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
 ]
 
 std = [
@@ -162,6 +157,6 @@ std = [
 	"xcm-executor/std",
 	"sp-consensus-aura/std",
 
-    "darkwebb-primitives/std",
-    "common/std",
+	"darkwebb-primitives/std",
+	"common/std",
 ]
