@@ -51,7 +51,7 @@ benchmarks! {
 
 		let new_ed = T::Balance::from(2_000_000u32);
 
-	}: _(RawOrigin::Root, asset_id, new_name.clone(), AssetType::PoolShare(T::AssetId::from(10u8),T::AssetId::from(20u8)), Some(new_ed))
+	}: _(RawOrigin::Root, asset_id, new_name.clone(), AssetType::PoolShare(vec![T::AssetId::from(10u8),T::AssetId::from(20u8)]), Some(new_ed))
 	verify {
 		let bname = crate::Pallet::<T>::to_bounded_name(new_name).unwrap();
 		assert_eq!(crate::Pallet::<T>::asset_ids(&bname), Some(T::AssetId::from(1u8)));
@@ -62,7 +62,7 @@ benchmarks! {
 		let stored = stored.unwrap();
 
 		let expected = AssetDetails{
-			asset_type: AssetType::PoolShare(T::AssetId::from(10u8), T::AssetId::from(20u8)),
+			asset_type: AssetType::PoolShare(vec![T::AssetId::from(10u8), T::AssetId::from(20u8)]),
 			locked: false,
 			existential_deposit: new_ed,
 			name: bname,};

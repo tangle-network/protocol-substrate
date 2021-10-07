@@ -5740,8 +5740,10 @@ dependencies = [
 name = "pallet-bridge"
 version = "1.0.0"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "frame-system-benchmarking",
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",
