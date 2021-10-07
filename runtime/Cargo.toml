@@ -98,7 +98,6 @@ branch = "master"
 [features]
 default = ["std"]
 runtime-benchmarks = [
-	"polkadot-service/runtime-benchmarks",
 	"hex-literal",
 	"frame-benchmarking",
 	"frame-support/runtime-benchmarks",
