@@ -27,6 +27,7 @@ serde = { version = "1.0.101", features = ["derive"] }
 hex-literal = "0.2.1"
 async-trait = "0.1.42"
 
+pallet-mt = { path = "../pallets/mt", version = "1.0.0" }
 pallet-mt-rpc = { path = "../pallets/mt/rpc", version = "0.1.0" }
 common = { path = "../common" }
 

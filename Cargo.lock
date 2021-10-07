@@ -1989,6 +1989,7 @@ dependencies = [
  "hex-literal 0.2.1",
  "jsonrpc-core",
  "log",
+ "pallet-mt",
  "pallet-mt-rpc",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",

@@ -45,7 +45,7 @@ impl<C, M> MerkleClient<C, M> {
 impl<C, Block, Element> MerkleApi<<Block as BlockT>::Hash, Element> for MerkleClient<C, Block>
 where
 	Block: BlockT,
-	Element: ElementTrait + Send + Sync + 'static,
+	Element: ElementTrait,
 	C: HeaderBackend<Block> + ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	C::Api: MerkleRuntimeApi<Block, Element>,
 {
