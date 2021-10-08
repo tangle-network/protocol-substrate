@@ -43,6 +43,9 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
