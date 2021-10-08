@@ -21,6 +21,9 @@ sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://g
 sp-std = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 darkwebb-primitives = { path = "../../primitives", default-features = false }
 
+#Optional dependencies
+frame-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
+
 [dev-dependencies]
 serde = { version = "1.0.119" }
 sp-core = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
@@ -48,4 +51,12 @@ std = [
     "sp-std/std",
     "darkwebb-primitives/std",
     "darkwebb-primitives/hashing",
+    "frame-benchmarking/std"
+]
+
+runtime-benchmarks = [
+  "frame-benchmarking",
+  "frame-system/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-benchmarking/std"
 ]

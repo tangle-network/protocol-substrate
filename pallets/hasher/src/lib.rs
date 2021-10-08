@@ -57,9 +57,11 @@
 pub mod mock;
 #[cfg(test)]
 mod tests;
+mod benchmarking;
 
 use sp_runtime::traits::{Saturating, Zero};
 use sp_std::prelude::*;
+use sp_std::vec;
 
 use darkwebb_primitives::{hasher::*, types::DepositDetails};
 use frame_support::{
@@ -248,7 +250,7 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
+				Self::deposit_event(Event::MaintainerSet(Default::default(), new_maintainer));
 				Ok(().into())
 			})
 		}

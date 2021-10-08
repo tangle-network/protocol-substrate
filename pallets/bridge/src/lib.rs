@@ -593,4 +593,14 @@ impl<T: Config<I>, I: 'static> EnsureOrigin<T::Origin> for EnsureBridge<T, I> {
 			r => Err(T::Origin::from(r)),
 		})
 	}
+
+	/// Returns an outer origin capable of passing `try_origin` check.
+	///
+	/// ** Should be used for benchmarking only!!! **
+	#[cfg(feature = "runtime-benchmarks")]
+	fn successful_origin() -> T::Origin {
+		T::Origin::from(frame_system::RawOrigin::Signed(
+			T::BridgeAccountId::get().into_account(),
+		))
+	}
 }
