@@ -20,6 +20,8 @@ log = { version = "0.4.14", default-features = false }
 scale-info = { version = "1.0.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0.101", optional = true, features = ["derive"] }
 smallvec = "1.6.1"
+# This getrandom package was having issues been compiled to wasm in a downstream dependency, that's why this override is here
+getrandom = { version = "0.2", features = ["js"] }
 
 # local dependencies
 pallet-hasher = { path = "../pallets/hasher", default-features = false }
@@ -68,6 +70,7 @@ pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-fe
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
+pallet-session-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master", optional = true }
 
 # cumulus
 cumulus-pallet-aura-ext = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
@@ -80,6 +83,7 @@ cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus", bra
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
 pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
+cumulus-pallet-session-benchmarking = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false, optional = true }
 
 common = { path = "../common", default-features = false }
 
@@ -89,11 +93,8 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = 
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
+pallet-xcm = { version="0.9.11", git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 
-[dependencies.polkadot-service]
-git = "https://github.com/paritytech/polkadot"
-branch = "master"
 
 [features]
 default = ["std"]
@@ -104,8 +105,20 @@ runtime-benchmarks = [
 	"frame-system-benchmarking",
 	"frame-system/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
+	"pallet-assets/runtime-benchmarks",
+	"pallet-multisig/runtime-benchmarks",
+	"pallet-proxy/runtime-benchmarks",
+	"pallet-session-benchmarking",
+	"pallet-utility/runtime-benchmarks",
+	"pallet-collator-selection/runtime-benchmarks",
+	"pallet-hasher/runtime-benchmarks",
+	"pallet-asset-registry/runtime-benchmarks",
+	"pallet-bridge/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
+	"cumulus-pallet-session-benchmarking",
+	"pallet-xcm/runtime-benchmarks",
+	"xcm-builder/runtime-benchmarks"
 ]
 
 std = [
@@ -158,4 +171,12 @@ std = [
 
 	"darkwebb-primitives/std",
 	"common/std",
+	"pallet-hasher/std",
+	"pallet-verifier/std",
+	"pallet-mt/std",
+	"pallet-mixer/std",
+	"pallet-anchor/std",
+	"pallet-bridge/std",
+	"pallet-asset-registry/std",
+	"pallet-anchor-handler/std",
 ]

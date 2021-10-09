@@ -33,7 +33,8 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 const SEED: u32 = 0;
 // Based on parameters generated from these functions below  using the
 // arkworks_gadgets package, 16k was the max parameter length, so it's safe to
-// benchmark with 20k poseidon_bls381_x5_5 poseidon_bn254_x3_5
+// benchmark with 20k 
+// poseidon_bls381_x5_5 poseidon_bn254_x3_5
 // poseidon_circom_bn254_x5_5
 // poseidon_circom_bn254_x5_3
 // poseidon_bls381_x3_5
