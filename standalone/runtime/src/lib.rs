@@ -1134,7 +1134,6 @@ parameter_types! {
 
 impl pallet_anchor::Config for Runtime {
 	type ChainId = ChainId;
-	type Currency = Currencies;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;
