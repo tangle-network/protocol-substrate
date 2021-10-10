@@ -56,7 +56,7 @@ where
 	C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BlockBuilder<Block>,
-	C::Api: pallet_mt::MerkleTreeApi<Block, Element>,
+	C::Api: pallet_mt_rpc_runtime_api::MerkleTreeApi<Block, Element>,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use frame_rpc_system::{FullSystem, SystemApi};

@@ -25,7 +25,8 @@ smallvec = "1.6.1"
 pallet-hasher = { path = "../pallets/hasher", default-features = false }
 pallet-verifier = { path = "../pallets/verifier", default-features = false }
 pallet-mt = { path = "../pallets/mt", default-features = false }
-pallet-mt-rpc = { path = "../pallets/mt/rpc", optional = true}
+pallet-mt-rpc-runtime-api = { path = "../pallets/mt/rpc/runtime-api", default-features = false }
+
 pallet-mixer = { path = "../pallets/mixer", default-features = false }
 pallet-anchor = { path = "../pallets/anchor", default-features = false }
 pallet-bridge = { path = "../pallets/bridge", default-features = false }
@@ -154,5 +155,5 @@ std = [
 
 	"darkwebb-primitives/std",
 	"common/std",
-	"pallet-mt-rpc",
+	"pallet-mt-rpc-runtime-api/std",
 ]

@@ -404,10 +404,3 @@ impl<T: Config<I>, I: 'static> TreeInspector<T::AccountId, T::TreeId, T::Element
 		Ok(false)
 	}
 }
-
-sp_api::decl_runtime_apis! {
-	pub trait MerkleTreeApi<Element: ElementTrait> {
-		/// Get the leaf of tree id at a given index.
-		fn get_leaf(tree_id: u32, index: u32) -> Option<Element>;
-	}
-}

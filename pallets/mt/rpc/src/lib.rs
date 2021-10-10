@@ -9,7 +9,7 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
 use darkwebb_primitives::ElementTrait;
-use pallet_mt::MerkleTreeApi as MerkleRuntimeApi;
+use pallet_mt_rpc_runtime_api::MerkleTreeApi;
 
 /// Merkle RPC methods.
 #[rpc]
@@ -47,7 +47,7 @@ where
 	Block: BlockT,
 	Element: ElementTrait,
 	C: HeaderBackend<Block> + ProvideRuntimeApi<Block> + Send + Sync + 'static,
-	C::Api: MerkleRuntimeApi<Block, Element>,
+	C::Api: MerkleTreeApi<Block, Element>,
 {
 	fn get_leaves(
 		&self,

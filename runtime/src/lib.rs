@@ -1025,7 +1025,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_mt::MerkleTreeApi<Block, Element> for Runtime {
+	impl pallet_mt_rpc_runtime_api::MerkleTreeApi<Block, Element> for Runtime {
 		fn get_leaf(tree_id: u32, index: u32) -> Option<Element> {
 			let v = MerkleTree::leaves(tree_id, index);
 			if v == Element::default() {

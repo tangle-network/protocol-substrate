@@ -18,6 +18,7 @@ sp-runtime = { version = "4.0.0-dev", git = "https://github.com/paritytech/subst
 
 darkwebb-primitives = { path = "../../../primitives", default-features = false }
 pallet-mt = { path = "../", default-features = false }
+pallet-mt-rpc-runtime-api = { path = "./runtime-api", default-features = false }
 
 [features]
 default = ["std"]
@@ -25,4 +26,5 @@ std = [
     "codec/std",
     "darkwebb-primitives/std",
     "pallet-mt/std",
+    "pallet-mt-rpc-runtime-api/std",
 ]
