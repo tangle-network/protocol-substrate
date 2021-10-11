@@ -246,8 +246,8 @@ parameter_types! {
 impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees>;
-	type TransactionByteFee = TransactionByteFee;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
+	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = IdentityFee<Balance>;
 }
 
@@ -358,6 +358,7 @@ impl pallet_staking::Config for Runtime {
 	type GenesisElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
 	type NextNewSession = Session;
+	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
 	// send the slashed funds to the treasury.
 	type Reward = ();
 	type RewardRemainder = Treasury;
@@ -371,7 +372,6 @@ impl pallet_staking::Config for Runtime {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>,
 	>;
-	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
 	type SlashDeferDuration = SlashDeferDuration;
 	// Alternatively, use pallet_staking::UseNominatorsMap<Runtime> to just use the
 	// nominators map. Note that the aforementioned does not scale to a very large
@@ -1472,12 +1472,11 @@ impl_runtime_apis! {
 			let mut list = Vec::<BenchmarkList>::new();
 
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
-			list_benchmark!(list, extra, pallet_assets, Assets);
-			list_benchmark!(list, extra, pallet_balances, Balances);
-			list_benchmark!(list, extra, pallet_multisig, Multisig);
-			list_benchmark!(list, extra, pallet_proxy, Proxy);
-			list_benchmark!(list, extra, pallet_utility, Utility);
-			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
+			list_benchmark!(list, extra, pallet_hasher, BLS381Poseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BLS381Poseidon5x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon5x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1509,12 +1508,11 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_assets, Assets);
-			add_benchmark!(params, batches, pallet_balances, Balances);
-			add_benchmark!(params, batches, pallet_multisig, Multisig);
-			add_benchmark!(params, batches, pallet_proxy, Proxy);
-			add_benchmark!(params, batches, pallet_utility, Utility);
-			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+			add_benchmark!(params, batches, pallet_hasher, BLS381Poseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BLS381Poseidon5x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon5x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
