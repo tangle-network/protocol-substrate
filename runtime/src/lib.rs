@@ -1055,11 +1055,11 @@ impl_runtime_apis! {
 
 			let mut list = Vec::<BenchmarkList>::new();
 
-			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
-			list_benchmark!(list, extra, pallet_balances, Balances);
-			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
-			list_benchmark!(list, extra, pallet_collator_selection, CollatorSelection);
 			list_benchmark!(list, extra, pallet_hasher, BLS381Poseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BLS381Poseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon5x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 
 
 			let storage_info = AllPalletsWithSystem::storage_info();
@@ -1092,11 +1092,11 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
-			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_balances, Balances);
-			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
 			add_benchmark!(params, batches, pallet_hasher, BLS381Poseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BLS381Poseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon5x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

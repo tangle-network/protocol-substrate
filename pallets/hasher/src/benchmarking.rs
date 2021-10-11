@@ -53,11 +53,11 @@ benchmarks_instance_pallet! {
 		let parameters = vec![0u8;c as usize];
 		Maintainer::<T, I>::put::<T::AccountId>(caller.clone());
 
-		<<T as Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller, 100_000_000u32.into());
+		<<T as Config<I>>::Currency as Currency<T::AccountId>>::deposit_creating(&caller, u32::MAX.into());
 
 		Deposit::<T, I>::put::<Option<DepositDetails<T::AccountId, DepositBalanceOf<T, I>>>>(Some(DepositDetails{
 			depositor,
-			deposit:1_000_000u32.into()
+			deposit:1_000u32.into()
 		}));
 
 	}: _(RawOrigin::Signed(caller.clone()), parameters.clone())
@@ -84,7 +84,7 @@ benchmarks_instance_pallet! {
 
 		Deposit::<T, I>::put::<Option<DepositDetails<T::AccountId, DepositBalanceOf<T, I>>>>(Some(DepositDetails{
 			depositor,
-			deposit:1_000_000u32.into()
+			deposit:1_000u32.into()
 		}));
 
 
