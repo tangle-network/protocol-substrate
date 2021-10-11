@@ -1982,6 +1982,7 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
+ "darkwebb-primitives",
  "darkwebb-runtime",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -1989,6 +1990,9 @@ dependencies = [
  "hex-literal 0.2.1",
  "jsonrpc-core",
  "log",
+ "pallet-mt",
+ "pallet-mt-rpc",
+ "pallet-mt-rpc-runtime-api",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
  "polkadot-cli",
@@ -2094,6 +2098,7 @@ dependencies = [
  "pallet-hasher",
  "pallet-mixer",
  "pallet-mt",
+ "pallet-mt-rpc-runtime-api",
  "pallet-multisig",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
@@ -2238,6 +2243,7 @@ dependencies = [
  "pallet-indices",
  "pallet-mixer",
  "pallet-mt",
+ "pallet-mt-rpc-runtime-api",
  "pallet-multisig",
  "pallet-offences",
  "pallet-proxy",
@@ -5816,6 +5822,33 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-mt-rpc"
+version = "0.1.0"
+dependencies = [
+ "darkwebb-primitives",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-mt",
+ "pallet-mt-rpc-runtime-api",
+ "parity-scale-codec",
+ "sc-rpc",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-mt-rpc-runtime-api"
+version = "1.0.0"
+dependencies = [
+ "darkwebb-primitives",
+ "pallet-mt",
+ "sp-api",
 ]
 
 [[package]]

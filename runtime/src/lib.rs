@@ -43,6 +43,9 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
@@ -694,6 +697,7 @@ parameter_types! {
 }
 
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {
@@ -1017,6 +1021,17 @@ impl_runtime_apis! {
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
+		}
+	}
+
+	impl pallet_mt_rpc_runtime_api::MerkleTreeApi<Block, Element> for Runtime {
+		fn get_leaf(tree_id: u32, index: u32) -> Option<Element> {
+			let v = MerkleTree::leaves(tree_id, index);
+			if v == Element::default() {
+				None
+			} else {
+				Some(v)
+			}
 		}
 	}
 
