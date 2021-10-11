@@ -260,7 +260,6 @@ pub fn new_full_base(
 	let warp_sync = Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
 		backend.clone(),
 		import_setup.1.shared_authority_set().clone(),
-		Vec::default(),
 	));
 
 	let (network, system_rpc_tx, network_starter) =
@@ -548,7 +547,6 @@ pub fn new_light_base(
 	let warp_sync = Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
 		backend.clone(),
 		grandpa_link.shared_authority_set().clone(),
-		Vec::default(),
 	));
 
 	let (network, system_rpc_tx, network_starter) =
