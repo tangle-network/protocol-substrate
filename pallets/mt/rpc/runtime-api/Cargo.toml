@@ -20,5 +20,5 @@ default = ["std"]
 std = [
 	"sp-api/std",
 	"pallet-mt/std",
-  "darkwebb-primitives/std",
+	"darkwebb-primitives/std",
 ]
