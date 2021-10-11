@@ -304,7 +304,12 @@ impl pallet_indices::Config for Runtime {
 	type WeightInfo = pallet_indices::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(17);
+}
+
 impl pallet_session::Config for Runtime {
+	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
 	type Event = Event;
 	type Keys = SessionKeys;
 	type NextSessionRotation = Babe;
@@ -339,7 +344,6 @@ parameter_types! {
 	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
 	pub const MaxNominatorRewardedPerValidator: u32 = 256;
 	pub OffchainRepeat: BlockNumber = 5;
-	pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(17);
 }
 
 use frame_election_provider_support::onchain;
@@ -358,7 +362,6 @@ impl pallet_staking::Config for Runtime {
 	type GenesisElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
 	type NextNewSession = Session;
-	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
 	// send the slashed funds to the treasury.
 	type Reward = ();
 	type RewardRemainder = Treasury;
@@ -1472,11 +1475,6 @@ impl_runtime_apis! {
 			let mut list = Vec::<BenchmarkList>::new();
 
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
-			list_benchmark!(list, extra, pallet_hasher, BLS381Poseidon3x5Hasher);
-			list_benchmark!(list, extra, pallet_hasher, BLS381Poseidon5x5Hasher);
-			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon3x5Hasher);
-			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon5x5Hasher);
-			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1508,11 +1506,6 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_hasher, BLS381Poseidon3x5Hasher);
-			add_benchmark!(params, batches, pallet_hasher, BLS381Poseidon5x5Hasher);
-			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon3x5Hasher);
-			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon5x5Hasher);
-			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
