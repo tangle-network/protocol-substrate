@@ -7,7 +7,7 @@ use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, IdentityLookup}
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -21,9 +21,10 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		BN254Poseidon3x5Hasher: pallet_hasher::{Pallet, Call, Storage, Event<T>},
-		BN254Poseidon5x5Hasher: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>},
-		BN254CircomPoseidon3x5Hasher: pallet_hasher::<Instance3>::{Pallet, Call, Storage, Event<T>},
+		BN254Poseidon3x5Hasher: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		BN254Poseidon5x5Hasher: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		BN254CircomPoseidon3x5Hasher: pallet_hasher::<Instance3>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		DefaultPalletHasher: pallet_hasher::{Pallet, Call, Storage, Event<T>, Config<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -82,7 +83,7 @@ parameter_types! {
 	pub const MetadataDepositPerByte: u64 = 1;
 }
 
-impl pallet_hasher::Config for Test {
+impl pallet_hasher::Config<Instance1> for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
@@ -114,6 +115,19 @@ impl pallet_hasher::Config<Instance3> for Test {
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
 }
+
+
+impl pallet_hasher::Config for Test {
+	type Currency = Balances;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type Hasher = darkwebb_primitives::hashing::BN254Poseidon3x5Hasher;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ParameterDeposit;
+	type StringLimit = StringLimit;
+}
+
 
 pub type BN254Poseidon3x5HasherCall = pallet_hasher::Call<Test, Instance1>;
 pub type BN254Poseidon5x5HasherCall = pallet_hasher::Call<Test, Instance2>;

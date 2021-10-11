@@ -55,5 +55,7 @@ std = [
   "sp-core/std",
   "sp-std/std",
   "sp-api/std",
-  "frame-benchmarking/std"
+  "frame-benchmarking/std",
+  "sp-io/std",
+  "polkadot-xcm/std"
 ]
