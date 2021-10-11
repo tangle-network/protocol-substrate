@@ -59,7 +59,7 @@ use log::{error, warn, info, debug, trace};
 pub struct DarkwebbParachainRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for DarkwebbParachainRuntimeExecutor {
-	type ExtendHostFunctions = ();
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
 		darkwebb_runtime::api::dispatch(method, data)
