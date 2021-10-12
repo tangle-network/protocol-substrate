@@ -25,7 +25,9 @@ use darkwebb_primitives::types::DepositDetails;
 use frame_benchmarking::{account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
 use frame_support::traits::Currency;
 use frame_system::RawOrigin;
-
+use sp_runtime::traits::Bounded;
+type BalanceOf<T, I> =
+	<<T as Config<I>>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
@@ -53,7 +55,7 @@ benchmarks_instance_pallet! {
 		let parameters = vec![0u8;c as usize];
 		Maintainer::<T, I>::put::<T::AccountId>(caller.clone());
 
-		<<T as Config<I>>::Currency as Currency<T::AccountId>>::deposit_creating(&caller, u32::MAX.into());
+		<<T as Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller, BalanceOf::<T, I>::max_value());
 
 		Deposit::<T, I>::put::<Option<DepositDetails<T::AccountId, DepositBalanceOf<T, I>>>>(Some(DepositDetails{
 			depositor,
