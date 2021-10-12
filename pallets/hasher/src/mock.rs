@@ -1,5 +1,5 @@
 use super::*;
-use crate::{self as pallet_hasher, weights::WebbWeight};
+use crate::{self as pallet_hasher};
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
 use frame_support::parameter_types;
