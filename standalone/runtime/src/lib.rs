@@ -240,6 +240,7 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	pub const TransactionByteFee: Balance = 10 * MILLICENTS;
+	pub const OperationalFeeMultiplier: u8 = 5;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
 	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
 	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
@@ -248,6 +249,7 @@ parameter_types! {
 impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees>;
+	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = IdentityFee<Balance>;
 }
@@ -975,6 +977,7 @@ impl pallet_hasher::Config<Instance1> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
+	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_hasher::Config<Instance2> for Runtime {
@@ -986,6 +989,7 @@ impl pallet_hasher::Config<Instance2> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
+	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_hasher::Config<Instance3> for Runtime {
@@ -997,6 +1001,7 @@ impl pallet_hasher::Config<Instance3> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
+	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_hasher::Config<Instance4> for Runtime {
@@ -1008,6 +1013,7 @@ impl pallet_hasher::Config<Instance4> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
+	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_hasher::Config<Instance5> for Runtime {
@@ -1019,6 +1025,7 @@ impl pallet_hasher::Config<Instance5> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
+	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
@@ -1486,14 +1493,11 @@ impl_runtime_apis! {
 
 			let mut list = Vec::<BenchmarkList>::new();
 
-			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
-			list_benchmark!(list, extra, pallet_assets, Assets);
-			list_benchmark!(list, extra, pallet_balances, Balances);
-			list_benchmark!(list, extra, pallet_multisig, Multisig);
-			list_benchmark!(list, extra, pallet_proxy, Proxy);
-			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
-			list_benchmark!(list, extra, pallet_utility, Utility);
-			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
+			list_benchmark!(list, extra, pallet_hasher, BLS381Poseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BLS381Poseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon5x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1524,14 +1528,11 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
-			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_assets, Assets);
-			add_benchmark!(params, batches, pallet_balances, Balances);
-			add_benchmark!(params, batches, pallet_multisig, Multisig);
-			add_benchmark!(params, batches, pallet_proxy, Proxy);
-			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_utility, Utility);
-			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+			add_benchmark!(params, batches, pallet_hasher, BLS381Poseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BLS381Poseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon5x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

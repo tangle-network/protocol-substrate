@@ -13,10 +13,10 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 
-frame-support = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-frame-system = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-std = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+frame-support = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
+frame-system = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
+sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
+sp-std = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
 pallet-hasher = { path = "../hasher", default-features = false }
 pallet-mt = { path = "../mt", default-features = false }
 pallet-verifier = { path = "../verifier", default-features = false }
@@ -26,12 +26,15 @@ orml-tokens = { path = "../../open-runtime-module-library/tokens", default-featu
 orml-currencies = { path = "../../open-runtime-module-library/currencies", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
 
+frame-system-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true }
+frame-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true }
+
 [dev-dependencies]
 serde = { version = "1.0.119" }
-sp-core = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-io = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-core = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
+sp-io = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
+sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false }
 ark-ec = { version = "^0.3.0", default-features = false }
@@ -58,4 +61,10 @@ std = [
     "pallet-mt/std",
     "pallet-verifier/std",
     "darkwebb-primitives/std",
+    "pallet-asset-registry/std"
+]
+runtime-benchmarks = [
+  "frame-benchmarking",
+  "frame-system/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
 ]
