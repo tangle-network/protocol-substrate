@@ -2,6 +2,7 @@
 
 use super::*;
 use crate as pallet_mt;
+use pallet_balances::WeightInfo;
 use sp_core::H256;
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
@@ -92,6 +93,7 @@ impl pallet_hasher::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
+	type WeightInfo = ();
 }
 
 parameter_types! {
