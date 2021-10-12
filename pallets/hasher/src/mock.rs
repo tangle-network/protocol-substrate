@@ -1,5 +1,5 @@
 use super::*;
-use crate as pallet_hasher;
+use crate::{self as pallet_hasher, weights::WebbWeight};
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
 use frame_support::parameter_types;
@@ -92,6 +92,7 @@ impl pallet_hasher::Config<Instance1> for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
+	type WeightInfo = ();
 }
 
 impl pallet_hasher::Config<Instance2> for Test {
@@ -103,6 +104,7 @@ impl pallet_hasher::Config<Instance2> for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
+	type WeightInfo = ();
 }
 
 impl pallet_hasher::Config<Instance3> for Test {
@@ -114,6 +116,7 @@ impl pallet_hasher::Config<Instance3> for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
+	type WeightInfo = ();
 }
 
 
@@ -126,6 +129,7 @@ impl pallet_hasher::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
+	type WeightInfo = ();
 }
 
 
@@ -136,3 +140,5 @@ pub type BN254CircomPoseidon3x5HasherCall = pallet_hasher::Call<Test, Instance3>
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
 }
+
+

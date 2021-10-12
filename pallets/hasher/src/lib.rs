@@ -53,15 +53,15 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod benchmarking;
 #[cfg(test)]
 pub mod mock;
 #[cfg(test)]
 mod tests;
-mod benchmarking;
+pub mod weights;
 
 use sp_runtime::traits::{Saturating, Zero};
-use sp_std::prelude::*;
-use sp_std::vec;
+use sp_std::{prelude::*, vec};
 
 use darkwebb_primitives::{hasher::*, types::DepositDetails};
 use frame_support::{
@@ -73,6 +73,7 @@ use frame_system::Config as SystemConfig;
 type DepositBalanceOf<T, I = ()> = <<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
 pub use pallet::*;
+pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -113,6 +114,9 @@ pub mod pallet {
 
 		/// The maximum length of a name or symbol stored on-chain.
 		type StringLimit: Get<u32>;
+
+		/// Weightinfo for pallet.
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::genesis_config]
@@ -180,7 +184,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::set_parameters(parameters.len() as u32))]
 		pub fn set_parameters(origin: OriginFor<T>, parameters: Vec<u8>) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			// ensure parameter setter is the maintainer
@@ -212,7 +216,7 @@ pub mod pallet {
 			})
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::set_maintainer())]
 		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			// ensure parameter setter is the maintainer
@@ -225,7 +229,7 @@ pub mod pallet {
 			})
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::force_set_parameters(parameters.len() as u32))]
 		pub fn force_set_parameters(origin: OriginFor<T>, parameters: Vec<u8>) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			// get old deposit details if they exist
@@ -244,7 +248,7 @@ pub mod pallet {
 			})
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::force_set_maintainer())]
 		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			// set the new maintainer
