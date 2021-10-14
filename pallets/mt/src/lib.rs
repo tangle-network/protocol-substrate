@@ -51,6 +51,8 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
+mod benchmarking;
+
 pub mod types;
 use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchError};
@@ -261,6 +263,8 @@ pub mod pallet {
 			// insert the leaf
 			<Self as TreeInterface<_, _, _>>::insert_in_order(tree_id, leaf)?;
 
+			Self::deposit_event(Event::LeafInsertion(tree_id, next_index, leaf));
+
 			Ok(().into())
 		}
 
@@ -283,7 +287,7 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
+				Self::deposit_event(Event::MaintainerSet(Default::default(), new_maintainer));
 				Ok(().into())
 			})
 		}
@@ -294,7 +298,7 @@ pub mod pallet {
 			default_hashes: Vec<T::Element>,
 		) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
-			// set the new maintainer
+			// set the new default hashes
 			DefaultHashes::<T, I>::put(default_hashes);
 			Ok(().into())
 		}

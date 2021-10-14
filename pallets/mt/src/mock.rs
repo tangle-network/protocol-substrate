@@ -2,7 +2,6 @@
 
 use super::*;
 use crate as pallet_mt;
-use pallet_balances::WeightInfo;
 use sp_core::H256;
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
