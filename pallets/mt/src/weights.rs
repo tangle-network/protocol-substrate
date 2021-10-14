@@ -91,7 +91,7 @@ impl WeightInfo for () {
 	fn insert() -> Weight {
 		0
 	}
-	fn set_maintainer(c: u32) -> Weight{
+	fn set_maintainer() -> Weight{
 		0
 	}
 	fn force_set_maintainer() -> Weight{
