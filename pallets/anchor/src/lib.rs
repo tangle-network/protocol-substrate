@@ -220,7 +220,7 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
+				Self::deposit_event(Event::MaintainerSet(Default::default(), new_maintainer));
 				Ok(().into())
 			})
 		}
