@@ -1037,6 +1037,7 @@ parameter_types! {
 	pub const Two: u64 = 2;
 	pub const MaxTreeDepth: u8 = 30;
 	pub const RootHistorySize: u32 = 1096;
+	pub const MaxDefaultHashes: u16 = 256;
 	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
 	pub const DefaultZeroElement: Element = Element([
 		108, 175, 153, 072, 237, 133, 150, 036,
@@ -1080,6 +1081,8 @@ impl pallet_mt::Config for Runtime {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type MaxDefaultHashes = MaxDefaultHashes;
+	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_verifier::Config for Runtime {
@@ -1489,7 +1492,6 @@ impl_runtime_apis! {
 		) {
 			use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
-			use frame_system_benchmarking::Pallet as SystemBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 
@@ -1510,7 +1512,6 @@ impl_runtime_apis! {
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
 
-			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![

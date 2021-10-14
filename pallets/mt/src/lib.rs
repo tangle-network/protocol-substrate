@@ -53,10 +53,14 @@ mod tests;
 
 mod benchmarking;
 
+pub mod weights;
+
 pub mod types;
 use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchError};
 use types::TreeMetadata;
+
+pub use weights::WeightInfo;
 
 use darkwebb_primitives::{
 	hasher::*,
@@ -106,6 +110,9 @@ pub mod pallet {
 		/// The max depth of trees
 		type MaxTreeDepth: Get<u8>;
 
+		/// The max length of default hashes
+		type MaxDefaultHashes: Get<u16>;
+
 		/// The hasher instance trait
 		type Hasher: HasherModule;
 
@@ -134,6 +141,9 @@ pub mod pallet {
 
 		/// The maximum length of a name or symbol stored on-chain.
 		type StringLimit: Get<u32>;
+
+		/// WeightInfo for pallet
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::storage]
@@ -208,6 +218,8 @@ pub mod pallet {
 		ExceedsMaxLeaves,
 		/// Tree doesnt exist
 		TreeDoesntExist,
+		/// Invalid length for default hashes
+		ExceedsMaxDefaultHashes,
 	}
 
 	#[pallet::hooks]
@@ -298,6 +310,11 @@ pub mod pallet {
 			default_hashes: Vec<T::Element>,
 		) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
+			let len_of_hashes = default_hashes.len();
+			ensure!(
+				len_of_hashes > 0 && len_of_hashes <= T::MaxDefaultHashes::get() as usize,
+				Error::<T, I>::ExceedsMaxDefaultHashes
+			);
 			// set the new default hashes
 			DefaultHashes::<T, I>::put(default_hashes);
 			Ok(().into())

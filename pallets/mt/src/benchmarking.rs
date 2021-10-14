@@ -34,7 +34,6 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 }
 
 const SEED: u32 = 0;
-const MAX_LENGTH_OF_HASHES: u32 = 20000;
 
 benchmarks! {
 
@@ -81,13 +80,14 @@ benchmarks! {
 	}
 
 	force_set_default_hashes {
-		// Since there's no bound on the length of default hashes vector
-		// Using 20k to benchmark
-		let p in 1..MAX_LENGTH_OF_HASHES;
+		let p in 1..T::MaxDefaultHashes::get() as u32;
 
 		let default_hashes = vec![T::DefaultZeroElement::get();p as usize];
 
 	}:_(RawOrigin::Root, default_hashes)
+	verify {
+		assert_eq!(DefaultHashes::<T>::get().len(), p as usize)
+	}
 
 }
 

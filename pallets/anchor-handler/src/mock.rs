@@ -141,6 +141,7 @@ parameter_types! {
 	pub const Two: u64 = 2;
 	pub const MaxTreeDepth: u8 = 255;
 	pub const RootHistorySize: u32 = 1096;
+	pub const MaxDefaultHashes: u16 = 256;
 	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
 	pub const DefaultZeroElement: Element = Element([
 		047, 229, 076, 096, 211, 172, 171, 243,
@@ -182,6 +183,8 @@ impl pallet_mt::Config for Test {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type MaxDefaultHashes = MaxDefaultHashes;
+	type WeightInfo = ();
 }
 
 parameter_types! {
