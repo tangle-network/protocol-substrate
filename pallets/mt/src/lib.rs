@@ -241,7 +241,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		#[pallet::weight(T::WeightInfo::create(depth as u32))]
+		#[pallet::weight(T::WeightInfo::create(*depth as u32))]
 		pub fn create(origin: OriginFor<T>, depth: u8) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			ensure!(
