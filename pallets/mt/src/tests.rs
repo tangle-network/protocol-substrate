@@ -44,11 +44,7 @@ fn should_fail_in_case_when_max_default_hashes_is_exceeded() {
 		let max_default_hashes = <Test as Config>::MaxDefaultHashes::get();
 		assert_err!(
 			MerkleTree::force_set_default_hashes(Origin::root(), vec![<Test as Config>::DefaultZeroElement::get(); (max_default_hashes + 1) as usize]),
-			DispatchError::Module {
-				index: 3,
-				error: 5, // ExceedsMaxDefaultHashes,
-				message: None,
-			}
+			crate::Error::<Test, _>::ExceedsMaxDefaultHashes
 		);
 	});
 }
