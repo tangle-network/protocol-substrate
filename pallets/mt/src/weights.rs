@@ -47,7 +47,7 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree DefaultHashes (r:1 w:0)
 	// Storage: MerkleTree Trees (r:0 w:1)
 	fn create(_d: u32, ) -> Weight {
-		(51_144_000 as Weight)
+		(51_295_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
@@ -58,27 +58,27 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree Leaves (r:0 w:1)
 	// Storage: MerkleTree CachedRoots (r:0 w:1)
 	fn insert() -> Weight {
-		(52_695_000 as Weight)
+		(54_848_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(5 as Weight))
 	}
 	// Storage: MerkleTree Maintainer (r:1 w:1)
 	fn set_maintainer() -> Weight {
-		(23_721_000 as Weight)
+		(24_413_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: MerkleTree Maintainer (r:1 w:1)
 	fn force_set_maintainer() -> Weight {
-		(19_725_000 as Weight)
+		(20_762_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: MerkleTree DefaultHashes (r:0 w:1)
 	fn force_set_default_hashes(p: u32, ) -> Weight {
-		(3_132_000 as Weight)
+		(3_253_000 as Weight)
 			// Standard Error: 0
-			.saturating_add((62_000 as Weight).saturating_mul(p as Weight))
+			.saturating_add((66_000 as Weight).saturating_mul(p as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 }

@@ -110,9 +110,6 @@ pub mod pallet {
 		/// The max depth of trees
 		type MaxTreeDepth: Get<u8>;
 
-		/// The max length of default hashes
-		type MaxDefaultHashes: Get<u16>;
-
 		/// The hasher instance trait
 		type Hasher: HasherModule;
 
@@ -312,7 +309,7 @@ pub mod pallet {
 			T::ForceOrigin::ensure_origin(origin)?;
 			let len_of_hashes = default_hashes.len();
 			ensure!(
-				len_of_hashes > 0 && len_of_hashes <= T::MaxDefaultHashes::get() as usize,
+				len_of_hashes > 0 && len_of_hashes <= T::MaxTreeDepth::get() as usize,
 				Error::<T, I>::ExceedsMaxDefaultHashes
 			);
 			// set the new default hashes

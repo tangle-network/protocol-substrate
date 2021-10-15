@@ -101,7 +101,6 @@ parameter_types! {
 	pub const LeafDepositPerByte: u64 = 1;
 	pub const Two: u64 = 2;
 	pub const MaxTreeDepth: u8 = 32;
-	pub const MaxDefaultHashes: u16 = 256;
 	pub const RootHistorySize: u32 = 1096;
 	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
 	pub const DefaultZeroElement: Element = Element([
@@ -142,7 +141,6 @@ impl Config for Test {
 	type RootIndex = u32;
 	type StringLimit = StringLimit;
 	type TreeDeposit = TreeDeposit;
-	type MaxDefaultHashes = MaxDefaultHashes;
 	type TreeId = u32;
 	type Two = Two;
 	type WeightInfo = ();

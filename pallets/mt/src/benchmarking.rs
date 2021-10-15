@@ -80,7 +80,7 @@ benchmarks! {
 	}
 
 	force_set_default_hashes {
-		let p in 1..T::MaxDefaultHashes::get() as u32;
+		let p in 1..T::MaxTreeDepth::get() as u32;
 
 		let default_hashes = vec![T::DefaultZeroElement::get();p as usize];
 
