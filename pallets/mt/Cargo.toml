@@ -39,12 +39,14 @@ arkworks-gadgets = { version = "^0.3" } # just for testing we will enclude every
 default = ["std"]
 std = [
     "codec/std",
+    "scale-info/std",
     "frame-support/std",
     "frame-system/std",
     "sp-runtime/std",
     "sp-std/std",
     "pallet-hasher/std",
     "darkwebb-primitives/std",
+    "frame-benchmarking/std"
 ]
 runtime-benchmarks = [
   "frame-benchmarking",

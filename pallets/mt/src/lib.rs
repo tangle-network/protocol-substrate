@@ -51,10 +51,16 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
+mod benchmarking;
+
+pub mod weights;
+
 pub mod types;
 use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchError};
 use types::TreeMetadata;
+
+pub use weights::WeightInfo;
 
 use darkwebb_primitives::{
 	hasher::*,
@@ -132,6 +138,9 @@ pub mod pallet {
 
 		/// The maximum length of a name or symbol stored on-chain.
 		type StringLimit: Get<u32>;
+
+		/// WeightInfo for pallet
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::storage]
@@ -206,6 +215,8 @@ pub mod pallet {
 		ExceedsMaxLeaves,
 		/// Tree doesnt exist
 		TreeDoesntExist,
+		/// Invalid length for default hashes
+		ExceedsMaxDefaultHashes,
 	}
 
 	#[pallet::hooks]
@@ -227,7 +238,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::create(*depth as u32))]
 		pub fn create(origin: OriginFor<T>, depth: u8) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			ensure!(
@@ -247,7 +258,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::insert())]
 		pub fn insert(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let _origin = ensure_signed(origin)?;
 			ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T, I>::TreeDoesntExist);
@@ -261,10 +272,12 @@ pub mod pallet {
 			// insert the leaf
 			<Self as TreeInterface<_, _, _>>::insert_in_order(tree_id, leaf)?;
 
+			Self::deposit_event(Event::LeafInsertion(tree_id, next_index, leaf));
+
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::set_maintainer())]
 		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			// ensure parameter setter is the maintainer
@@ -277,24 +290,29 @@ pub mod pallet {
 			})
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::force_set_maintainer())]
 		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
+				Self::deposit_event(Event::MaintainerSet(Default::default(), new_maintainer));
 				Ok(().into())
 			})
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::force_set_default_hashes(default_hashes.len() as u32))]
 		pub fn force_set_default_hashes(
 			origin: OriginFor<T>,
 			default_hashes: Vec<T::Element>,
 		) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
-			// set the new maintainer
+			let len_of_hashes = default_hashes.len();
+			ensure!(
+				len_of_hashes > 0 && len_of_hashes <= T::MaxTreeDepth::get() as usize,
+				Error::<T, I>::ExceedsMaxDefaultHashes
+			);
+			// set the new default hashes
 			DefaultHashes::<T, I>::put(default_hashes);
 			Ok(().into())
 		}
