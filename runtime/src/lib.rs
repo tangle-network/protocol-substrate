@@ -736,6 +736,7 @@ impl pallet_mt::Config for Runtime {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_verifier::Config for Runtime {
@@ -1056,7 +1057,6 @@ impl_runtime_apis! {
 		) {
 			use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
-			use frame_system_benchmarking::Pallet as SystemBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 
@@ -1065,6 +1065,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon3x5Hasher);
 			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon5x5Hasher);
 			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_mt, MerkleTree);
 
 
 			let storage_info = AllPalletsWithSystem::storage_info();
@@ -1077,7 +1078,6 @@ impl_runtime_apis! {
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
 
-			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
 
 
@@ -1102,6 +1102,8 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon3x5Hasher);
 			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon5x5Hasher);
 			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_mt, MerkleTree);
+			
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

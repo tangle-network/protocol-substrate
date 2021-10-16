@@ -182,6 +182,7 @@ impl pallet_mt::Config for Test {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type WeightInfo = ();
 }
 
 parameter_types! {
