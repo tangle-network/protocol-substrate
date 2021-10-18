@@ -32,6 +32,7 @@ ark-serialize = { version = "^0.3.0", default-features = false, features = [ "de
 ark-ff = { version = "^0.3.0", default-features = false, optional = true}
 ark-std = { version = "^0.3.0", default-features = false, optional = true }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"], optional = true }
 pallet-balances = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true}
 
@@ -84,4 +85,5 @@ runtime-benchmarks = [
   "ark-std",
   "ark-bn254",
   "pallet-balances",
+  "ark-bls12-381"
 ]
