@@ -21,7 +21,6 @@
 
 use super::*;
 
-
 use darkwebb_primitives::{anchor::AnchorInterface, traits::merkle_tree::{TreeInspector}};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
 use frame_system::RawOrigin;
@@ -42,7 +41,7 @@ use arkworks_gadgets::{
 	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
 };
 
-use frame_support::traits::{Currency, Get, OnInitialize};
+use frame_support::{traits::{Currency, Get, PalletInfo}, storage};
 use crate::Pallet as Anchor;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
@@ -51,11 +50,10 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 
 pub const TREE_DEPTH: usize = 30;
 pub const M: usize = 2;
-pub const DEPOSIT_SIZE: u128 = 10_000;
 
 
 const SEED: u32 = 0;
-const MAX_EDGES: u32 = 246;
+const MAX_EDGES: u32 = 256;
 type Bn254Fr = ark_bn254::Fr;
 
 benchmarks! {
@@ -112,19 +110,20 @@ benchmarks! {
 					let mds = get_mds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
 					PoseidonParameters::new(rounds, mds)
 				}
-				Curve::Bls381 => todo!("Setup environment for bls381"),
+				_ => todo!("Setup environment for bls381"),
 			};
-			// 1. Setup The Hasher Pallet.
+			
 			
 			//Todo
-			
-			//<T as pallet_mt::Config>::Hasher::force_set_parameters{parameters: params.to_bytes()};
 
+			let hasher_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as pallet_mt::Config>::Hasher>().unwrap();
+			let verifier_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as pallet_mixer::Config>::Verifier>().unwrap();
+
+			// 1. Setup The Hasher Pallet.
+			storage::unhashed::put(&storage::storage_prefix(hasher_pallet_name.as_bytes(), "Parameters".as_bytes()),&params.to_bytes());
 	
-			// 2. Initialize MerkleTree pallet.
-
-			// Todo
-			//<<T as pallet_mixer::Config>::Tree as OnInitialize<u64>>::on_initialize(1);
+			// 2. Initialize MerkleTree pallet
+			pallet_mt::Pallet::<T>::set_default_hashes();
 
 			// 3. Setup the VerifierPallet
 			//    but to do so, we need to have a VerifyingKey
@@ -146,7 +145,7 @@ benchmarks! {
 			};
 
 			// Todo
-			//<T as pallet_mixer::Config>::Verifier::force_set_parameters(RawOrigin::Root, verifier_key_bytes);
+			storage::unhashed::put(&storage::storage_prefix(verifier_pallet_name.as_bytes(), "Parameters".as_bytes()),&verifier_key_bytes);
 			
 			proving_key_bytes
 		};
@@ -158,17 +157,16 @@ benchmarks! {
 		<<T as pallet_mt::Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 100_000_000u32.into());
 		let src_chain_id: u32 = 1;
 		let recipient_account_id: T::AccountId = account("recipient", 0, SEED);
-		let relayer_account_id: T::AccountId = account("recipient", 1, SEED);
-		let creator: T::AccountId = account("creator", 0, SEED);
-		whitelist_account!(recipient_account_id);
-		whitelist_account!(relayer_account_id);
+		let relayer_account_id: T::AccountId = account("relayer", 1, SEED);
+		let creator: T::AccountId = account("creator", 2, SEED);
 		whitelist_account!(creator);
 		let fee_value: u32 = 0;
 		let refund_value: u32 = 0;
+		
 		// fit inputs to the curve.
-		let chain_id = Bn254Fr::from(src_chain_id.into());
-		let recipient = Bn254Fr::from(recipient_account_id.into());
-		let relayer = Bn254Fr::from(relayer_account_id.into());
+		let chain_id = Bn254Fr::from(src_chain_id);
+		let recipient = Bn254Fr::from(account::<u64>("recipient", 0, SEED));
+		let relayer = Bn254Fr::from(account::<u64>("relayer", 1, SEED));
 		let fee = Bn254Fr::from(fee_value);
 		let refund = Bn254Fr::from(refund_value);
 
@@ -185,7 +183,7 @@ benchmarks! {
 			caller.clone(),
 			tree_id,
 			<T as pallet_mt::Config>::Element::from_bytes(&leaf.into_repr().to_bytes_le()),
-		);
+		)?;
 
 		// the withdraw process..
 		// we setup the inputs to our proof generator.
@@ -232,7 +230,7 @@ benchmarks! {
 		roots_element,
 		nullifier_hash_element,
 		recipient_account_id.clone(),
-		relayer_account_id.into(),
+		relayer_account_id,
 		fee_value.into(),
 		refund_value.into()
 	)

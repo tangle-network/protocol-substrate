@@ -1066,6 +1066,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon5x5Hasher);
 			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			list_benchmark!(list, extra, pallet_mt, MerkleTree);
+			list_benchmark!(list, extra, pallet_anchor, Anchor);
 
 
 			let storage_info = AllPalletsWithSystem::storage_info();
@@ -1103,6 +1104,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon5x5Hasher);
 			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			add_benchmark!(params, batches, pallet_mt, MerkleTree);
+			add_benchmark!(params, batches, pallet_anchor, Anchor);
 			
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }

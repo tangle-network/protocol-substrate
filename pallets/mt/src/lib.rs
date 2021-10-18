@@ -222,16 +222,7 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
 		fn on_initialize(_n: T::BlockNumber) -> Weight {
-			let mut temp_hashes: Vec<T::Element> = Vec::with_capacity(T::MaxTreeDepth::get() as usize);
-			let default_zero = T::DefaultZeroElement::get();
-			temp_hashes.push(default_zero);
-			let mut temp_hash = default_zero.to_bytes().to_vec();
-			for _ in 0..T::MaxTreeDepth::get() {
-				temp_hash = T::Hasher::hash_two(&temp_hash, &temp_hash).unwrap();
-				temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
-			}
-
-			DefaultHashes::<T, I>::put(temp_hashes);
+			Self::set_default_hashes();
 			1u64 + 1u64
 		}
 	}
@@ -327,6 +318,19 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		};
 
 		two
+	}
+
+	pub fn set_default_hashes() {
+		let mut temp_hashes: Vec<T::Element> = Vec::with_capacity(T::MaxTreeDepth::get() as usize);
+		let default_zero = T::DefaultZeroElement::get();
+		temp_hashes.push(default_zero);
+		let mut temp_hash = default_zero.to_bytes().to_vec();
+		for _ in 0..T::MaxTreeDepth::get() {
+			temp_hash = T::Hasher::hash_two(&temp_hash, &temp_hash).unwrap();
+			temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
+		}
+
+		DefaultHashes::<T, I>::put(temp_hashes);
 	}
 }
 
