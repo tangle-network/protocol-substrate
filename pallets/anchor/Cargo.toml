@@ -25,8 +25,16 @@ darkwebb-primitives = { path = "../../primitives", default-features = false }
 orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
 
+
 frame-system-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true }
 frame-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true }
+ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ], optional = true }
+ark-ff = { version = "^0.3.0", default-features = false, optional = true}
+ark-std = { version = "^0.3.0", default-features = false, optional = true }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
+arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"], optional = true }
+pallet-balances = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true}
+
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
@@ -39,20 +47,21 @@ orml-currencies = { path = "../../open-runtime-module-library/currencies", defau
 rand = "0.8.4"
 
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
-ark-ff = { version = "^0.3.0", default-features = false }
+ark-ff = { version = "^0.3.0", default-features = false}
 ark-ec = { version = "^0.3.0", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
-ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ] }
+ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ]}
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ] }
-ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ]}
 arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"] }
 
 [features]
 default = ["std"]
 std = [
     "codec/std",
+    "scale-info/std",
     "frame-support/std",
     "frame-system/std",
     "sp-runtime/std",
@@ -63,9 +72,16 @@ std = [
     "pallet-verifier/std",
     "darkwebb-primitives/std",
     "pallet-asset-registry/std",
+    "frame-benchmarking/std"
 ]
 runtime-benchmarks = [
   "frame-benchmarking",
   "frame-system/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
+  "ark-ff",
+  "arkworks-gadgets",
+  "ark-serialize",
+  "ark-std",
+  "ark-bn254",
+  "pallet-balances",
 ]
