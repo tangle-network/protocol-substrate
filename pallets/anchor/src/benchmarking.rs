@@ -19,27 +19,15 @@
 
 #![cfg(feature = "runtime-benchmarks")]
 
+
 use super::*;
 
 use darkwebb_primitives::{anchor::AnchorInterface, traits::merkle_tree::TreeInspector};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
 use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
+use core::{include, concat, env};
 
-use ark_ff::{BigInteger, PrimeField};
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use arkworks_gadgets::{
-	poseidon::PoseidonParameters,
-	prelude::ark_groth16::ProvingKey,
-	setup::{
-		bridge::{
-			prove_groth16_circuit_circomx5, setup_arbitrary_data, setup_groth16_random_circuit_circomx5,
-			setup_leaf_circomx5, setup_set, Circuit_Circomx5,
-		},
-		common::{setup_circom_params_x5_3, setup_circom_params_x5_5, setup_tree_and_create_path_tree_circomx5, Curve},
-	},
-	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
-};
 
 use crate::Pallet as Anchor;
 use frame_support::{
@@ -51,12 +39,16 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
+// Run the zk-setup binary before compiling the with runtime-benchmarks
+// The ZK_CONFIG_DIR supplied should be the same directory where the zk_config.rs file was generated
+include!(concat!(env!("ZK_CONFIG_DIR", "ZK_CONFIG_DIR is not defined"), "/zk_config.rs"));
+
 pub const TREE_DEPTH: usize = 30;
 pub const M: usize = 2;
 
 const SEED: u32 = 0;
 const MAX_EDGES: u32 = 256;
-type Bn254Fr = ark_bn254::Fr;
+
 
 benchmarks! {
 
@@ -101,58 +93,18 @@ benchmarks! {
 	}
 
 	withdraw {
+		
+		let hasher_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as pallet_mt::Config>::Hasher>().unwrap();
+		let verifier_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as pallet_mixer::Config>::Verifier>().unwrap();
 
-		let curve = Curve::Bn254;
+		// 1. Setup The Hasher Pallet.
+		storage::unhashed::put(&storage::storage_prefix(hasher_pallet_name.as_bytes(), "Parameters".as_bytes()),&HASH_PARAMS[..]);
 
-		let pk_bytes = {
-			let rng = &mut ark_std::test_rng();
-			let params = match curve {
-				Curve::Bn254 => {
-					let rounds = get_rounds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-					let mds = get_mds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-					PoseidonParameters::new(rounds, mds)
-				}
-				_ => todo!("Setup environment for bls381"),
-			};
+		// 2. Initialize MerkleTree pallet
+		pallet_mt::Pallet::<T>::set_default_hashes();
 
 
-			//Todo
-
-			let hasher_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as pallet_mt::Config>::Hasher>().unwrap();
-			let verifier_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as pallet_mixer::Config>::Verifier>().unwrap();
-
-			// 1. Setup The Hasher Pallet.
-			storage::unhashed::put(&storage::storage_prefix(hasher_pallet_name.as_bytes(), "Parameters".as_bytes()),&params.to_bytes());
-
-			// 2. Initialize MerkleTree pallet
-			pallet_mt::Pallet::<T>::set_default_hashes();
-
-			// 3. Setup the VerifierPallet
-			//    but to do so, we need to have a VerifyingKey
-			let mut verifier_key_bytes = Vec::new();
-			let mut proving_key_bytes = Vec::new();
-
-			match curve {
-				Curve::Bn254 => {
-					let (pk, vk) = setup_groth16_random_circuit_circomx5::<_, ark_bn254::Bn254, TREE_DEPTH, M>(rng, curve);
-					vk.serialize(&mut verifier_key_bytes).unwrap();
-					pk.serialize(&mut proving_key_bytes).unwrap();
-				}
-				Curve::Bls381 => {
-					let (pk, vk) =
-						setup_groth16_random_circuit_circomx5::<_, ark_bls12_381::Bls12_381, TREE_DEPTH, M>(rng, curve);
-					vk.serialize(&mut verifier_key_bytes).unwrap();
-					pk.serialize(&mut proving_key_bytes).unwrap();
-				}
-			};
-
-			// Todo
-			storage::unhashed::put(&storage::storage_prefix(verifier_pallet_name.as_bytes(), "Parameters".as_bytes()),&verifier_key_bytes);
-
-			proving_key_bytes
-		};
-
-		let rng = &mut ark_std::test_rng();
+		storage::unhashed::put(&storage::storage_prefix(verifier_pallet_name.as_bytes(), "Parameters".as_bytes()),&VK_BYTES[..]);
 
 		// inputs
 		let caller: T::AccountId = whitelisted_caller();
@@ -165,16 +117,6 @@ benchmarks! {
 		let fee_value: u32 = 0;
 		let refund_value: u32 = 0;
 
-		// fit inputs to the curve.
-		let chain_id = Bn254Fr::from(src_chain_id);
-		let recipient = Bn254Fr::from(account::<u64>("recipient", 0, SEED));
-		let relayer = Bn254Fr::from(account::<u64>("relayer", 1, SEED));
-		let fee = Bn254Fr::from(fee_value);
-		let refund = Bn254Fr::from(refund_value);
-
-		let params5 = setup_circom_params_x5_5::<Bn254Fr>(curve);
-		let (leaf_private, leaf_public, leaf, nullifier_hash) = setup_leaf_circomx5(chain_id, &params5, rng);
-
 		let deposit_size: u32 = 1_000_000;
 		let depth = <T as pallet_mt::Config>::MaxTreeDepth::get();
 		let asset_id = <<T as pallet_mixer::Config>::NativeCurrencyId as Get<pallet_mixer::CurrencyIdOf<T, _>>>::get();
@@ -184,50 +126,20 @@ benchmarks! {
 		<Anchor<T> as AnchorInterface<AnchorConfigration<T, _>>>::deposit(
 			caller.clone(),
 			tree_id,
-			<T as pallet_mt::Config>::Element::from_bytes(&leaf.into_repr().to_bytes_le()),
+			<T as pallet_mt::Config>::Element::from_bytes(&LEAF[..]),
 		)?;
 
-		// the withdraw process..
-		// we setup the inputs to our proof generator.
-		let params3 = setup_circom_params_x5_3::<Bn254Fr>(curve);
-		let (mt, path) = setup_tree_and_create_path_tree_circomx5::<_, TREE_DEPTH>(&[leaf], 0, &params3);
-		let root = mt.root().inner();
-		let tree_root = <pallet_mt::Pallet<T> as TreeInspector<T::AccountId, <T as pallet_mt::Config>::TreeId, <T as pallet_mt::Config>::Element>>::get_root(tree_id).unwrap();
-
-		let mut roots = [Bn254Fr::default(); M];
-		roots[0] = root; // local root.
-
-		let set_private_inputs = setup_set(&root, &roots);
-		let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
-		// setup the circuit.
-		let circuit = Circuit_Circomx5::new(
-			arbitrary_input,
-			leaf_private,
-			leaf_public,
-			set_private_inputs,
-			roots,
-			params5,
-			path,
-			root,
-			nullifier_hash,
-		);
-		let pk = ProvingKey::<ark_bn254::Bn254>::deserialize(&*pk_bytes).unwrap();
-		// generate the proof.
-		let proof = prove_groth16_circuit_circomx5(&pk, circuit, rng);
-
-		// format the input for the pallet.
-		let mut proof_bytes = Vec::new();
-		proof.serialize(&mut proof_bytes).unwrap();
-		let roots_element = roots
+		let roots_element = ROOT_ELEMENT_BYTES
 			.iter()
-			.map(|v| <T as pallet_mt::Config>::Element::from_bytes(&v.into_repr().to_bytes_le()))
+			.map(|v| <T as pallet_mt::Config>::Element::from_bytes(&v[..]))
 			.collect();
 
-		let nullifier_hash_element = <T as pallet_mt::Config>::Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
+		let nullifier_hash_element = <T as pallet_mt::Config>::Element::from_bytes(&NULLIFIER_HASH_ELEMENTS_BYTES[..]);
 
 	}: _(
 		RawOrigin::Signed(caller),
-		tree_id,proof_bytes,
+		tree_id,
+		PROOF_BYTES.to_vec(),
 		src_chain_id.into(),
 		roots_element,
 		nullifier_hash_element,

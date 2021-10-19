@@ -30,14 +30,6 @@ pallet-asset-registry = { path = "../asset-registry", default-features = false }
 frame-system-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true }
 frame-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true }
 
-# pallet-balances = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true}
-
-ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ], optional = true }
-ark-ff = { version = "^0.3.0", default-features = false, optional = true}
-ark-std = { version = "^0.3.0", default-features = false, optional = true }
-ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
-ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
-arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"], optional = true }
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
@@ -52,9 +44,12 @@ rand = "0.8.4"
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false}
 ark-ec = { version = "^0.3.0", default-features = false }
-ark-std = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ]}
+ark-std = { version = "^0.3.0", default-features = false }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"] }
 
 [features]
 default = ["std"]
@@ -78,10 +73,4 @@ runtime-benchmarks = [
     "frame-benchmarking",
     "frame-system/runtime-benchmarks",
     "frame-support/runtime-benchmarks",
-    "ark-ff",
-    "ark-serialize",
-    "ark-std",
-    "ark-bn254",
-    "ark-bls12-381",
-    "arkworks-gadgets",
 ]
