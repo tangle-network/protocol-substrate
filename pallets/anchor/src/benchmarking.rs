@@ -21,7 +21,7 @@
 
 use super::*;
 
-use darkwebb_primitives::{anchor::AnchorInterface, traits::merkle_tree::{TreeInspector}};
+use darkwebb_primitives::{anchor::AnchorInterface, traits::merkle_tree::TreeInspector};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
 use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
@@ -41,8 +41,11 @@ use arkworks_gadgets::{
 	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
 };
 
-use frame_support::{traits::{Currency, Get, PalletInfo}, storage};
 use crate::Pallet as Anchor;
+use frame_support::{
+	storage,
+	traits::{Currency, Get, PalletInfo},
+};
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
@@ -50,7 +53,6 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 
 pub const TREE_DEPTH: usize = 30;
 pub const M: usize = 2;
-
 
 const SEED: u32 = 0;
 const MAX_EDGES: u32 = 256;
@@ -99,9 +101,9 @@ benchmarks! {
 	}
 
 	withdraw {
-		
+
 		let curve = Curve::Bn254;
-		
+
 		let pk_bytes = {
 			let rng = &mut ark_std::test_rng();
 			let params = match curve {
@@ -112,8 +114,8 @@ benchmarks! {
 				}
 				_ => todo!("Setup environment for bls381"),
 			};
-			
-			
+
+
 			//Todo
 
 			let hasher_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as pallet_mt::Config>::Hasher>().unwrap();
@@ -121,7 +123,7 @@ benchmarks! {
 
 			// 1. Setup The Hasher Pallet.
 			storage::unhashed::put(&storage::storage_prefix(hasher_pallet_name.as_bytes(), "Parameters".as_bytes()),&params.to_bytes());
-	
+
 			// 2. Initialize MerkleTree pallet
 			pallet_mt::Pallet::<T>::set_default_hashes();
 
@@ -129,7 +131,7 @@ benchmarks! {
 			//    but to do so, we need to have a VerifyingKey
 			let mut verifier_key_bytes = Vec::new();
 			let mut proving_key_bytes = Vec::new();
-		
+
 			match curve {
 				Curve::Bn254 => {
 					let (pk, vk) = setup_groth16_random_circuit_circomx5::<_, ark_bn254::Bn254, TREE_DEPTH, M>(rng, curve);
@@ -146,7 +148,7 @@ benchmarks! {
 
 			// Todo
 			storage::unhashed::put(&storage::storage_prefix(verifier_pallet_name.as_bytes(), "Parameters".as_bytes()),&verifier_key_bytes);
-			
+
 			proving_key_bytes
 		};
 
@@ -162,7 +164,7 @@ benchmarks! {
 		whitelist_account!(creator);
 		let fee_value: u32 = 0;
 		let refund_value: u32 = 0;
-		
+
 		// fit inputs to the curve.
 		let chain_id = Bn254Fr::from(src_chain_id);
 		let recipient = Bn254Fr::from(account::<u64>("recipient", 0, SEED));
@@ -176,7 +178,7 @@ benchmarks! {
 		let deposit_size: u32 = 1_000_000;
 		let depth = <T as pallet_mt::Config>::MaxTreeDepth::get();
 		let asset_id = <<T as pallet_mixer::Config>::NativeCurrencyId as Get<pallet_mixer::CurrencyIdOf<T, _>>>::get();
-		
+
 		let tree_id = <Anchor<T> as AnchorInterface<AnchorConfigration<T, _>>>::create(creator, deposit_size.into(), depth, 2, asset_id)?;
 
 		<Anchor<T> as AnchorInterface<AnchorConfigration<T, _>>>::deposit(
@@ -224,7 +226,7 @@ benchmarks! {
 		let nullifier_hash_element = <T as pallet_mt::Config>::Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
 
 	}: _(
-		RawOrigin::Signed(caller), 
+		RawOrigin::Signed(caller),
 		tree_id,proof_bytes,
 		src_chain_id.into(),
 		roots_element,

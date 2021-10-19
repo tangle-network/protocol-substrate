@@ -52,7 +52,6 @@ mod tests;
 
 mod benchmarking;
 
-
 pub mod types;
 use codec::{Decode, Encode};
 use darkwebb_primitives::{

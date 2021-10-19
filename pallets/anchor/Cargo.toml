@@ -17,6 +17,7 @@ frame-support = { default-features = false, version = "4.0.0-dev", git = "https:
 frame-system = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
 sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
 sp-std = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
+sp-io = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
 pallet-hasher = { path = "../hasher", default-features = false }
 pallet-mixer = { path = "../mixer", default-features = false }
 pallet-mt = { path = "../mt", default-features = false }
@@ -28,19 +29,20 @@ pallet-asset-registry = { path = "../asset-registry", default-features = false }
 
 frame-system-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true }
 frame-benchmarking = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true }
+
+# pallet-balances = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true}
+
 ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ], optional = true }
 ark-ff = { version = "^0.3.0", default-features = false, optional = true}
 ark-std = { version = "^0.3.0", default-features = false, optional = true }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"], optional = true }
-pallet-balances = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11", optional = true}
-
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
 sp-core = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
-sp-io = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
+
 sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
 pallet-balances = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.11" }
 orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false }
@@ -53,10 +55,6 @@ ark-ec = { version = "^0.3.0", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ]}
-ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ] }
-ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ]}
-arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"] }
 
 [features]
 default = ["std"]
@@ -67,23 +65,23 @@ std = [
     "frame-system/std",
     "sp-runtime/std",
     "sp-std/std",
+    "sp-io/std",
     "pallet-hasher/std",
     "pallet-mt/std",
     "pallet-mixer/std",
     "pallet-verifier/std",
-    "darkwebb-primitives/std",
     "pallet-asset-registry/std",
+    "darkwebb-primitives/std",
     "frame-benchmarking/std"
 ]
 runtime-benchmarks = [
-  "frame-benchmarking",
-  "frame-system/runtime-benchmarks",
-  "frame-support/runtime-benchmarks",
-  "ark-ff",
-  "arkworks-gadgets",
-  "ark-serialize",
-  "ark-std",
-  "ark-bn254",
-  "pallet-balances",
-  "ark-bls12-381"
+    "frame-benchmarking",
+    "frame-system/runtime-benchmarks",
+    "frame-support/runtime-benchmarks",
+    "ark-ff",
+    "ark-serialize",
+    "ark-std",
+    "ark-bn254",
+    "ark-bls12-381",
+    "arkworks-gadgets",
 ]
