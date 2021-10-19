@@ -117,7 +117,7 @@ fn main() {
         
 		fs::write(
             &dest_path,
-            format!("const HASH_PARAMS: [u8;{}] = {:?};\nconst PROOF_BYTES: [u8;{}] = {:?};\nconst VK_BYTES: [u8;{}] = {:?};\nconst ROOT_ELEMENT_BYTES: [[u8;32];{}] = {:?};\nconst NULLIFIER_HASH_ELEMENTS_BYTES: [u8;{}] = {:?};\nconst LEAF: [u8;{}]= {:?};", 
+            format!("pub const HASH_PARAMS: [u8;{}] = {:?};\npub const PROOF_BYTES: [u8;{}] = {:?};\npub const VK_BYTES: [u8;{}] = {:?};\npub const ROOT_ELEMENT_BYTES: [[u8;32];{}] = {:?};\npub const NULLIFIER_HASH_ELEMENTS_BYTES: [u8;{}] = {:?};\npub const LEAF: [u8;{}]= {:?};", 
 			hash_params.len(), 
 			hash_params, 
 			proof_bytes.len(), 

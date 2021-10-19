@@ -50,6 +50,9 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod zk_config;
+
 mod benchmarking;
 
 pub mod types;
