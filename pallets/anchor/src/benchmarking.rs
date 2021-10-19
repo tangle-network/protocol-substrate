@@ -26,8 +26,8 @@ use darkwebb_primitives::{anchor::AnchorInterface, traits::merkle_tree::TreeInsp
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
 use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
-use core::{include, concat, env};
-
+// Run the zk-setup binary before compiling the with runtime-benchmarks to generate the zk_config.rs file
+use zk_config::*;
 
 use crate::Pallet as Anchor;
 use frame_support::{
@@ -39,9 +39,8 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
-// Run the zk-setup binary before compiling the with runtime-benchmarks
-// The ZK_CONFIG_DIR supplied should be the same directory where the zk_config.rs file was generated
-include!(concat!(env!("ZK_CONFIG_DIR", "ZK_CONFIG_DIR is not defined"), "/zk_config.rs"));
+
+
 
 pub const TREE_DEPTH: usize = 30;
 pub const M: usize = 2;
