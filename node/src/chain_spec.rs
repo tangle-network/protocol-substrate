@@ -274,7 +274,7 @@ fn testnet_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT * 4096))
+				.map(|k| (k, darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT * 4096_000))
 				.collect(),
 		},
 		parachain_info: darkwebb_runtime::ParachainInfoConfig { parachain_id: id },
