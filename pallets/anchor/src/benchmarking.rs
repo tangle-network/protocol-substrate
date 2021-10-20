@@ -27,7 +27,8 @@ use darkwebb_primitives::{anchor::AnchorInterface, traits::merkle_tree::TreeInsp
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
 use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
-// Run the zk-setup binary before compiling the with runtime-benchmarks to generate the zk_config.rs file
+// Run the zk-setup binary before compiling the with runtime-benchmarks to generate the zk_config.rs file if it doesn't exist
+// The accounts used in generating the proofs have to be the same accounts used in the withdraw benchmark
 use zk_config::*;
 
 use crate::Pallet as Anchor;
@@ -57,13 +58,13 @@ benchmarks! {
 
 	deposit {
 	  let caller: T::AccountId = whitelisted_caller();
-	  let deposit_size: u32 = 1_000_000_000;
+	  let deposit_size: u32 = 50_000_000;
 	  let asset_id = <<T as pallet_mixer::Config>::NativeCurrencyId as Get<pallet_mixer::CurrencyIdOf<T, _>>>::get();
 	  let depth = <T as pallet_mt::Config>::MaxTreeDepth::get();
 	  
 	  let tree_id = <Anchor<T> as AnchorInterface<AnchorConfigration<T, _>>>::create(T::AccountId::default(), deposit_size.into(), depth, MAX_EDGES as u32, asset_id)?;
 	  let leaf = <T as pallet_mt::Config>::Element::from_bytes(&[1u8; 32]);
-	  <<T as pallet_mt::Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 100_000_000u32.into());
+	  <<T as pallet_mt::Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
 
 	}: _(RawOrigin::Signed(caller.clone()), tree_id, leaf)
 	verify {
@@ -102,18 +103,17 @@ benchmarks! {
 
 		// inputs
 		let caller: T::AccountId = whitelisted_caller();
-		<<T as pallet_mt::Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 100_000_000u32.into());
+		<<T as pallet_mt::Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
 		let src_chain_id: u32 = 1;
 		let recipient_account_id: T::AccountId = account("recipient", 0, SEED);
 		let relayer_account_id: T::AccountId = account("relayer", 1, SEED);
 		whitelist_account!(recipient_account_id);
 		whitelist_account!(relayer_account_id);
 		<<T as pallet_mt::Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&recipient_account_id.clone(), 100_000_000u32.into());
-		<<T as pallet_mt::Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&relayer_account_id.clone(), 100_000_000u32.into());
 		let fee_value: u32 = 0;
 		let refund_value: u32 = 0;
 
-		let deposit_size: u32 = 1_000_000_000;
+		let deposit_size: u32 = 50_000_000;
 		let depth = <T as pallet_mt::Config>::MaxTreeDepth::get();
 		let asset_id = <<T as pallet_mixer::Config>::NativeCurrencyId as Get<pallet_mixer::CurrencyIdOf<T, _>>>::get();
 
