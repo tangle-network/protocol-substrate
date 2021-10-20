@@ -259,9 +259,9 @@ fn testnet_genesis(
 	let verifier_params = {
 		use std::fs;
 		// let pk_bytes = fs::read("../../fixtures/proving_key.bin").unwrap();
-		let vk_bytes = fs::read("./fixtures/verifying_key.bin").unwrap();
+		let vk_bytes = include_bytes!("../../fixtures/verifying_key.bin");
 
-		vk_bytes
+		vk_bytes.to_vec()
 	};
 
 	log::info!("Genesis Config");
