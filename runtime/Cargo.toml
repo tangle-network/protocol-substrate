@@ -34,6 +34,7 @@ pallet-anchor = { path = "../pallets/anchor", default-features = false }
 pallet-bridge = { path = "../pallets/bridge", default-features = false }
 pallet-asset-registry = { path = "../pallets/asset-registry", default-features = false }
 pallet-anchor-handler = { path = "../pallets/anchor-handler", default-features = false }
+pallet-hello = { path = "../pallets/hello", default-features = false }
 orml-traits = { path = "../open-runtime-module-library/traits", default-features = false }
 orml-tokens = { path = "../open-runtime-module-library/tokens", default-features = false }
 orml-currencies = { path = "../open-runtime-module-library/currencies", default-features = false }
@@ -190,4 +191,5 @@ std = [
 	"pallet-asset-registry/std",
 	"pallet-anchor-handler/std",
 	"pallet-mt-rpc-runtime-api/std",
+	"pallet-hello/std",
 ]

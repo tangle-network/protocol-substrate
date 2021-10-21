@@ -831,6 +831,13 @@ impl pallet_bridge::Config<BridgeInstance> for Runtime {
 	type ProposalLifetime = ProposalLifetime;
 }
 
+impl pallet_hello::Config for Runtime {
+	type Call = Call;
+	type Event = Event;
+	type Origin = Origin;
+	type XcmSender = XcmRouter;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously
 // configured.
 construct_runtime!(
@@ -891,6 +898,7 @@ construct_runtime!(
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
 		AnchorHandler: pallet_anchor_handler::{Pallet, Call, Storage, Event<T>},
 		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		HelloXcm: pallet_hello::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -1103,7 +1111,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon5x5Hasher);
 			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			add_benchmark!(params, batches, pallet_mt, MerkleTree);
-			
+
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
