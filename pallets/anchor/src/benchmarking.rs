@@ -90,7 +90,7 @@ benchmarks! {
 	withdraw {
 		
 		let hasher_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as pallet_mt::Config>::Hasher>().unwrap();
-		let verifier_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as pallet_mixer::Config>::Verifier>().unwrap();
+		let verifier_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as Config>::Verifier>().unwrap();
 
 		// 1. Setup The Hasher Pallet.
 		storage::unhashed::put(&storage::storage_prefix(hasher_pallet_name.as_bytes(), "Parameters".as_bytes()),&HASH_PARAMS[..]);

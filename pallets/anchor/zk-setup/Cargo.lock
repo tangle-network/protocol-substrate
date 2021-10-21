@@ -2900,4 +2900,6 @@ dependencies = [
  "ark-std",
  "arkworks-gadgets",
  "frame-benchmarking",
+ "parity-scale-codec",
+ "sp-runtime",
 ]

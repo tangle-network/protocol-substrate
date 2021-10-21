@@ -739,7 +739,7 @@ impl pallet_mt::Config for Runtime {
 	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
 }
 
-impl pallet_verifier::Config for Runtime {
+impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
@@ -748,6 +748,17 @@ impl pallet_verifier::Config for Runtime {
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
 	type Verifier = darkwebb_primitives::verifying::ArkworksBn254MixerVerifier;
+}
+
+impl pallet_verifier::Config<pallet_verifier::Instance2> for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ();
+	type StringLimit = StringLimit;
+	type Verifier = darkwebb_primitives::verifying::ArkworksBn254BridgeVerifier;
 }
 
 impl pallet_asset_registry::Config for Runtime {
@@ -793,7 +804,7 @@ impl pallet_mixer::Config for Runtime {
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = MixerPalletId;
 	type Tree = MerkleTree;
-	type Verifier = Verifier;
+	type Verifier = MixerVerifier;
 }
 
 parameter_types! {
@@ -805,7 +816,8 @@ impl pallet_anchor::Config for Runtime {
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;
-	type Verifier = Verifier;
+	type Verifier = AnchorVerifier;
+	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_anchor_handler::Config for Runtime {
@@ -884,7 +896,8 @@ construct_runtime!(
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 
-		Verifier: pallet_verifier::{Pallet, Call, Storage, Event<T>, Config<T>},
+		MixerVerifier: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		AnchorVerifier: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 

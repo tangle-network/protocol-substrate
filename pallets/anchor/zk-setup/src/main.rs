@@ -1,6 +1,7 @@
 use std::{env, fs, path::Path};
 
-use ark_ff::{BigInteger, PrimeField};
+use codec::Encode;
+use ark_ff::{BigInteger, PrimeField, FromBytes};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use arkworks_gadgets::{
 	poseidon::PoseidonParameters,
@@ -15,6 +16,9 @@ use arkworks_gadgets::{
 	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
 };
 
+use sp_runtime::{
+	traits::{Verify, IdentifyAccount},
+};
 use frame_benchmarking::account;
 
 pub const TREE_DEPTH: usize = 30;
@@ -22,9 +26,10 @@ pub const M: usize = 2;
 
 const SEED: u32 = 0;
 type Bn254Fr = ark_bn254::Fr;
+pub type AccountId = <<sp_runtime::MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 
-pub fn generate_proofs(out_dir: &str) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<Vec<u8>>, Vec<u8>, Vec<u8>) {
+pub fn generate_proofs() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<Vec<u8>>, Vec<u8>, Vec<u8>) {
 	let curve = Curve::Bn254;
 
 	let mut pk_bytes = Vec::new();
@@ -44,15 +49,18 @@ pub fn generate_proofs(out_dir: &str) -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<Vec<u8>
 
 	// inputs
 	let src_chain_id: u32 = 1;
-	let recipient_account_id = account::<u64>("recipient", 0, SEED);
-	let relayer_account_id = account::<u64>("relayer", 1, SEED);
+	let mut recipient_account_bytes: Vec<u8> = account::<AccountId>("recipient", 0, SEED).encode()[..20].to_vec();
+	let mut relayer_account_bytes: Vec<u8> = account::<AccountId>("relayer", 1, SEED).encode()[..20].to_vec();
 	let fee_value: u32 = 0;
 	let refund_value: u32 = 0;
 
+	recipient_account_bytes.extend_from_slice(&[0u8;12]);
+	relayer_account_bytes.extend_from_slice(&[0u8;12]);
+
 	// fit inputs to the curve.
 	let chain_id = Bn254Fr::from(src_chain_id);
-	let recipient = Bn254Fr::from(recipient_account_id);
-	let relayer = Bn254Fr::from(relayer_account_id);
+	let recipient = Bn254Fr::read(&recipient_account_bytes[..]).unwrap();
+	let relayer = Bn254Fr::read(&relayer_account_bytes[..]).unwrap();
 	let fee = Bn254Fr::from(fee_value);
 	let refund = Bn254Fr::from(refund_value);
 
@@ -113,7 +121,7 @@ fn main() {
 			.expect("Expected output directory 'OUT_DIR' when running this script");
 
 		let dest_path = Path::new(&out_dir).join("zk_config.rs");
-		let (proof_bytes, vk_bytes, hash_params, roots_element_bytes, nullifier_hash_element_bytes, leaf) = generate_proofs(&out_dir);
+		let (proof_bytes, vk_bytes, hash_params, roots_element_bytes, nullifier_hash_element_bytes, leaf) = generate_proofs();
         
 		fs::write(
             &dest_path,
