@@ -70,7 +70,7 @@ use pallet_mixer::{types::MixerMetadata, BalanceOf, CurrencyIdOf};
 use sp_runtime::traits::{AccountIdConversion, AtLeast32Bit, One, Saturating, Zero};
 use sp_std::prelude::*;
 use types::*;
-use weights::WeightInfo;
+pub use weights::WeightInfo;
 
 pub use pallet::*;
 
