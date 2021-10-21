@@ -95,7 +95,7 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 
 
 impl WeightInfo for  () {
-	fn create(i: u32, d:u32) -> Weight {
+	fn create(_i: u32, _d:u32) -> Weight {
 		0
 	}
 	fn deposit() -> Weight{
