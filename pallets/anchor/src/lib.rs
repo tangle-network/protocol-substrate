@@ -188,7 +188,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		#[pallet::weight(<T as Config>::WeightInfo::create(*depth as u32, *max_edges))]
+		#[pallet::weight(<T as Config<I>>::WeightInfo::create(*depth as u32, *max_edges))]
 		pub fn create(
 			origin: OriginFor<T>,
 			deposit_size: BalanceOf<T, I>,
@@ -204,14 +204,14 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(<T as Config>::WeightInfo::deposit())]
+		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			<Self as AnchorInterface<_>>::deposit(origin, tree_id, leaf)?;
 			Ok(().into())
 		}
 
-		#[pallet::weight(<T as Config>::WeightInfo::set_maintainer())]
+		#[pallet::weight(<T as Config<I>>::WeightInfo::set_maintainer())]
 		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			// ensure parameter setter is the maintainer
@@ -224,7 +224,7 @@ pub mod pallet {
 			})
 		}
 
-		#[pallet::weight(<T as Config>::WeightInfo::force_set_maintainer())]
+		#[pallet::weight(<T as Config<I>>::WeightInfo::force_set_maintainer())]
 		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			// set the new maintainer
@@ -235,7 +235,7 @@ pub mod pallet {
 			})
 		}
 
-		#[pallet::weight(T::WeightInfo::withdraw())]
+		#[pallet::weight(<T as Config<I>>::WeightInfo::withdraw())]
 		pub fn withdraw(
 			origin: OriginFor<T>,
 			id: T::TreeId,
