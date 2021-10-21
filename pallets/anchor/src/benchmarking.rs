@@ -125,10 +125,16 @@ benchmarks! {
 			<T as pallet_mt::Config>::Element::from_bytes(&LEAF[..]),
 		)?;
 
+		let tree_root = <pallet_mt::Pallet<T> as TreeInspector<T::AccountId, <T as pallet_mt::Config>::TreeId, <T as pallet_mt::Config>::Element>>::get_root(tree_id).unwrap();
+		// sanity check.
+
+		assert_eq!(<T as pallet_mt::Config>::Element::from_bytes(&ROOT_ELEMENT_BYTES[0]), tree_root);
+
 		let roots_element = ROOT_ELEMENT_BYTES
 			.iter()
 			.map(|v| <T as pallet_mt::Config>::Element::from_bytes(&v[..]))
 			.collect();
+		
 
 		let nullifier_hash_element = <T as pallet_mt::Config>::Element::from_bytes(&NULLIFIER_HASH_ELEMENTS_BYTES[..]);
 
