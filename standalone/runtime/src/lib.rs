@@ -1242,7 +1242,7 @@ construct_runtime!(
 
 		MixerVerifier: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		AnchorVerifier: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
-		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>, Config<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},

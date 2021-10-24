@@ -16,10 +16,11 @@ use common::{AccountId, AuraId, BabeId, Balance, Signature};
 
 use darkwebb_runtime::{
 	constants::{currency::*, time::*},
-	wasm_binary_unwrap, AuthorityDiscoveryConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
-	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BabeConfig, Block,
-	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig,
-	SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig, MixerVerifierConfig, AnchorVerifierConfig
+	wasm_binary_unwrap, AnchorVerifierConfig, AuthorityDiscoveryConfig, BLS381Poseidon3x5HasherConfig,
+	BLS381Poseidon5x5HasherConfig, BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig,
+	BN254Poseidon5x5HasherConfig, BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
+	GrandpaConfig, ImOnlineConfig, IndicesConfig, MerkleTreeConfig, MixerVerifierConfig, SessionConfig, StakerStatus,
+	StakingConfig, SudoConfig, SystemConfig,
 };
 use itertools::Itertools;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -359,6 +360,10 @@ fn testnet_genesis(
 		anchor_verifier: AnchorVerifierConfig {
 			parameters: Some(verifier_params),
 			phantom: Default::default(),
+		},
+		merkle_tree: MerkleTreeConfig {
+			phantom: Default::default(),
+			default_hashes: None,
 		},
 	}
 }

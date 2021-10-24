@@ -898,7 +898,7 @@ construct_runtime!(
 
 		MixerVerifier: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		AnchorVerifier: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
-		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>, Config<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
@@ -1118,7 +1118,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			add_benchmark!(params, batches, pallet_mt, MerkleTree);
 			add_benchmark!(params, batches, pallet_anchor, Anchor);
-			
+
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
