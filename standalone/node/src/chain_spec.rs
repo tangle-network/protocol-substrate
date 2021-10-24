@@ -16,10 +16,11 @@ use common::{AccountId, AuraId, BabeId, Balance, Signature};
 
 use darkwebb_runtime::{
 	constants::{currency::*, time::*},
-	wasm_binary_unwrap, AuthorityDiscoveryConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
-	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BabeConfig, Block,
-	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig,
-	MerkleTreeConfig, SessionConfig, StakerStatus, StakingConfig, SudoConfig, SystemConfig, VerifierConfig,
+	wasm_binary_unwrap, AnchorVerifierConfig, AuthorityDiscoveryConfig, BLS381Poseidon3x5HasherConfig,
+	BLS381Poseidon5x5HasherConfig, BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig,
+	BN254Poseidon5x5HasherConfig, BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
+	GrandpaConfig, ImOnlineConfig, IndicesConfig, MerkleTreeConfig, MixerVerifierConfig, SessionConfig, StakerStatus,
+	StakingConfig, SudoConfig, SystemConfig,
 };
 use itertools::Itertools;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
@@ -352,7 +353,11 @@ fn testnet_genesis(
 			parameters: Some(circom_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		verifier: VerifierConfig {
+		mixer_verifier: MixerVerifierConfig {
+			parameters: Some(verifier_params.clone()),
+			phantom: Default::default(),
+		},
+		anchor_verifier: AnchorVerifierConfig {
 			parameters: Some(verifier_params),
 			phantom: Default::default(),
 		},

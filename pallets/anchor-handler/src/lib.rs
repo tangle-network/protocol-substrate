@@ -52,7 +52,6 @@ use darkwebb_primitives::{
 };
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;
-use orml_traits::MultiCurrency;
 use pallet_anchor::types::EdgeMetadata;
 use pallet_mixer::{BalanceOf, CurrencyIdOf};
 pub mod types;

@@ -246,6 +246,7 @@ impl pallet_anchor::Config for Test {
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;
 	type Verifier = VerifierPallet;
+	type WeightInfo = ();
 }
 
 parameter_types! {

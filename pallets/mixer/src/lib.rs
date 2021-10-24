@@ -292,8 +292,8 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 			output.iter_mut().zip(v).for_each(|(b1, b2)| *b1 = *b2);
 			output
 		};
-		let recipient_bytes = recipient.using_encoded(element_encoder);
-		let relayer_bytes = relayer.using_encoded(element_encoder);
+		let recipient_bytes = truncate_and_pad(&recipient.using_encoded(element_encoder)[..]);
+		let relayer_bytes = truncate_and_pad(&relayer.using_encoded(element_encoder)[..]);
 		let fee_bytes = fee.using_encoded(element_encoder);
 		let refund_bytes = refund.using_encoded(element_encoder);
 		bytes.extend_from_slice(&nullifier_hash.encode());
@@ -362,4 +362,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		ensure!(mixer.is_some(), Error::<T, I>::NoMixerFound);
 		Ok(mixer.unwrap())
 	}
+}
+
+/// Truncate and pad 256 bit slice
+pub fn truncate_and_pad(t: &[u8]) -> Vec<u8> {
+	let mut truncated_bytes = t[..20].to_vec();
+	truncated_bytes.extend_from_slice(&[0u8; 12]);
+	truncated_bytes
 }
