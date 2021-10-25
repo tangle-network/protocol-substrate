@@ -259,9 +259,9 @@ fn testnet_genesis(
 	let verifier_params = {
 		use std::fs;
 		// let pk_bytes = fs::read("../../fixtures/proving_key.bin").unwrap();
-		let vk_bytes = fs::read("./fixtures/verifying_key.bin").unwrap();
+		let vk_bytes = include_bytes!("../../fixtures/verifying_key.bin");
 
-		vk_bytes
+		vk_bytes.to_vec()
 	};
 
 	log::info!("Genesis Config");
@@ -274,7 +274,7 @@ fn testnet_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT * 4096))
+				.map(|k| (k, darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT * 4096_000))
 				.collect(),
 		},
 		parachain_info: darkwebb_runtime::ParachainInfoConfig { parachain_id: id },

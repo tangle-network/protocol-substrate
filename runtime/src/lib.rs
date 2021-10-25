@@ -514,6 +514,7 @@ pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<Everything>,
 	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+	AllowUnpaidExecutionFrom<Everything>,
 	// ^^^ Parent and its exec plurality get free execution
 );
 
@@ -843,6 +844,13 @@ impl pallet_bridge::Config<BridgeInstance> for Runtime {
 	type ProposalLifetime = ProposalLifetime;
 }
 
+impl pallet_hello::Config for Runtime {
+	type Call = Call;
+	type Event = Event;
+	type Origin = Origin;
+	type XcmSender = XcmRouter;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously
 // configured.
 construct_runtime!(
@@ -904,6 +912,7 @@ construct_runtime!(
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
 		AnchorHandler: pallet_anchor_handler::{Pallet, Call, Storage, Event<T>},
 		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		HelloXcm: pallet_hello::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
