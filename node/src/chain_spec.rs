@@ -11,9 +11,9 @@ use arkworks_gadgets::{
 };
 use common::{AccountId, AuraId, Signature};
 use darkwebb_runtime::{
-	wasm_binary_unwrap, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
+	wasm_binary_unwrap, AnchorVerifierConfig, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
 	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig,
-	GenesisConfig, SudoConfig, SystemConfig, VerifierConfig,
+	GenesisConfig, MerkleTreeConfig, MixerVerifierConfig, SudoConfig, SystemConfig,
 };
 
 use cumulus_primitives_core::ParaId;
@@ -323,9 +323,17 @@ fn testnet_genesis(
 			parameters: Some(circom_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		verifier: VerifierConfig {
+		mixer_verifier: MixerVerifierConfig {
+			parameters: Some(verifier_params.clone()),
+			phantom: Default::default(),
+		},
+		anchor_verifier: AnchorVerifierConfig {
 			parameters: Some(verifier_params),
 			phantom: Default::default(),
+		},
+		merkle_tree: MerkleTreeConfig {
+			phantom: Default::default(),
+			default_hashes: None,
 		},
 	}
 }

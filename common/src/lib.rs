@@ -62,7 +62,6 @@ mod types {
 
 /// Common constants of parachains.
 mod constants {
-	use super::types::BlockNumber;
 	use frame_support::weights::{constants::WEIGHT_PER_SECOND, Weight};
 	use sp_runtime::Perbill;
 	/// We assume that ~5% of the block weight is consumed by `on_initialize`

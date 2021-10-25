@@ -222,17 +222,40 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
 		fn on_initialize(_n: T::BlockNumber) -> Weight {
-			let mut temp_hashes: Vec<T::Element> = Vec::with_capacity(T::MaxTreeDepth::get() as usize);
-			let default_zero = T::DefaultZeroElement::get();
-			temp_hashes.push(default_zero);
-			let mut temp_hash = default_zero.to_bytes().to_vec();
-			for _ in 0..T::MaxTreeDepth::get() {
-				temp_hash = T::Hasher::hash_two(&temp_hash, &temp_hash).unwrap();
-				temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
+			if Self::is_default_hashes_empty() {
+				let temp_hashes = generate_default_hashes::<T, I>();
+				DefaultHashes::<T, I>::put(temp_hashes);
+			}
+			1u64 + 1u64
+		}
+	}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+		pub phantom: PhantomData<T>,
+		pub default_hashes: Option<Vec<T::Element>>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+		fn default() -> Self {
+			Self {
+				phantom: Default::default(),
+				default_hashes: None,
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+		fn build(&self) {
+			if let Some(default_hashes) = &self.default_hashes {
+				DefaultHashes::<T, I>::put(default_hashes);
+				return;
 			}
 
-			DefaultHashes::<T, I>::put(temp_hashes);
-			1u64 + 1u64
+			let default_hashes = generate_default_hashes::<T, I>();
+			DefaultHashes::<T, I>::put(default_hashes);
 		}
 	}
 
@@ -317,6 +340,19 @@ pub mod pallet {
 			Ok(().into())
 		}
 	}
+
+	pub fn generate_default_hashes<T: Config<I>, I: 'static>() -> Vec<T::Element> {
+		let mut temp_hashes: Vec<T::Element> = Vec::with_capacity(T::MaxTreeDepth::get() as usize);
+		let default_zero = T::DefaultZeroElement::get();
+		temp_hashes.push(default_zero);
+		let mut temp_hash = default_zero.to_bytes().to_vec();
+		for _ in 0..T::MaxTreeDepth::get() {
+			temp_hash = T::Hasher::hash_two(&temp_hash, &temp_hash).unwrap();
+			temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
+		}
+
+		temp_hashes
+	}
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
@@ -327,6 +363,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		};
 
 		two
+	}
+
+	fn is_default_hashes_empty() -> bool {
+		let default_hashes = Self::default_hashes();
+		default_hashes.is_empty()
 	}
 }
 
