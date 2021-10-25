@@ -1,4 +1,12 @@
 # darkwebb-substrate
+### Build
+
+The `cargo run` command will perform an initial build. Use the following command to build the node
+without launching it:
+
+```sh
+cargo build --release
+```
 
 # Standalone local testnets
 In order to run the standalone development network, you should prepare your terminal environment for running 2 substrate nodes. Execute in either terminal the following commands. This will set up a development network using the BABE consensus mechanism for a 2 node network.
