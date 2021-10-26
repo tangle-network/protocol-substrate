@@ -2251,6 +2251,7 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-hasher",
+ "pallet-hello",
  "pallet-mixer",
  "pallet-mt",
  "pallet-mt-rpc-runtime-api",
@@ -5478,7 +5479,6 @@ dependencies = [
 name = "pallet-anchor"
 version = "1.0.0"
 dependencies = [
- "ark-bls12-377",
  "ark-bls12-381",
  "ark-bn254",
  "ark-crypto-primitives",
@@ -5982,6 +5982,22 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-hello"
+version = "0.1.0"
+dependencies = [
+ "cumulus-pallet-xcm",
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
 ]
 
 [[package]]

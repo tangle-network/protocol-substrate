@@ -1,6 +1,7 @@
 use codec::{Decode, Encode};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
+use sp_runtime::traits::MaybeSerializeDeserialize;
 use sp_std::vec::Vec;
 
 // Deposit details used in hasher / verifier pallets for
@@ -54,7 +55,7 @@ pub struct Setup {
 	pub backend: Backend,
 }
 
-pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy + TypeInfo {
+pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy + TypeInfo + MaybeSerializeDeserialize {
 	/// converts type to byte slice
 	fn to_bytes(&self) -> &[u8];
 	/// converts type to Vec

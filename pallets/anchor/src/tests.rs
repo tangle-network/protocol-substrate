@@ -1,4 +1,4 @@
-use ark_ff::{BigInteger, PrimeField};
+use ark_ff::{BigInteger, FromBytes, PrimeField};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use arkworks_gadgets::{
 	poseidon::PoseidonParameters,
@@ -16,13 +16,17 @@ use arkworks_gadgets::{
 use darkwebb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
 	merkle_tree::TreeInspector,
-	ElementTrait,
+	AccountId, ElementTrait,
 };
 
+use codec::Encode;
+
+use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, error::BadOrigin, traits::OnInitialize};
 
 use crate::mock::*;
 
+const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
 const M: usize = 2;
 const DEPOSIT_SIZE: u128 = 10_000;
@@ -61,7 +65,14 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 	};
 	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes));
 	// 4. and top-up some accounts with some balance
-	for account_id in [1, 2, 3, 4, 5, 6] {
+	for account_id in [
+		account::<AccountId>("", 1, SEED),
+		account::<AccountId>("", 2, SEED),
+		account::<AccountId>("", 3, SEED),
+		account::<AccountId>("", 4, SEED),
+		account::<AccountId>("", 5, SEED),
+		account::<AccountId>("", 6, SEED),
+	] {
 		assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
 	}
 	// finally return the provingkey bytes
@@ -87,7 +98,13 @@ fn should_fail_to_create_new_anchor_if_not_root() {
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
 		assert_err!(
-			Anchor::create(Origin::signed(1), DEPOSIT_SIZE, max_edges, depth, asset_id),
+			Anchor::create(
+				Origin::signed(account::<AccountId>("", 1, SEED)),
+				DEPOSIT_SIZE,
+				max_edges,
+				depth,
+				asset_id
+			),
 			BadOrigin,
 		);
 	});
@@ -104,13 +121,13 @@ fn should_be_able_to_deposit() {
 		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 
 		let tree_id = MerkleTree::next_tree_id() - 1;
-		let account_id = 1;
+		let account_id = account::<AccountId>("", 1, SEED);
 		let leaf = Element::from_bytes(&[1u8; 32]);
 		// check the balance before the deposit.
-		let balance_before = Balances::free_balance(account_id);
+		let balance_before = Balances::free_balance(account_id.clone());
 		println!("Balance before: {}", balance_before);
 		// and we do the deposit
-		assert_ok!(Anchor::deposit(Origin::signed(account_id), tree_id, leaf));
+		assert_ok!(Anchor::deposit(Origin::signed(account_id.clone()), tree_id, leaf));
 		// now we check the balance after the deposit.
 		let balance_after = Balances::free_balance(account_id);
 		// the balance should be less now with `deposit_size`
@@ -126,7 +143,11 @@ fn should_fail_to_deposit_if_mixer_not_found() {
 	new_test_ext().execute_with(|| {
 		setup_environment(Curve::Bn254);
 		assert_err!(
-			Anchor::deposit(Origin::signed(1), 2, Element::from_bytes(&[1u8; 32])),
+			Anchor::deposit(
+				Origin::signed(account::<AccountId>("", 1, SEED)),
+				2,
+				Element::from_bytes(&[1u8; 32])
+			),
 			pallet_mixer::Error::<Test, _>::NoMixerFound,
 		);
 	});
@@ -141,12 +162,15 @@ fn should_be_able_to_change_the_maintainer() {
 		let asset_id = 0;
 		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 
-		let default_maintainer_account_id = 0;
+		let default_maintainer_account_id = AccountId::default();
 		let current_maintainer_account_id = Anchor::maintainer();
 		assert_eq!(current_maintainer_account_id, default_maintainer_account_id);
 
-		let new_maintainer_account_id = 1;
-		assert_ok!(Anchor::force_set_maintainer(Origin::root(), new_maintainer_account_id));
+		let new_maintainer_account_id = account::<AccountId>("", 1, SEED);
+		assert_ok!(Anchor::force_set_maintainer(
+			Origin::root(),
+			new_maintainer_account_id.clone()
+		));
 		let current_maintainer_account_id = Anchor::maintainer();
 		assert_eq!(current_maintainer_account_id, new_maintainer_account_id);
 	});
@@ -161,9 +185,12 @@ fn should_fail_to_change_the_maintainer_if_not_the_current_maintainer() {
 		let asset_id = 0;
 		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		let current_maintainer_account_id = Anchor::maintainer();
-		let new_maintainer_account_id = 1;
+		let new_maintainer_account_id = account::<AccountId>("", 1, SEED);
 		assert_err!(
-			Anchor::set_maintainer(Origin::signed(2), new_maintainer_account_id),
+			Anchor::set_maintainer(
+				Origin::signed(account::<AccountId>("", 2, SEED)),
+				new_maintainer_account_id
+			),
 			crate::Error::<Test, _>::InvalidPermissions,
 		);
 		// maintainer should never be changed.
@@ -244,15 +271,15 @@ fn anchor_works() {
 		// inputs
 		let tree_id = create_anchor();
 		let src_chain_id = 1;
-		let sender_account_id = 1;
-		let recipient_account_id = 2;
-		let relayer_account_id = 0;
+		let sender_account_id = account::<AccountId>("", 1, SEED);
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
 		let fee_value = 0;
 		let refund_value = 0;
 		// fit inputs to the curve.
 		let chain_id = Bn254Fr::from(src_chain_id);
-		let recipient = Bn254Fr::from(recipient_account_id);
-		let relayer = Bn254Fr::from(relayer_account_id);
+		let recipient = Bn254Fr::read(&crate::truncate_and_pad(&recipient_account_id.encode()[..])[..]).unwrap();
+		let relayer = Bn254Fr::read(&crate::truncate_and_pad(&relayer_account_id.encode()[..])[..]).unwrap();
 		let fee = Bn254Fr::from(fee_value);
 		let refund = Bn254Fr::from(refund_value);
 		// circuit setup
@@ -260,7 +287,7 @@ fn anchor_works() {
 		let (leaf_private, leaf_public, leaf, nullifier_hash) = setup_leaf_circomx5(chain_id, &params5, rng);
 		// do a deposit.
 		assert_ok!(Anchor::deposit(
-			Origin::signed(sender_account_id),
+			Origin::signed(sender_account_id.clone()),
 			tree_id,
 			Element::from_bytes(&leaf.into_repr().to_bytes_le()),
 		));
@@ -306,7 +333,7 @@ fn anchor_works() {
 		// all ready, call withdraw.
 		// but first check the balance before that.
 
-		let balance_before = Balances::free_balance(recipient_account_id);
+		let balance_before = Balances::free_balance(recipient_account_id.clone());
 		// fire the call.
 		assert_ok!(Anchor::withdraw(
 			Origin::signed(sender_account_id),
@@ -315,7 +342,7 @@ fn anchor_works() {
 			src_chain_id,
 			roots_element,
 			nullifier_hash_element,
-			recipient_account_id,
+			recipient_account_id.clone(),
 			relayer_account_id,
 			fee_value,
 			refund_value,
@@ -338,15 +365,15 @@ fn double_spending_should_fail() {
 		// inputs
 		let tree_id = create_anchor();
 		let src_chain_id = 1;
-		let sender_account_id = 1;
-		let recipient_account_id = 2;
-		let relayer_account_id = 0;
+		let sender_account_id = account::<AccountId>("", 1, SEED);
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
 		let fee_value = 0;
 		let refund_value = 0;
 		// fit inputs to the curve.
 		let chain_id = Bn254Fr::from(src_chain_id);
-		let recipient = Bn254Fr::from(recipient_account_id);
-		let relayer = Bn254Fr::from(relayer_account_id);
+		let recipient = Bn254Fr::read(&crate::truncate_and_pad(&recipient_account_id.encode()[..])[..]).unwrap();
+		let relayer = Bn254Fr::read(&crate::truncate_and_pad(&relayer_account_id.encode()[..])[..]).unwrap();
 		let fee = Bn254Fr::from(fee_value);
 		let refund = Bn254Fr::from(refund_value);
 		// circuit setup
@@ -354,7 +381,7 @@ fn double_spending_should_fail() {
 		let (leaf_private, leaf_public, leaf, nullifier_hash) = setup_leaf_circomx5(chain_id, &params5, rng);
 		// do a deposit.
 		assert_ok!(Anchor::deposit(
-			Origin::signed(sender_account_id),
+			Origin::signed(sender_account_id.clone()),
 			tree_id,
 			Element::from_bytes(&leaf.into_repr().to_bytes_le()),
 		));
@@ -400,22 +427,22 @@ fn double_spending_should_fail() {
 		// all ready, call withdraw.
 		// but first check the balance before that.
 
-		let balance_before = Balances::free_balance(recipient_account_id);
+		let balance_before = Balances::free_balance(recipient_account_id.clone());
 		// fire the call.
 		assert_ok!(Anchor::withdraw(
-			Origin::signed(sender_account_id),
+			Origin::signed(sender_account_id.clone()),
 			tree_id,
 			proof_bytes.clone(),
 			src_chain_id,
 			roots_element.clone(),
 			nullifier_hash_element,
-			recipient_account_id,
-			relayer_account_id,
+			recipient_account_id.clone(),
+			relayer_account_id.clone(),
 			fee_value,
 			refund_value,
 		));
 		// now we check the recipient balance again.
-		let balance_after = Balances::free_balance(recipient_account_id);
+		let balance_after = Balances::free_balance(recipient_account_id.clone());
 		assert_eq!(balance_after, balance_before + DEPOSIT_SIZE);
 		// perfect
 
@@ -450,15 +477,15 @@ fn should_fail_when_invalid_merkle_roots() {
 		// inputs
 		let tree_id = create_anchor();
 		let src_chain_id = 1;
-		let sender_account_id = 1;
-		let recipient_account_id = 2;
-		let relayer_account_id = 0;
+		let sender_account_id = account::<AccountId>("", 1, SEED);
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
 		let fee_value = 0;
 		let refund_value = 0;
 		// fit inputs to the curve.
 		let chain_id = Bn254Fr::from(src_chain_id);
-		let recipient = Bn254Fr::from(recipient_account_id);
-		let relayer = Bn254Fr::from(relayer_account_id);
+		let recipient = Bn254Fr::read(&crate::truncate_and_pad(&recipient_account_id.encode()[..])[..]).unwrap();
+		let relayer = Bn254Fr::read(&crate::truncate_and_pad(&relayer_account_id.encode()[..])[..]).unwrap();
 		let fee = Bn254Fr::from(fee_value);
 		let refund = Bn254Fr::from(refund_value);
 		// circuit setup
@@ -466,7 +493,7 @@ fn should_fail_when_invalid_merkle_roots() {
 		let (leaf_private, leaf_public, leaf, nullifier_hash) = setup_leaf_circomx5(chain_id, &params5, rng);
 		// do a deposit.
 		assert_ok!(Anchor::deposit(
-			Origin::signed(sender_account_id),
+			Origin::signed(sender_account_id.clone()),
 			tree_id,
 			Element::from_bytes(&leaf.into_repr().to_bytes_le()),
 		));

@@ -6,10 +6,12 @@ use sp_core::H256;
 pub use darkwebb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
 	types::ElementTrait,
+	AccountId,
 };
 use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
+use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -18,7 +20,6 @@ use sp_runtime::{
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
-pub type AccountId = u64;
 pub type Balance = u128;
 
 pub type BlockNumber = u64;
@@ -105,7 +106,7 @@ parameter_types! {
 impl pallet_verifier::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
@@ -116,7 +117,7 @@ impl pallet_verifier::Config for Test {
 impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = darkwebb_primitives::hashing::BN254CircomPoseidon3x5Hasher;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
@@ -142,7 +143,7 @@ parameter_types! {
 	pub const MockZeroElement: Element = Element([0; 32]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
+#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Serialize, Deserialize)]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {
@@ -164,7 +165,7 @@ impl pallet_mt::Config for Test {
 	type DefaultZeroElement = MockZeroElement;
 	type Element = Element;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
 	type LeafIndex = u32;
 	type MaxTreeDepth = MaxTreeDepth;
@@ -209,7 +210,7 @@ impl pallet_asset_registry::Config for Test {
 	type Balance = u128;
 	type Event = Event;
 	type NativeAssetId = NativeCurrencyId;
-	type RegistryOrigin = frame_system::EnsureRoot<u64>;
+	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
 }
@@ -237,6 +238,7 @@ impl pallet_anchor::Config for Test {
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;
 	type Verifier = VerifierPallet;
+	type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.
