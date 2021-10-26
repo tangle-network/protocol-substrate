@@ -307,12 +307,7 @@ impl pallet_indices::Config for Runtime {
 	type WeightInfo = pallet_indices::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(17);
-}
-
 impl pallet_session::Config for Runtime {
-	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
 	type Event = Event;
 	type Keys = SessionKeys;
 	type NextSessionRotation = Babe;
@@ -341,6 +336,7 @@ pallet_staking_reward_curve::build! {
 }
 
 parameter_types! {
+	pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(17);
 	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
 	pub const BondingDuration: pallet_staking::EraIndex = 24 * 28;
 	pub const SlashDeferDuration: pallet_staking::EraIndex = 24 * 7; // 1/4 the bonding duration.
@@ -356,6 +352,7 @@ impl onchain::Config for Runtime {
 }
 
 impl pallet_staking::Config for Runtime {
+	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
 	type BondingDuration = BondingDuration;
 	type Currency = Balances;
 	type CurrencyToVote = U128CurrencyToVote;
