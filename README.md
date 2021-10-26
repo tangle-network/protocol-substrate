@@ -1,4 +1,4 @@
-# darkwebb-substrate
+# protocol-substrate
 ### Build
 
 The `cargo run` command will perform an initial build. Use the following command to build the node
