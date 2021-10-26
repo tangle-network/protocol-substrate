@@ -7,7 +7,7 @@ use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup}
+	traits::{BlakeTwo256, IdentityLookup},
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -119,7 +119,6 @@ impl pallet_hasher::Config<Instance3> for Test {
 	type WeightInfo = ();
 }
 
-
 impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
@@ -132,7 +131,6 @@ impl pallet_hasher::Config for Test {
 	type WeightInfo = ();
 }
 
-
 pub type BN254Poseidon3x5HasherCall = pallet_hasher::Call<Test, Instance1>;
 pub type BN254Poseidon5x5HasherCall = pallet_hasher::Call<Test, Instance2>;
 pub type BN254CircomPoseidon3x5HasherCall = pallet_hasher::Call<Test, Instance3>;
@@ -140,5 +138,3 @@ pub type BN254CircomPoseidon3x5HasherCall = pallet_hasher::Call<Test, Instance3>
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
 }
-
-

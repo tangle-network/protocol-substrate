@@ -22,12 +22,13 @@
 use super::*;
 
 use darkwebb_primitives::types::DepositDetails;
-use frame_benchmarking::{account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
+use frame_benchmarking::{
+	account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account, whitelisted_caller,
+};
 use frame_support::traits::Currency;
 use frame_system::RawOrigin;
 use sp_runtime::traits::Bounded;
-type BalanceOf<T, I> =
-	<<T as Config<I>>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+type BalanceOf<T, I> = <<T as Config<I>>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
@@ -36,7 +37,7 @@ fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::
 const SEED: u32 = 0;
 // Based on parameters generated from these functions below  using the
 // arkworks_gadgets package, 16k was the max parameter length, so it's safe to
-// benchmark with 20k 
+// benchmark with 20k
 // poseidon_bls381_x5_5 poseidon_bn254_x3_5
 // poseidon_circom_bn254_x5_5
 // poseidon_circom_bn254_x5_3
@@ -103,9 +104,7 @@ benchmarks_instance_pallet! {
 		assert_last_event::<T, I>(Event::MaintainerSet(Default::default(), new_maintainer.into()).into());
 	}
 
-	
+
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
-
-
