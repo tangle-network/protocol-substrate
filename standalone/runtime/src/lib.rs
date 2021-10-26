@@ -307,12 +307,7 @@ impl pallet_indices::Config for Runtime {
 	type WeightInfo = pallet_indices::weights::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(17);
-}
-
 impl pallet_session::Config for Runtime {
-	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
 	type Event = Event;
 	type Keys = SessionKeys;
 	type NextSessionRotation = Babe;
@@ -341,6 +336,7 @@ pallet_staking_reward_curve::build! {
 }
 
 parameter_types! {
+	pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(17);
 	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
 	pub const BondingDuration: pallet_staking::EraIndex = 24 * 28;
 	pub const SlashDeferDuration: pallet_staking::EraIndex = 24 * 7; // 1/4 the bonding duration.
@@ -356,6 +352,7 @@ impl onchain::Config for Runtime {
 }
 
 impl pallet_staking::Config for Runtime {
+	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
 	type BondingDuration = BondingDuration;
 	type Currency = Balances;
 	type CurrencyToVote = U128CurrencyToVote;
@@ -1151,6 +1148,7 @@ impl pallet_mixer::Config for Runtime {
 	type PalletId = MixerPalletId;
 	type Tree = MerkleTree;
 	type Verifier = MixerVerifier;
+	type WeightInfo = pallet_mixer::weights::WebbWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1515,6 +1513,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			list_benchmark!(list, extra, pallet_mt, MerkleTree);
 			list_benchmark!(list, extra, pallet_anchor, Anchor);
+			list_benchmark!(list, extra, pallet_mixer, Mixer);
 			list_benchmark!(list, extra, pallet_verifier, AnchorVerifier);
 			list_benchmark!(list, extra, pallet_verifier, MixerVerifier);
 
@@ -1553,6 +1552,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			add_benchmark!(params, batches, pallet_mt, MerkleTree);
 			add_benchmark!(params, batches, pallet_anchor, Anchor);
+			add_benchmark!(params, batches, pallet_mixer, Mixer);
 			add_benchmark!(params, batches, pallet_verifier, AnchorVerifier);
 			add_benchmark!(params, batches, pallet_verifier, MixerVerifier);
 

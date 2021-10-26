@@ -104,14 +104,14 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(0)]
 		pub fn start(origin: OriginFor<T>, para: ParaId) -> DispatchResult {
-			ensure_root(origin)?;
+			ensure_signed(origin)?;
 			Targets::<T>::mutate(|t| t.push(para));
 			Ok(())
 		}
 
 		#[pallet::weight(0)]
 		pub fn stop(origin: OriginFor<T>, para: ParaId) -> DispatchResult {
-			ensure_root(origin)?;
+			ensure_signed(origin)?;
 			Targets::<T>::mutate(|t| {
 				if let Some(p) = t.iter().position(|p| p == &para) {
 					t.swap_remove(p);

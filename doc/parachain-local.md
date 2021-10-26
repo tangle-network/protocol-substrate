@@ -9,7 +9,7 @@ We will use [Polkadot](https://github.com/paritytech/polkadot) as our Relay Chai
 1. Clone Polkadot node locally:
 
 ```shell
-git clone https://github.com/paritytech/polkadot.git --branch=v0.9.10
+git clone https://github.com/paritytech/polkadot.git
 ```
 2. Build Release version of Polkadot node:
 
@@ -123,7 +123,7 @@ yarn global add polkadot-launch
         {
           "wsPort": 9988,
           "port": 13000,
-          "name": "alice",
+          "name": "bob",
           "flags": ["--force-authoring", "--", "--execution=wasm"]
         }
       ]

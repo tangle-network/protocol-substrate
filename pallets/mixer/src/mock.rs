@@ -224,6 +224,7 @@ impl Config for Test {
 	type PalletId = MixerPalletId;
 	type Tree = MerkleTree;
 	type Verifier = VerifierPallet;
+	type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.
