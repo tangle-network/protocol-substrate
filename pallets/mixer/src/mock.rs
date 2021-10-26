@@ -11,6 +11,7 @@ use darkwebb_primitives::types::ElementTrait;
 use frame_support::{parameter_types, traits::Nothing};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
+use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -122,7 +123,7 @@ parameter_types! {
 	pub const NewDefaultZeroElement: Element = Element([0u8; 32]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
+#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Deserialize, Serialize)]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {

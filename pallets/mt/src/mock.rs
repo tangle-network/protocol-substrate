@@ -5,11 +5,17 @@ use crate as pallet_mt;
 use sp_core::H256;
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
-use frame_support::parameter_types;
+use frame_support::{parameter_types, traits::GenesisBuild};
 use frame_system as system;
+use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
+};
+
+use arkworks_gadgets::{
+	poseidon::PoseidonParameters,
+	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -111,7 +117,7 @@ parameter_types! {
 	]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
+#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Deserialize, Serialize)]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {
@@ -146,12 +152,48 @@ impl Config for Test {
 	type WeightInfo = ();
 }
 
+pub fn hasher_params() -> Vec<u8> {
+	let rounds = get_rounds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
+	let mds = get_mds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
+	let params = PoseidonParameters::new(rounds, mds);
+	params.to_bytes()
+}
+
+pub struct ExtBuilder;
+
+impl Default for ExtBuilder {
+	fn default() -> Self {
+		Self {}
+	}
+}
+
+impl ExtBuilder {
+	pub fn with_crate_gen_config(self) -> sp_io::TestExternalities {
+		let mut storage = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
+		let _ = pallet_hasher::GenesisConfig::<Test> {
+			parameters: Some(hasher_params()),
+			..Default::default()
+		}
+		.assimilate_storage(&mut storage);
+
+		let __ = crate::GenesisConfig::<Test>::default().assimilate_storage(&mut storage);
+
+		storage.into()
+	}
+
+	pub fn build(self) -> sp_io::TestExternalities {
+		let mut storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+		let _ = pallet_balances::GenesisConfig::<Test> {
+			balances: vec![(1, 10u128.pow(18)), (2, 20u128.pow(18)), (3, 30u128.pow(18))],
+		}
+		.assimilate_storage(&mut storage);
+
+		storage.into()
+	}
+}
+
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	let _ = pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(1, 10u128.pow(18)), (2, 20u128.pow(18)), (3, 30u128.pow(18))],
-	}
-	.assimilate_storage(&mut storage);
-	storage.into()
+	ExtBuilder::default().build()
 }
