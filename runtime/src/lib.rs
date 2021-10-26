@@ -806,6 +806,7 @@ impl pallet_mixer::Config for Runtime {
 	type PalletId = MixerPalletId;
 	type Tree = MerkleTree;
 	type Verifier = MixerVerifier;
+	type WeightInfo = pallet_mixer::weights::WebbWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1089,6 +1090,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			list_benchmark!(list, extra, pallet_mt, MerkleTree);
 			list_benchmark!(list, extra, pallet_anchor, Anchor);
+			list_benchmark!(list, extra, pallet_mixer, Mixer);
 
 
 			let storage_info = AllPalletsWithSystem::storage_info();
@@ -1127,6 +1129,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			add_benchmark!(params, batches, pallet_mt, MerkleTree);
 			add_benchmark!(params, batches, pallet_anchor, Anchor);
+			add_benchmark!(params, batches, pallet_mixer, Mixer);
 
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }

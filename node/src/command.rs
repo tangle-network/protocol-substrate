@@ -17,11 +17,7 @@
 use crate::{
 	chain_spec,
 	cli::{Cli, RelayChainCli, Subcommand},
-	service::{
-		new_partial, Block,
-		DarkwebbParachainRuntimeExecutor,
-		ShellRuntimeExecutor
-	},
+	service::{new_partial, Block, DarkwebbParachainRuntimeExecutor, ShellRuntimeExecutor},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -29,8 +25,8 @@ use cumulus_primitives_core::ParaId;
 use log::info;
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
-	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
-	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
+	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams, NetworkParams, Result,
+	RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
@@ -48,6 +44,7 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn is_shell(&self) -> bool {
 		self.id().starts_with("shell")
 	}
+
 	fn is_darkwebb(&self) -> bool {
 		self.id().starts_with("darkwebb")
 	}
@@ -56,16 +53,14 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 	fn is_shell(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_shell(self)
-	}	
+	}
+
 	fn is_darkwebb(&self) -> bool {
 		<dyn sc_service::ChainSpec>::is_darkwebb(self)
 	}
 }
 
-fn load_spec(
-	id: &str,
-	para_id: ParaId,
-) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+fn load_spec(id: &str, para_id: ParaId) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
 		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id)),
 		"darkwebb-dev" => Box::new(chain_spec::darkwebb_development_config(para_id)?),
@@ -80,7 +75,7 @@ fn load_spec(
 			} else {
 				Box::new(chain_spec)
 			}
-		},
+		}
 	})
 }
 
@@ -162,8 +157,7 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
-			.load_spec(id)
+		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter()).load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -226,27 +220,23 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| cmd.run(config.chain_spec, config.network))
-		},
+		}
 		Some(Subcommand::CheckBlock(cmd)) => {
 			construct_async_run!(|components, cli, cmd, config| {
 				Ok(cmd.run(components.client, components.import_queue))
 			})
-		},
+		}
 		Some(Subcommand::ExportBlocks(cmd)) => {
-			construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, config.database))
-			})
-		},
+			construct_async_run!(|components, cli, cmd, config| { Ok(cmd.run(components.client, config.database)) })
+		}
 		Some(Subcommand::ExportState(cmd)) => {
-			construct_async_run!(|components, cli, cmd, config| {
-				Ok(cmd.run(components.client, config.chain_spec))
-			})
-		},
+			construct_async_run!(|components, cli, cmd, config| { Ok(cmd.run(components.client, config.chain_spec)) })
+		}
 		Some(Subcommand::ImportBlocks(cmd)) => {
 			construct_async_run!(|components, cli, cmd, config| {
 				Ok(cmd.run(components.client, components.import_queue))
 			})
-		},
+		}
 		Some(Subcommand::PurgeChain(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 
@@ -258,19 +248,16 @@ pub fn run() -> Result<()> {
 						.chain(cli.relaychain_args.iter()),
 				);
 
-				let polkadot_config = SubstrateCli::create_configuration(
-					&polkadot_cli,
-					&polkadot_cli,
-					config.tokio_handle.clone(),
-				)
-				.map_err(|err| format!("Relay chain argument error: {}", err))?;
+				let polkadot_config =
+					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, config.tokio_handle.clone())
+						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 				cmd.run(config, polkadot_config)
 			})
-		},
-		Some(Subcommand::Revert(cmd)) => construct_async_run!(|components, cli, cmd, config| {
-			Ok(cmd.run(components.client, components.backend))
-		}),
+		}
+		Some(Subcommand::Revert(cmd)) => {
+			construct_async_run!(|components, cli, cmd, config| { Ok(cmd.run(components.client, components.backend)) })
+		}
 		Some(Subcommand::ExportGenesisState(params)) => {
 			let mut builder = sc_cli::LoggerBuilder::new("");
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
@@ -294,14 +281,13 @@ pub fn run() -> Result<()> {
 			}
 
 			Ok(())
-		},
+		}
 		Some(Subcommand::ExportGenesisWasm(params)) => {
 			let mut builder = sc_cli::LoggerBuilder::new("");
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let raw_wasm_blob =
-				extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
+			let raw_wasm_blob = extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
 			let output_buf = if params.raw {
 				raw_wasm_blob
 			} else {
@@ -315,8 +301,8 @@ pub fn run() -> Result<()> {
 			}
 
 			Ok(())
-		},
-		Some(Subcommand::Benchmark(cmd)) =>
+		}
+		Some(Subcommand::Benchmark(cmd)) => {
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
 				if runner.config().chain_spec.is_darkwebb() {
@@ -330,13 +316,13 @@ pub fn run() -> Result<()> {
 				Err("Benchmarking wasn't enabled when building the node. \
 				You can enable it with `--features runtime-benchmarks`."
 					.into())
-			},
+			}
+		}
 		None => {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
 			runner.run_node_until_exit(|config| async move {
-				let para_id =
-					chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
+				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
 
 				log::info!("Starting node {:?}", para_id);
 				let polkadot_cli = RelayChainCli::new(
@@ -348,8 +334,7 @@ pub fn run() -> Result<()> {
 
 				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(DEFAULT_PARA_ID));
 
-				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
+				let parachain_account = AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
 
 				log::info!("Parachain account: {:?}", parachain_account);
 				log::info!("Config chain spec: {:?}", config.chain_spec);
@@ -359,14 +344,16 @@ pub fn run() -> Result<()> {
 
 				log::info!("Starting block {:?}", block);
 				let tokio_handle = config.tokio_handle.clone();
-				let polkadot_config =
-					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
-						.map_err(|err| format!("Relay chain argument error: {}", err))?;
+				let polkadot_config = SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
+					.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 				info!("Parachain id: {:?}", id);
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
-				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
+				info!(
+					"Is collating: {}",
+					if config.role.is_authority() { "yes" } else { "no" }
+				);
 
 				if config.chain_spec.is_darkwebb() {
 					crate::service::start_darkwebb_parachain_node(config, polkadot_config, id)
@@ -385,7 +372,7 @@ pub fn run() -> Result<()> {
 						.map_err(Into::into)
 				}
 			})
-		},
+		}
 	}
 }
 
@@ -454,7 +441,11 @@ impl CliConfiguration<Self> for RelayChainCli {
 	fn chain_id(&self, is_dev: bool) -> Result<String> {
 		let chain_id = self.base.base.chain_id(is_dev)?;
 
-		Ok(if chain_id.is_empty() { self.chain_id.clone().unwrap_or_default() } else { chain_id })
+		Ok(if chain_id.is_empty() {
+			self.chain_id.clone().unwrap_or_default()
+		} else {
+			chain_id
+		})
 	}
 
 	fn role(&self, is_dev: bool) -> Result<sc_service::Role> {
@@ -501,10 +492,7 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.announce_block()
 	}
 
-	fn telemetry_endpoints(
-		&self,
-		chain_spec: &Box<dyn ChainSpec>,
-	) -> Result<Option<sc_telemetry::TelemetryEndpoints>> {
+	fn telemetry_endpoints(&self, chain_spec: &Box<dyn ChainSpec>) -> Result<Option<sc_telemetry::TelemetryEndpoints>> {
 		self.base.base.telemetry_endpoints(chain_spec)
 	}
 }

@@ -15,13 +15,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Anchor pallet benchmarking.
+//! Mixer pallet benchmarking.
 
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
 
-use darkwebb_primitives::{anchor::AnchorInterface, traits::merkle_tree::TreeInspector};
+use darkwebb_primitives::{mixer::MixerInterface, traits::merkle_tree::TreeInspector, ElementTrait};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
 use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
@@ -31,10 +31,10 @@ use orml_traits::MultiCurrency;
 // benchmark
 use zk_config::*;
 
-use crate::Pallet as Anchor;
+use crate::Pallet as Mixer;
 use frame_support::{
 	storage,
-	traits::{Currency, Get, PalletInfo},
+	traits::{Currency, Get, OnInitialize, PalletInfo},
 };
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
@@ -42,31 +42,29 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 }
 
 const SEED: u32 = 0;
-const MAX_EDGES: u32 = 256;
 
 benchmarks! {
 
 	create {
-	  let i in 1..MAX_EDGES;
 	  let d in 1..<T as pallet_mt::Config>::MaxTreeDepth::get() as u32;
 
 	  let deposit_size: u32 = 1_000_000_000;
-	  let asset_id = <<T as pallet_mixer::Config>::NativeCurrencyId as Get<pallet_mixer::CurrencyIdOf<T, _>>>::get();
-	}: _(RawOrigin::Root, deposit_size.into(), i, d as u8, asset_id)
+	  let asset_id = <<T as Config>::NativeCurrencyId as Get<CurrencyIdOf<T, _>>>::get();
+	}: _(RawOrigin::Root, deposit_size.into(), d as u8, asset_id)
 
 	deposit {
 	  let caller: T::AccountId = whitelisted_caller();
 	  let deposit_size: u32 = 50_000_000;
-	  let asset_id = <<T as pallet_mixer::Config>::NativeCurrencyId as Get<pallet_mixer::CurrencyIdOf<T, _>>>::get();
+	  let asset_id = <<T as Config>::NativeCurrencyId as Get<CurrencyIdOf<T, _>>>::get();
 	  let depth = <T as pallet_mt::Config>::MaxTreeDepth::get();
 
-	  let tree_id = <Anchor<T> as AnchorInterface<AnchorConfigration<T, _>>>::create(T::AccountId::default(), deposit_size.into(), depth, MAX_EDGES as u32, asset_id)?;
+	  let tree_id = <Mixer<T> as MixerInterface<_,_,_,_,_>>::create(T::AccountId::default(), deposit_size.into(), depth, asset_id)?;
 	  let leaf = <T as pallet_mt::Config>::Element::from_bytes(&[1u8; 32]);
 	  <<T as pallet_mt::Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
 
 	}: _(RawOrigin::Signed(caller.clone()), tree_id, leaf)
 	verify {
-	  assert_eq!(<<T as pallet_mixer::Config>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &pallet_mixer::Pallet::<T>::account_id()), deposit_size.into())
+	  assert_eq!(<<T as Config>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &Pallet::<T>::account_id()), deposit_size.into())
 	}
 
 	set_maintainer {
@@ -94,7 +92,7 @@ benchmarks! {
 		storage::unhashed::put(&storage::storage_prefix(hasher_pallet_name.as_bytes(), "Parameters".as_bytes()),&HASH_PARAMS[..]);
 
 		// 2. Initialize MerkleTree pallet
-		// pallet_mt::Pallet::<T>::set_default_hashes();
+		<pallet_mt::Pallet<T> as OnInitialize<_>>::on_initialize(Default::default());
 
 
 		storage::unhashed::put(&storage::storage_prefix(verifier_pallet_name.as_bytes(), "Parameters".as_bytes()),&VK_BYTES[..]);
@@ -113,11 +111,11 @@ benchmarks! {
 
 		let deposit_size: u32 = 50_000_000;
 		let depth = <T as pallet_mt::Config>::MaxTreeDepth::get();
-		let asset_id = <<T as pallet_mixer::Config>::NativeCurrencyId as Get<pallet_mixer::CurrencyIdOf<T, _>>>::get();
+		let asset_id = <<T as Config>::NativeCurrencyId as Get<CurrencyIdOf<T, _>>>::get();
 
-		let tree_id = <Anchor<T> as AnchorInterface<AnchorConfigration<T, _>>>::create(T::AccountId::default(), deposit_size.into(), depth, 2, asset_id)?;
+		let tree_id = <Mixer<T> as MixerInterface<_,_,_,_,_>>::create(T::AccountId::default(), deposit_size.into(), depth, asset_id)?;
 
-		<Anchor<T> as AnchorInterface<AnchorConfigration<T, _>>>::deposit(
+		<Mixer<T> as MixerInterface<_,_,_,_,_>>::deposit(
 			caller.clone(),
 			tree_id,
 			<T as pallet_mt::Config>::Element::from_bytes(&LEAF[..]),
@@ -128,10 +126,11 @@ benchmarks! {
 
 		assert_eq!(<T as pallet_mt::Config>::Element::from_bytes(&ROOT_ELEMENT_BYTES[0]), tree_root);
 
-		let roots_element = ROOT_ELEMENT_BYTES
+		let roots_element: Vec<<T as pallet_mt::Config>::Element> = ROOT_ELEMENT_BYTES
 			.iter()
 			.map(|v| <T as pallet_mt::Config>::Element::from_bytes(&v[..]))
 			.collect();
+		let root = roots_element[0];
 
 
 		let nullifier_hash_element = <T as pallet_mt::Config>::Element::from_bytes(&NULLIFIER_HASH_ELEMENTS_BYTES[..]);
@@ -140,8 +139,7 @@ benchmarks! {
 		RawOrigin::Signed(caller),
 		tree_id,
 		PROOF_BYTES.to_vec(),
-		src_chain_id.into(),
-		roots_element,
+		root,
 		nullifier_hash_element,
 		recipient_account_id.clone(),
 		relayer_account_id,
@@ -149,7 +147,7 @@ benchmarks! {
 		refund_value.into()
 	)
 	verify {
-		assert_eq!(<<T as pallet_mixer::Config>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &recipient_account_id), (100_000_000u32 + deposit_size).into())
+		assert_eq!(<<T as Config>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &recipient_account_id), (100_000_000u32 + deposit_size).into())
 	}
 
 }

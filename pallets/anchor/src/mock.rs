@@ -226,6 +226,7 @@ impl pallet_mixer::Config for Test {
 	type PalletId = MixerPalletId;
 	type Tree = MerkleTree;
 	type Verifier = VerifierPallet;
+	type WeightInfo = ();
 }
 
 parameter_types! {
