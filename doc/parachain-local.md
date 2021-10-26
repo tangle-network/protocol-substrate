@@ -123,7 +123,7 @@ yarn global add polkadot-launch
         {
           "wsPort": 9988,
           "port": 13000,
-          "name": "alice",
+          "name": "bob",
           "flags": ["--force-authoring", "--", "--execution=wasm"]
         }
       ]
