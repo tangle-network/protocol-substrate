@@ -1092,6 +1092,7 @@ impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
 	type Verifier = darkwebb_primitives::verifying::ArkworksBn254MixerVerifier;
+	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_verifier::Config<pallet_verifier::Instance2> for Runtime {
@@ -1103,6 +1104,7 @@ impl pallet_verifier::Config<pallet_verifier::Instance2> for Runtime {
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
 	type Verifier = darkwebb_primitives::verifying::ArkworksBn254BridgeVerifier;
+	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_asset_registry::Config for Runtime {
@@ -1513,6 +1515,8 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			list_benchmark!(list, extra, pallet_mt, MerkleTree);
 			list_benchmark!(list, extra, pallet_anchor, Anchor);
+			list_benchmark!(list, extra, pallet_verifier, AnchorVerifier);
+			list_benchmark!(list, extra, pallet_verifier, MixerVerifier);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1549,6 +1553,8 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			add_benchmark!(params, batches, pallet_mt, MerkleTree);
 			add_benchmark!(params, batches, pallet_anchor, Anchor);
+			add_benchmark!(params, batches, pallet_verifier, AnchorVerifier);
+			add_benchmark!(params, batches, pallet_verifier, MixerVerifier);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
