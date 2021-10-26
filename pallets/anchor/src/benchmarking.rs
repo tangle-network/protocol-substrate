@@ -34,7 +34,7 @@ use zk_config::*;
 use crate::Pallet as Anchor;
 use frame_support::{
 	storage,
-	traits::{Currency, Get, PalletInfo},
+	traits::{Currency, Get, PalletInfo, OnInitialize},
 };
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
@@ -94,7 +94,7 @@ benchmarks! {
 		storage::unhashed::put(&storage::storage_prefix(hasher_pallet_name.as_bytes(), "Parameters".as_bytes()),&HASH_PARAMS[..]);
 
 		// 2. Initialize MerkleTree pallet
-		// pallet_mt::Pallet::<T>::set_default_hashes();
+		<pallet_mt::Pallet<T> as OnInitialize<_>>::on_initialize(Default::default());
 
 
 		storage::unhashed::put(&storage::storage_prefix(verifier_pallet_name.as_bytes(), "Parameters".as_bytes()),&VK_BYTES[..]);
