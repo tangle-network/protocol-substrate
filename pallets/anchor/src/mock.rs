@@ -112,6 +112,7 @@ impl pallet_verifier::Config for Test {
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
 	type Verifier = darkwebb_primitives::verifying::ArkworksBn254BridgeVerifier;
+	type WeightInfo = ();
 }
 
 impl pallet_hasher::Config for Test {

@@ -114,6 +114,7 @@ impl pallet_verifier::Config for Test {
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
 	type Verifier = darkwebb_primitives::verifying::ArkworksBls381BridgeVerifier;
+	type WeightInfo = ();
 }
 
 pub struct TestHasher;
