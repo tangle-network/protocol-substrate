@@ -181,8 +181,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 impl<T: Config<I>, I: 'static> TokenWrapperInterface<T::AccountId, T::AssetId, T::Balance> for Pallet<T, I> {
 	fn wrap(
-		fromAssetId: T::AssetId,
-		intoPoolShareId: T::AssetId,
+		from_asset_id: T::AssetId,
+		into_pool_share_id: T::AssetId,
 		amount: T::Balance,
 		recipient: T::AccountId,
 	) -> Result<(), frame_support::dispatch::DispatchError> {
@@ -190,8 +190,8 @@ impl<T: Config<I>, I: 'static> TokenWrapperInterface<T::AccountId, T::AssetId, T
 	}
 
 	fn unwrap(
-		fromPoolShareId: T::AssetId,
-		intoAssetId: T::AssetId,
+		from_pool_share_id: T::AssetId,
+		into_asset_id: T::AssetId,
 		amount: T::Balance,
 		recipient: T::AccountId,
 	) -> Result<(), frame_support::dispatch::DispatchError> {
