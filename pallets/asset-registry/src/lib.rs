@@ -20,6 +20,7 @@
 use frame_support::{dispatch::DispatchError, pallet_prelude::*, sp_runtime::traits::CheckedAdd, transactional};
 use frame_system::pallet_prelude::*;
 use sp_arithmetic::traits::BaseArithmetic;
+use sp_io::storage::exists;
 use sp_std::{convert::TryInto, vec::Vec};
 
 #[cfg(test)]
@@ -42,7 +43,7 @@ pub use pallet::*;
 
 use crate::types::{AssetDetails, AssetMetadata};
 use frame_support::BoundedVec;
-use traits::{Registry, ShareTokenRegistry};
+pub use traits::{Registry, ShareTokenRegistry};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -105,6 +106,12 @@ pub mod pallet {
 
 		/// Incorrect number of assets provided to create shared asset.
 		InvalidSharedAssetLen,
+
+		/// Asset exists in to pool
+		AssetExistsInPool,
+
+		/// Asset not found in pool
+		AssetNotFoundInPool,
 	}
 
 	#[pallet::storage]
@@ -346,6 +353,30 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Add an asset to an existing pool.
+		#[pallet::weight(0)]
+		pub fn add_asset_to_pool(origin: OriginFor<T>, pool: Vec<u8>, asset_id: T::AssetId) -> DispatchResult {
+			ensure_root(origin)?;
+
+			ensure!(Self::assets(asset_id).is_some(), Error::<T>::AssetNotRegistered);
+
+			Self::add_asset_to_existing_pool(&pool, asset_id)?;
+
+			Ok(())
+		}
+
+		/// Remove an asset from an existing pool.
+		#[pallet::weight(0)]
+		pub fn delete_asset_to_pool(origin: OriginFor<T>, pool: Vec<u8>, asset_id: T::AssetId) -> DispatchResult {
+			ensure_root(origin)?;
+
+			ensure!(Self::assets(asset_id).is_some(), Error::<T>::AssetNotRegistered);
+
+			Self::delete_asset_from_existing_pool(&pool, asset_id)?;
+
+			Ok(())
+		}
 	}
 }
 
@@ -426,6 +457,67 @@ impl<T: Config> Pallet<T> {
 	/// Return asset for given loation.
 	pub fn location_to_asset(location: T::AssetNativeLocation) -> Option<T::AssetId> {
 		Self::location_assets(location)
+	}
+
+	fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+		let pool_asset_id = Self::retrieve_asset(name)?;
+		Assets::<T>::try_mutate(
+			pool_asset_id,
+			move |maybe_detail| -> Result<T::AssetId, DispatchError> {
+				let detail = maybe_detail.as_mut().ok_or(Error::<T>::AssetNotFound)?;
+
+				let asset_type = match &detail.asset_type {
+					AssetType::Token => return Err(Error::<T>::AssetNotFound.into()),
+					AssetType::PoolShare(pool) => {
+						if !pool.contains(&asset_id) {
+							let mut pool_clone = pool.clone();
+							pool_clone.push(asset_id.clone());
+							AssetType::PoolShare(pool_clone)
+						} else {
+							return Err(Error::<T>::AssetExistsInPool.into());
+						}
+					}
+				};
+
+				detail.asset_type = asset_type.clone();
+
+				Self::deposit_event(Event::Updated(pool_asset_id.clone(), detail.name.clone(), asset_type));
+
+				Ok(pool_asset_id)
+			},
+		)
+	}
+
+	fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+		let pool_asset_id = Self::retrieve_asset(name)?;
+		Assets::<T>::try_mutate(
+			pool_asset_id,
+			move |maybe_detail| -> Result<T::AssetId, DispatchError> {
+				let detail = maybe_detail.as_mut().ok_or(Error::<T>::AssetNotFound)?;
+
+				let asset_type = match &detail.asset_type {
+					AssetType::Token => return Err(Error::<T>::AssetNotFound.into()),
+					AssetType::PoolShare(pool) => {
+						if pool.contains(&asset_id) {
+							let filtered_pool = pool
+								.iter()
+								.filter(|id| **id != asset_id)
+								.map(|id| *id)
+								.collect::<Vec<T::AssetId>>();
+							AssetType::PoolShare(filtered_pool)
+						} else {
+							return Err(Error::<T>::AssetNotFoundInPool.into());
+						}
+					}
+				};
+
+				detail.asset_type = asset_type.clone();
+
+				Self::deposit_event(Event::Updated(pool_asset_id.clone(), detail.name.clone(), asset_type));
+
+				Ok(pool_asset_id)
+			},
+		)
 	}
 }
 

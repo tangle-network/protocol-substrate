@@ -1,0 +1,50 @@
+[package]
+authors = ["Webb Technologies Inc."]
+description = "FRAME pallet template for defining custom runtime logic."
+edition = "2018"
+homepage = "https://substrate.dev"
+license = "Unlicense"
+name = "pallet-token-wrapper"
+repository = "https://github.com/substrate-developer-hub/substrate-darkwebb-node/"
+version = "1.0.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"] }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-arithmetic = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+darkwebb-primitives = { path = "../../primitives", default-features = false }
+asset-registry = {package="pallet-asset-registry", path = "../asset-registry", default-features = false}
+orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
+
+
+#Optional dependencies
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "scale-info/std",
+    "frame-support/std",
+    "frame-system/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "orml-traits/std",
+    "darkwebb-primitives/std",
+    "frame-benchmarking/std",
+    "asset-registry/std",
+    "sp-arithmetic/std"
+]
+runtime-benchmarks = [
+  "frame-benchmarking",
+  "frame-system/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+]

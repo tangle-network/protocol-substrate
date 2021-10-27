@@ -323,6 +323,16 @@ fn update_asset() {
 	});
 }
 
+#[test]
+fn add_asset_to_pool() {
+	assert_eq!(true, false)
+}
+
+#[test]
+fn delete_asset_from_pool() {
+	assert_eq!(true, false)
+}
+
 use orml_traits::GetByKey;
 
 #[test]
