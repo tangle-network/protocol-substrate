@@ -26,6 +26,10 @@ fn should_wrap_token() {
 		assert_ok!(TokenWrapper::wrap(Origin::signed(recipient), first_token_id, pool_share_id, 50000 as u128, recipient));
 		
 		assert_eq!(Tokens::total_issuance(pool_share_id), 50000);
+
+		assert_eq!(TokenWrapper::get_balance(first_token_id, &recipient), 50000);
+
+		assert_eq!(TokenWrapper::get_balance(pool_share_id, &recipient), 50000);
 	})
 }
 
@@ -50,9 +54,15 @@ fn should_unwrap_token() {
 		
 		assert_eq!(Tokens::total_issuance(pool_share_id), 50000);
 
+		assert_eq!(TokenWrapper::get_balance(pool_share_id, &recipient), 50000);
+
+		assert_eq!(TokenWrapper::get_balance(first_token_id, &recipient), 50000);
+
 		assert_ok!(TokenWrapper::unwrap(Origin::signed(recipient),pool_share_id, first_token_id, 50000 as u128, recipient ));
 
 		assert_eq!(Tokens::total_issuance(pool_share_id), Default::default());
+
+		assert_eq!(TokenWrapper::get_balance(first_token_id, &recipient), 100000);
 	})
 }
 

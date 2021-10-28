@@ -59,7 +59,7 @@ mod tests;
 mod traits;
 
 use codec::{Decode, Encode};
-use sp_runtime::{traits::Saturating};
+use sp_runtime::traits::Saturating;
 use sp_std::prelude::*;
 
 use asset_registry::{Registry, ShareTokenRegistry};
@@ -226,6 +226,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let wrapping_fee = Self::get_wrapping_fee(amount);
 		let total = wrapping_fee.saturating_add(amount);
 		T::Currency::free_balance(currency_id, recipient) > total
+	}
+
+	pub fn get_balance(currency_id: CurrencyIdOf<T, I>, recipient: &T::AccountId) -> BalanceOf<T, I> {
+		T::Currency::total_balance(currency_id, recipient)
 	}
 }
 
