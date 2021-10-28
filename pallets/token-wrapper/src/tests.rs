@@ -2,7 +2,7 @@ use std::convert::TryInto;
 
 use crate::mock::*;
 
-use frame_support::{assert_ok, traits::Currency};
+use frame_support::assert_ok;
 
 use asset_registry::AssetType;
 
@@ -16,7 +16,7 @@ fn should_wrap_token() {
 		let pool_share_id = AssetRegistry::register_asset(b"meme".to_vec().try_into().unwrap(), AssetType::PoolShare(vec![second_token_id,first_token_id]), existential_balance.into()).unwrap();
 
 		let recipient: u64 = 1;
-		let currency_id: u32 = 1;
+		
 		let balance: i128 = 100000;
 
 		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance.into()));

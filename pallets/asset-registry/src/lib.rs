@@ -20,7 +20,6 @@
 use frame_support::{dispatch::DispatchError, pallet_prelude::*, sp_runtime::traits::CheckedAdd, transactional};
 use frame_system::pallet_prelude::*;
 use sp_arithmetic::traits::BaseArithmetic;
-use sp_io::storage::exists;
 use sp_std::{convert::TryInto, vec::Vec};
 
 #[cfg(test)]
