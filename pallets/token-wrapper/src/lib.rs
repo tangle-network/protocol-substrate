@@ -139,8 +139,6 @@ pub mod pallet {
 	pub enum Error<T, I = ()> {
 		/// Invalid transaction amount
 		InvalidAmount,
-		/// Poolshare asset not found
-		InvalidPoolShareAsset,
 		/// AssetId not found in selected pool share
 		UnregisteredAssetId,
 		/// Assets not found in selected pool
@@ -245,6 +243,8 @@ impl<T: Config<I>, I: 'static> TokenWrapperInterface<T::AccountId, T::AssetId, B
 		amount: BalanceOf<T, I>,
 		recipient: T::AccountId,
 	) -> Result<(), frame_support::dispatch::DispatchError> {
+		ensure!(amount > <BalanceOf<T, I>>::default(), Error::<T, I>::InvalidAmount);
+
 		ensure!(
 			<T::AssetRegistry as Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::exists(from_asset_id),
 			Error::<T, I>::UnregisteredAssetId
@@ -292,6 +292,8 @@ impl<T: Config<I>, I: 'static> TokenWrapperInterface<T::AccountId, T::AssetId, B
 		amount: BalanceOf<T, I>,
 		recipient: T::AccountId,
 	) -> Result<(), frame_support::dispatch::DispatchError> {
+		ensure!(amount > <BalanceOf<T, I>>::default(), Error::<T, I>::InvalidAmount);
+		
 		ensure!(
 			<T::AssetRegistry as Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::exists(into_asset_id),
 			Error::<T, I>::UnregisteredAssetId
