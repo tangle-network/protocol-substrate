@@ -24,12 +24,9 @@
 //! The Token Wrapper module provides functionality for token wrapping
 //! management including:
 //!
-//! * Wrapping assets
-//! * Unwrapping share pooled tokens
+//! * Wrapping assets into shares pool tokens
+//! * Unwrapping shared pool tokens
 //!
-//! To use it in your runtime, you need to implement the hasher [`Config`].
-//! Additionally, you will want to implement the hash traits defined in the
-//! darkwebb_primitives::hasher module.
 //!
 //! The supported dispatchable functions are documented in the [`Call`] enum.
 //!
