@@ -352,7 +352,6 @@ impl onchain::Config for Runtime {
 }
 
 impl pallet_staking::Config for Runtime {
-	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
 	type BondingDuration = BondingDuration;
 	type Currency = Balances;
 	type CurrencyToVote = U128CurrencyToVote;
@@ -362,6 +361,7 @@ impl pallet_staking::Config for Runtime {
 	type GenesisElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
 	type NextNewSession = Session;
+	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
 	// send the slashed funds to the treasury.
 	type Reward = ();
 	type RewardRemainder = Treasury;

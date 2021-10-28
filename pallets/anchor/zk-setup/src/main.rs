@@ -1,25 +1,23 @@
 use std::{env, fs, path::Path};
 
-use codec::Encode;
-use ark_ff::{BigInteger, PrimeField, FromBytes};
+use ark_ff::{BigInteger, FromBytes, PrimeField};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use arkworks_gadgets::{
 	poseidon::PoseidonParameters,
 	prelude::ark_groth16::ProvingKey,
 	setup::{
 		bridge::{
-			prove_groth16_circuit_circomx5, setup_arbitrary_data, setup_leaf_circomx5, setup_set, Circuit_Circomx5,
-			setup_groth16_random_circuit_circomx5
+			prove_groth16_circuit_circomx5, setup_arbitrary_data, setup_groth16_random_circuit_circomx5,
+			setup_leaf_circomx5, setup_set, Circuit_Circomx5,
 		},
 		common::{setup_circom_params_x5_3, setup_circom_params_x5_5, setup_tree_and_create_path_tree_circomx5, Curve},
 	},
 	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
 };
+use codec::Encode;
 
-use sp_runtime::{
-	traits::{Verify, IdentifyAccount},
-};
 use frame_benchmarking::account;
+use sp_runtime::traits::{IdentifyAccount, Verify};
 
 pub const TREE_DEPTH: usize = 30;
 pub const M: usize = 2;
@@ -27,7 +25,6 @@ pub const M: usize = 2;
 const SEED: u32 = 0;
 type Bn254Fr = ark_bn254::Fr;
 pub type AccountId = <<sp_runtime::MultiSignature as Verify>::Signer as IdentifyAccount>::AccountId;
-
 
 pub fn generate_proofs() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<Vec<u8>>, Vec<u8>, Vec<u8>) {
 	let curve = Curve::Bn254;
@@ -54,8 +51,8 @@ pub fn generate_proofs() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<Vec<u8>>, Vec<u8>, V
 	let fee_value: u32 = 0;
 	let refund_value: u32 = 0;
 
-	recipient_account_bytes.extend_from_slice(&[0u8;12]);
-	relayer_account_bytes.extend_from_slice(&[0u8;12]);
+	recipient_account_bytes.extend_from_slice(&[0u8; 12]);
+	relayer_account_bytes.extend_from_slice(&[0u8; 12]);
 
 	// fit inputs to the curve.
 	let chain_id = Bn254Fr::from(src_chain_id);
@@ -111,19 +108,18 @@ pub fn generate_proofs() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<Vec<u8>>, Vec<u8>, V
 		params.to_bytes(),
 		roots_element_bytes,
 		nullifier_hash_element_bytes,
-		leaf.into_repr().to_bytes_le()
+		leaf.into_repr().to_bytes_le(),
 	)
 }
 
-
 fn main() {
-		let out_dir = env::var("OUT_DIR")
-			.expect("Expected output directory 'OUT_DIR' when running this script");
+	let out_dir = env::var("OUT_DIR").expect("Expected output directory 'OUT_DIR' when running this script");
 
-		let dest_path = Path::new(&out_dir).join("zk_config.rs");
-		let (proof_bytes, vk_bytes, hash_params, roots_element_bytes, nullifier_hash_element_bytes, leaf) = generate_proofs();
-        
-		fs::write(
+	let dest_path = Path::new(&out_dir).join("zk_config.rs");
+	let (proof_bytes, vk_bytes, hash_params, roots_element_bytes, nullifier_hash_element_bytes, leaf) =
+		generate_proofs();
+
+	fs::write(
             &dest_path,
             format!("pub const HASH_PARAMS: [u8;{}] = {:?};\npub const PROOF_BYTES: [u8;{}] = {:?};\npub const VK_BYTES: [u8;{}] = {:?};\npub const ROOT_ELEMENT_BYTES: [[u8;32];{}] = {:?};\npub const NULLIFIER_HASH_ELEMENTS_BYTES: [u8;{}] = {:?};\npub const LEAF: [u8;{}]= {:?};", 
 			hash_params.len(), 

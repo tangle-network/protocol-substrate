@@ -34,7 +34,7 @@ use zk_config::*;
 use crate::Pallet as Anchor;
 use frame_support::{
 	storage,
-	traits::{Currency, Get, PalletInfo, OnInitialize},
+	traits::{Currency, Get, OnInitialize, PalletInfo},
 };
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
