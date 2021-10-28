@@ -19,11 +19,13 @@ use super::Error;
 use crate::{
 	mock::*,
 	types::{AssetDetails, AssetMetadata, AssetType},
+	ShareTokenRegistry,
 };
 use codec::Encode;
 use darkwebb_primitives::{AssetId, Balance};
 use frame_support::{assert_noop, assert_ok, BoundedVec};
 use polkadot_xcm::v0::{Junction::*, MultiLocation::*};
+use sp_runtime::DispatchError;
 use sp_std::convert::TryInto;
 
 #[test]
@@ -325,12 +327,86 @@ fn update_asset() {
 
 #[test]
 fn add_asset_to_pool() {
-	assert_eq!(true, false)
+	ExtBuilder::default().build().execute_with(|| {
+		let existential_balance: u32 = 1000;
+		let first_token_id = Registry::register_asset(
+			b"shib".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+		let second_token_id = Registry::register_asset(
+			b"doge".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let pool_share_id = Registry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![first_token_id]),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		assert_ok!(Registry::add_asset_to_pool(
+			Origin::root(),
+			b"meme".to_vec().try_into().unwrap(),
+			second_token_id
+		));
+
+		assert_eq!(
+			<Registry as ShareTokenRegistry<
+				<Test as crate::Config>::AssetId,
+				Vec<u8>,
+				<Test as crate::Config>::Balance,
+				DispatchError,
+			>>::contains_asset(pool_share_id, second_token_id),
+			true
+		)
+	})
 }
 
 #[test]
 fn delete_asset_from_pool() {
-	assert_eq!(true, false)
+	ExtBuilder::default().build().execute_with(|| {
+		let existential_balance: u32 = 1000;
+		let first_token_id = Registry::register_asset(
+			b"shib".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+		let second_token_id = Registry::register_asset(
+			b"doge".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let pool_share_id = Registry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![first_token_id, second_token_id]),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		assert_ok!(Registry::delete_asset_from_pool(
+			Origin::root(),
+			b"meme".to_vec().try_into().unwrap(),
+			second_token_id
+		));
+
+		assert_eq!(
+			<Registry as ShareTokenRegistry<
+				<Test as crate::Config>::AssetId,
+				Vec<u8>,
+				<Test as crate::Config>::Balance,
+				DispatchError,
+			>>::contains_asset(pool_share_id, second_token_id),
+			false
+		)
+	})
 }
 
 use orml_traits::GetByKey;

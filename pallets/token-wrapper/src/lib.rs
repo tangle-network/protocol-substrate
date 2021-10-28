@@ -133,6 +133,9 @@ pub mod pallet {
 			amount: BalanceOf<T, I>,
 			recipient: T::AccountId,
 		},
+		UpdatedWrappingFeePercent {
+			wrapping_fee_percent: BalanceOf<T, I>,
+		},
 	}
 
 	#[pallet::error]
@@ -145,7 +148,7 @@ pub mod pallet {
 		UnregisteredAssetId,
 		/// Assets not found in selected pool
 		NotFoundInPool,
-		/// Insufficient Balance
+		/// Insufficient Balance for an asset
 		InsufficientBalance,
 	}
 
@@ -156,6 +159,10 @@ pub mod pallet {
 			ensure_root(origin)?;
 
 			WrappingFeePercent::<T, I>::put(fee);
+
+			Self::deposit_event(Event::UpdatedWrappingFeePercent {
+				wrapping_fee_percent: fee,
+			});
 			Ok(().into())
 		}
 
