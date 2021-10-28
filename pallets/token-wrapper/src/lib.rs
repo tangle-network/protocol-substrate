@@ -232,6 +232,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::Currency::free_balance(currency_id, recipient) > total
 	}
 
+	#[cfg(test)]
 	pub fn get_balance(currency_id: CurrencyIdOf<T, I>, recipient: &T::AccountId) -> BalanceOf<T, I> {
 		T::Currency::total_balance(currency_id, recipient)
 	}
