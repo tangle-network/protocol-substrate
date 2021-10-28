@@ -929,7 +929,7 @@ impl pallet_bounties::Config for Runtime {
 }
 
 parameter_types! {
-	pub const TokenWrapperPalletId: PalletId = PalletId(*b"py/tknwrp");
+	pub const TokenWrapperPalletId: PalletId = PalletId(*b"dw/tknwrp");
 	pub const WrappingFeeDivider: Balance = 100;
 }
 
