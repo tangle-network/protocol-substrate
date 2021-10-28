@@ -407,9 +407,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-gadgets"
-version = "0.3.12"
+version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b384815dfaca54e0da4f270d3037dbab85983d18e1379c108a72f35e11e867c8"
+checksum = "03ee3a63f1b49e53f5207dc4abf5d964fcda6c42b9be2b1e27a54e6acf11682f"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -11619,7 +11619,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.11.2",
+ "parking_lot 0.10.2",
  "regex",
  "serde",
  "serde_json",
@@ -11733,8 +11733,8 @@ version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f559b464de2e2bdabcac6a210d12e9b5a5973c251e102c44c585c71d51bd78e"
 dependencies = [
- "cfg-if 1.0.0",
- "rand 0.8.4",
+ "cfg-if 0.1.10",
+ "rand 0.7.3",
  "static_assertions",
 ]
 

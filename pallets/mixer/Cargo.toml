@@ -49,22 +49,22 @@ arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"] }
 [features]
 default = ["std"]
 std = [
-    "codec/std",
-    "frame-support/std",
-    "frame-system/std",
-    "orml-traits/std",
-    "orml-tokens/std",
-    "orml-currencies/std",
-    "sp-runtime/std",
-    "sp-std/std",
-    "pallet-hasher/std",
-    "pallet-mt/std",
-    "pallet-verifier/std",
-    "darkwebb-primitives/std",
-    "pallet-asset-registry/std"
+	"codec/std",
+	"frame-support/std",
+	"frame-system/std",
+	"orml-traits/std",
+	"orml-tokens/std",
+	"orml-currencies/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"pallet-hasher/std",
+	"pallet-mt/std",
+	"pallet-verifier/std",
+	"darkwebb-primitives/std",
+	"pallet-asset-registry/std"
 ]
 runtime-benchmarks = [
-  "frame-benchmarking",
-  "frame-system/runtime-benchmarks",
-  "frame-support/runtime-benchmarks",
+	"frame-benchmarking",
+	"frame-system/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
 ]
