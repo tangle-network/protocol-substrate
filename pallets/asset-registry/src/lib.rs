@@ -368,7 +368,7 @@ pub mod pallet {
 
 		/// Remove an asset from an existing pool.
 		#[pallet::weight(0)]
-		pub fn delete_asset_to_pool(origin: OriginFor<T>, pool: Vec<u8>, asset_id: T::AssetId) -> DispatchResult {
+		pub fn delete_asset_from_pool(origin: OriginFor<T>, pool: Vec<u8>, asset_id: T::AssetId) -> DispatchResult {
 			ensure_root(origin)?;
 
 			ensure!(Self::assets(asset_id).is_some(), Error::<T>::AssetNotRegistered);
@@ -551,6 +551,18 @@ impl<T: Config> ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchErro
 		existential_deposit: T::Balance,
 	) -> Result<T::AssetId, DispatchError> {
 		Self::get_or_create_asset(name.clone(), AssetType::PoolShare(assets.to_vec()), existential_deposit)
+	}
+
+	fn contains_asset(pool_share_id: T::AssetId, asset_id: T::AssetId) -> bool {
+		let pool_option = Self::assets(pool_share_id);
+		if let Some(pool) = pool_option {
+			match pool.asset_type {
+				AssetType::Token => return false,
+				AssetType::PoolShare(assets) => return assets.contains(&asset_id),
+			}
+		}
+
+		return false;
 	}
 }
 

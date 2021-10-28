@@ -36,4 +36,6 @@ pub trait ShareTokenRegistry<AssetId, AssetName, Balance, Error>: Registry<Asset
 			Self::create_shared_asset(&name, &assets, existential_deposit)
 		}
 	}
+
+	fn contains_asset(pool_share_id: AssetId, asset_id: AssetId) -> bool;
 }
