@@ -1,19 +1,9 @@
-use arkworks_gadgets::{
-	poseidon::PoseidonParameters,
-	prelude::ark_ff::{BigInteger, Field, PrimeField},
-	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
-};
+use arkworks_gadgets::prelude::ark_ff::{BigInteger, Field, PrimeField};
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
+use sp_std::vec;
 
 use super::*;
 use crate::mock::*;
-
-fn hasher_params() -> Vec<u8> {
-	let rounds = get_rounds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-	let mds = get_mds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-	let params = PoseidonParameters::new(rounds, mds);
-	params.to_bytes()
-}
 
 #[test]
 fn shout_create_an_empty_tree() {
@@ -33,6 +23,20 @@ fn should_fail_in_case_of_larger_depth() {
 				error: 1, // InvalidTreeDepth,
 				message: None,
 			}
+		);
+	});
+}
+
+#[test]
+fn should_fail_in_case_when_max_default_hashes_is_exceeded() {
+	new_test_ext().execute_with(|| {
+		let max_default_hashes = <Test as Config>::MaxTreeDepth::get();
+		assert_err!(
+			MerkleTree::force_set_default_hashes(Origin::root(), vec![
+				<Test as Config>::DefaultZeroElement::get();
+				(max_default_hashes + 1) as usize
+			]),
+			crate::Error::<Test, _>::ExceedsMaxDefaultHashes
 		);
 	});
 }
@@ -111,6 +115,13 @@ fn should_reach_same_root_as_js() {
 			Element::from_bytes(&expected_root.into_repr().to_bytes_be())
 		));
 	});
+}
+
+#[test]
+fn genesis_config_works() {
+	ExtBuilder::default().with_crate_gen_config().execute_with(|| {
+		assert_eq!(MerkleTree::is_default_hashes_empty(), false);
+	})
 }
 
 #[ignore = "used only for debugging"]

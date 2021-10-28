@@ -51,10 +51,16 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
+mod benchmarking;
+
+pub mod weights;
+
 pub mod types;
 use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchError};
 use types::TreeMetadata;
+
+pub use weights::WeightInfo;
 
 use darkwebb_primitives::{
 	hasher::*,
@@ -132,6 +138,9 @@ pub mod pallet {
 
 		/// The maximum length of a name or symbol stored on-chain.
 		type StringLimit: Get<u32>;
+
+		/// WeightInfo for pallet
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::storage]
@@ -206,28 +215,53 @@ pub mod pallet {
 		ExceedsMaxLeaves,
 		/// Tree doesnt exist
 		TreeDoesntExist,
+		/// Invalid length for default hashes
+		ExceedsMaxDefaultHashes,
 	}
 
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {
 		fn on_initialize(_n: T::BlockNumber) -> Weight {
-			let mut temp_hashes: Vec<T::Element> = Vec::with_capacity(T::MaxTreeDepth::get() as usize);
-			let default_zero = T::DefaultZeroElement::get();
-			temp_hashes.push(default_zero);
-			let mut temp_hash = default_zero.to_bytes().to_vec();
-			for _ in 0..T::MaxTreeDepth::get() {
-				temp_hash = T::Hasher::hash_two(&temp_hash, &temp_hash).unwrap();
-				temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
+			if Self::is_default_hashes_empty() {
+				let temp_hashes = generate_default_hashes::<T, I>();
+				DefaultHashes::<T, I>::put(temp_hashes);
+			}
+			1u64 + 1u64
+		}
+	}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+		pub phantom: PhantomData<T>,
+		pub default_hashes: Option<Vec<T::Element>>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+		fn default() -> Self {
+			Self {
+				phantom: Default::default(),
+				default_hashes: None,
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+		fn build(&self) {
+			if let Some(default_hashes) = &self.default_hashes {
+				DefaultHashes::<T, I>::put(default_hashes);
+				return;
 			}
 
-			DefaultHashes::<T, I>::put(temp_hashes);
-			1u64 + 1u64
+			let default_hashes = generate_default_hashes::<T, I>();
+			DefaultHashes::<T, I>::put(default_hashes);
 		}
 	}
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::create(*depth as u32))]
 		pub fn create(origin: OriginFor<T>, depth: u8) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			ensure!(
@@ -247,7 +281,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::insert())]
 		pub fn insert(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let _origin = ensure_signed(origin)?;
 			ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T, I>::TreeDoesntExist);
@@ -261,10 +295,12 @@ pub mod pallet {
 			// insert the leaf
 			<Self as TreeInterface<_, _, _>>::insert_in_order(tree_id, leaf)?;
 
+			Self::deposit_event(Event::LeafInsertion(tree_id, next_index, leaf));
+
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::set_maintainer())]
 		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			// ensure parameter setter is the maintainer
@@ -277,27 +313,45 @@ pub mod pallet {
 			})
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::force_set_maintainer())]
 		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
+				Self::deposit_event(Event::MaintainerSet(Default::default(), new_maintainer));
 				Ok(().into())
 			})
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::force_set_default_hashes(default_hashes.len() as u32))]
 		pub fn force_set_default_hashes(
 			origin: OriginFor<T>,
 			default_hashes: Vec<T::Element>,
 		) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
-			// set the new maintainer
+			let len_of_hashes = default_hashes.len();
+			ensure!(
+				len_of_hashes > 0 && len_of_hashes <= T::MaxTreeDepth::get() as usize,
+				Error::<T, I>::ExceedsMaxDefaultHashes
+			);
+			// set the new default hashes
 			DefaultHashes::<T, I>::put(default_hashes);
 			Ok(().into())
 		}
+	}
+
+	pub fn generate_default_hashes<T: Config<I>, I: 'static>() -> Vec<T::Element> {
+		let mut temp_hashes: Vec<T::Element> = Vec::with_capacity(T::MaxTreeDepth::get() as usize);
+		let default_zero = T::DefaultZeroElement::get();
+		temp_hashes.push(default_zero);
+		let mut temp_hash = default_zero.to_bytes().to_vec();
+		for _ in 0..T::MaxTreeDepth::get() {
+			temp_hash = T::Hasher::hash_two(&temp_hash, &temp_hash).unwrap();
+			temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
+		}
+
+		temp_hashes
 	}
 }
 
@@ -309,6 +363,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		};
 
 		two
+	}
+
+	fn is_default_hashes_empty() -> bool {
+		let default_hashes = Self::default_hashes();
+		default_hashes.is_empty()
 	}
 }
 

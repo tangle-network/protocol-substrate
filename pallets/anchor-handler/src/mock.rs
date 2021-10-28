@@ -6,6 +6,7 @@ use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
 use orml_traits::parameter_type_with_key;
 pub use pallet_balances;
+use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -113,6 +114,7 @@ impl pallet_verifier::Config for Test {
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
 	type Verifier = darkwebb_primitives::verifying::ArkworksBls381BridgeVerifier;
+	type WeightInfo = ();
 }
 
 pub struct TestHasher;
@@ -131,6 +133,7 @@ impl pallet_hasher::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -149,7 +152,7 @@ parameter_types! {
 	]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
+#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Serialize, Deserialize)]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {
@@ -181,6 +184,7 @@ impl pallet_mt::Config for Test {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -231,6 +235,7 @@ impl pallet_mixer::Config for Test {
 	type PalletId = MixerPalletId;
 	type Tree = MT;
 	type Verifier = VerifierPallet;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -243,6 +248,7 @@ impl pallet_anchor::Config for Test {
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;
 	type Verifier = VerifierPallet;
+	type WeightInfo = ();
 }
 
 parameter_types! {

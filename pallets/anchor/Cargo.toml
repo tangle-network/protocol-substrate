@@ -13,10 +13,10 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = { package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 
-frame-support = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-frame-system = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-std = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-hasher = { path = "../hasher", default-features = false }
 pallet-mixer = { path = "../mixer", default-features = false }
 pallet-mt = { path = "../mt", default-features = false }
@@ -25,39 +25,50 @@ darkwebb-primitives = { path = "../../primitives", default-features = false }
 orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
 
+frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
+
+
 [dev-dependencies]
 serde = { version = "1.0.119" }
-sp-core = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-io = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
-pallet-balances = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false }
 orml-currencies = { path = "../../open-runtime-module-library/currencies", default-features = false }
 rand = "0.8.4"
 
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
-ark-ff = { version = "^0.3.0", default-features = false }
+ark-ff = { version = "^0.3.0", default-features = false}
 ark-ec = { version = "^0.3.0", default-features = false }
-ark-std = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
-ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ] }
-ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ] }
+ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ]}
+ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"] }
 
 [features]
 default = ["std"]
 std = [
     "codec/std",
+    "scale-info/std",
     "frame-support/std",
     "frame-system/std",
     "sp-runtime/std",
     "sp-std/std",
+    "sp-io/std",
     "pallet-hasher/std",
     "pallet-mt/std",
     "pallet-mixer/std",
     "pallet-verifier/std",
-    "darkwebb-primitives/std",
     "pallet-asset-registry/std",
+    "darkwebb-primitives/std",
+    "frame-benchmarking/std"
+]
+runtime-benchmarks = [
+    "frame-benchmarking",
+    "frame-system/runtime-benchmarks",
+    "frame-support/runtime-benchmarks",
 ]

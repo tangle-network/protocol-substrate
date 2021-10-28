@@ -51,7 +51,13 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod zk_config;
+
+mod benchmarking;
+
 pub mod types;
+pub mod weights;
 use types::MixerMetadata;
 
 use codec::Encode;
@@ -69,6 +75,7 @@ use orml_traits::MultiCurrency;
 use sp_std::prelude::*;
 
 pub use pallet::*;
+pub use weights::WeightInfo;
 
 /// Type alias for the orml_traits::MultiCurrency::Balance type
 pub type BalanceOf<T, I> =
@@ -109,6 +116,9 @@ pub mod pallet {
 		/// Native currency id
 		#[pallet::constant]
 		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
+
+		/// WeightInfo for pallet
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::storage]
@@ -161,7 +171,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config<I>>::WeightInfo::create(*depth as u32))]
 		pub fn create(
 			origin: OriginFor<T>,
 			deposit_size: BalanceOf<T, I>,
@@ -175,7 +185,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config<I>>::WeightInfo::set_maintainer())]
 		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			// ensure parameter setter is the maintainer
@@ -188,25 +198,25 @@ pub mod pallet {
 			})
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config<I>>::WeightInfo::force_set_maintainer())]
 		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
+				Self::deposit_event(Event::MaintainerSet(Default::default(), new_maintainer));
 				Ok(().into())
 			})
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			<Self as MixerInterface<_, _, _, _, _>>::deposit(origin, tree_id, leaf)?;
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config<I>>::WeightInfo::withdraw())]
 		pub fn withdraw(
 			origin: OriginFor<T>,
 			id: T::TreeId,
@@ -292,8 +302,8 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 			output.iter_mut().zip(v).for_each(|(b1, b2)| *b1 = *b2);
 			output
 		};
-		let recipient_bytes = recipient.using_encoded(element_encoder);
-		let relayer_bytes = relayer.using_encoded(element_encoder);
+		let recipient_bytes = truncate_and_pad(&recipient.using_encoded(element_encoder)[..]);
+		let relayer_bytes = truncate_and_pad(&relayer.using_encoded(element_encoder)[..]);
 		let fee_bytes = fee.using_encoded(element_encoder);
 		let refund_bytes = refund.using_encoded(element_encoder);
 		bytes.extend_from_slice(&nullifier_hash.encode());
@@ -362,4 +372,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		ensure!(mixer.is_some(), Error::<T, I>::NoMixerFound);
 		Ok(mixer.unwrap())
 	}
+}
+
+/// Truncate and pad 256 bit slice
+pub fn truncate_and_pad(t: &[u8]) -> Vec<u8> {
+	let mut truncated_bytes = t[..20].to_vec();
+	truncated_bytes.extend_from_slice(&[0u8; 12]);
+	truncated_bytes
 }

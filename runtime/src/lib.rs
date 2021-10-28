@@ -185,13 +185,11 @@ impl pallet_aura::Config for Runtime {
 }
 
 parameter_types! {
-	pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
 	pub const Period: u32 = 6 * HOURS;
 	pub const Offset: u32 = 0;
 }
 
 impl pallet_session::Config for Runtime {
-	type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
 	type Event = Event;
 	type Keys = SessionKeys;
 	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
@@ -238,11 +236,13 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
 	pub const TransactionByteFee: Balance = 1;
+	pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees<Runtime>>;
+	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
 }
@@ -512,6 +512,7 @@ pub type Barrier = (
 	TakeWeightCredit,
 	AllowTopLevelPaidExecutionFrom<Everything>,
 	AllowUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
+	AllowUnpaidExecutionFrom<Everything>,
 	// ^^^ Parent and its exec plurality get free execution
 );
 
@@ -631,6 +632,7 @@ impl pallet_hasher::Config<Instance1> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
+	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_hasher::Config<Instance2> for Runtime {
@@ -642,6 +644,7 @@ impl pallet_hasher::Config<Instance2> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
+	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_hasher::Config<Instance3> for Runtime {
@@ -653,6 +656,7 @@ impl pallet_hasher::Config<Instance3> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
+	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_hasher::Config<Instance4> for Runtime {
@@ -664,6 +668,7 @@ impl pallet_hasher::Config<Instance4> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
+	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_hasher::Config<Instance5> for Runtime {
@@ -675,6 +680,7 @@ impl pallet_hasher::Config<Instance5> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
+	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
@@ -729,9 +735,10 @@ impl pallet_mt::Config for Runtime {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
 }
 
-impl pallet_verifier::Config for Runtime {
+impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
@@ -740,6 +747,19 @@ impl pallet_verifier::Config for Runtime {
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
 	type Verifier = darkwebb_primitives::verifying::ArkworksBn254MixerVerifier;
+	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
+}
+
+impl pallet_verifier::Config<pallet_verifier::Instance2> for Runtime {
+	type Currency = Balances;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ();
+	type StringLimit = StringLimit;
+	type Verifier = darkwebb_primitives::verifying::ArkworksBn254BridgeVerifier;
+	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_asset_registry::Config for Runtime {
@@ -785,7 +805,8 @@ impl pallet_mixer::Config for Runtime {
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = MixerPalletId;
 	type Tree = MerkleTree;
-	type Verifier = Verifier;
+	type Verifier = MixerVerifier;
+	type WeightInfo = pallet_mixer::weights::WebbWeight<Runtime>;
 }
 
 parameter_types! {
@@ -797,7 +818,8 @@ impl pallet_anchor::Config for Runtime {
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;
-	type Verifier = Verifier;
+	type Verifier = AnchorVerifier;
+	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_anchor_handler::Config for Runtime {
@@ -821,6 +843,13 @@ impl pallet_bridge::Config<BridgeInstance> for Runtime {
 	type Event = Event;
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
+}
+
+impl pallet_hello::Config for Runtime {
+	type Call = Call;
+	type Event = Event;
+	type Origin = Origin;
+	type XcmSender = XcmRouter;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously
@@ -876,13 +905,15 @@ construct_runtime!(
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 
-		Verifier: pallet_verifier::{Pallet, Call, Storage, Event<T>, Config<T>},
-		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		MixerVerifier: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		AnchorVerifier: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>, Config<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
 		AnchorHandler: pallet_anchor_handler::{Pallet, Call, Storage, Event<T>},
 		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		HelloXcm: pallet_hello::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -1049,21 +1080,19 @@ impl_runtime_apis! {
 		) {
 			use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
-			use frame_system_benchmarking::Pallet as SystemBench;
-			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 
-			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
-			list_benchmark!(list, extra, pallet_assets, Assets);
-			list_benchmark!(list, extra, pallet_balances, Balances);
-			list_benchmark!(list, extra, pallet_multisig, Multisig);
-			list_benchmark!(list, extra, pallet_proxy, Proxy);
-			list_benchmark!(list, extra, pallet_session, SessionBench::<Runtime>);
-			list_benchmark!(list, extra, pallet_uniques, Uniques);
-			list_benchmark!(list, extra, pallet_utility, Utility);
-			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
-			list_benchmark!(list, extra, pallet_collator_selection, CollatorSelection);
+			list_benchmark!(list, extra, pallet_hasher, BLS381Poseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BLS381Poseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon5x5Hasher);
+			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
+			list_benchmark!(list, extra, pallet_mt, MerkleTree);
+			list_benchmark!(list, extra, pallet_anchor, Anchor);
+			list_benchmark!(list, extra, pallet_mixer, Mixer);
+			list_benchmark!(list, extra, pallet_verifier, AnchorVerifier);
+			list_benchmark!(list, extra, pallet_verifier, MixerVerifier);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1075,11 +1104,8 @@ impl_runtime_apis! {
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
 
-			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
 
-			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
-			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
 				// Block Number
@@ -1097,16 +1123,16 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
-			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_assets, Assets);
-			add_benchmark!(params, batches, pallet_balances, Balances);
-			add_benchmark!(params, batches, pallet_multisig, Multisig);
-			add_benchmark!(params, batches, pallet_proxy, Proxy);
-			add_benchmark!(params, batches, pallet_session, SessionBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_uniques, Uniques);
-			add_benchmark!(params, batches, pallet_utility, Utility);
-			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			add_benchmark!(params, batches, pallet_collator_selection, CollatorSelection);
+			add_benchmark!(params, batches, pallet_hasher, BLS381Poseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BLS381Poseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon5x5Hasher);
+			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
+			add_benchmark!(params, batches, pallet_mt, MerkleTree);
+			add_benchmark!(params, batches, pallet_anchor, Anchor);
+			add_benchmark!(params, batches, pallet_mixer, Mixer);
+			add_benchmark!(params, batches, pallet_verifier, AnchorVerifier);
+			add_benchmark!(params, batches, pallet_verifier, MixerVerifier);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
@@ -1132,7 +1158,7 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 		.create_inherent_data()
 		.expect("Could not create the timestamp inherent data");
 
-		inherent_data.check_extrinsics(&block)
+		inherent_data.check_extrinsics(block)
 	}
 }
 

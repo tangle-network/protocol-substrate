@@ -1,5 +1,5 @@
 use super::*;
-use crate as pallet_hasher;
+use crate::{self as pallet_hasher};
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
 use frame_support::parameter_types;
@@ -21,9 +21,10 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		BN254Poseidon3x5Hasher: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		BN254Poseidon5x5Hasher: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>},
-		BN254CircomPoseidon3x5Hasher: pallet_hasher::<Instance3>::{Pallet, Call, Storage, Event<T>},
+		BN254Poseidon3x5Hasher: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		BN254Poseidon5x5Hasher: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		BN254CircomPoseidon3x5Hasher: pallet_hasher::<Instance3>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		DefaultPalletHasher: pallet_hasher::{Pallet, Call, Storage, Event<T>, Config<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -91,6 +92,7 @@ impl pallet_hasher::Config<Instance1> for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
+	type WeightInfo = ();
 }
 
 impl pallet_hasher::Config<Instance2> for Test {
@@ -102,6 +104,7 @@ impl pallet_hasher::Config<Instance2> for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
+	type WeightInfo = ();
 }
 
 impl pallet_hasher::Config<Instance3> for Test {
@@ -113,6 +116,19 @@ impl pallet_hasher::Config<Instance3> for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
+	type WeightInfo = ();
+}
+
+impl pallet_hasher::Config for Test {
+	type Currency = Balances;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type Hasher = darkwebb_primitives::hashing::BN254Poseidon3x5Hasher;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ParameterDeposit = ParameterDeposit;
+	type StringLimit = StringLimit;
+	type WeightInfo = ();
 }
 
 pub type BN254Poseidon3x5HasherCall = pallet_hasher::Call<Test, Instance1>;

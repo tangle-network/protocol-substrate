@@ -11,6 +11,7 @@ use darkwebb_primitives::types::ElementTrait;
 use frame_support::{parameter_types, traits::Nothing};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
+use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -102,6 +103,7 @@ impl pallet_hasher::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -121,7 +123,7 @@ parameter_types! {
 	pub const NewDefaultZeroElement: Element = Element([0u8; 32]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
+#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Deserialize, Serialize)]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {
@@ -153,6 +155,7 @@ impl pallet_mt::Config for Test {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type WeightInfo = ();
 }
 
 impl pallet_verifier::Config for Test {
@@ -164,6 +167,7 @@ impl pallet_verifier::Config for Test {
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
 	type Verifier = darkwebb_primitives::verifying::ArkworksBn254MixerVerifier;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -220,6 +224,7 @@ impl Config for Test {
 	type PalletId = MixerPalletId;
 	type Tree = MerkleTree;
 	type Verifier = VerifierPallet;
+	type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.

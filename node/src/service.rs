@@ -56,7 +56,7 @@ use substrate_prometheus_endpoint::Registry;
 pub struct DarkwebbParachainRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for DarkwebbParachainRuntimeExecutor {
-	type ExtendHostFunctions = ();
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
 		darkwebb_runtime::api::dispatch(method, data)
@@ -71,7 +71,7 @@ impl sc_executor::NativeExecutionDispatch for DarkwebbParachainRuntimeExecutor {
 pub struct ShellRuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for ShellRuntimeExecutor {
-	type ExtendHostFunctions = ();
+	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
 		shell_runtime::api::dispatch(method, data)

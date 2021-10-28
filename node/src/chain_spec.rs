@@ -11,9 +11,9 @@ use arkworks_gadgets::{
 };
 use common::{AccountId, AuraId, Signature};
 use darkwebb_runtime::{
-	wasm_binary_unwrap, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
+	wasm_binary_unwrap, AnchorVerifierConfig, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
 	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig,
-	GenesisConfig, SudoConfig, SystemConfig, VerifierConfig,
+	GenesisConfig, MerkleTreeConfig, MixerVerifierConfig, SudoConfig, SystemConfig,
 };
 
 use cumulus_primitives_core::ParaId;
@@ -259,9 +259,9 @@ fn testnet_genesis(
 	let verifier_params = {
 		use std::fs;
 		// let pk_bytes = fs::read("../../fixtures/proving_key.bin").unwrap();
-		let vk_bytes = fs::read("./fixtures/verifying_key.bin").unwrap();
+		let vk_bytes = include_bytes!("../../fixtures/verifying_key.bin");
 
-		vk_bytes
+		vk_bytes.to_vec()
 	};
 
 	log::info!("Genesis Config");
@@ -274,7 +274,7 @@ fn testnet_genesis(
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT * 4096))
+				.map(|k| (k, darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT * 4096_000))
 				.collect(),
 		},
 		parachain_info: darkwebb_runtime::ParachainInfoConfig { parachain_id: id },
@@ -323,9 +323,17 @@ fn testnet_genesis(
 			parameters: Some(circom_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		verifier: VerifierConfig {
+		mixer_verifier: MixerVerifierConfig {
+			parameters: Some(verifier_params.clone()),
+			phantom: Default::default(),
+		},
+		anchor_verifier: AnchorVerifierConfig {
 			parameters: Some(verifier_params),
 			phantom: Default::default(),
+		},
+		merkle_tree: MerkleTreeConfig {
+			phantom: Default::default(),
+			default_hashes: None,
 		},
 	}
 }
