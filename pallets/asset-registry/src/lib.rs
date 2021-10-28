@@ -391,7 +391,7 @@ impl<T: Config> Pallet<T> {
 	///
 	/// Does not perform any  check whether an asset for given name already
 	/// exists. This has to be prior to calling this function.
-	fn register_asset(
+	pub fn register_asset(
 		name: BoundedVec<u8, T::StringLimit>,
 		asset_type: AssetType<T::AssetId>,
 		existential_deposit: T::Balance,
@@ -459,7 +459,7 @@ impl<T: Config> Pallet<T> {
 		Self::location_assets(location)
 	}
 
-	fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+	pub fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
 		let pool_asset_id = Self::retrieve_asset(name)?;
 		Assets::<T>::try_mutate(
 			pool_asset_id,
@@ -488,7 +488,7 @@ impl<T: Config> Pallet<T> {
 		)
 	}
 
-	fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+	pub fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
 		let pool_asset_id = Self::retrieve_asset(name)?;
 		Assets::<T>::try_mutate(
 			pool_asset_id,

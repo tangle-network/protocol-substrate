@@ -51,21 +51,22 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// #[cfg(test)]
-// pub mod mock;
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+pub mod mock;
+#[cfg(test)]
+mod tests;
 
 mod traits;
 
 use codec::{Decode, Encode};
-use sp_std::{prelude::*, vec};
+use sp_runtime::{traits::Saturating};
+use sp_std::prelude::*;
 
 use asset_registry::{Registry, ShareTokenRegistry};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchError},
 	sp_runtime::traits::AccountIdConversion,
-	traits::{Currency, Get},
+	traits::Get,
 	PalletId,
 };
 use orml_traits::MultiCurrency;
@@ -78,8 +79,6 @@ pub type CurrencyIdOf<T, I> =
 	<<T as pallet::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
 pub type BalanceOf<T, I> =
 	<<T as Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
-pub type NativeBalance<T, I> =
-	<<T as Config<I>>::Balances as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -103,18 +102,21 @@ pub mod pallet {
 		/// The currency mechanism.
 		type Currency: MultiCurrency<Self::AccountId>;
 
-		/// Default Currency implementation
-		type Balances: Currency<Self::AccountId>;
+		#[pallet::constant]
+		type TreasuryId: Get<PalletId>;
 
 		/// Asset registry
 		type AssetRegistry: Registry<Self::AssetId, Vec<u8>, Self::Balance, DispatchError>
 			+ ShareTokenRegistry<Self::AssetId, Vec<u8>, Self::Balance, DispatchError>;
+
+		#[pallet::constant]
+		type WrappingFeeDivider: Get<BalanceOf<Self, I>>;
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn wrapping_fee)]
+	#[pallet::getter(fn wrapping_fee_percent)]
 	/// Percentage of amount to used as wrapping fee
-	pub type WrappingFee<T: Config<I>, I: 'static = ()> = StorageValue<_, NativeBalance<T, I>, ValueQuery>;
+	pub type WrappingFeePercent<T: Config<I>, I: 'static = ()> = StorageValue<_, BalanceOf<T, I>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -122,13 +124,13 @@ pub mod pallet {
 		WrappedToken {
 			pool_share_asset: T::AssetId,
 			asset_id: T::AssetId,
-			amount: T::Balance,
+			amount: BalanceOf<T, I>,
 			recipient: T::AccountId,
 		},
 		UnwrappedToken {
 			pool_share_asset: T::AssetId,
 			asset_id: T::AssetId,
-			amount: T::Balance,
+			amount: BalanceOf<T, I>,
 			recipient: T::AccountId,
 		},
 	}
@@ -150,16 +152,24 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
+		pub fn set_wrapping_fee(origin: OriginFor<T>, fee: BalanceOf<T, I>) -> DispatchResultWithPostInfo {
+			ensure_root(origin)?;
+
+			WrappingFeePercent::<T, I>::put(fee);
+			Ok(().into())
+		}
+
+		#[pallet::weight(0)]
 		pub fn wrap(
 			origin: OriginFor<T>,
 			from_asset_id: T::AssetId,
 			into_pool_share_id: T::AssetId,
-			amount: T::Balance,
+			amount: BalanceOf<T, I>,
 			recipient: T::AccountId,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 
-			<Self as TokenWrapperInterface<T::AccountId, T::AssetId, T::Balance>>::wrap(
+			<Self as TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T, I>>>::wrap(
 				from_asset_id,
 				into_pool_share_id,
 				amount,
@@ -173,12 +183,12 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			from_pool_share_id: T::AssetId,
 			into_asset_id: T::AssetId,
-			amount: T::Balance,
+			amount: BalanceOf<T, I>,
 			recipient: T::AccountId,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 
-			<Self as TokenWrapperInterface<T::AccountId, T::AssetId, T::Balance>>::unwrap(
+			<Self as TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T, I>>>::unwrap(
 				from_pool_share_id,
 				into_asset_id,
 				amount,
@@ -194,27 +204,36 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::PalletId::get().into_account()
 	}
 
+	pub fn treasury_id() -> T::AccountId {
+		T::TreasuryId::get().into_account()
+	}
+
 	pub fn to_currency_id(asset_id: T::AssetId) -> Result<CurrencyIdOf<T, I>, &'static str> {
 		let bytes = asset_id.encode();
 		CurrencyIdOf::<T, I>::decode(&mut &bytes[..]).map_err(|_| "Error converting asset_id to currency id")
 	}
 
-	pub fn to_balance(balance: T::Balance) -> BalanceOf<T, I> {
-		let bytes = balance.encode();
-		BalanceOf::<T, I>::decode(&mut &bytes[..]).unwrap_or_default()
+	pub fn get_wrapping_fee(amount: BalanceOf<T, I>) -> BalanceOf<T, I> {
+		let percent = Self::wrapping_fee_percent();
+		amount.saturating_mul(percent / T::WrappingFeeDivider::get())
 	}
 
-	pub fn has_sufficient_balance(recipient: &T::AccountId) -> bool {
-		let wrapping_fee = Self::wrapping_fee();
-		<T::Balances as Currency<T::AccountId>>::free_balance(recipient) > wrapping_fee
+	pub fn has_sufficient_balance(
+		currency_id: CurrencyIdOf<T, I>,
+		recipient: &T::AccountId,
+		amount: BalanceOf<T, I>,
+	) -> bool {
+		let wrapping_fee = Self::get_wrapping_fee(amount);
+		let total = wrapping_fee.saturating_add(amount);
+		T::Currency::free_balance(currency_id, recipient) > total
 	}
 }
 
-impl<T: Config<I>, I: 'static> TokenWrapperInterface<T::AccountId, T::AssetId, T::Balance> for Pallet<T, I> {
+impl<T: Config<I>, I: 'static> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T, I>> for Pallet<T, I> {
 	fn wrap(
 		from_asset_id: T::AssetId,
 		into_pool_share_id: T::AssetId,
-		amount: T::Balance,
+		amount: BalanceOf<T, I>,
 		recipient: T::AccountId,
 	) -> Result<(), frame_support::dispatch::DispatchError> {
 		ensure!(
@@ -232,27 +251,22 @@ impl<T: Config<I>, I: 'static> TokenWrapperInterface<T::AccountId, T::AssetId, T
 
 		let from_currency_id = Self::to_currency_id(from_asset_id)?;
 		let pool_share_currency_id = Self::to_currency_id(into_pool_share_id)?;
-		let value = Self::to_balance(amount);
-
-		let wrapping_fee = Self::wrapping_fee();
 
 		ensure!(
-			Self::has_sufficient_balance(&recipient),
+			Self::has_sufficient_balance(from_currency_id, &recipient, amount),
 			Error::<T, I>::InsufficientBalance
 		);
 
-		// TODO Transfer to treasury
-
-		<T::Balances as Currency<T::AccountId>>::transfer(
+		T::Currency::transfer(
+			from_currency_id,
 			&recipient,
-			&Self::account_id(),
-			wrapping_fee,
-			frame_support::traits::ExistenceRequirement::KeepAlive,
+			&Self::treasury_id(),
+			Self::get_wrapping_fee(amount),
 		)?;
 
-		T::Currency::transfer(from_currency_id, &recipient, &Self::account_id(), value)?;
+		T::Currency::transfer(from_currency_id, &recipient, &Self::account_id(), amount)?;
 
-		T::Currency::deposit(pool_share_currency_id, &recipient, value)?;
+		T::Currency::deposit(pool_share_currency_id, &recipient, amount)?;
 
 		Self::deposit_event(Event::WrappedToken {
 			pool_share_asset: into_pool_share_id,
@@ -266,7 +280,7 @@ impl<T: Config<I>, I: 'static> TokenWrapperInterface<T::AccountId, T::AssetId, T
 	fn unwrap(
 		from_pool_share_id: T::AssetId,
 		into_asset_id: T::AssetId,
-		amount: T::Balance,
+		amount: BalanceOf<T, I>,
 		recipient: T::AccountId,
 	) -> Result<(), frame_support::dispatch::DispatchError> {
 		ensure!(
@@ -285,11 +299,9 @@ impl<T: Config<I>, I: 'static> TokenWrapperInterface<T::AccountId, T::AssetId, T
 		let into_currency_id = Self::to_currency_id(into_asset_id)?;
 		let pool_share_currency_id = Self::to_currency_id(from_pool_share_id)?;
 
-		let value = Self::to_balance(amount);
+		T::Currency::withdraw(pool_share_currency_id, &recipient, amount)?;
 
-		T::Currency::withdraw(pool_share_currency_id, &recipient, value)?;
-
-		T::Currency::transfer(into_currency_id, &Self::account_id(), &recipient, value)?;
+		T::Currency::transfer(into_currency_id, &Self::account_id(), &recipient, amount)?;
 
 		Self::deposit_event(Event::UnwrappedToken {
 			pool_share_asset: from_pool_share_id,
