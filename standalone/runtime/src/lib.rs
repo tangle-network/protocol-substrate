@@ -352,7 +352,6 @@ impl onchain::Config for Runtime {
 }
 
 impl pallet_staking::Config for Runtime {
-	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
 	type BondingDuration = BondingDuration;
 	type Currency = Balances;
 	type CurrencyToVote = U128CurrencyToVote;
@@ -362,6 +361,7 @@ impl pallet_staking::Config for Runtime {
 	type GenesisElectionProvider = onchain::OnChainSequentialPhragmen<Self>;
 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
 	type NextNewSession = Session;
+	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
 	// send the slashed funds to the treasury.
 	type Reward = ();
 	type RewardRemainder = Treasury;
@@ -1185,6 +1185,20 @@ impl pallet_bridge::Config<BridgeInstance> for Runtime {
 	type ProposalLifetime = ProposalLifetime;
 }
 
+parameter_types! {
+	pub const TokenWrapperPalletId: PalletId = PalletId(*b"py/tknwrp");
+	pub const WrappingFeeDivider: Balance = 100;
+}
+
+impl pallet_token_wrapper::Config for Runtime {
+	type AssetRegistry = AssetRegistry;
+	type Currency = Currencies;
+	type Event = Event;
+	type PalletId = TokenWrapperPalletId;
+	type TreasuryId = TreasuryPalletId;
+	type WrappingFeeDivider = WrappingFeeDivider;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously
 // configured.
 construct_runtime!(
@@ -1237,6 +1251,7 @@ construct_runtime!(
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
+		TokenWrapper: pallet_token_wrapper::{Pallet, Storage, Call, Event<T>},
 
 		MixerVerifier: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		AnchorVerifier: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},

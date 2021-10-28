@@ -11,12 +11,16 @@ pub use constants::{currency::*, fee::WeightToFee, time::*};
 mod weights;
 
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata, u32_trait::{_3,_5}};
+use sp_core::{
+	crypto::KeyTypeId,
+	u32_trait::{_3, _5},
+	OpaqueMetadata,
+};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, Percent, Permill
+	ApplyExtrinsicResult, Percent, Permill,
 };
 
 use codec::{Decode, Encode, MaxEncodedLen};
@@ -868,7 +872,6 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
-
 parameter_types! {
 	pub const ProposalBond: Permill = Permill::from_percent(5);
 	pub const ProposalBondMinimum: Balance = 1 * DOLLARS;
@@ -925,6 +928,20 @@ impl pallet_bounties::Config for Runtime {
 	type WeightInfo = pallet_bounties::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const TokenWrapperPalletId: PalletId = PalletId(*b"py/tknwrp");
+	pub const WrappingFeeDivider: Balance = 100;
+}
+
+impl pallet_token_wrapper::Config for Runtime {
+	type AssetRegistry = AssetRegistry;
+	type Currency = Currencies;
+	type Event = Event;
+	type PalletId = TokenWrapperPalletId;
+	type TreasuryId = TreasuryPalletId;
+	type WrappingFeeDivider = WrappingFeeDivider;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously
 // configured.
 construct_runtime!(
@@ -979,6 +996,7 @@ construct_runtime!(
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
+		TokenWrapper: pallet_token_wrapper::{Pallet, Storage, Call, Event<T>},
 
 		MixerVerifier: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		AnchorVerifier: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
@@ -990,7 +1008,7 @@ construct_runtime!(
 		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		HelloXcm: pallet_hello::{Pallet, Call, Storage, Event<T>},
 
-		Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>},
+		Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>}
 	}
 );
 
