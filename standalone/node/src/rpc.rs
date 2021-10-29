@@ -33,6 +33,9 @@
 use std::sync::Arc;
 
 use common::{AccountId, Balance, Block, BlockNumber, Hash, Index};
+use darkwebb_runtime::Element;
+
+use pallet_mt_rpc::{MerkleApi, MerkleClient};
 use sc_client_api::AuxStore;
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
@@ -122,6 +125,7 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BabeApi<Block>,
 	C::Api: BlockBuilder<Block>,
+	C::Api: pallet_mt_rpc_runtime_api::MerkleTreeApi<Block, Element>,
 	P: TransactionPool + 'static,
 	SC: SelectChain<Block> + 'static,
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
@@ -183,13 +187,14 @@ where
 	io.extend_with(sc_sync_state_rpc::SyncStateRpcApi::to_delegate(
 		sc_sync_state_rpc::SyncStateRpcHandler::new(
 			chain_spec,
-			client,
+			client.clone(),
 			shared_authority_set,
 			shared_epoch_changes,
 			deny_unsafe,
 		)?,
 	));
 
+	io.extend_with(MerkleApi::to_delegate(MerkleClient::new(client.clone())));
 	Ok(io)
 }
 
