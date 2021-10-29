@@ -10,7 +10,11 @@ use arkworks_gadgets::{
 	},
 };
 use common::{AccountId, AuraId, Signature};
-use darkwebb_runtime::{AnchorVerifierConfig, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig, BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig, CouncilConfig, GenesisConfig, MerkleTreeConfig, MixerVerifierConfig, SudoConfig, SystemConfig, wasm_binary_unwrap};
+use darkwebb_runtime::{
+	wasm_binary_unwrap, AnchorVerifierConfig, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
+	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig,
+	CouncilConfig, GenesisConfig, MerkleTreeConfig, MixerVerifierConfig, SudoConfig, SystemConfig,
+};
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;

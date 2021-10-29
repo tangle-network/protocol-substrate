@@ -13,7 +13,7 @@ mod weights;
 use sp_api::impl_runtime_apis;
 use sp_core::{
 	crypto::KeyTypeId,
-	u32_trait::{_3, _5, _1, _2},
+	u32_trait::{_1, _2, _3, _5},
 	OpaqueMetadata,
 };
 use sp_runtime::{

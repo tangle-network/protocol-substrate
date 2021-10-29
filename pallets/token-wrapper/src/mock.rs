@@ -2,14 +2,14 @@
 
 use super::*;
 use crate as pallet_token_wrapper;
-use sp_core::H256;
-use frame_support::{parameter_types, traits::Nothing, pallet_prelude::GenesisBuild, PalletId};
+use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
+use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-    Permill
+	Permill,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -24,12 +24,12 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 		AssetRegistry: asset_registry::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
-        Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
-        TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>}
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
+		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>}
 	}
 );
 
@@ -101,7 +101,6 @@ impl pallet_balances::Config for Test {
 	type WeightInfo = ();
 }
 
-
 /// Tokens Configurations
 impl orml_tokens::Config for Test {
 	type Amount = Amount;
@@ -136,34 +135,34 @@ parameter_types! {
 }
 
 impl pallet_treasury::Config for Test {
-	type PalletId = TreasuryPalletId;
-	type Currency = pallet_balances::Pallet<Test>;
 	type ApproveOrigin = frame_system::EnsureRoot<u64>;
-	type RejectOrigin = frame_system::EnsureRoot<u64>;
+	type Burn = Burn;
+	type BurnDestination = ();
+	type Currency = pallet_balances::Pallet<Test>;
 	type Event = Event;
+	type MaxApprovals = MaxApprovals;
 	type OnSlash = ();
+	type PalletId = TreasuryPalletId;
 	type ProposalBond = ProposalBond;
 	type ProposalBondMinimum = ProposalBondMinimum;
-	type SpendPeriod = SpendPeriod;
-	type Burn = Burn;
-	type BurnDestination = (); // Just gets burned.
-	type WeightInfo = ();
+	type RejectOrigin = frame_system::EnsureRoot<u64>;
 	type SpendFunds = ();
-	type MaxApprovals = MaxApprovals;
+	type SpendPeriod = SpendPeriod;
+	// Just gets burned.
+	type WeightInfo = ();
 }
 
 parameter_types! {
-    pub const TokenWrapperPalletId: PalletId = PalletId(*b"py/tkwrp");
+	pub const TokenWrapperPalletId: PalletId = PalletId(*b"py/tkwrp");
 	pub const WrappingFeeDivider: u128 = 100;
 }
 
-
 impl Config for Test {
+	type AssetRegistry = AssetRegistry;
 	type Currency = Currencies;
 	type Event = Event;
-    type TreasuryId = TreasuryPalletId;
-    type PalletId = TokenWrapperPalletId;
-    type AssetRegistry = AssetRegistry;
+	type PalletId = TokenWrapperPalletId;
+	type TreasuryId = TreasuryPalletId;
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
 
