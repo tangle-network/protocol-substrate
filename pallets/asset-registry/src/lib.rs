@@ -190,17 +190,32 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Asset was registered. \[asset_id, name, type\]
-		Registered(T::AssetId, BoundedVec<u8, T::StringLimit>, AssetType<T::AssetId>),
+		/// Asset was registered.
+		Registered {
+			asset_id: T::AssetId,
+			name: BoundedVec<u8, T::StringLimit>,
+			asset_type: AssetType<T::AssetId>,
+		},
 
-		/// Asset was updated. \[asset_id, name, type\]
-		Updated(T::AssetId, BoundedVec<u8, T::StringLimit>, AssetType<T::AssetId>),
+		/// Asset was updated.
+		Updated {
+			asset_id: T::AssetId,
+			name: BoundedVec<u8, T::StringLimit>,
+			asset_type: AssetType<T::AssetId>,
+		},
 
-		/// Metadata set for an asset. \[asset_id, symbol, decimals\]
-		MetadataSet(T::AssetId, BoundedVec<u8, T::StringLimit>, u8),
+		/// Metadata set for an asset.
+		MetadataSet {
+			asset_id: T::AssetId,
+			symbol: BoundedVec<u8, T::StringLimit>,
+			decimals: u8,
+		},
 
-		/// Native location set for an asset. \[asset_id, location\]
-		LocationSet(T::AssetId, T::AssetNativeLocation),
+		/// Native location set for an asset.
+		LocationSet {
+			asset_id: T::AssetId,
+			location: T::AssetNativeLocation,
+		},
 	}
 
 	#[pallet::call]
@@ -279,7 +294,11 @@ pub mod pallet {
 				detail.asset_type = asset_type.clone();
 				detail.existential_deposit = existential_deposit.unwrap_or(detail.existential_deposit);
 
-				Self::deposit_event(Event::Updated(asset_id, bounded_name, asset_type));
+				Self::deposit_event(Event::Updated {
+					asset_id,
+					name: bounded_name,
+					asset_type,
+				});
 
 				Ok(())
 			})
@@ -315,7 +334,11 @@ pub mod pallet {
 
 			AssetMetadataMap::<T>::insert(asset_id, metadata);
 
-			Self::deposit_event(Event::MetadataSet(asset_id, b_symbol, decimals));
+			Self::deposit_event(Event::MetadataSet {
+				asset_id,
+				symbol: b_symbol,
+				decimals,
+			});
 
 			Ok(())
 		}
@@ -342,7 +365,7 @@ pub mod pallet {
 			AssetLocations::<T>::insert(asset_id, &location);
 			LocationAssets::<T>::insert(&location, asset_id);
 
-			Self::deposit_event(Event::LocationSet(asset_id, location));
+			Self::deposit_event(Event::LocationSet { asset_id, location });
 
 			Ok(())
 		}
@@ -396,7 +419,11 @@ impl<T: Config> Pallet<T> {
 				.checked_add(&T::AssetId::from(1))
 				.ok_or(Error::<T>::NoIdAvailable)?;
 
-			Self::deposit_event(Event::Registered(asset_id, name, asset_type));
+			Self::deposit_event(Event::Registered {
+				asset_id,
+				name,
+				asset_type,
+			});
 
 			Ok(asset_id)
 		})

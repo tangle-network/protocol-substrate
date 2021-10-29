@@ -146,9 +146,12 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		MaintainerSet(T::AccountId, T::AccountId),
+		MaintainerSet {
+			old_maintainer: T::AccountId,
+			new_maintainer: T::AccountId,
+		},
 		/// New tree created
-		MixerCreation(T::TreeId),
+		MixerCreation { tree_id: T::TreeId },
 	}
 
 	#[pallet::error]
@@ -181,7 +184,7 @@ pub mod pallet {
 			ensure_root(origin)?;
 			let tree_id =
 				<Self as MixerInterface<_, _, _, _, _>>::create(T::AccountId::default(), deposit_size, depth, asset)?;
-			Self::deposit_event(Event::MixerCreation(tree_id));
+			Self::deposit_event(Event::MixerCreation { tree_id });
 			Ok(().into())
 		}
 
@@ -193,7 +196,10 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(origin, new_maintainer));
+				Self::deposit_event(Event::MaintainerSet {
+					old_maintainer: origin,
+					new_maintainer,
+				});
 				Ok(().into())
 			})
 		}
@@ -204,7 +210,10 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), new_maintainer));
+				Self::deposit_event(Event::MaintainerSet {
+					old_maintainer: Default::default(),
+					new_maintainer,
+				});
 				Ok(().into())
 			})
 		}

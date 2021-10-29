@@ -47,7 +47,7 @@ benchmarks! {
 
 	}:_(RawOrigin::Signed(caller.clone()), d as u8)
 	verify {
-		assert_last_event::<T>(Event::TreeCreation(tree_id, caller).into())
+		assert_last_event::<T>(Event::TreeCreation{tree_id: tree_id, who: caller}.into())
 	}
 
 	insert {
@@ -60,7 +60,7 @@ benchmarks! {
 
 	}:_(RawOrigin::Signed(caller.clone()), tree_id, element)
 	verify {
-		assert_last_event::<T>(Event::LeafInsertion(tree_id, leaf_index, element).into())
+		assert_last_event::<T>(Event::LeafInsertion{tree_id, leaf_index, leaf: element}.into())
 	}
 
 	set_maintainer {
@@ -69,14 +69,14 @@ benchmarks! {
 		Maintainer::<T>::put::<T::AccountId>(caller.clone());
 	}:_(RawOrigin::Signed(caller.clone()), new_maintainer.clone())
 	verify {
-		assert_last_event::<T>(Event::MaintainerSet(caller, new_maintainer.into()).into());
+		assert_last_event::<T>(Event::MaintainerSet{old_maintainer: caller, new_maintainer: new_maintainer.into()}.into());
 	}
 
 	force_set_maintainer {
 		let new_maintainer: T::AccountId = account("maintainer", 0, SEED);
 	}:_(RawOrigin::Root, new_maintainer.clone())
 	verify {
-		assert_last_event::<T>(Event::MaintainerSet(Default::default(), new_maintainer.into()).into());
+		assert_last_event::<T>(Event::MaintainerSet{old_maintainer: Default::default(), new_maintainer: new_maintainer.into()}.into());
 	}
 
 	force_set_default_hashes {

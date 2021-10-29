@@ -157,27 +157,50 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// Maintainer is set
-		MaintainerSet(T::AccountId, T::AccountId),
+		MaintainerSet {
+			old_maintainer: T::AccountId,
+			new_maintainer: T::AccountId,
+		},
 		/// Vote threshold has changed (new_threshold)
-		RelayerThresholdChanged(u32),
+		RelayerThresholdChanged { new_threshold: u32 },
 		/// Chain now available for transfers (chain_id)
-		ChainWhitelisted(T::ChainId),
+		ChainWhitelisted { chain_id: T::ChainId },
 		/// Relayer added to set
-		RelayerAdded(T::AccountId),
+		RelayerAdded { relayer_id: T::AccountId },
 		/// Relayer removed from set
-		RelayerRemoved(T::AccountId),
+		RelayerRemoved { relayer_id: T::AccountId },
 		/// Vote submitted in favour of proposal
-		VoteFor(T::ChainId, DepositNonce, T::AccountId),
+		VoteFor {
+			chain_id: T::ChainId,
+			deposit_nonce: DepositNonce,
+			who: T::AccountId,
+		},
 		/// Vot submitted against proposal
-		VoteAgainst(T::ChainId, DepositNonce, T::AccountId),
+		VoteAgainst {
+			chain_id: T::ChainId,
+			deposit_nonce: DepositNonce,
+			who: T::AccountId,
+		},
 		/// Voting successful for a proposal
-		ProposalApproved(T::ChainId, DepositNonce),
+		ProposalApproved {
+			chain_id: T::ChainId,
+			deposit_nonce: DepositNonce,
+		},
 		/// Voting rejected a proposal
-		ProposalRejected(T::ChainId, DepositNonce),
+		ProposalRejected {
+			chain_id: T::ChainId,
+			deposit_nonce: DepositNonce,
+		},
 		/// Execution of call succeeded
-		ProposalSucceeded(T::ChainId, DepositNonce),
+		ProposalSucceeded {
+			chain_id: T::ChainId,
+			deposit_nonce: DepositNonce,
+		},
 		/// Execution of call failed
-		ProposalFailed(T::ChainId, DepositNonce),
+		ProposalFailed {
+			chain_id: T::ChainId,
+			deposit_nonce: DepositNonce,
+		},
 	}
 
 	// Errors inform users that something went wrong.
@@ -232,7 +255,10 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(origin, new_maintainer));
+				Self::deposit_event(Event::MaintainerSet {
+					old_maintainer: origin,
+					new_maintainer,
+				});
 				Ok(().into())
 			})
 		}
@@ -244,7 +270,10 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), T::AccountId::default()));
+				Self::deposit_event(Event::MaintainerSet {
+					old_maintainer: Default::default(),
+					new_maintainer,
+				});
 				Ok(().into())
 			})
 		}
@@ -426,7 +455,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn set_relayer_threshold(threshold: u32) -> DispatchResultWithPostInfo {
 		ensure!(threshold > 0, Error::<T, I>::InvalidThreshold);
 		RelayerThreshold::<T, I>::put(threshold);
-		Self::deposit_event(Event::RelayerThresholdChanged(threshold));
+		Self::deposit_event(Event::RelayerThresholdChanged {
+			new_threshold: threshold,
+		});
 		Ok(().into())
 	}
 
@@ -449,7 +480,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// Cannot whitelist with an existing entry
 		ensure!(!Self::chain_whitelisted(id), Error::<T, I>::ChainAlreadyWhitelisted);
 		ChainNonces::<T, I>::insert(&id, 0);
-		Self::deposit_event(Event::ChainWhitelisted(id));
+		Self::deposit_event(Event::ChainWhitelisted { chain_id: id });
 		Ok(().into())
 	}
 
@@ -459,7 +490,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Relayers::<T, I>::insert(&relayer, true);
 		RelayerCount::<T, I>::mutate(|i| *i += 1);
 
-		Self::deposit_event(Event::RelayerAdded(relayer));
+		Self::deposit_event(Event::RelayerAdded { relayer_id: relayer });
 		Ok(().into())
 	}
 
@@ -468,7 +499,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		ensure!(Self::is_relayer(&relayer), Error::<T, I>::RelayerInvalid);
 		Relayers::<T, I>::remove(&relayer);
 		RelayerCount::<T, I>::mutate(|i| *i -= 1);
-		Self::deposit_event(Event::RelayerRemoved(relayer));
+		Self::deposit_event(Event::RelayerRemoved { relayer_id: relayer });
 		Ok(().into())
 	}
 
@@ -500,10 +531,18 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 		if in_favour {
 			votes.votes_for.push(who.clone());
-			Self::deposit_event(Event::VoteFor(src_id, nonce, who.clone()));
+			Self::deposit_event(Event::VoteFor {
+				chain_id: src_id,
+				deposit_nonce: nonce,
+				who: who.clone(),
+			});
 		} else {
 			votes.votes_against.push(who.clone());
-			Self::deposit_event(Event::VoteAgainst(src_id, nonce, who.clone()));
+			Self::deposit_event(Event::VoteAgainst {
+				chain_id: src_id,
+				deposit_nonce: nonce,
+				who: who.clone(),
+			});
 		}
 
 		Votes::<T, I>::insert(src_id, (nonce, prop.clone()), votes.clone());
@@ -565,17 +604,26 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		nonce: DepositNonce,
 		call: Box<T::Proposal>,
 	) -> DispatchResultWithPostInfo {
-		Self::deposit_event(Event::ProposalApproved(src_id, nonce));
+		Self::deposit_event(Event::ProposalApproved {
+			chain_id: src_id,
+			deposit_nonce: nonce,
+		});
 		call.dispatch(frame_system::RawOrigin::Signed(Self::account_id()).into())
 			.map(|_| ())
 			.map_err(|e| e.error)?;
-		Self::deposit_event(Event::ProposalSucceeded(src_id, nonce));
+		Self::deposit_event(Event::ProposalSucceeded {
+			chain_id: src_id,
+			deposit_nonce: nonce,
+		});
 		Ok(().into())
 	}
 
 	/// Cancels a proposal.
 	fn cancel_execution(src_id: T::ChainId, nonce: DepositNonce) -> DispatchResultWithPostInfo {
-		Self::deposit_event(Event::ProposalRejected(src_id, nonce));
+		Self::deposit_event(Event::ProposalRejected {
+			chain_id: src_id,
+			deposit_nonce: nonce,
+		});
 		Ok(().into())
 	}
 }
