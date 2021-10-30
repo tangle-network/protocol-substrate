@@ -6,7 +6,7 @@ use codec::Decode;
 use sp_core::H256;
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
-use darkwebb_primitives::types::ElementTrait;
+use darkwebb_primitives::{types::ElementTrait, AccountId};
 use frame_support::{parameter_types, traits::Nothing};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
@@ -15,6 +15,8 @@ use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
+
+use frame_benchmarking::account;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -46,7 +48,7 @@ parameter_types! {
 
 impl system::Config for Test {
 	type AccountData = pallet_balances::AccountData<u128>;
-	type AccountId = u64;
+	type AccountId = AccountId;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
@@ -96,7 +98,7 @@ parameter_types! {
 impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = darkwebb_primitives::hashing::BN254CircomPoseidon3x5Hasher;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
@@ -144,7 +146,7 @@ impl pallet_mt::Config for Test {
 	type DefaultZeroElement = NewDefaultZeroElement;
 	type Element = Element;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
 	type LeafIndex = u32;
 	type MaxTreeDepth = MaxTreeDepth;
@@ -160,7 +162,7 @@ impl pallet_mt::Config for Test {
 impl pallet_verifier::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
@@ -185,7 +187,7 @@ impl pallet_asset_registry::Config for Test {
 	type Balance = u128;
 	type Event = Event;
 	type NativeAssetId = NativeAssetId;
-	type RegistryOrigin = frame_system::EnsureRoot<u64>;
+	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
 }
@@ -230,7 +232,11 @@ impl Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let _ = pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(1, 10u128.pow(18)), (2, 20u128.pow(18)), (3, 30u128.pow(18))],
+		balances: vec![
+			(account::<AccountId>("", 1, 0), 10u128.pow(18)),
+			(account::<AccountId>("", 2, 0), 20u128.pow(18)),
+			(account::<AccountId>("", 3, 0), 30u128.pow(18)),
+		],
 	}
 	.assimilate_storage(&mut storage);
 	storage.into()
