@@ -42,7 +42,7 @@ pub use pallet::*;
 
 use crate::types::{AssetDetails, AssetMetadata};
 use frame_support::BoundedVec;
-use traits::{Registry, ShareTokenRegistry};
+pub use traits::{Registry, ShareTokenRegistry};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -105,6 +105,12 @@ pub mod pallet {
 
 		/// Incorrect number of assets provided to create shared asset.
 		InvalidSharedAssetLen,
+
+		/// Asset exists in to pool
+		AssetExistsInPool,
+
+		/// Asset not found in pool
+		AssetNotFoundInPool,
 	}
 
 	#[pallet::storage]
@@ -369,6 +375,30 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Add an asset to an existing pool.
+		#[pallet::weight(0)]
+		pub fn add_asset_to_pool(origin: OriginFor<T>, pool: Vec<u8>, asset_id: T::AssetId) -> DispatchResult {
+			ensure_root(origin)?;
+
+			ensure!(Self::assets(asset_id).is_some(), Error::<T>::AssetNotRegistered);
+
+			Self::add_asset_to_existing_pool(&pool, asset_id)?;
+
+			Ok(())
+		}
+
+		/// Remove an asset from an existing pool.
+		#[pallet::weight(0)]
+		pub fn delete_asset_from_pool(origin: OriginFor<T>, pool: Vec<u8>, asset_id: T::AssetId) -> DispatchResult {
+			ensure_root(origin)?;
+
+			ensure!(Self::assets(asset_id).is_some(), Error::<T>::AssetNotRegistered);
+
+			Self::delete_asset_from_existing_pool(&pool, asset_id)?;
+
+			Ok(())
+		}
 	}
 }
 
@@ -383,7 +413,7 @@ impl<T: Config> Pallet<T> {
 	///
 	/// Does not perform any  check whether an asset for given name already
 	/// exists. This has to be prior to calling this function.
-	fn register_asset(
+	pub fn register_asset(
 		name: BoundedVec<u8, T::StringLimit>,
 		asset_type: AssetType<T::AssetId>,
 		existential_deposit: T::Balance,
@@ -454,6 +484,67 @@ impl<T: Config> Pallet<T> {
 	pub fn location_to_asset(location: T::AssetNativeLocation) -> Option<T::AssetId> {
 		Self::location_assets(location)
 	}
+
+	pub fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+		let pool_asset_id = Self::retrieve_asset(name)?;
+		Assets::<T>::try_mutate(
+			pool_asset_id,
+			move |maybe_detail| -> Result<T::AssetId, DispatchError> {
+				let detail = maybe_detail.as_mut().ok_or(Error::<T>::AssetNotFound)?;
+
+				let asset_type = match &detail.asset_type {
+					AssetType::Token => return Err(Error::<T>::AssetNotFound.into()),
+					AssetType::PoolShare(pool) => {
+						if !pool.contains(&asset_id) {
+							let mut pool_clone = pool.clone();
+							pool_clone.push(asset_id.clone());
+							AssetType::PoolShare(pool_clone)
+						} else {
+							return Err(Error::<T>::AssetExistsInPool.into());
+						}
+					}
+				};
+
+				detail.asset_type = asset_type.clone();
+
+				Self::deposit_event(Event::Updated(pool_asset_id.clone(), detail.name.clone(), asset_type));
+
+				Ok(pool_asset_id)
+			},
+		)
+	}
+
+	pub fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+		let pool_asset_id = Self::retrieve_asset(name)?;
+		Assets::<T>::try_mutate(
+			pool_asset_id,
+			move |maybe_detail| -> Result<T::AssetId, DispatchError> {
+				let detail = maybe_detail.as_mut().ok_or(Error::<T>::AssetNotFound)?;
+
+				let asset_type = match &detail.asset_type {
+					AssetType::Token => return Err(Error::<T>::AssetNotFound.into()),
+					AssetType::PoolShare(pool) => {
+						if pool.contains(&asset_id) {
+							let filtered_pool = pool
+								.iter()
+								.filter(|id| **id != asset_id)
+								.map(|id| *id)
+								.collect::<Vec<T::AssetId>>();
+							AssetType::PoolShare(filtered_pool)
+						} else {
+							return Err(Error::<T>::AssetNotFoundInPool.into());
+						}
+					}
+				};
+
+				detail.asset_type = asset_type.clone();
+
+				Self::deposit_event(Event::Updated(pool_asset_id.clone(), detail.name.clone(), asset_type));
+
+				Ok(pool_asset_id)
+			},
+		)
+	}
 }
 
 impl<T: Config> Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError> for Pallet<T> {
@@ -486,6 +577,18 @@ impl<T: Config> ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchErro
 		existential_deposit: T::Balance,
 	) -> Result<T::AssetId, DispatchError> {
 		Self::get_or_create_asset(name.clone(), AssetType::PoolShare(assets.to_vec()), existential_deposit)
+	}
+
+	fn contains_asset(pool_share_id: T::AssetId, asset_id: T::AssetId) -> bool {
+		let pool_option = Self::assets(pool_share_id);
+		if let Some(pool) = pool_option {
+			match pool.asset_type {
+				AssetType::Token => return false,
+				AssetType::PoolShare(assets) => return assets.contains(&asset_id),
+			}
+		}
+
+		return false;
 	}
 }
 

@@ -3,7 +3,6 @@
 use super::*;
 use crate as pallet_mixer;
 use codec::Decode;
-use pallet_balances::Pallet;
 use sp_core::H256;
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
