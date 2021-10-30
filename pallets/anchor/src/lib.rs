@@ -157,9 +157,12 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		MaintainerSet(T::AccountId, T::AccountId),
+		MaintainerSet {
+			old_maintainer: T::AccountId,
+			new_maintainer: T::AccountId,
+		},
 		/// New tree created
-		AnchorCreation(T::TreeId),
+		AnchorCreation { tree_id: T::TreeId },
 	}
 
 	#[pallet::error]
@@ -200,7 +203,7 @@ pub mod pallet {
 			ensure_root(origin)?;
 			let tree_id =
 				<Self as AnchorInterface<_>>::create(T::AccountId::default(), deposit_size, depth, max_edges, asset)?;
-			Self::deposit_event(Event::AnchorCreation(tree_id));
+			Self::deposit_event(Event::AnchorCreation { tree_id });
 			Ok(().into())
 		}
 
@@ -219,7 +222,10 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(origin, new_maintainer));
+				Self::deposit_event(Event::MaintainerSet {
+					old_maintainer: origin,
+					new_maintainer,
+				});
 				Ok(().into())
 			})
 		}
@@ -230,7 +236,10 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), new_maintainer));
+				Self::deposit_event(Event::MaintainerSet {
+					old_maintainer: Default::default(),
+					new_maintainer,
+				});
 				Ok(().into())
 			})
 		}

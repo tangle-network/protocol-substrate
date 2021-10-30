@@ -165,8 +165,14 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		ParametersSet(T::AccountId, Vec<u8>),
-		MaintainerSet(T::AccountId, T::AccountId),
+		ParametersSet {
+			who: T::AccountId,
+			parameters: Vec<u8>,
+		},
+		MaintainerSet {
+			old_maintainer: T::AccountId,
+			new_maintainer: T::AccountId,
+		},
 	}
 
 	#[pallet::error]
@@ -213,7 +219,10 @@ pub mod pallet {
 
 			Parameters::<T, I>::try_mutate(|params| {
 				*params = parameters.clone();
-				Self::deposit_event(Event::ParametersSet(origin, parameters));
+				Self::deposit_event(Event::ParametersSet {
+					who: origin,
+					parameters,
+				});
 				Ok(().into())
 			})
 		}
@@ -226,7 +235,10 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(origin, new_maintainer));
+				Self::deposit_event(Event::MaintainerSet {
+					old_maintainer: origin,
+					new_maintainer,
+				});
 				Ok(().into())
 			})
 		}
@@ -245,7 +257,10 @@ pub mod pallet {
 
 			Parameters::<T, I>::try_mutate(|params| {
 				*params = parameters.clone();
-				Self::deposit_event(Event::ParametersSet(Default::default(), parameters));
+				Self::deposit_event(Event::ParametersSet {
+					who: Default::default(),
+					parameters,
+				});
 				Ok(().into())
 			})
 		}
@@ -256,7 +271,10 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), new_maintainer));
+				Self::deposit_event(Event::MaintainerSet {
+					old_maintainer: Default::default(),
+					new_maintainer,
+				});
 				Ok(().into())
 			})
 		}

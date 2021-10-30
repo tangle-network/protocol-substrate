@@ -109,7 +109,9 @@ fn whitelist_chain() {
 			Error::<Test>::InvalidChainId
 		);
 
-		assert_events(vec![Event::Bridge(pallet_bridge::Event::ChainWhitelisted(0))]);
+		assert_events(vec![Event::Bridge(pallet_bridge::Event::ChainWhitelisted {
+			chain_id: 0,
+		})]);
 	})
 }
 
@@ -125,8 +127,10 @@ fn set_get_threshold() {
 		assert_eq!(RelayerThreshold::<Test>::get(), 5);
 
 		assert_events(vec![
-			Event::Bridge(pallet_bridge::Event::RelayerThresholdChanged(TEST_THRESHOLD)),
-			Event::Bridge(pallet_bridge::Event::RelayerThresholdChanged(5)),
+			Event::Bridge(pallet_bridge::Event::RelayerThresholdChanged {
+				new_threshold: TEST_THRESHOLD,
+			}),
+			Event::Bridge(pallet_bridge::Event::RelayerThresholdChanged { new_threshold: 5 }),
 		]);
 	})
 }
@@ -158,10 +162,10 @@ fn add_remove_relayer() {
 		assert_eq!(Bridge::relayer_count(), 2);
 
 		assert_events(vec![
-			Event::Bridge(pallet_bridge::Event::RelayerAdded(RELAYER_A)),
-			Event::Bridge(pallet_bridge::Event::RelayerAdded(RELAYER_B)),
-			Event::Bridge(pallet_bridge::Event::RelayerAdded(RELAYER_C)),
-			Event::Bridge(pallet_bridge::Event::RelayerRemoved(RELAYER_B)),
+			Event::Bridge(pallet_bridge::Event::RelayerAdded { relayer_id: RELAYER_A }),
+			Event::Bridge(pallet_bridge::Event::RelayerAdded { relayer_id: RELAYER_B }),
+			Event::Bridge(pallet_bridge::Event::RelayerAdded { relayer_id: RELAYER_C }),
+			Event::Bridge(pallet_bridge::Event::RelayerRemoved { relayer_id: RELAYER_B }),
 		]);
 	})
 }
@@ -231,11 +235,29 @@ fn create_sucessful_proposal() {
 		assert_eq!(prop, expected);
 
 		assert_events(vec![
-			Event::Bridge(pallet_bridge::Event::VoteFor(src_id, prop_id, RELAYER_A)),
-			Event::Bridge(pallet_bridge::Event::VoteAgainst(src_id, prop_id, RELAYER_B)),
-			Event::Bridge(pallet_bridge::Event::VoteFor(src_id, prop_id, RELAYER_C)),
-			Event::Bridge(pallet_bridge::Event::ProposalApproved(src_id, prop_id)),
-			Event::Bridge(pallet_bridge::Event::ProposalSucceeded(src_id, prop_id)),
+			Event::Bridge(pallet_bridge::Event::VoteFor {
+				chain_id: src_id,
+				deposit_nonce: prop_id,
+				who: RELAYER_A,
+			}),
+			Event::Bridge(pallet_bridge::Event::VoteAgainst {
+				chain_id: src_id,
+				deposit_nonce: prop_id,
+				who: RELAYER_B,
+			}),
+			Event::Bridge(pallet_bridge::Event::VoteFor {
+				chain_id: src_id,
+				deposit_nonce: prop_id,
+				who: RELAYER_C,
+			}),
+			Event::Bridge(pallet_bridge::Event::ProposalApproved {
+				chain_id: src_id,
+				deposit_nonce: prop_id,
+			}),
+			Event::Bridge(pallet_bridge::Event::ProposalSucceeded {
+				chain_id: src_id,
+				deposit_nonce: prop_id,
+			}),
 		]);
 	})
 }
@@ -304,10 +326,25 @@ fn create_unsucessful_proposal() {
 		assert_eq!(Balances::free_balance(Bridge::account_id()), ENDOWED_BALANCE);
 
 		assert_events(vec![
-			Event::Bridge(pallet_bridge::Event::VoteFor(src_id, prop_id, RELAYER_A)),
-			Event::Bridge(pallet_bridge::Event::VoteAgainst(src_id, prop_id, RELAYER_B)),
-			Event::Bridge(pallet_bridge::Event::VoteAgainst(src_id, prop_id, RELAYER_C)),
-			Event::Bridge(pallet_bridge::Event::ProposalRejected(src_id, prop_id)),
+			Event::Bridge(pallet_bridge::Event::VoteFor {
+				chain_id: src_id,
+				deposit_nonce: prop_id,
+				who: RELAYER_A,
+			}),
+			Event::Bridge(pallet_bridge::Event::VoteAgainst {
+				chain_id: src_id,
+				deposit_nonce: prop_id,
+				who: RELAYER_B,
+			}),
+			Event::Bridge(pallet_bridge::Event::VoteAgainst {
+				chain_id: src_id,
+				deposit_nonce: prop_id,
+				who: RELAYER_C,
+			}),
+			Event::Bridge(pallet_bridge::Event::ProposalRejected {
+				chain_id: src_id,
+				deposit_nonce: prop_id,
+			}),
 		]);
 	})
 }
@@ -362,10 +399,20 @@ fn execute_after_threshold_change() {
 		assert_eq!(Balances::free_balance(Bridge::account_id()), ENDOWED_BALANCE);
 
 		assert_events(vec![
-			Event::Bridge(pallet_bridge::Event::VoteFor(src_id, prop_id, RELAYER_A)),
-			Event::Bridge(pallet_bridge::Event::RelayerThresholdChanged(1)),
-			Event::Bridge(pallet_bridge::Event::ProposalApproved(src_id, prop_id)),
-			Event::Bridge(pallet_bridge::Event::ProposalSucceeded(src_id, prop_id)),
+			Event::Bridge(pallet_bridge::Event::VoteFor {
+				chain_id: src_id,
+				deposit_nonce: prop_id,
+				who: RELAYER_A,
+			}),
+			Event::Bridge(pallet_bridge::Event::RelayerThresholdChanged { new_threshold: 1 }),
+			Event::Bridge(pallet_bridge::Event::ProposalApproved {
+				chain_id: src_id,
+				deposit_nonce: prop_id,
+			}),
+			Event::Bridge(pallet_bridge::Event::ProposalSucceeded {
+				chain_id: src_id,
+				deposit_nonce: prop_id,
+			}),
 		]);
 	})
 }
@@ -435,8 +482,10 @@ fn proposal_expires() {
 		};
 		assert_eq!(prop, expected);
 
-		assert_events(vec![Event::Bridge(pallet_bridge::Event::VoteFor(
-			src_id, prop_id, RELAYER_A,
-		))]);
+		assert_events(vec![Event::Bridge(pallet_bridge::Event::VoteFor {
+			chain_id: src_id,
+			deposit_nonce: prop_id,
+			who: RELAYER_A,
+		})]);
 	})
 }

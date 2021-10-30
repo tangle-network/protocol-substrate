@@ -196,11 +196,18 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		MaintainerSet(T::AccountId, T::AccountId),
+		MaintainerSet {
+			old_maintainer: T::AccountId,
+			new_maintainer: T::AccountId,
+		},
 		/// New tree created
-		TreeCreation(T::TreeId, T::AccountId),
+		TreeCreation { tree_id: T::TreeId, who: T::AccountId },
 		/// New leaf inserted
-		LeafInsertion(T::TreeId, T::LeafIndex, T::Element),
+		LeafInsertion {
+			tree_id: T::TreeId,
+			leaf_index: T::LeafIndex,
+			leaf: T::Element,
+		},
 	}
 
 	#[pallet::error]
@@ -277,7 +284,7 @@ pub mod pallet {
 
 			let tree_id = <Self as TreeInterface<_, _, _>>::create(origin.clone(), depth)?;
 
-			Self::deposit_event(Event::TreeCreation(tree_id, origin));
+			Self::deposit_event(Event::TreeCreation { tree_id, who: origin });
 			Ok(().into())
 		}
 
@@ -295,7 +302,11 @@ pub mod pallet {
 			// insert the leaf
 			<Self as TreeInterface<_, _, _>>::insert_in_order(tree_id, leaf)?;
 
-			Self::deposit_event(Event::LeafInsertion(tree_id, next_index, leaf));
+			Self::deposit_event(Event::LeafInsertion {
+				tree_id,
+				leaf_index: next_index,
+				leaf,
+			});
 
 			Ok(().into())
 		}
@@ -308,7 +319,10 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(origin, new_maintainer));
+				Self::deposit_event(Event::MaintainerSet {
+					old_maintainer: origin,
+					new_maintainer,
+				});
 				Ok(().into())
 			})
 		}
@@ -319,7 +333,10 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet(Default::default(), new_maintainer));
+				Self::deposit_event(Event::MaintainerSet {
+					old_maintainer: Default::default(),
+					new_maintainer,
+				});
 				Ok(().into())
 			})
 		}
