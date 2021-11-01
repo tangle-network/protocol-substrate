@@ -407,7 +407,7 @@ fn should_fail_when_invalid_merkle_roots() {
 		assert_eq!(roots_element[0], tree_root);
 
 		// invalid root length
-		roots_element.push(Element::from_bytes(ark_bn254::Fr::default().into_repr().to_bytes_le()));
+		roots_element.push(Element::from_bytes(&ark_bn254::Fr::default().into_repr().to_bytes_le()[..]));
 		// all ready, call withdraw.
 
 		// fire the call.
