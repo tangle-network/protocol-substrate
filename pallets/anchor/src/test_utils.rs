@@ -20,8 +20,6 @@ type Bn254Fr = ark_bn254::Fr;
 type Bls12_381Fr = ark_bls12_381::Fr;
 
 type ProofBytes = Vec<u8>;
-type VerifierBytes = Vec<u8>;
-type HashParams = Vec<u8>;
 type RootsElement = Vec<Element>;
 type NullifierHashElement = Element;
 type LeafElement = Element;
@@ -47,14 +45,14 @@ pub fn get_keys(curve: Curve, pk_bytes: &mut Vec<u8>, vk_bytes: &mut Vec<u8>) ->
 	match curve {
 		Curve::Bn254 => {
 			let (pk, vk) = setup_groth16_random_circuit_circomx5::<_, ark_bn254::Bn254, TREE_DEPTH, M>(rng, curve);
-			vk.serialize(&mut vk_bytes).unwrap();
-			pk.serialize(&mut pk_bytes).unwrap();
+			vk.serialize(vk_bytes).unwrap();
+			pk.serialize(pk_bytes).unwrap();
 		}
 		Curve::Bls381 => {
 			let (pk, vk) =
 				setup_groth16_random_circuit_circomx5::<_, ark_bls12_381::Bls12_381, TREE_DEPTH, M>(rng, curve);
-			vk.serialize(&mut vk_bytes).unwrap();
-			pk.serialize(&mut pk_bytes).unwrap();
+			vk.serialize(vk_bytes).unwrap();
+			pk.serialize(pk_bytes).unwrap();
 		}
 	};
 }
@@ -180,4 +178,12 @@ pub fn setup_zk_circuit(
 			return (proof_bytes, roots_element, nullifier_hash_element, leaf_element);
 		}
 	};
+}
+
+
+/// Truncate and pad 256 bit slice in reverse
+pub fn truncate_and_pad_reverse(t: &[u8]) -> Vec<u8> {
+	let mut truncated_bytes = t[12..].to_vec();
+	truncated_bytes.extend_from_slice(&[0u8; 12]);
+	truncated_bytes
 }

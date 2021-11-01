@@ -29,7 +29,7 @@ fn hasher_params() -> Vec<u8> {
 	params.to_bytes()
 }
 
-/// Truncate and pad 256 bit slice
+/// Truncate and pad 256 bit slice in reverse
 pub fn truncate_and_pad_reverse(t: &[u8]) -> Vec<u8> {
 	let mut truncated_bytes = t[12..].to_vec();
 	truncated_bytes.extend_from_slice(&[0u8; 12]);
