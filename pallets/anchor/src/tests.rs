@@ -432,7 +432,7 @@ fn should_fail_when_invalid_merkle_roots() {
 }
 
 #[test]
-fn mixer_should_fail_with_when_any_byte_is_changed_in_proof() {
+fn should_fail_with_when_any_byte_is_changed_in_proof() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let pk_bytes = setup_environment(curve);
@@ -495,7 +495,7 @@ fn mixer_should_fail_with_when_any_byte_is_changed_in_proof() {
 }
 
 #[test]
-fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
+fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let pk_bytes = setup_environment(curve);
@@ -550,7 +550,7 @@ fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation(
 }
 
 #[test]
-fn mixer_should_fail_with_when_fee_submitted_is_changed() {
+fn should_fail_with_when_fee_submitted_is_changed() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let pk_bytes = setup_environment(curve);
@@ -606,7 +606,7 @@ fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 }
 
 #[test]
-fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
+fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let pk_bytes = setup_environment(curve);
