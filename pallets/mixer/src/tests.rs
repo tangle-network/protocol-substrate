@@ -201,8 +201,6 @@ fn mixer_should_fail_with_when_proof_when_any_byte_is_changed_in_proof() {
 			tree_id,
 			leaf_element,
 		));
-		// check the balance before the withdraw.
-		let balance_before = Balances::free_balance(recipient_account_id.clone());
 
 		// now we start to generate the proof.
 		let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
@@ -287,15 +285,13 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 			tree_id,
 			leaf_element,
 		));
-		// check the balance before the withdraw.
-		let balance_before = Balances::free_balance(recipient_account_id.clone());
+
 
 		// now we start to generate the proof.
 		let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
 		let (mt, path) = setup_tree_and_create_path_tree_circomx5(&[leaf], 0, &params3);
 		let root = mt.root().inner();
 		let root_element = Element::from_bytes(&root.into_repr().to_bytes_be());
-		let mixer_tree_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let circuit = Circuit_Circomx5::new(arbitrary_input, leaf_private, (), params5, path, root, nullifier_hash);
 		let (pk, vk) = setup_groth16_circuit_circomx5::<_, ark_bn254::Bn254, LEN>(&mut rng, circuit.clone());
@@ -367,8 +363,6 @@ fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation(
 			tree_id,
 			leaf_element,
 		));
-		// check the balance before the withdraw.
-		let balance_before = Balances::free_balance(recipient_account_id.clone());
 
 		// now we start to generate the proof.
 		let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
@@ -448,8 +442,6 @@ fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 			tree_id,
 			leaf_element,
 		));
-		// check the balance before the withdraw.
-		let balance_before = Balances::free_balance(recipient_account_id.clone());
 
 		// now we start to generate the proof.
 		let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
@@ -529,8 +521,6 @@ fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_revers
 			tree_id,
 			leaf_element,
 		));
-		// check the balance before the withdraw.
-		let balance_before = Balances::free_balance(recipient_account_id.clone());
 
 		// now we start to generate the proof.
 		let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
