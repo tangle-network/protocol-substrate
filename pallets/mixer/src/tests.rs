@@ -232,13 +232,20 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 			leaf_element,
 		));
 
+		let mut root_element_bytes = roots_element[0].to_bytes().to_vec();
+		let a = root_element_bytes[0];
+		let b = root_element_bytes[1];
+		root_element_bytes[0] = b;
+		root_element_bytes[1] = a;
+		let root_element = Element::from_bytes(&root_element_bytes[..]);
+
 		// now we start to generate the proof.
 		assert_err!(
 			Mixer::withdraw(
 				Origin::signed(sender_account_id),
 				tree_id,
 				proof_bytes,
-				roots_element[1],
+				root_element,
 				nullifier_hash_element,
 				recipient_account_id,
 				relayer_account_id,
