@@ -27,7 +27,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 		}
 	};
 	// 1. Setup The Hasher Pallet.
-	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params.to_bytes()));
+	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params.0));
 	// 2. Initialize MerkleTree pallet.
 	<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 	// 3. Setup the VerifierPallet
@@ -407,7 +407,9 @@ fn should_fail_when_invalid_merkle_roots() {
 		assert_eq!(roots_element[0], tree_root);
 
 		// invalid root length
-		roots_element.push(Element::from_bytes(&ark_bn254::Fr::default().into_repr().to_bytes_le()[..]));
+		roots_element.push(Element::from_bytes(
+			&ark_bn254::Fr::default().into_repr().to_bytes_le()[..],
+		));
 		// all ready, call withdraw.
 
 		// fire the call.
@@ -430,7 +432,7 @@ fn should_fail_when_invalid_merkle_roots() {
 }
 
 #[test]
-fn mixer_should_fail_with_when_proof_when_any_byte_is_changed_in_proof() {
+fn mixer_should_fail_with_when_any_byte_is_changed_in_proof() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let pk_bytes = setup_environment(curve);
