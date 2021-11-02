@@ -252,7 +252,7 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 				fee_value.into(),
 				refund_value.into(),
 			),
-			crate::Error::<Test>::InvalidWithdrawRoot
+			crate::Error::<Test>::UnknownRoot
 		);
 	});
 }
