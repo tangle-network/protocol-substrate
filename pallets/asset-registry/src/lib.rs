@@ -507,7 +507,11 @@ impl<T: Config> Pallet<T> {
 
 				detail.asset_type = asset_type.clone();
 
-				Self::deposit_event(Event::Updated(pool_asset_id.clone(), detail.name.clone(), asset_type));
+				Self::deposit_event(Event::Updated {
+					asset_id: pool_asset_id.clone(),
+					name: detail.name.clone(),
+					asset_type,
+				});
 
 				Ok(pool_asset_id)
 			},
@@ -539,7 +543,11 @@ impl<T: Config> Pallet<T> {
 
 				detail.asset_type = asset_type.clone();
 
-				Self::deposit_event(Event::Updated(pool_asset_id.clone(), detail.name.clone(), asset_type));
+				Self::deposit_event(Event::Updated {
+					asset_id: pool_asset_id.clone(),
+					name: detail.name.clone(),
+					asset_type,
+				});
 
 				Ok(pool_asset_id)
 			},
