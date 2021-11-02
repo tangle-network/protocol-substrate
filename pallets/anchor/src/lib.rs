@@ -48,6 +48,8 @@
 #[cfg(test)]
 pub mod mock;
 #[cfg(test)]
+mod test_utils;
+#[cfg(test)]
 mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]

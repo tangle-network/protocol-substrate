@@ -1,17 +1,5 @@
-use ark_ff::{BigInteger, FromBytes, PrimeField};
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use arkworks_gadgets::{
-	poseidon::PoseidonParameters,
-	prelude::ark_groth16::ProvingKey,
-	setup::{
-		bridge::{
-			prove_groth16_circuit_circomx5, setup_arbitrary_data, setup_groth16_random_circuit_circomx5,
-			setup_leaf_circomx5, setup_set, Circuit_Circomx5,
-		},
-		common::{setup_circom_params_x5_3, setup_circom_params_x5_5, setup_tree_and_create_path_tree_circomx5, Curve},
-	},
-	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
-};
+use ark_ff::{BigInteger, PrimeField};
+use arkworks_gadgets::setup::common::Curve;
 
 use darkwebb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
@@ -24,7 +12,7 @@ use codec::Encode;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, error::BadOrigin, traits::OnInitialize};
 
-use crate::mock::*;
+use crate::{mock::*, test_utils::*};
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
@@ -32,17 +20,14 @@ const M: usize = 2;
 const DEPOSIT_SIZE: u128 = 10_000;
 
 fn setup_environment(curve: Curve) -> Vec<u8> {
-	let rng = &mut ark_std::test_rng();
 	let params = match curve {
-		Curve::Bn254 => {
-			let rounds = get_rounds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-			let mds = get_mds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-			PoseidonParameters::new(rounds, mds)
+		Curve::Bn254 => get_hash_params::<ark_bn254::Fr>(curve),
+		Curve::Bls381 => {
+			todo!("Setup hash params for bls381")
 		}
-		Curve::Bls381 => todo!("Setup environment for bls381"),
 	};
 	// 1. Setup The Hasher Pallet.
-	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params.to_bytes()));
+	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params.0));
 	// 2. Initialize MerkleTree pallet.
 	<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 	// 3. Setup the VerifierPallet
@@ -50,19 +35,8 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 	let mut verifier_key_bytes = Vec::new();
 	let mut proving_key_bytes = Vec::new();
 
-	match curve {
-		Curve::Bn254 => {
-			let (pk, vk) = setup_groth16_random_circuit_circomx5::<_, ark_bn254::Bn254, TREE_DEPTH, M>(rng, curve);
-			vk.serialize(&mut verifier_key_bytes).unwrap();
-			pk.serialize(&mut proving_key_bytes).unwrap();
-		}
-		Curve::Bls381 => {
-			let (pk, vk) =
-				setup_groth16_random_circuit_circomx5::<_, ark_bls12_381::Bls12_381, TREE_DEPTH, M>(rng, curve);
-			vk.serialize(&mut verifier_key_bytes).unwrap();
-			pk.serialize(&mut proving_key_bytes).unwrap();
-		}
-	};
+	get_keys(curve.clone(), &mut proving_key_bytes, &mut verifier_key_bytes);
+
 	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes));
 	// 4. and top-up some accounts with some balance
 	for account_id in [
@@ -261,12 +235,9 @@ fn create_anchor() -> u32 {
 
 #[test]
 fn anchor_works() {
-	type Bn254Fr = ark_bn254::Fr;
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let pk_bytes = setup_environment(curve);
-
-		let rng = &mut ark_std::test_rng();
 
 		// inputs
 		let tree_id = create_anchor();
@@ -276,62 +247,29 @@ fn anchor_works() {
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
 		let fee_value = 0;
 		let refund_value = 0;
-		// fit inputs to the curve.
-		let chain_id = Bn254Fr::from(src_chain_id);
-		let recipient = Bn254Fr::read(&crate::truncate_and_pad(&recipient_account_id.encode()[..])[..]).unwrap();
-		let relayer = Bn254Fr::read(&crate::truncate_and_pad(&relayer_account_id.encode()[..])[..]).unwrap();
-		let fee = Bn254Fr::from(fee_value);
-		let refund = Bn254Fr::from(refund_value);
-		// circuit setup
-		let params5 = setup_circom_params_x5_5::<Bn254Fr>(curve);
-		let (leaf_private, leaf_public, leaf, nullifier_hash) = setup_leaf_circomx5(chain_id, &params5, rng);
-		// do a deposit.
+
+		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			src_chain_id,
+			fee_value,
+			refund_value,
+		);
+
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			Element::from_bytes(&leaf.into_repr().to_bytes_le()),
+			leaf_element.clone(),
 		));
 
-		// the withdraw process..
-		// we setup the inputs to our proof generator.
-		let params3 = setup_circom_params_x5_3::<Bn254Fr>(curve);
-		let (mt, path) = setup_tree_and_create_path_tree_circomx5::<_, TREE_DEPTH>(&[leaf], 0, &params3);
-		let root = mt.root().inner();
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
 		// sanity check.
-		assert_eq!(Element::from_bytes(&root.into_repr().to_bytes_le()), tree_root);
-
-		let mut roots = [Bn254Fr::default(); M];
-		roots[0] = root; // local root.
-
-		let set_private_inputs = setup_set(&root, &roots);
-		let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
-		// setup the circuit.
-		let circuit = Circuit_Circomx5::new(
-			arbitrary_input,
-			leaf_private,
-			leaf_public,
-			set_private_inputs,
-			roots,
-			params5,
-			path,
-			root,
-			nullifier_hash,
-		);
-		let pk = ProvingKey::<ark_bn254::Bn254>::deserialize(&*pk_bytes).unwrap();
-		// generate the proof.
-		let proof = prove_groth16_circuit_circomx5(&pk, circuit, rng);
-
-		// format the input for the pallet.
-		let mut proof_bytes = Vec::new();
-		proof.serialize(&mut proof_bytes).unwrap();
-		let roots_element = roots
-			.iter()
-			.map(|v| Element::from_bytes(&v.into_repr().to_bytes_le()))
-			.collect();
-		let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
-		// all ready, call withdraw.
-		// but first check the balance before that.
+		assert_eq!(roots_element[0], tree_root);
 
 		let balance_before = Balances::free_balance(recipient_account_id.clone());
 		// fire the call.
@@ -344,8 +282,8 @@ fn anchor_works() {
 			nullifier_hash_element,
 			recipient_account_id.clone(),
 			relayer_account_id,
-			fee_value,
-			refund_value,
+			fee_value.into(),
+			refund_value.into(),
 		));
 		// now we check the recipient balance again.
 		let balance_after = Balances::free_balance(recipient_account_id);
@@ -356,11 +294,9 @@ fn anchor_works() {
 
 #[test]
 fn double_spending_should_fail() {
-	type Bn254Fr = ark_bn254::Fr;
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let pk_bytes = setup_environment(curve);
-		let rng = &mut ark_std::test_rng();
 
 		// inputs
 		let tree_id = create_anchor();
@@ -370,60 +306,28 @@ fn double_spending_should_fail() {
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
 		let fee_value = 0;
 		let refund_value = 0;
-		// fit inputs to the curve.
-		let chain_id = Bn254Fr::from(src_chain_id);
-		let recipient = Bn254Fr::read(&crate::truncate_and_pad(&recipient_account_id.encode()[..])[..]).unwrap();
-		let relayer = Bn254Fr::read(&crate::truncate_and_pad(&relayer_account_id.encode()[..])[..]).unwrap();
-		let fee = Bn254Fr::from(fee_value);
-		let refund = Bn254Fr::from(refund_value);
-		// circuit setup
-		let params5 = setup_circom_params_x5_5::<Bn254Fr>(curve);
-		let (leaf_private, leaf_public, leaf, nullifier_hash) = setup_leaf_circomx5(chain_id, &params5, rng);
-		// do a deposit.
+
+		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			src_chain_id,
+			fee_value,
+			refund_value,
+		);
+
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			Element::from_bytes(&leaf.into_repr().to_bytes_le()),
+			leaf_element.clone(),
 		));
 
-		// the withdraw process..
-		// we setup the inputs to our proof generator.
-		let params3 = setup_circom_params_x5_3::<Bn254Fr>(curve);
-		let (mt, path) = setup_tree_and_create_path_tree_circomx5::<_, TREE_DEPTH>(&[leaf], 0, &params3);
-		let root = mt.root().inner();
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		// sanity check.
-		assert_eq!(Element::from_bytes(&root.into_repr().to_bytes_le()), tree_root);
-
-		let mut roots = [Bn254Fr::default(); M];
-		roots[0] = root; // local root.
-
-		let set_private_inputs = setup_set(&root, &roots);
-		let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
-		// setup the circuit.
-		let circuit = Circuit_Circomx5::new(
-			arbitrary_input,
-			leaf_private,
-			leaf_public,
-			set_private_inputs,
-			roots,
-			params5,
-			path,
-			root,
-			nullifier_hash,
-		);
-		let pk = ProvingKey::<ark_bn254::Bn254>::deserialize(&*pk_bytes).unwrap();
-		// generate the proof.
-		let proof = prove_groth16_circuit_circomx5(&pk, circuit, rng);
-
-		// format the input for the pallet.
-		let mut proof_bytes = Vec::new();
-		proof.serialize(&mut proof_bytes).unwrap();
-		let roots_element: Vec<_> = roots
-			.iter()
-			.map(|v| Element::from_bytes(&v.into_repr().to_bytes_le()))
-			.collect();
-		let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
+		assert_eq!(roots_element[0], tree_root);
 		// all ready, call withdraw.
 		// but first check the balance before that.
 
@@ -438,8 +342,8 @@ fn double_spending_should_fail() {
 			nullifier_hash_element,
 			recipient_account_id.clone(),
 			relayer_account_id.clone(),
-			fee_value,
-			refund_value,
+			fee_value.into(),
+			refund_value.into(),
 		));
 		// now we check the recipient balance again.
 		let balance_after = Balances::free_balance(recipient_account_id.clone());
@@ -457,8 +361,8 @@ fn double_spending_should_fail() {
 				nullifier_hash_element,
 				recipient_account_id,
 				relayer_account_id,
-				fee_value,
-				refund_value,
+				fee_value.into(),
+				refund_value.into(),
 			),
 			pallet_mixer::Error::<Test, _>::AlreadyRevealedNullifier
 		);
@@ -467,12 +371,9 @@ fn double_spending_should_fail() {
 
 #[test]
 fn should_fail_when_invalid_merkle_roots() {
-	type Bn254Fr = ark_bn254::Fr;
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let pk_bytes = setup_environment(curve);
-
-		let rng = &mut ark_std::test_rng();
 
 		// inputs
 		let tree_id = create_anchor();
@@ -482,61 +383,33 @@ fn should_fail_when_invalid_merkle_roots() {
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
 		let fee_value = 0;
 		let refund_value = 0;
-		// fit inputs to the curve.
-		let chain_id = Bn254Fr::from(src_chain_id);
-		let recipient = Bn254Fr::read(&crate::truncate_and_pad(&recipient_account_id.encode()[..])[..]).unwrap();
-		let relayer = Bn254Fr::read(&crate::truncate_and_pad(&relayer_account_id.encode()[..])[..]).unwrap();
-		let fee = Bn254Fr::from(fee_value);
-		let refund = Bn254Fr::from(refund_value);
-		// circuit setup
-		let params5 = setup_circom_params_x5_5::<Bn254Fr>(curve);
-		let (leaf_private, leaf_public, leaf, nullifier_hash) = setup_leaf_circomx5(chain_id, &params5, rng);
-		// do a deposit.
+
+		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+
+		let (proof_bytes, mut roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			src_chain_id,
+			fee_value,
+			refund_value,
+		);
+
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			Element::from_bytes(&leaf.into_repr().to_bytes_le()),
+			leaf_element.clone(),
 		));
 
-		// the withdraw process..
-		// we setup the inputs to our proof generator.
-		let params3 = setup_circom_params_x5_3::<Bn254Fr>(curve);
-		let (mt, path) = setup_tree_and_create_path_tree_circomx5::<_, TREE_DEPTH>(&[leaf], 0, &params3);
-		let root = mt.root().inner();
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		// sanity check.
-		assert_eq!(Element::from_bytes(&root.into_repr().to_bytes_le()), tree_root);
+		assert_eq!(roots_element[0], tree_root);
 
 		// invalid root length
-		let mut roots = [Bn254Fr::default(); M + 1];
-		roots[0] = root; // local root.
-
-		let set_private_inputs = setup_set(&root, &roots);
-		let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
-		// setup the circuit.
-		let circuit = Circuit_Circomx5::new(
-			arbitrary_input,
-			leaf_private,
-			leaf_public,
-			set_private_inputs,
-			roots,
-			params5,
-			path,
-			root,
-			nullifier_hash,
-		);
-		let pk = ProvingKey::<ark_bn254::Bn254>::deserialize(&*pk_bytes).unwrap();
-		// generate the proof.
-		let proof = prove_groth16_circuit_circomx5(&pk, circuit, rng);
-
-		// format the input for the pallet.
-		let mut proof_bytes = Vec::new();
-		proof.serialize(&mut proof_bytes).unwrap();
-		let roots_element = roots
-			.iter()
-			.map(|v| Element::from_bytes(&v.into_repr().to_bytes_le()))
-			.collect();
-		let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
+		roots_element.push(Element::from_bytes(
+			&ark_bn254::Fr::default().into_repr().to_bytes_le()[..],
+		));
 		// all ready, call withdraw.
 
 		// fire the call.
@@ -550,10 +423,240 @@ fn should_fail_when_invalid_merkle_roots() {
 				nullifier_hash_element,
 				recipient_account_id,
 				relayer_account_id,
-				fee_value,
-				refund_value,
+				fee_value.into(),
+				refund_value.into(),
 			),
 			crate::Error::<Test, _>::InvalidMerkleRoots,
+		);
+	});
+}
+
+#[test]
+fn should_fail_with_when_any_byte_is_changed_in_proof() {
+	new_test_ext().execute_with(|| {
+		let curve = Curve::Bn254;
+		let pk_bytes = setup_environment(curve);
+
+		// inputs
+		let tree_id = create_anchor();
+		let src_chain_id = 1;
+		let sender_account_id = account::<AccountId>("", 1, SEED);
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
+		let fee_value = 0;
+		let refund_value = 0;
+
+		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+
+		let (mut proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			src_chain_id,
+			fee_value,
+			refund_value,
+		);
+
+		assert_ok!(Anchor::deposit(
+			Origin::signed(sender_account_id.clone()),
+			tree_id,
+			leaf_element.clone(),
+		));
+
+		let tree_root = MerkleTree::get_root(tree_id).unwrap();
+		assert_eq!(roots_element[0], tree_root);
+
+		// now double spending should fail.
+
+		let a = proof_bytes[0];
+		let b = proof_bytes[1];
+
+		proof_bytes[0] = b;
+		proof_bytes[1] = a;
+
+		assert_err!(
+			Anchor::withdraw(
+				Origin::signed(sender_account_id),
+				tree_id,
+				proof_bytes,
+				src_chain_id,
+				roots_element,
+				nullifier_hash_element,
+				recipient_account_id,
+				relayer_account_id,
+				fee_value.into(),
+				refund_value.into(),
+			),
+			crate::Error::<Test, _>::InvalidWithdrawProof
+		);
+	});
+}
+
+#[test]
+fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
+	new_test_ext().execute_with(|| {
+		let curve = Curve::Bn254;
+		let pk_bytes = setup_environment(curve);
+
+		// inputs
+		let tree_id = create_anchor();
+		let src_chain_id = 1;
+		let sender_account_id = account::<AccountId>("", 1, SEED);
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
+		let fee_value = 0;
+		let refund_value = 0;
+
+		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			src_chain_id,
+			fee_value,
+			refund_value,
+		);
+
+		assert_ok!(Anchor::deposit(
+			Origin::signed(sender_account_id.clone()),
+			tree_id,
+			leaf_element.clone(),
+		));
+
+		let tree_root = MerkleTree::get_root(tree_id).unwrap();
+		assert_eq!(roots_element[0], tree_root);
+
+		assert_err!(
+			Anchor::withdraw(
+				Origin::signed(sender_account_id),
+				tree_id,
+				proof_bytes,
+				src_chain_id,
+				roots_element,
+				nullifier_hash_element,
+				recipient_account_id.clone(),
+				recipient_account_id,
+				fee_value.into(),
+				refund_value.into(),
+			),
+			crate::Error::<Test, _>::InvalidWithdrawProof
+		);
+	});
+}
+
+#[test]
+fn should_fail_with_when_fee_submitted_is_changed() {
+	new_test_ext().execute_with(|| {
+		let curve = Curve::Bn254;
+		let pk_bytes = setup_environment(curve);
+
+		// inputs
+		let tree_id = create_anchor();
+		let src_chain_id = 1;
+		let sender_account_id = account::<AccountId>("", 1, SEED);
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
+		let fee_value = 0;
+		let refund_value = 0;
+
+		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			src_chain_id,
+			fee_value,
+			refund_value,
+		);
+
+		assert_ok!(Anchor::deposit(
+			Origin::signed(sender_account_id.clone()),
+			tree_id,
+			leaf_element.clone(),
+		));
+
+		let tree_root = MerkleTree::get_root(tree_id).unwrap();
+		assert_eq!(roots_element[0], tree_root);
+
+		// now double spending should fail.
+		assert_err!(
+			Anchor::withdraw(
+				Origin::signed(sender_account_id),
+				tree_id,
+				proof_bytes,
+				src_chain_id,
+				roots_element,
+				nullifier_hash_element,
+				recipient_account_id,
+				relayer_account_id,
+				100u128,
+				refund_value.into(),
+			),
+			crate::Error::<Test, _>::InvalidWithdrawProof
+		);
+	});
+}
+
+#[test]
+fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
+	new_test_ext().execute_with(|| {
+		let curve = Curve::Bn254;
+		let pk_bytes = setup_environment(curve);
+
+		// inputs
+		let tree_id = create_anchor();
+		let src_chain_id = 1;
+		let sender_account_id = account::<AccountId>("", 1, SEED);
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
+		let fee_value = 0;
+		let refund_value = 0;
+
+		let recipient_bytes = truncate_and_pad_reverse(&recipient_account_id.encode()[..]);
+		let relayer_bytes = truncate_and_pad_reverse(&relayer_account_id.encode()[..]);
+
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			src_chain_id,
+			fee_value,
+			refund_value,
+		);
+
+		assert_ok!(Anchor::deposit(
+			Origin::signed(sender_account_id.clone()),
+			tree_id,
+			leaf_element.clone(),
+		));
+
+		let tree_root = MerkleTree::get_root(tree_id).unwrap();
+		assert_eq!(roots_element[0], tree_root);
+
+		// now double spending should fail.
+		assert_err!(
+			Anchor::withdraw(
+				Origin::signed(sender_account_id),
+				tree_id,
+				proof_bytes,
+				src_chain_id,
+				roots_element,
+				nullifier_hash_element,
+				recipient_account_id,
+				relayer_account_id,
+				fee_value.into(),
+				refund_value.into(),
+			),
+			crate::Error::<Test, _>::InvalidWithdrawProof
 		);
 	});
 }
