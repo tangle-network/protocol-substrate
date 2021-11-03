@@ -1100,7 +1100,7 @@ pub mod pallet {
 			Self {
 				candidates: vec![],
 				nominations: vec![],
-				..Default::default()
+				inflation_config: Default::default()
 			}
 		}
 	}
