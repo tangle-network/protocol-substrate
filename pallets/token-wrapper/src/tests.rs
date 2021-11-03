@@ -323,3 +323,53 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 		assert_eq!(TokenWrapper::get_balance(second_token_id, &recipient), 50000);
 	})
 }
+
+#[test]
+fn should_not_wrap_invalid_amount() {
+	new_test_ext().execute_with(|| {
+		let existential_balance: u32 = 1000;
+		let first_token_id = AssetRegistry::register_asset(
+			b"shib".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+		let second_token_id = AssetRegistry::register_asset(
+			b"doge".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let pool_share_id = AssetRegistry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let recipient: u64 = 1;
+
+		let balance: i128 = 100000;
+
+		assert_ok!(Currencies::update_balance(
+			Origin::root(),
+			recipient,
+			first_token_id,
+			balance.into()
+		));
+
+		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
+
+		assert_err!(
+			TokenWrapper::wrap(
+				Origin::signed(recipient),
+				first_token_id,
+				pool_share_id,
+				0 as u128,
+				recipient
+			),
+			crate::Error::<Test>::InvalidAmount
+		);
+	})
+}
