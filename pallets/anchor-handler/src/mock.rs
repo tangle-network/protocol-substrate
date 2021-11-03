@@ -40,7 +40,6 @@ frame_support::construct_runtime!(
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
-		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
 		AnchorHandler: pallet_anchor_handler::{Pallet, Call, Storage, Event<T>},
 		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
@@ -225,28 +224,18 @@ impl pallet_asset_registry::Config for Test {
 }
 
 parameter_types! {
-	pub const MixerPalletId: PalletId = PalletId(*b"py/mixer");
-}
-
-impl pallet_mixer::Config for Test {
-	type Currency = Currencies;
-	type Event = Event;
-	type NativeCurrencyId = NativeCurrencyId;
-	type PalletId = MixerPalletId;
-	type Tree = MT;
-	type Verifier = VerifierPallet;
-	type WeightInfo = ();
-}
-
-parameter_types! {
+	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	pub const HistoryLength: u32 = 30;
 }
 
 impl pallet_anchor::Config for Test {
 	type ChainId = ChainId;
+	type Currency = Currencies;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
-	type Mixer = Mixer;
+	type LinkableTree = MT;
+	type NativeCurrencyId = NativeCurrencyId;
+	type PalletId = AnchorPalletId;
 	type Verifier = VerifierPallet;
 	type WeightInfo = ();
 }

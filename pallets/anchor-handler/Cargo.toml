@@ -26,7 +26,6 @@ sp-io = { default-features = false, git = "https://github.com/paritytech/substra
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-arithmetic = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-mt = { path = "../mt", default-features = false }
-pallet-mixer = { path = "../mixer", default-features = false }
 pallet-anchor = { path = "../anchor", default-features = false }
 pallet-bridge = { path = "../bridge", default-features = false }
 orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }

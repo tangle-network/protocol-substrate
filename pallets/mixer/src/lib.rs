@@ -166,8 +166,8 @@ pub mod pallet {
 		/// Invalid nullifier that is already used
 		/// (this error is returned when a nullifier is used twice)
 		AlreadyRevealedNullifier,
-		/// Invalid root used in withdrawal
-		InvalidWithdrawRoot,
+		/// Invalid root
+		UnknownRoot,
 		/// No mixer found
 		NoMixerFound,
 	}
@@ -300,7 +300,7 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 	) -> Result<(), DispatchError> {
 		let mixer = Self::get_mixer(id)?;
 		// Check if local root is known
-		ensure!(T::Tree::is_known_root(id, root)?, Error::<T, I>::InvalidWithdrawRoot);
+		ensure!(T::Tree::is_known_root(id, root)?, Error::<T, I>::UnknownRoot);
 		// Check nullifier and add or return `AlreadyRevealedNullifier`
 		Self::ensure_nullifier_unused(id, nullifier_hash)?;
 		Self::add_nullifier_hash(id, nullifier_hash)?;
@@ -359,7 +359,7 @@ impl<T: Config<I>, I: 'static> MixerInspector<T::AccountId, CurrencyIdOf<T, I>, 
 
 	fn ensure_known_root(id: T::TreeId, target: T::Element) -> Result<(), DispatchError> {
 		let is_known: bool = Self::is_known_root(id, target)?;
-		ensure!(is_known, Error::<T, I>::InvalidWithdrawRoot);
+		ensure!(is_known, Error::<T, I>::UnknownRoot);
 		Ok(())
 	}
 

@@ -50,10 +50,20 @@ pub trait AnchorInterface<C: AnchorConfig> {
 		root: C::Element,
 		height: C::BlockNumber,
 	) -> Result<(), dispatch::DispatchError>;
+	// Stores nullifier hash from a spend tx
+	fn add_nullifier_hash(id: C::TreeId, nullifier_hash: C::Element) -> Result<(), dispatch::DispatchError>;
 }
 
 /// Anchor trait for inspecting tree state
 pub trait AnchorInspector<C: AnchorConfig> {
+	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
+	fn get_root(id: C::TreeId) -> Result<C::Element, dispatch::DispatchError>;
+	/// Checks if a merkle root is in a tree's cached history or returns
+	/// `TreeDoesntExist
+	fn is_known_root(id: C::TreeId, target: C::Element) -> Result<bool, dispatch::DispatchError>;
+
+	fn ensure_known_root(id: C::TreeId, target: C::Element) -> Result<(), dispatch::DispatchError>;
+
 	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
 	fn get_neighbor_roots(id: C::TreeId) -> Result<Vec<C::Element>, dispatch::DispatchError>;
 	/// Checks if a merkle root is in a tree's cached history or returns
@@ -74,4 +84,10 @@ pub trait AnchorInspector<C: AnchorConfig> {
 	) -> Result<(), dispatch::DispatchError>;
 	/// Check if this anchor has this edge
 	fn has_edge(id: C::TreeId, src_chain_id: C::ChainId) -> bool;
+
+	/// Check if a nullifier has been used in a tree or returns
+	/// `InvalidNullifier`
+	fn is_nullifier_used(id: C::TreeId, nullifier: C::Element) -> bool;
+
+	fn ensure_nullifier_unused(id: C::TreeId, nullifier: C::Element) -> Result<(), dispatch::DispatchError>;
 }
