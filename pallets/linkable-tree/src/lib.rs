@@ -50,9 +50,6 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "runtime-benchmarks")]
-mod zk_config;
-
 mod benchmarking;
 
 pub mod types;
@@ -63,7 +60,7 @@ use darkwebb_primitives::{
 	ElementTrait,
 };
 use frame_support::{ensure, pallet_prelude::DispatchError, traits::Get};
-use sp_runtime::traits::{AccountIdConversion, AtLeast32Bit, One, Saturating, Zero};
+use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
 use sp_std::prelude::*;
 use types::*;
 pub use weights::WeightInfo;
@@ -176,6 +173,10 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(<T as Config<I>>::WeightInfo::create(*depth as u32, *max_edges))]
 		pub fn create(origin: OriginFor<T>, max_edges: u32, depth: u8) -> DispatchResultWithPostInfo {
+			// Should it only be the root who can create linked trees?
+			ensure_root(origin)?;
+			let tree_id = <Self as LinkableTreeInterface<_>>::create(T::AccountId::default(), depth, max_edges)?;
+			Self::deposit_event(Event::LinkableTreeCreation { tree_id });
 			Ok(().into())
 		}
 

@@ -34,10 +34,8 @@ use sp_std::marker::PhantomData;
 
 pub trait WeightInfo {
 	fn create(i: u32, d:u32) -> Weight;
-	fn deposit() -> Weight;
 	fn set_maintainer() -> Weight;
 	fn force_set_maintainer() -> Weight;
-	fn withdraw() -> Weight;
 }
 
 /// Weight functions for `pallet_anchor`.
@@ -53,19 +51,6 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
-	// Storage: MerkleTree Trees (r:1 w:1)
-	// Storage: MerkleTree DefaultHashes (r:1 w:0)
-	// Storage: MerkleTree NextRootIndex (r:1 w:1)
-	// Storage: MerkleTree NextLeafIndex (r:1 w:1)
-	// Storage: Mixer Mixers (r:1 w:0)
-	// Storage: System Account (r:1 w:1)
-	// Storage: MerkleTree Leaves (r:0 w:1)
-	// Storage: MerkleTree CachedRoots (r:0 w:1)
-	fn deposit() -> Weight {
-		(101_741_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(6 as Weight))
-			.saturating_add(T::DbWeight::get().writes(6 as Weight))
-	}
 	// Storage: Anchor Maintainer (r:1 w:1)
 	fn set_maintainer() -> Weight {
 		(23_195_000 as Weight)
@@ -78,19 +63,6 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
-	// Storage: Anchor MaxEdges (r:1 w:0)
-	// Storage: Mixer Mixers (r:1 w:0)
-	// Storage: MerkleTree Trees (r:1 w:0)
-	// Storage: MerkleTree CachedRoots (r:1 w:0)
-	// Storage: Anchor EdgeList (r:1 w:0)
-	// Storage: Mixer NullifierHashes (r:1 w:1)
-	// Storage: AnchorVerifier Parameters (r:1 w:0)
-	// Storage: System Account (r:1 w:1)
-	fn withdraw() -> Weight {
-		(37_923_368_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(8 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
-	}
 }
 
 
@@ -98,16 +70,10 @@ impl WeightInfo for  () {
 	fn create(_i: u32, _d:u32) -> Weight {
 		0
 	}
-	fn deposit() -> Weight{
-		0
-	}
 	fn set_maintainer() -> Weight {
 		0
 	}
 	fn force_set_maintainer() -> Weight {
-		0
-	}
-	fn withdraw() -> Weight{
 		0
 	}
 }

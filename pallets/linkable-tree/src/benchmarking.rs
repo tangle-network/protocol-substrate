@@ -21,21 +21,10 @@
 
 use super::*;
 
-use darkwebb_primitives::{anchor::AnchorInterface, traits::merkle_tree::TreeInspector};
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
+use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_system::RawOrigin;
-use orml_traits::MultiCurrency;
-// Run the zk-setup binary before compiling the with runtime-benchmarks to
-// generate the zk_config.rs file if it doesn't exist The accounts used in
-// generating the proofs have to be the same accounts used in the withdraw
-// benchmark
-use zk_config::*;
 
-use crate::Pallet as Anchor;
-use frame_support::{
-	storage,
-	traits::{Currency, Get, OnInitialize, PalletInfo},
-};
+use frame_support::traits::Get;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
@@ -49,10 +38,7 @@ benchmarks! {
 	create {
 	  let i in 1..MAX_EDGES;
 	  let d in 1..<T as pallet_mt::Config>::MaxTreeDepth::get() as u32;
-
-	  let deposit_size: u32 = 1_000_000_000;
-	  let asset_id = <<T as pallet_mixer::Config>::NativeCurrencyId as Get<pallet_mixer::CurrencyIdOf<T, _>>>::get();
-	}: _(RawOrigin::Root, deposit_size.into(), i, d as u8, asset_id)
+	}: _(RawOrigin::Root, i, d as u8)
 
 	set_maintainer {
 		let caller: T::AccountId = whitelisted_caller();

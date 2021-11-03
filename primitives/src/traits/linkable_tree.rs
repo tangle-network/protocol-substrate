@@ -14,6 +14,8 @@ pub trait LinkableTreeConfig {
 pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 	// Creates a new linkable tree
 	fn create(creator: C::AccountId, depth: u8, max_edges: u32) -> Result<C::TreeId, dispatch::DispatchError>;
+	// fn insert_in_order(id: C::TreeId, leaf: C::Element) -> Result<C::TreeId,
+	// dispatch::DispatchError>;
 	/// Add an edge to this tree
 	fn add_edge(
 		id: C::TreeId,
@@ -32,6 +34,8 @@ pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 
 /// Trait for inspecting tree state
 pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
+	// fn is_known_root(id: C::TreeId, root: C::Element) -> Result<bool,
+	// dispatch::DispatchError>;
 	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
 	fn get_neighbor_roots(id: C::TreeId) -> Result<Vec<C::Element>, dispatch::DispatchError>;
 	/// Checks if a merkle root is in a tree's cached history or returns
