@@ -239,6 +239,7 @@ impl pallet_anchor::Config for Test {
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;
+	type PostDepositHook = ();
 	type Verifier = VerifierPallet;
 	type WeightInfo = ();
 }

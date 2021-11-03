@@ -49,13 +49,13 @@ mod tests;
 use darkwebb_primitives::{
 	anchor::AnchorConfig,
 	traits::anchor::{AnchorInspector, AnchorInterface},
+	ResourceId,
 };
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;
 use pallet_anchor::types::EdgeMetadata;
 use pallet_mixer::{BalanceOf, CurrencyIdOf};
 pub mod types;
-use pallet_bridge::types::ResourceId;
 use types::*;
 
 pub use pallet::*;

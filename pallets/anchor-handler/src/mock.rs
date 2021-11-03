@@ -5,6 +5,7 @@ use frame_support::{ord_parameter_types, parameter_types, traits::Nothing, Palle
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
 use orml_traits::parameter_type_with_key;
+use pallet_anchor::PostDepositHook;
 pub use pallet_balances;
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
@@ -247,6 +248,7 @@ impl pallet_anchor::Config for Test {
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;
+	type PostDepositHook = ();
 	type Verifier = VerifierPallet;
 	type WeightInfo = ();
 }

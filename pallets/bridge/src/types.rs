@@ -6,7 +6,6 @@ use sp_std::prelude::*;
 pub const DARKWEBB_DEFAULT_RELAYER_THRESHOLD: u32 = 1;
 
 pub type DepositNonce = u64;
-pub type ResourceId = [u8; 32];
 
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum ProposalStatus {

@@ -64,7 +64,12 @@ use darkwebb_primitives::{
 	verifier::*,
 	ElementTrait,
 };
-use frame_support::{ensure, pallet_prelude::DispatchError, traits::Get};
+use frame_support::{
+	dispatch::{DispatchResult, DispatchResultWithPostInfo},
+	ensure,
+	pallet_prelude::DispatchError,
+	traits::Get,
+};
 use orml_traits::MultiCurrency;
 use pallet_mixer::{types::MixerMetadata, BalanceOf, CurrencyIdOf};
 use sp_runtime::traits::{AccountIdConversion, AtLeast32Bit, One, Saturating, Zero};
@@ -102,6 +107,10 @@ pub mod pallet {
 
 		/// The pruning length for neighbor root histories
 		type HistoryLength: Get<Self::RootIndex>;
+
+		/// A type that implements [PostDepositHook] that would be called when a
+		/// deposit is made.
+		type PostDepositHook: PostDepositHook<Self, I>;
 
 		/// Weight info for pallet
 		type WeightInfo: WeightInfo;
@@ -210,7 +219,8 @@ pub mod pallet {
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			<Self as AnchorInterface<_>>::deposit(origin, tree_id, leaf)?;
+			<Self as AnchorInterface<_>>::deposit(origin.clone(), tree_id, leaf)?;
+			T::PostDepositHook::post_deposit(origin, tree_id, leaf)?;
 			Ok(().into())
 		}
 
@@ -294,7 +304,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		max_edges: u32,
 		asset: CurrencyIdOf<T, I>,
 	) -> Result<T::TreeId, DispatchError> {
-		let id = T::Mixer::create(creator, deposit_size, depth, asset.into())?;
+		let id = T::Mixer::create(creator, deposit_size, depth, asset)?;
 		MaxEdges::<T, I>::insert(id, max_edges);
 		Ok(id)
 	}
@@ -367,8 +377,8 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		bytes.extend_from_slice(&fee_bytes);
 		bytes.extend_from_slice(&refund_bytes);
 		bytes.extend_from_slice(&chain_id_bytes);
-		for i in 0..m {
-			bytes.extend_from_slice(&roots[i].encode());
+		for root in roots.iter().take(m) {
+			bytes.extend_from_slice(&root.encode());
 		}
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
@@ -404,12 +414,12 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 			height,
 		};
 		// update historical neighbor list for this edge's root
-		let neighbor_root_inx = CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id));
+		let neighbor_root_idx = CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id));
 		CurrentNeighborRootIndex::<T, I>::insert(
 			(id, src_chain_id),
-			neighbor_root_inx + T::RootIndex::one() % T::HistoryLength::get(),
+			neighbor_root_idx + T::RootIndex::one() % T::HistoryLength::get(),
 		);
-		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_inx, root);
+		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_idx, root);
 		// Append new edge to the end of the edge list for the given tree
 		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
 		Ok(())
@@ -430,10 +440,10 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 			root,
 			height,
 		};
-		let neighbor_root_inx =
+		let neighbor_root_idx =
 			(CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id)) + T::RootIndex::one()) % T::HistoryLength::get();
-		CurrentNeighborRootIndex::<T, I>::insert((id, src_chain_id), neighbor_root_inx);
-		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_inx, root);
+		CurrentNeighborRootIndex::<T, I>::insert((id, src_chain_id), neighbor_root_idx);
+		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_idx, root);
 		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
 		Ok(())
 	}
@@ -467,7 +477,7 @@ impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pal
 
 		let curr_root_inx = CurrentNeighborRootIndex::<T, I>::get((tree_id, src_chain_id));
 		let mut historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), curr_root_inx)
-			.unwrap_or(T::Element::from_bytes(&[0; 32]));
+			.unwrap_or_else(|| T::Element::from_bytes(&[0; 32]));
 		if target_root == historical_root {
 			return Ok(true);
 		}
@@ -475,8 +485,8 @@ impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pal
 		let mut i = get_next_inx(curr_root_inx);
 
 		while i != curr_root_inx {
-			historical_root =
-				NeighborRoots::<T, I>::get((tree_id, src_chain_id), i).unwrap_or(T::Element::from_bytes(&[0; 32]));
+			historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), i)
+				.unwrap_or_else(|| T::Element::from_bytes(&[0; 32]));
 			if target_root == historical_root {
 				return Ok(true);
 			}
@@ -520,6 +530,15 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 }
 
+pub trait PostDepositHook<T: Config<I>, I: 'static> {
+	fn post_deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> DispatchResult;
+}
+
+impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for () {
+	fn post_deposit(_: T::AccountId, _: T::TreeId, _: T::Element) -> DispatchResult {
+		Ok(())
+	}
+}
 /// Truncate and pad 256 bit slice
 pub fn truncate_and_pad(t: &[u8]) -> Vec<u8> {
 	let mut truncated_bytes = t[..20].to_vec();

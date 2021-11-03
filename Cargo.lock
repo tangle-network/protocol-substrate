@@ -5756,6 +5756,7 @@ dependencies = [
 name = "pallet-bridge"
 version = "1.0.0"
 dependencies = [
+ "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6623,6 +6624,29 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-xanchor"
+version = "0.1.0"
+dependencies = [
+ "cumulus-pallet-xcm",
+ "cumulus-primitives-core",
+ "darkwebb-primitives",
+ "frame-support",
+ "frame-system",
+ "orml-traits",
+ "pallet-anchor",
+ "pallet-asset-registry",
+ "pallet-bridge",
+ "pallet-mixer",
+ "pallet-mt",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
 ]
 
 [[package]]

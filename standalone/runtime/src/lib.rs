@@ -1160,6 +1160,7 @@ impl pallet_anchor::Config for Runtime {
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;
+	type PostDepositHook = ();
 	type Verifier = AnchorVerifier;
 	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }

@@ -202,7 +202,8 @@ impl pallet_session::Config for Runtime {
 	type SessionManager = CollatorSelection;
 	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	// we don't have stash and controller, thus we don't need the convert as well.
+	// we don't have stash and controller, thus we don't need the convert as
+	// well.
 	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
 	type WeightInfo = weights::pallet_session::WeightInfo<Runtime>;
 }
@@ -305,7 +306,8 @@ pub enum ProxyType {
 	AssetOwner,
 	/// Asset manager. Can execute calls related to asset management.
 	AssetManager,
-	// Collator selection proxy. Can execute calls related to collator selection mechanism.
+	// Collator selection proxy. Can execute calls related to collator
+	// selection mechanism.
 	Collator,
 }
 impl Default for ProxyType {
@@ -456,7 +458,8 @@ pub type LocationToAccountId = (
 	ParentIsDefault<AccountId>,
 	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
-	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
+	// Straight up local `AccountId32` origins just alias directly to
+	// `AccountId`.
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
@@ -464,11 +467,14 @@ pub type LocationToAccountId = (
 pub type LocalAssetTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
-	// Use this currency when it is a fungible asset matching the given location or name:
+	// Use this currency when it is a fungible asset matching the given
+	// location or name:
 	IsConcrete<KsmLocation>,
-	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+	// Do a simple punn to convert an AccountId32 MultiLocation into a native
+	// chain account ID:
 	LocationToAccountId,
-	// Our chain's account ID type (we can't get away without mentioning it explicitly):
+	// Our chain's account ID type (we can't get away without mentioning it
+	// explicitly):
 	AccountId,
 	// We don't track any teleports.
 	(),
@@ -479,23 +485,25 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 /// `Transact`. There is an `OriginKind` which can biases the kind of local
 /// `Origin` it will become.
 pub type XcmOriginToTransactDispatchOrigin = (
-	// Sovereign account converter; this attempts to derive an `AccountId` from the origin location
-	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
-	// foreign chains who want to have a local sovereign account on this chain which they control.
+	// Sovereign account converter; this attempts to derive an `AccountId` from
+	// the origin location using `LocationToAccountId` and then turn that into
+	// the usual `Signed` origin. Useful for foreign chains who want to have a
+	// local sovereign account on this chain which they control.
 	SovereignSignedViaLocation<LocationToAccountId, Origin>,
-	// Native converter for Relay-chain (Parent) location; will converts to a `Relay` origin when
-	// recognised.
+	// Native converter for Relay-chain (Parent) location; will converts to a
+	// `Relay` origin when recognised.
 	RelayChainAsNative<RelayChainOrigin, Origin>,
-	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
-	// recognised.
+	// Native converter for sibling Parachains; will convert to a `SiblingPara`
+	// origin when recognised.
 	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
-	// Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
-	// transaction from the Root origin.
+	// Superuser converter for the Relay-chain (Parent) location. This will
+	// allow it to issue a transaction from the Root origin.
 	ParentAsSuperuser<Origin>,
-	// Native signed account converter; this just converts an `AccountId32` origin into a normal
-	// `Origin::Signed` origin of the same 32-byte value.
+	// Native signed account converter; this just converts an `AccountId32`
+	// origin into a normal `Origin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RelayNetwork, Origin>,
-	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
+	// Xcm origins can be represented natively under the Xcm pallet's Xcm
+	// origin.
 	XcmPassthrough<Origin>,
 );
 
@@ -822,6 +830,7 @@ impl pallet_anchor::Config for Runtime {
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;
+	type PostDepositHook = ();
 	type Verifier = AnchorVerifier;
 	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }
