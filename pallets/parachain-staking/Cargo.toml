@@ -1,5 +1,5 @@
 [package]
-name = "collator-selection"
+name = "pallet-parachain-staking"
 version = "2.1.1"
 authors = ["PureStake"]
 edition = "2018"
@@ -11,11 +11,11 @@ frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", bran
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 log = "0.4"
-nimbus-primitives = { git = "https://github.com/purestake/nimbus", branch = "moonbeam-polkadot-v0.9.11", default-features = false }
-parity-scale-codec = { version = "2.2", default-features = false, features = ["derive"] }
+parity-scale-codec = { version = "2.3.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0.101", optional = true }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
+pallet-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 substrate-fixed = { default-features = false, git = "https://github.com/encointer/substrate-fixed" }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 
@@ -31,12 +31,12 @@ std = [
 	"frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
-	"nimbus-primitives/std",
 	"parity-scale-codec/std",
 	"serde",
 	"sp-runtime/std",
 	"sp-std/std",
 	"scale-info/std",
+	"pallet-authorship/std"
 ]
 runtime-benchmarks = ["frame-benchmarking"]
 try-runtime = ["frame-support/try-runtime"]

@@ -28,6 +28,7 @@ pallet-hasher = {path = "../pallets/hasher", default-features = false}
 pallet-mt = {path = "../pallets/mt", default-features = false}
 pallet-mt-rpc-runtime-api = {path = "../pallets/mt/rpc/runtime-api", default-features = false}
 pallet-verifier = {path = "../pallets/verifier", default-features = false}
+pallet-parachain-staking = {path = "../pallets/parachain-staking", default-features = false}
 
 orml-currencies = {path = "../open-runtime-module-library/currencies", default-features = false}
 orml-tokens = {path = "../open-runtime-module-library/tokens", default-features = false}
@@ -128,6 +129,7 @@ runtime-benchmarks = [
   "pallet-timestamp/runtime-benchmarks",
   "pallet-xcm/runtime-benchmarks",
   "pallet-collective/runtime-benchmarks",
+  "pallet-parachain-staking/runtime-benchmarks"
 ]
 
 std = [
@@ -195,4 +197,6 @@ std = [
   "pallet-treasury/std",
   "pallet-token-wrapper/std",
   "pallet-bounties/std",
+  "pallet-collator-selection/std",
+  "pallet-parachain-staking/std"
 ]

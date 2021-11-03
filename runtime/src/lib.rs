@@ -212,7 +212,7 @@ parameter_types! {
 }
 
 impl pallet_authorship::Config for Runtime {
-	type EventHandler = (CollatorSelection,);
+	type EventHandler = (CollatorSelection, ParachainStaking);
 	type FilterUncle = ();
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
 	type UncleGenerations = UncleGenerations;
@@ -307,6 +307,8 @@ pub enum ProxyType {
 	AssetManager,
 	// Collator selection proxy. Can execute calls related to collator selection mechanism.
 	Collator,
+	/// Can execute calls related related to staking.
+	Staking,
 }
 impl Default for ProxyType {
 	fn default() -> Self {
@@ -317,13 +319,17 @@ impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::NonTransfer => !matches!(c, Call::Balances { .. } | Call::Assets { .. }),
+			ProxyType::NonTransfer => !matches!(
+				c,
+				Call::Balances { .. } | Call::Assets { .. } | Call::ParachainStaking { .. }
+			),
 			ProxyType::CancelProxy => matches!(
 				c,
 				Call::Proxy(pallet_proxy::Call::reject_announcement { .. })
 					| Call::Utility { .. }
 					| Call::Multisig { .. }
 			),
+			ProxyType::Staking => matches!(c, Call::ParachainStaking { .. }),
 			ProxyType::Assets => {
 				matches!(c, Call::Assets { .. } | Call::Utility { .. } | Call::Multisig { .. })
 			}
@@ -351,7 +357,10 @@ impl InstanceFilter<Call> for ProxyType {
 			),
 			ProxyType::Collator => matches!(
 				c,
-				Call::CollatorSelection { .. } | Call::Utility { .. } | Call::Multisig { .. }
+				Call::CollatorSelection { .. }
+					| Call::ParachainStaking { .. }
+					| Call::Utility { .. }
+					| Call::Multisig { .. }
 			),
 		}
 	}
@@ -944,6 +953,59 @@ impl pallet_token_wrapper::Config for Runtime {
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
 
+parameter_types! {
+	/// Minimum round length is 2 minutes (10 * 12 second block times)
+	pub const MinBlocksPerRound: u32 = 10;
+	/// Default BlocksPerRound is every 4 hours (1200 * 12 second block times)
+	pub const DefaultBlocksPerRound: u32 = 4 * HOURS;
+	/// Collator candidate exits are delayed by 2 rounds
+	pub const LeaveCandidatesDelay: u32 = 2;
+	/// Nominator exits are delayed by 2 rounds
+	pub const LeaveNominatorsDelay: u32 = 2;
+	/// Nomination revocations are delayed by 2 rounds
+	pub const RevokeNominationDelay: u32 = 2;
+	/// Reward payments are delayed by 2 rounds
+	pub const RewardPaymentDelay: u32 = 2;
+	/// Minimum 8 collators selected per round, default at genesis and minimum forever after
+	pub const MinSelectedCandidates: u32 = 8;
+	/// Maximum 100 nominators per collator
+	pub const MaxNominatorsPerCollator: u32 = 100;
+	/// Maximum 100 collators per nominator
+	pub const MaxCollatorsPerNominator: u32 = 100;
+	/// Default fixed percent a collator takes off the top of due rewards is 20%
+	pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
+	/// Default percent of inflation set aside for parachain bond every round
+	pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(30);
+	/// Minimum stake required to become a collator
+	pub const MinCollatorStk: u128 = 1 * KUNITS * SUPPLY_FACTOR;
+	/// Minimum stake required to be reserved to be a candidate
+	pub const MinCollatorCandidateStk: u128 = KUNITS * SUPPLY_FACTOR / 10;
+	/// Minimum stake required to be reserved to be a nominator is 5
+	pub const MinNominatorStk: u128 = 5 * UNITS * SUPPLY_FACTOR;
+}
+
+impl pallet_parachain_staking::Config for Runtime {
+	type Currency = Balances;
+	type DefaultBlocksPerRound = DefaultBlocksPerRound;
+	type DefaultCollatorCommission = DefaultCollatorCommission;
+	type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
+	type Event = Event;
+	type LeaveCandidatesDelay = LeaveCandidatesDelay;
+	type LeaveNominatorsDelay = LeaveNominatorsDelay;
+	type MaxCollatorsPerNominator = MaxCollatorsPerNominator;
+	type MaxNominatorsPerCollator = MaxNominatorsPerCollator;
+	type MinBlocksPerRound = MinBlocksPerRound;
+	type MinCollatorCandidateStk = MinCollatorCandidateStk;
+	type MinCollatorStk = MinCollatorStk;
+	type MinNomination = MinNominatorStk;
+	type MinNominatorStk = MinNominatorStk;
+	type MinSelectedCandidates = MinSelectedCandidates;
+	type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
+	type RevokeNominationDelay = RevokeNominationDelay;
+	type RewardPaymentDelay = RewardPaymentDelay;
+	type WeightInfo = pallet_parachain_staking::weights::WebbWeight<Runtime>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously
 // configured.
 construct_runtime!(
@@ -972,6 +1034,7 @@ construct_runtime!(
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
+		ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>} = 25,
 
 		// XCM helpers.
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 30,

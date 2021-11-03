@@ -2020,19 +2020,15 @@ pub mod pallet {
 
 	/// Add amount points to block authors:
 	/// * 20 points to the block producer for producing a block in the chain
-	impl<T: Config> nimbus_primitives::EventHandler<T::AccountId> for Pallet<T> {
+	impl<T: Config> pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T> {
 		fn note_author(author: T::AccountId) {
 			let now = <Round<T>>::get().current;
 			let score_plus_20 = <AwardedPts<T>>::get(now, &author) + 20;
 			<AwardedPts<T>>::insert(now, author, score_plus_20);
 			<Points<T>>::mutate(now, |x| *x += 20);
 		}
-	}
 
-	impl<T: Config> nimbus_primitives::CanAuthor<T::AccountId> for Pallet<T> {
-		fn can_author(account: &T::AccountId, _slot: &u32) -> bool {
-			Self::is_selected_candidate(account)
-		}
+		fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {}
 	}
 
 	impl<T: Config> Get<Vec<T::AccountId>> for Pallet<T> {
