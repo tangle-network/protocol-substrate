@@ -10,20 +10,25 @@ use arkworks_gadgets::{
 	},
 };
 use common::{AccountId, AuraId, Signature};
+use darkwebb_primitives::Balance;
 use darkwebb_runtime::{
 	wasm_binary_unwrap, AnchorVerifierConfig, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
 	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig,
 	CouncilConfig, GenesisConfig, MerkleTreeConfig, MixerVerifierConfig, ParachainStakingConfig, SudoConfig,
-	SystemConfig,
+	SystemConfig, UNITS,
 };
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
+use pallet_parachain_staking::{InflationInfo, Range};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{
+	traits::{IdentifyAccount, Verify},
+	Perbill,
+};
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<darkwebb_runtime::GenesisConfig, Extensions>;
@@ -122,12 +127,16 @@ pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
 						get_collator_keys_from_seed("Alice"),
+						1_000 * UNITS,
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
 						get_collator_keys_from_seed("Bob"),
+						1_000 * UNITS,
 					),
 				],
+				// Nominations
+				vec![],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -169,17 +178,21 @@ pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 		ChainType::Local,
 		move || {
 			testnet_genesis(
-				// initial collators.
+				// initial collators candidates.
 				vec![
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
 						get_collator_keys_from_seed("Alice"),
+						1_000 * UNITS,
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
 						get_collator_keys_from_seed("Bob"),
+						1_000 * UNITS,
 					),
 				],
+				// Nominations
+				vec![],
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
@@ -213,14 +226,34 @@ pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 	))
 }
 
+pub fn darkwebb_inflation_config() -> InflationInfo<Balance> {
+	InflationInfo {
+		expect: Range {
+			min: 100_000 * UNITS,
+			ideal: 200_000 * UNITS,
+			max: 500_000 * UNITS,
+		},
+		annual: Range {
+			min: Perbill::from_percent(4),
+			ideal: Perbill::from_percent(5),
+			max: Perbill::from_percent(5),
+		},
+		// 8766 rounds (hours) in a year
+		round: Range {
+			min: Perbill::from_parts(Perbill::from_percent(4).deconstruct() / 8766),
+			ideal: Perbill::from_parts(Perbill::from_percent(5).deconstruct() / 8766),
+			max: Perbill::from_parts(Perbill::from_percent(5).deconstruct() / 8766),
+		},
+	}
+}
+
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
-	invulnerables: Vec<(AccountId, AuraId)>,
+	candidates: Vec<(AccountId, AuraId, Balance)>,
+	nominations: Vec<(AccountId, AccountId, Balance)>,
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> GenesisConfig {
-	use ark_serialize::CanonicalSerialize;
-	use ark_std::test_rng;
 	log::info!("Circom params");
 	let circom_params = {
 		let rounds = get_rounds_poseidon_circom_bn254_x5_3::<arkworks_gadgets::prelude::ark_bn254::Fr>();
@@ -279,16 +312,11 @@ fn testnet_genesis(
 				.collect(),
 		},
 		parachain_info: darkwebb_runtime::ParachainInfoConfig { parachain_id: id },
-		collator_selection: darkwebb_runtime::CollatorSelectionConfig {
-			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT * 16,
-			..Default::default()
-		},
 		session: darkwebb_runtime::SessionConfig {
-			keys: invulnerables
+			keys: candidates
 				.iter()
 				.cloned()
-				.map(|(acc, aura)| {
+				.map(|(acc, aura, _)| {
 					(
 						acc.clone(),                 // account id
 						acc.clone(),                 // validator id
@@ -338,7 +366,15 @@ fn testnet_genesis(
 		},
 		council: CouncilConfig::default(),
 		treasury: Default::default(),
-		parachain_staking: ParachainStakingConfig::default(),
+		parachain_staking: ParachainStakingConfig {
+			candidates: candidates
+				.iter()
+				.cloned()
+				.map(|(account, _, bond)| (account, bond))
+				.collect(),
+			nominations,
+			inflation_config: darkwebb_inflation_config(),
+		},
 	}
 }
 

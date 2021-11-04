@@ -2162,6 +2162,7 @@ dependencies = [
  "pallet-mt",
  "pallet-mt-rpc",
  "pallet-mt-rpc-runtime-api",
+ "pallet-parachain-staking",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
  "polkadot-cli",
@@ -6288,7 +6289,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-parachain-staking"
-version = "2.1.1"
+version = "1.0.0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",

@@ -1,6 +1,6 @@
 [package]
 name = "pallet-parachain-staking"
-version = "2.1.1"
+version = "1.0.0"
 authors = ["PureStake"]
 edition = "2018"
 license = "GNU GPL 3.0"
