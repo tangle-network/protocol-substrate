@@ -64,12 +64,7 @@ use darkwebb_primitives::{
 	verifier::*,
 	ElementTrait,
 };
-use frame_support::{
-	dispatch::{DispatchResult, DispatchResultWithPostInfo},
-	ensure,
-	pallet_prelude::DispatchError,
-	traits::Get,
-};
+use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::MultiCurrency;
 use pallet_mixer::{types::MixerMetadata, BalanceOf, CurrencyIdOf};
 use sp_runtime::traits::{AccountIdConversion, AtLeast32Bit, One, Saturating, Zero};
@@ -141,7 +136,7 @@ pub mod pallet {
 		T::TreeId,
 		Blake2_128Concat,
 		T::ChainId,
-		EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>,
+		EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
 		ValueQuery,
 	>;
 
@@ -289,10 +284,10 @@ pub struct AnchorConfigration<T: Config<I>, I: 'static>(core::marker::PhantomDat
 impl<T: Config<I>, I: 'static> AnchorConfig for AnchorConfigration<T, I> {
 	type AccountId = T::AccountId;
 	type Balance = BalanceOf<T, I>;
-	type BlockNumber = T::BlockNumber;
 	type ChainId = T::ChainId;
 	type CurrencyId = CurrencyIdOf<T, I>;
 	type Element = T::Element;
+	type LeafIndex = T::LeafIndex;
 	type TreeId = T::TreeId;
 }
 
@@ -396,7 +391,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
 		root: T::Element,
-		height: T::BlockNumber,
+		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
 		// ensure edge doesn't exists
 		ensure!(
@@ -411,7 +406,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		let e_meta = EdgeMetadata {
 			src_chain_id,
 			root,
-			height,
+			latest_leaf_index,
 		};
 		// update historical neighbor list for this edge's root
 		let neighbor_root_idx = CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id));
@@ -429,7 +424,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
 		root: T::Element,
-		height: T::BlockNumber,
+		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
 		ensure!(
 			EdgeList::<T, I>::contains_key(id, src_chain_id),
@@ -438,7 +433,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		let e_meta = EdgeMetadata {
 			src_chain_id,
 			root,
-			height,
+			latest_leaf_index,
 		};
 		let neighbor_root_idx =
 			(CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id)) + T::RootIndex::one()) % T::HistoryLength::get();

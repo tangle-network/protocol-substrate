@@ -1,4 +1,4 @@
-use crate::{mock::*, types::UpdateRecord, AnchorList, Counts, UpdateRecords};
+use crate::{mock::*, pallet, types::UpdateRecord, AnchorList, Counts, UpdateRecords};
 use frame_support::{assert_err, assert_noop, assert_ok, dispatch::DispatchError};
 use pallet_anchor::types::EdgeMetadata;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
@@ -23,7 +23,7 @@ fn make_anchor_update_proposal(
 	anchor_metadata: EdgeMetadata<
 		ChainId,
 		<Test as pallet_mt::Config>::Element,
-		<Test as frame_system::Config>::BlockNumber,
+		<Test as pallet_mt::Config>::LeafIndex,
 	>,
 ) -> Call {
 	Call::AnchorHandler(crate::Call::execute_anchor_update_proposal {
@@ -71,7 +71,7 @@ fn relay_anchor_update_proposal(
 	src_chain_id: u32,
 	resource_id: &[u8; 32],
 	prop_id: u64,
-	edge_metadata: EdgeMetadata<ChainId, Element, <Test as frame_system::Config>::BlockNumber>,
+	edge_metadata: EdgeMetadata<ChainId, Element, <Test as pallet_mt::Config>::LeafIndex>,
 ) {
 	// create anchor update proposal
 	let resource = b"AnchorHandler.execute_anchor_update_proposal".to_vec();
@@ -163,11 +163,11 @@ fn anchor_update_proposal_edge_add_success() {
 		setup_relayers(src_chain_id);
 		mock_anchor_creation_using_pallet_call(src_chain_id, &resource_id);
 		let root = Element::from_bytes(&[1; 32]);
-		let height: u64 = 5;
+		let latest_leaf_index = 5;
 		let edge_metadata = EdgeMetadata {
 			src_chain_id,
 			root,
-			height,
+			latest_leaf_index,
 		};
 		assert_eq!(0, Counts::<Test>::get(src_chain_id));
 		relay_anchor_update_proposal(src_chain_id, &resource_id, prop_id, edge_metadata.clone());
@@ -215,11 +215,11 @@ fn anchor_update_proposal_edge_update_success() {
 		setup_relayers(src_chain_id);
 		mock_anchor_creation_using_pallet_call(src_chain_id, &resource_id);
 		let root = Element::from_bytes(&[1; 32]);
-		let height: u64 = 5;
+		let latest_leaf_index = 5;
 		let edge_metadata = EdgeMetadata {
 			src_chain_id,
 			root,
-			height,
+			latest_leaf_index,
 		};
 		assert_eq!(0, Counts::<Test>::get(src_chain_id));
 		relay_anchor_update_proposal(src_chain_id, &resource_id, prop_id, edge_metadata.clone());
@@ -249,11 +249,11 @@ fn anchor_update_proposal_edge_update_success() {
 		assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_chain_id, 0));
 
 		let root = Element::from_bytes(&[2; 32]);
-		let height: u64 = 10;
+		let latest_leaf_index = 10;
 		let edge_metadata = EdgeMetadata {
 			src_chain_id,
 			root,
-			height,
+			latest_leaf_index,
 		};
 		relay_anchor_update_proposal(src_chain_id, &resource_id, prop_id + 1, edge_metadata.clone());
 		assert_eq!(2, Counts::<Test>::get(src_chain_id));

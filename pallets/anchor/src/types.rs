@@ -12,11 +12,11 @@ pub struct AnchorMetadata<AccountId, Balance> {
 }
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
-pub struct EdgeMetadata<ChainID, Element, BlockNumber> {
+pub struct EdgeMetadata<ChainID, Element, LeafIndex> {
 	/// chain id
 	pub src_chain_id: ChainID,
 	/// root of source chain anchor's native merkle tree
 	pub root: Element,
-	/// height of source chain anchor's native merkle tree
-	pub height: BlockNumber,
+	/// the latest leaf index of source chain anchor's native merkle tree
+	pub latest_leaf_index: LeafIndex,
 }
