@@ -19,15 +19,15 @@ use crate as stake;
 use crate::{pallet, AwardedPts, Config, InflationInfo, Points, Range};
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{Everything, GenesisBuild, OnFinalize, OnInitialize},
+	traits::{Everything, FindAuthor, GenesisBuild, OnFinalize, OnInitialize},
 	weights::Weight,
 };
 use sp_core::H256;
 use sp_io;
 use sp_runtime::{
-	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
-	Perbill, Percent,
+	testing::{Header, UintAuthorityId},
+	traits::{BlakeTwo256, IdentityLookup, OpaqueKeys},
+	Perbill, Percent, RuntimeAppPublic,
 };
 
 pub type AccountId = u64;
@@ -45,8 +45,12 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Stake: stake::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>},
+		Aura: pallet_aura::{Pallet, Storage, Config<T>},
+
 	}
 );
 
@@ -96,9 +100,81 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = [u8; 4];
 	type WeightInfo = ();
 }
+
+parameter_types! {
+	pub const MinimumPeriod: u64 = 1;
+}
+
+impl pallet_timestamp::Config for Test {
+	type MinimumPeriod = MinimumPeriod;
+	type Moment = u64;
+	type OnTimestampSet = Aura;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const MaxAuthorities: u32 = 100_000;
+}
+
+impl pallet_aura::Config for Test {
+	type AuthorityId = sp_consensus_aura::sr25519::AuthorityId;
+	type DisabledValidators = ();
+	type MaxAuthorities = MaxAuthorities;
+}
+
+sp_runtime::impl_opaque_keys! {
+	pub struct MockSessionKeys {
+		// a key for aura authoring
+		pub aura: UintAuthorityId,
+	}
+}
+
+impl From<UintAuthorityId> for MockSessionKeys {
+	fn from(aura: sp_runtime::testing::UintAuthorityId) -> Self {
+		Self { aura }
+	}
+}
+
+parameter_types! {
+	pub static SessionHandlerCollators: Vec<u64> = vec![];
+	pub static SessionChangeBlock: u64 = 0;
+}
+
+pub struct TestSessionHandler;
+impl pallet_session::SessionHandler<u64> for TestSessionHandler {
+	const KEY_TYPE_IDS: &'static [sp_runtime::KeyTypeId] = &[UintAuthorityId::ID];
+
+	fn on_genesis_session<Ks: OpaqueKeys>(keys: &[(u64, Ks)]) {
+		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+	}
+
+	fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
+		SessionChangeBlock::set(System::block_number());
+		dbg!(keys.len());
+		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
+	}
+
+	fn on_before_session_ending() {}
+
+	fn on_disabled(_: u32) {}
+}
+
+impl pallet_session::Config for Test {
+	type Event = Event;
+	type Keys = MockSessionKeys;
+	type NextSessionRotation = Stake;
+	type SessionHandler = TestSessionHandler;
+	type SessionManager = Stake;
+	type ShouldEndSession = Stake;
+	type ValidatorId = <Self as frame_system::Config>::AccountId;
+	// we don't have stash and controller, thus we don't need the convert as well.
+	type ValidatorIdOf = crate::IdentityCollator;
+	type WeightInfo = ();
+}
+
 parameter_types! {
 	pub const MinBlocksPerRound: u32 = 3;
-	pub const DefaultBlocksPerRound: u32 = 5;
+	pub const BlocksPerRound: u32 = 5;
 	pub const LeaveCandidatesDelay: u32 = 2;
 	pub const LeaveNominatorsDelay: u32 = 2;
 	pub const RevokeNominationDelay: u32 = 2;
@@ -112,9 +188,10 @@ parameter_types! {
 	pub const MinNominatorStk: u128 = 5;
 	pub const MinNomination: u128 = 3;
 }
+
 impl Config for Test {
+	type BlocksPerRound = BlocksPerRound;
 	type Currency = Balances;
-	type DefaultBlocksPerRound = DefaultBlocksPerRound;
 	type DefaultCollatorCommission = DefaultCollatorCommission;
 	type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
 	type Event = Event;
@@ -214,6 +291,20 @@ impl ExtBuilder {
 		.assimilate_storage(&mut t)
 		.expect("Parachain Staking's storage can be assimilated");
 
+		let validators = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+		let keys = validators
+			.iter()
+			.map(|i| {
+				(*i, *i, MockSessionKeys {
+					aura: UintAuthorityId(*i),
+				})
+			})
+			.collect::<Vec<_>>();
+
+		pallet_session::GenesisConfig::<Test> { keys }
+			.assimilate_storage(&mut t)
+			.expect("Pallet session storage can be assimilated");
+
 		let mut ext = sp_io::TestExternalities::new(t);
 		ext.execute_with(|| System::set_block_number(1));
 		ext
@@ -222,13 +313,18 @@ impl ExtBuilder {
 
 pub(crate) fn roll_to(n: u64) {
 	while System::block_number() < n {
-		Stake::on_finalize(System::block_number());
 		Balances::on_finalize(System::block_number());
+		Stake::on_finalize(System::block_number());
+		Session::on_finalize(System::block_number());
+		Aura::on_finalize(System::block_number());
 		System::on_finalize(System::block_number());
 		System::set_block_number(System::block_number() + 1);
 		System::on_initialize(System::block_number());
+		Timestamp::on_initialize(System::block_number());
 		Balances::on_initialize(System::block_number());
 		Stake::on_initialize(System::block_number());
+		Session::on_initialize(System::block_number());
+		Aura::on_initialize(System::block_number());
 	}
 }
 

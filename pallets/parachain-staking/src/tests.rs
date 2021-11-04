@@ -54,10 +54,6 @@ fn invalid_root_origin_fails() {
 			Stake::set_collator_commission(Origin::signed(45), Perbill::from_percent(5)),
 			sp_runtime::DispatchError::BadOrigin
 		);
-		assert_noop!(
-			Stake::set_blocks_per_round(Origin::signed(45), 3u32),
-			sp_runtime::DispatchError::BadOrigin
-		);
 	});
 }
 
@@ -148,7 +144,7 @@ fn set_blocks_per_round_event_emits_correctly() {
 			last_event(),
 			MetaEvent::Stake(Event::BlocksPerRoundSet {
 				round: 1,
-				first_block: 0,
+				block: 0,
 				old: 5,
 				new: 3,
 				min: Perbill::from_parts(463),
@@ -610,11 +606,7 @@ fn cannot_join_candidates_with_more_than_available_balance() {
 		.execute_with(|| {
 			assert_noop!(
 				Stake::join_candidates(Origin::signed(1), 501u128, 100u32),
-				DispatchError::Module {
-					index: 1,
-					error: 2,
-					message: Some("InsufficientBalance")
-				}
+				pallet_balances::Error::<Test>::InsufficientBalance
 			);
 		});
 }
@@ -1026,11 +1018,7 @@ fn cannot_candidate_bond_more_if_insufficient_balance() {
 		.execute_with(|| {
 			assert_noop!(
 				Stake::candidate_bond_more(Origin::signed(1), 1),
-				DispatchError::Module {
-					index: 1,
-					error: 2,
-					message: Some("InsufficientBalance")
-				}
+				pallet_balances::Error::<Test>::InsufficientBalance
 			);
 		});
 }
@@ -2176,11 +2164,7 @@ fn cannot_nominator_bond_more_if_insufficient_balance() {
 		.execute_with(|| {
 			assert_noop!(
 				Stake::nominator_bond_more(Origin::signed(2), 1, 5),
-				DispatchError::Module {
-					index: 1,
-					error: 2,
-					message: Some("InsufficientBalance")
-				}
+				pallet_balances::Error::<Test>::InsufficientBalance
 			);
 		});
 }

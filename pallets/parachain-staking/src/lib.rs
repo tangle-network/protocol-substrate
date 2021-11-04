@@ -62,6 +62,7 @@ mod set;
 mod tests;
 
 pub mod weights;
+
 use weights::WeightInfo;
 
 use frame_support::pallet;
@@ -73,16 +74,19 @@ pub use pallet::*;
 pub mod pallet {
 	use crate::{set::OrderedSet, InflationInfo, Range, WeightInfo};
 	use frame_support::{
+		dispatch::Weight,
 		pallet_prelude::*,
-		traits::{Currency, Get, Imbalance, ReservableCurrency},
+		traits::{Currency, EstimateNextSessionRotation, Get, Imbalance, ReservableCurrency},
 	};
 	use frame_system::pallet_prelude::*;
+	use pallet_session::{SessionManager, ShouldEndSession};
 	use parity_scale_codec::{Decode, Encode};
 	use scale_info::TypeInfo;
 	use sp_runtime::{
-		traits::{AtLeast32BitUnsigned, Saturating, Zero},
-		Perbill, Percent, RuntimeDebug,
+		traits::{AtLeast32BitUnsigned, One, Saturating, Zero},
+		Perbill, Percent, Permill, RuntimeDebug,
 	};
+	use sp_staking::SessionIndex;
 	use sp_std::{cmp::Ordering, collections::btree_map::BTreeMap, prelude::*};
 
 	/// Pallet for parachain staking
@@ -605,6 +609,14 @@ pub mod pallet {
 		}
 	}
 
+	/// A convertor from collators id.
+	pub struct IdentityCollator;
+	impl<T> sp_runtime::traits::Convert<T, Option<T>> for IdentityCollator {
+		fn convert(t: T) -> Option<T> {
+			Some(t)
+		}
+	}
+
 	#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 	/// The current round index and transition information
 	pub struct RoundInfo<BlockNumber> {
@@ -635,7 +647,7 @@ pub mod pallet {
 		for RoundInfo<B>
 	{
 		fn default() -> RoundInfo<B> {
-			RoundInfo::new(1u32, 1u32.into(), 20u32)
+			RoundInfo::new(1u32, 0u32.into(), 20u32)
 		}
 	}
 
@@ -719,12 +731,13 @@ pub mod pallet {
 		type Currency: Currency<Self::AccountId> + ReservableCurrency<Self::AccountId>;
 		/// The origin for monetary governance
 		type MonetaryGovernanceOrigin: EnsureOrigin<Self::Origin>;
-		/// Minimum number of blocks per round
+		/// Minimum of blocks per round
 		#[pallet::constant]
 		type MinBlocksPerRound: Get<u32>;
-		/// Default number of blocks per round at genesis
+		/// Number of blocks per round, this is the period used in
+		/// the session pallet in rotating sessions
 		#[pallet::constant]
-		type DefaultBlocksPerRound: Get<u32>;
+		type BlocksPerRound: Get<u32>;
 		/// Number of rounds that collators remain bonded before exit request is
 		/// executed
 		#[pallet::constant]
@@ -958,7 +971,7 @@ pub mod pallet {
 		/// new_per_round_inflation]
 		BlocksPerRoundSet {
 			round: RoundIndex,
-			first_block: T::BlockNumber,
+			block: T::BlockNumber,
 			old: u32,
 			new: u32,
 			min: Perbill,
@@ -971,6 +984,7 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(n: T::BlockNumber) -> Weight {
 			let mut round = <Round<T>>::get();
+
 			if round.should_update(n) {
 				// mutate round
 				round.update(n);
@@ -1100,7 +1114,7 @@ pub mod pallet {
 			Self {
 				candidates: vec![],
 				nominations: vec![],
-				inflation_config: Default::default()
+				inflation_config: Default::default(),
 			}
 		}
 	}
@@ -1174,12 +1188,13 @@ pub mod pallet {
 				account: T::AccountId::default(),
 				percent: T::DefaultParachainBondReservePercent::get(),
 			});
+
 			// Set total selected candidates to minimum config
 			<TotalSelected<T>>::put(T::MinSelectedCandidates::get());
 			// Choose top TotalSelected collator candidates
 			let (v_count, _, total_staked) = <Pallet<T>>::select_top_candidates(1u32);
 			// Start Round 1 at Block 0
-			let round: RoundInfo<T::BlockNumber> = RoundInfo::new(1u32, 0u32.into(), T::DefaultBlocksPerRound::get());
+			let round: RoundInfo<T::BlockNumber> = RoundInfo::new(1u32, 0u32.into(), T::BlocksPerRound::get());
 			<Round<T>>::put(round);
 			// Snapshot total stake
 			<Staked<T>>::insert(1u32, <Total<T>>::get());
@@ -1275,17 +1290,6 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(<T as Config>::WeightInfo::set_collator_commission())]
-		/// Set the commission for all collators
-		pub fn set_collator_commission(origin: OriginFor<T>, new: Perbill) -> DispatchResultWithPostInfo {
-			frame_system::ensure_root(origin)?;
-			let old = <CollatorCommission<T>>::get();
-			ensure!(old != new, Error::<T>::NoWritingSameValue);
-			<CollatorCommission<T>>::put(new);
-			Self::deposit_event(Event::CollatorCommissionSet { old, new });
-			Ok(().into())
-		}
-
 		#[pallet::weight(<T as Config>::WeightInfo::set_blocks_per_round())]
 		/// Set blocks per round
 		/// - if called with `new` less than length of current round, will
@@ -1305,7 +1309,7 @@ pub mod pallet {
 			<Round<T>>::put(round);
 			Self::deposit_event(Event::BlocksPerRoundSet {
 				round: now,
-				first_block: first,
+				block: first,
 				old,
 				new,
 				min: inflation_config.round.min,
@@ -1313,6 +1317,17 @@ pub mod pallet {
 				max: inflation_config.round.max,
 			});
 			<InflationConfig<T>>::put(inflation_config);
+			Ok(().into())
+		}
+
+		#[pallet::weight(<T as Config>::WeightInfo::set_collator_commission())]
+		/// Set the commission for all collators
+		pub fn set_collator_commission(origin: OriginFor<T>, new: Perbill) -> DispatchResultWithPostInfo {
+			frame_system::ensure_root(origin)?;
+			let old = <CollatorCommission<T>>::get();
+			ensure!(old != new, Error::<T>::NoWritingSameValue);
+			<CollatorCommission<T>>::put(new);
+			Self::deposit_event(Event::CollatorCommissionSet { old, new });
 			Ok(().into())
 		}
 
@@ -1992,7 +2007,7 @@ pub mod pallet {
 		}
 
 		/// Best as in most cumulatively supported in terms of stake
-		/// Returns [collator_count, nomination_count, total staked]
+		/// Returns [collators, collator_count, nomination_count, total staked]
 		fn select_top_candidates(next: RoundIndex) -> (u32, u32, BalanceOf<T>) {
 			let (mut collator_count, mut nomination_count, mut total) = (0u32, 0u32, BalanceOf::<T>::zero());
 			// choose the top TotalSelected qualified candidates, ordered by stake
@@ -2018,22 +2033,125 @@ pub mod pallet {
 		}
 	}
 
-	/// Add amount points to block authors:
-	/// * 20 points to the block producer for producing a block in the chain
+	// Add amount points to block authors:
+	// * 20 points to the block producer for producing a block in the chain
 	impl<T: Config> pallet_authorship::EventHandler<T::AccountId, T::BlockNumber> for Pallet<T> {
 		fn note_author(author: T::AccountId) {
 			let now = <Round<T>>::get().current;
 			let score_plus_20 = <AwardedPts<T>>::get(now, &author) + 20;
 			<AwardedPts<T>>::insert(now, author, score_plus_20);
 			<Points<T>>::mutate(now, |x| *x += 20);
+
+			// TODO Benchmark this function
 		}
 
 		fn note_uncle(_author: T::AccountId, _age: T::BlockNumber) {}
 	}
 
+	impl<T: Config> SessionManager<T::AccountId> for Pallet<T> {
+		fn new_session(index: SessionIndex) -> Option<Vec<T::AccountId>> {
+			let block_number = <frame_system::Pallet<T>>::block_number();
+
+			log::info!(
+				"assembling new collators for new session {} at #{:?}",
+				index,
+				block_number,
+			);
+
+			Some(Self::selected_candidates())
+
+			// TODO Benchmark this function
+		}
+
+		fn new_session_genesis(_new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
+			let collators = Self::selected_candidates();
+
+			if collators.is_empty() {
+				return None;
+			}
+
+			Some(collators)
+
+			// TODO Benchmark this function
+		}
+
+		fn start_session(_: SessionIndex) {
+			// we don't care.
+		}
+
+		fn end_session(_: SessionIndex) {
+			// we don't care.
+		}
+	}
+
 	impl<T: Config> Get<Vec<T::AccountId>> for Pallet<T> {
 		fn get() -> Vec<T::AccountId> {
 			Self::selected_candidates()
+		}
+	}
+
+	impl<T: Config> ShouldEndSession<T::BlockNumber> for Pallet<T> {
+		fn should_end_session(now: T::BlockNumber) -> bool {
+			let round = <Round<T>>::get();
+			round.should_update(now)
+		}
+	}
+
+	impl<T: Config> EstimateNextSessionRotation<T::BlockNumber> for Pallet<T> {
+		fn average_session_length() -> T::BlockNumber {
+			T::BlocksPerRound::get().into()
+		}
+
+		fn estimate_current_session_progress(now: T::BlockNumber) -> (Option<Permill>, Weight) {
+			// TODO Benchmark this function
+			let round = <Round<T>>::get();
+			let period: T::BlockNumber = T::BlocksPerRound::get().into();
+
+			// NOTE: we add one since we assume that the current block has already elapsed,
+			// i.e. when evaluating the last block in the session the progress should be
+			// 100% (0% is never returned).
+			let progress = if now >= round.first {
+				let current = (now - round.first) % period.clone() + One::one();
+				Some(Permill::from_rational(current.clone(), period.clone()))
+			} else {
+				Some(Permill::from_rational(now + One::one(), round.first))
+			};
+
+			// Weight note: `estimate_current_session_progress` has no storage reads and
+			// trivial computational overhead. There should be no risk to the chain having
+			// this weight value be zero for now. However, this value of zero was not
+			// properly calculated, and so it would be reasonable to come back here and
+			// properly calculate the weight of this function.
+			(progress, Zero::zero())
+		}
+
+		fn estimate_next_session_rotation(now: T::BlockNumber) -> (Option<T::BlockNumber>, Weight) {
+			// TODO Benchmark this function
+			let round = <Round<T>>::get();
+			let offset = round.first;
+			let period: T::BlockNumber = T::BlocksPerRound::get().into();
+
+			let next_session = if now > offset {
+				let block_after_last_session = (now.clone() - offset) % period.clone();
+				if block_after_last_session > Zero::zero() {
+					now.saturating_add(period.saturating_sub(block_after_last_session))
+				} else {
+					// this branch happens when the session is already rotated or will rotate in
+					// this block (depending on being called before or after
+					// `session::on_initialize`). Here, we assume the latter, namely that this is
+					// called after `session::on_initialize`, and thus we add period to it as well.
+					now + period
+				}
+			} else {
+				offset
+			};
+
+			// Weight note: `estimate_next_session_rotation` has no storage reads and
+			// trivial computational overhead. There should be no risk to the chain having
+			// this weight value be zero for now. However, this value of zero was not
+			// properly calculated, and so it would be reasonable to come back here and
+			// properly calculate the weight of this function.
+			(Some(next_session), Zero::zero())
 		}
 	}
 }

@@ -15,12 +15,17 @@ parity-scale-codec = { version = "2.3.0", default-features = false, features = [
 serde = { version = "1.0.101", optional = true }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
+sp-staking = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 pallet-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 substrate-fixed = { default-features = false, git = "https://github.com/encointer/substrate-fixed" }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+pallet-session = { git = "https://github.com/paritytech/substrate.git", branch = "master"}
 
 [dev-dependencies]
 pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "master"}
+pallet-aura = { git = "https://github.com/paritytech/substrate.git", branch = "master"}
+pallet-timestamp = { git = "https://github.com/paritytech/substrate.git", branch = "master"}
+sp-consensus-aura = { git = "https://github.com/paritytech/substrate.git", branch = "master"}
 similar-asserts = "1.1.0"
 sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
@@ -36,7 +41,9 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	"scale-info/std",
-	"pallet-authorship/std"
+	"pallet-authorship/std",
+	"pallet-session/std",
+	"sp-staking/std"
 ]
 runtime-benchmarks = ["frame-benchmarking"]
 try-runtime = ["frame-support/try-runtime"]
