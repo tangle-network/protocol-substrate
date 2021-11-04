@@ -113,7 +113,7 @@ fn should_be_able_to_deposit() {
 }
 
 #[test]
-fn should_fail_to_deposit_if_mixer_not_found() {
+fn should_fail_to_deposit_if_anchor_not_found() {
 	new_test_ext().execute_with(|| {
 		setup_environment(Curve::Bn254);
 		assert_err!(
@@ -122,7 +122,7 @@ fn should_fail_to_deposit_if_mixer_not_found() {
 				2,
 				Element::from_bytes(&[1u8; 32])
 			),
-			pallet_mixer::Error::<Test, _>::NoMixerFound,
+			crate::Error::<Test, _>::NoAnchorFound,
 		);
 	});
 }
@@ -364,7 +364,7 @@ fn double_spending_should_fail() {
 				fee_value.into(),
 				refund_value.into(),
 			),
-			pallet_mixer::Error::<Test, _>::AlreadyRevealedNullifier
+			crate::Error::<Test, _>::AlreadyRevealedNullifier
 		);
 	});
 }

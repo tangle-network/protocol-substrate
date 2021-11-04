@@ -52,8 +52,7 @@ use darkwebb_primitives::{
 };
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;
-use pallet_anchor::types::EdgeMetadata;
-use pallet_mixer::{BalanceOf, CurrencyIdOf};
+use pallet_anchor::{types::EdgeMetadata, BalanceOf, CurrencyIdOf};
 pub mod types;
 use pallet_bridge::types::ResourceId;
 use types::*;
