@@ -401,8 +401,10 @@ impl InstanceFilter<Call> for ProxyType {
 					| Call::Utility { .. }
 					| Call::Multisig { .. }
 			),
-			ProxyType::Collator => matches!(c, |Call::ParachainStaking { .. }| Call::Utility { .. }
-				| Call::Multisig { .. }),
+			ProxyType::Collator => matches!(
+				c,
+				Call::ParachainStaking { .. } | Call::Utility { .. } | Call::Multisig { .. }
+			),
 		}
 	}
 
