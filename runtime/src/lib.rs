@@ -204,7 +204,7 @@ impl pallet_session::Config for Runtime {
 
 parameter_types! {
 	pub const  BlocksPerRound: u32 = 6 * HOURS;
-	pub const  MinBlocksPerRound: u32 = 2;
+	pub const  MinBlocksPerRound: u32 = 10;
 	/// Collator candidate exits are delayed by 2 rounds
 	pub const LeaveCandidatesDelay: u32 = 2;
 	/// Nominator exits are delayed by 2 rounds
