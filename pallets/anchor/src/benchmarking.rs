@@ -51,13 +51,13 @@ benchmarks! {
 	  let d in 1..<T as pallet_mt::Config>::MaxTreeDepth::get() as u32;
 
 	  let deposit_size: u32 = 1_000_000_000;
-	  let asset_id = <<T as pallet_mixer::Config>::NativeCurrencyId as Get<pallet_mixer::CurrencyIdOf<T, _>>>::get();
+	  let asset_id = <<T as crate::Config>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, _>>>::get();
 	}: _(RawOrigin::Root, deposit_size.into(), i, d as u8, asset_id)
 
 	deposit {
 	  let caller: T::AccountId = whitelisted_caller();
 	  let deposit_size: u32 = 50_000_000;
-	  let asset_id = <<T as pallet_mixer::Config>::NativeCurrencyId as Get<pallet_mixer::CurrencyIdOf<T, _>>>::get();
+	  let asset_id = <<T as crate::Config>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, _>>>::get();
 	  let depth = <T as pallet_mt::Config>::MaxTreeDepth::get();
 
 	  let tree_id = <Anchor<T> as AnchorInterface<AnchorConfigration<T, _>>>::create(T::AccountId::default(), deposit_size.into(), depth, MAX_EDGES as u32, asset_id)?;
@@ -66,7 +66,7 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(caller.clone()), tree_id, leaf)
 	verify {
-	  assert_eq!(<<T as pallet_mixer::Config>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &pallet_mixer::Pallet::<T>::account_id()), deposit_size.into())
+	  assert_eq!(<<T as crate::Config>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &crate::Pallet::<T>::account_id()), deposit_size.into())
 	}
 
 	withdraw {
@@ -97,7 +97,7 @@ benchmarks! {
 
 		let deposit_size: u32 = 50_000_000;
 		let depth = <T as pallet_mt::Config>::MaxTreeDepth::get();
-		let asset_id = <<T as pallet_mixer::Config>::NativeCurrencyId as Get<pallet_mixer::CurrencyIdOf<T, _>>>::get();
+		let asset_id = <<T as crate::Config>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, _>>>::get();
 
 		let tree_id = <Anchor<T> as AnchorInterface<AnchorConfigration<T, _>>>::create(T::AccountId::default(), deposit_size.into(), depth, 2, asset_id)?;
 
@@ -133,7 +133,7 @@ benchmarks! {
 		refund_value.into()
 	)
 	verify {
-		assert_eq!(<<T as pallet_mixer::Config>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &recipient_account_id), (100_000_000u32 + deposit_size).into())
+		assert_eq!(<<T as crate::Config>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &recipient_account_id), (100_000_000u32 + deposit_size).into())
 	}
 
 }
