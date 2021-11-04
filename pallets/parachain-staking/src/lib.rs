@@ -2099,7 +2099,8 @@ pub mod pallet {
 
 	impl<T: Config> EstimateNextSessionRotation<T::BlockNumber> for Pallet<T> {
 		fn average_session_length() -> T::BlockNumber {
-			T::BlocksPerRound::get().into()
+			let round = <Round<T>>::get();
+			round.length.into()
 		}
 
 		fn estimate_current_session_progress(now: T::BlockNumber) -> (Option<Permill>, Weight) {
