@@ -10,7 +10,7 @@ description = "parachain staking pallet for collator selection and reward distri
 frame-benchmarking = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false, optional = true }
 frame-support = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
-log = "0.4"
+log = {version = "0.4.14", default-features = false}
 parity-scale-codec = { version = "2.3.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0.101", optional = true }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
@@ -19,7 +19,7 @@ sp-staking = { git = "https://github.com/paritytech/substrate.git", branch = "ma
 pallet-authorship = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 substrate-fixed = { default-features = false, git = "https://github.com/encointer/substrate-fixed" }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
-pallet-session = { git = "https://github.com/paritytech/substrate.git", branch = "master"}
+pallet-session = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false}
 
 [dev-dependencies]
 pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "master"}
@@ -38,12 +38,13 @@ std = [
 	"frame-system/std",
 	"parity-scale-codec/std",
 	"serde",
+	"log/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	"scale-info/std",
 	"pallet-authorship/std",
 	"pallet-session/std",
-	"sp-staking/std"
+	"sp-staking/std",
 ]
 runtime-benchmarks = ["frame-benchmarking"]
 try-runtime = ["frame-support/try-runtime"]
