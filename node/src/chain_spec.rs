@@ -11,12 +11,7 @@ use arkworks_gadgets::{
 };
 use common::{AccountId, AuraId, Signature};
 use darkwebb_primitives::Balance;
-use darkwebb_runtime::{
-	wasm_binary_unwrap, AnchorVerifierConfig, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
-	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig,
-	CouncilConfig, GenesisConfig, MerkleTreeConfig, MixerVerifierConfig, ParachainStakingConfig, SudoConfig,
-	SystemConfig, UNITS,
-};
+use darkwebb_runtime::{AnchorVerifierConfig, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig, BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig, CENTS, CouncilConfig, GenesisConfig, MerkleTreeConfig, MixerVerifierConfig, ParachainStakingConfig, SudoConfig, SystemConfig, UNITS, wasm_binary_unwrap};
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;
@@ -181,14 +176,14 @@ pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 				// initial collators candidates.
 				vec![
 					(
-						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-						get_collator_keys_from_seed("Alice//stash"),
-						1_000 * UNITS,
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice"),
+						10 * CENTS,
 					),
 					(
-						get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-						get_collator_keys_from_seed("Bob//stash"),
-						1_000 * UNITS,
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob"),
+						10 * CENTS,
 					),
 				],
 				// Nominations
