@@ -16,10 +16,6 @@
 pub mod currency {
 	use common::Balance;
 
-	// Provide a common factor between runtimes based on a supply of 10_000_000
-	// tokens.
-	pub const SUPPLY_FACTOR: Balance = 10;
-
 	/// The existential deposit. Set to 1/10 of its parent Relay Chain (v9020).
 	pub const EXISTENTIAL_DEPOSIT: Balance = CENTS / 10;
 
