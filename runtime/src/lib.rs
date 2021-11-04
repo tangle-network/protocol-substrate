@@ -224,11 +224,11 @@ parameter_types! {
 	/// Default percent of inflation set aside for parachain bond every round
 	pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(30);
 	/// Minimum stake required to become a collator
-	pub const MinCollatorStk: u128 = 1 * KUNITS * SUPPLY_FACTOR;
+	pub const MinCollatorStk: u128 = 1 * CENTS * SUPPLY_FACTOR;
 	/// Minimum stake required to be reserved to be a candidate
-	pub const MinCollatorCandidateStk: u128 = KUNITS * SUPPLY_FACTOR / 10;
+	pub const MinCollatorCandidateStk: u128 = CENTS * SUPPLY_FACTOR / 10;
 	/// Minimum stake required to be reserved to be a nominator is 5
-	pub const MinNominatorStk: u128 = 5 * UNITS * SUPPLY_FACTOR;
+	pub const MinNominatorStk: u128 = 5 * MILLICENTS* SUPPLY_FACTOR;
 }
 
 impl pallet_parachain_staking::Config for Runtime {
