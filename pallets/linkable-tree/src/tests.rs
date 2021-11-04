@@ -16,6 +16,9 @@ fn should_create_new_linkable_tree() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		assert_ok!(LinkableTree::create(Origin::root(), max_edges, depth));
+		let id = MerkleTree::next_tree_id() - 1;
+		let root = <LinkableTree as LinkableTreeInspector<_>>::get_root(id);
+		assert_eq!(root.unwrap(), Element::from_bytes(&[0; 32]));
 	});
 }
 

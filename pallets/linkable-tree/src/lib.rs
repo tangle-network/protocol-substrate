@@ -175,7 +175,7 @@ pub mod pallet {
 		pub fn create(origin: OriginFor<T>, max_edges: u32, depth: u8) -> DispatchResultWithPostInfo {
 			// Should it only be the root who can create linked trees?
 			ensure_root(origin)?;
-			let tree_id = <Self as LinkableTreeInterface<_>>::create(T::AccountId::default(), depth, max_edges)?;
+			let tree_id = <Self as LinkableTreeInterface<_>>::create(T::AccountId::default(), max_edges, depth)?;
 			Self::deposit_event(Event::LinkableTreeCreation { tree_id });
 			Ok(().into())
 		}
@@ -226,10 +226,14 @@ impl<T: Config<I>, I: 'static> LinkableTreeConfig for LinkableTreeConfigration<T
 }
 
 impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T, I>> for Pallet<T, I> {
-	fn create(creator: T::AccountId, depth: u8, max_edges: u32) -> Result<T::TreeId, DispatchError> {
+	fn create(creator: T::AccountId, max_edges: u32, depth: u8) -> Result<T::TreeId, DispatchError> {
 		let id = T::Tree::create(creator, depth)?;
 		MaxEdges::<T, I>::insert(id, max_edges);
 		Ok(id)
+	}
+
+	fn insert_in_order(id: T::TreeId, leaf: T::Element) -> Result<T::Element, DispatchError> {
+		T::Tree::insert_in_order(id, leaf)
 	}
 
 	fn add_edge(
@@ -290,6 +294,14 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 }
 
 impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T, I>> for Pallet<T, I> {
+	fn get_root(id: T::TreeId) -> Result<T::Element, DispatchError> {
+		T::Tree::get_root(id)
+	}
+
+	fn is_known_root(id: T::TreeId, root: T::Element) -> Result<bool, DispatchError> {
+		T::Tree::is_known_root(id, root)
+	}
+
 	fn get_neighbor_roots(tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
 		let edges = EdgeList::<T, I>::iter_prefix_values(tree_id)
 			.into_iter()

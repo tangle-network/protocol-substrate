@@ -8,7 +8,7 @@ pub use darkwebb_primitives::{
 	types::ElementTrait,
 	AccountId,
 };
-use frame_support::{parameter_types, traits::Nothing, PalletId};
+use frame_support::parameter_types;
 use frame_system as system;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
