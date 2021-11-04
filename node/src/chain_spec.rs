@@ -127,12 +127,12 @@ pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
 						get_collator_keys_from_seed("Alice"),
-						1_000 * UNITS,
+						10 * UNITS,
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
 						get_collator_keys_from_seed("Bob"),
-						1_000 * UNITS,
+						10 * UNITS,
 					),
 				],
 				// Nominations
