@@ -151,6 +151,8 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
+		// Root is not found in history
+		UnknownRoot,
 		/// Account does not have correct permissions
 		InvalidPermissions,
 		/// Invalid Merkle Roots
@@ -173,7 +175,6 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(<T as Config<I>>::WeightInfo::create(*depth as u32, *max_edges))]
 		pub fn create(origin: OriginFor<T>, max_edges: u32, depth: u8) -> DispatchResultWithPostInfo {
-			// Should it only be the root who can create linked trees?
 			ensure_root(origin)?;
 			let tree_id = <Self as LinkableTreeInterface<_>>::create(T::AccountId::default(), max_edges, depth)?;
 			Self::deposit_event(Event::LinkableTreeCreation { tree_id });
@@ -302,6 +303,12 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		T::Tree::is_known_root(id, root)
 	}
 
+	fn ensure_known_root(id: T::TreeId, root: T::Element) -> Result<(), DispatchError> {
+		let known_root = Self::is_known_root(id, root)?;
+		ensure!(known_root, Error::<T, I>::UnknownRoot);
+		Ok(())
+	}
+
 	fn get_neighbor_roots(tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
 		let edges = EdgeList::<T, I>::iter_prefix_values(tree_id)
 			.into_iter()
@@ -355,6 +362,25 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 
 	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
 		EdgeList::<T, I>::contains_key(id, src_chain_id)
+	}
+
+	fn ensure_max_edges(id: T::TreeId, num_roots: usize) -> Result<(), DispatchError> {
+		let m = MaxEdges::<T, I>::get(id) as usize;
+		ensure!(num_roots == m, Error::<T, I>::InvalidMerkleRoots);
+		Ok(())
+	}
+
+	fn ensure_known_neighbor_roots(id: T::TreeId, roots: &Vec<T::Element>) -> Result<(), DispatchError> {
+		if roots.len() > 1 {
+			// Get edges and corresponding chain IDs for the anchor
+			let edges = EdgeList::<T, I>::iter_prefix(id).into_iter().collect::<Vec<_>>();
+
+			// Check membership of provided historical neighbor roots
+			for (i, (chain_id, _)) in edges.iter().enumerate() {
+				Self::ensure_known_neighbor_root(id, *chain_id, roots[i + 1])?;
+			}
+		}
+		Ok(())
 	}
 
 	fn ensure_known_neighbor_root(

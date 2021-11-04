@@ -18,9 +18,10 @@ frame-system = { default-features = false, git = "https://github.com/paritytech/
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-hasher = { path = "../hasher", default-features = false }
+pallet-linkable-tree = { path = "../linkable-tree", default-features = false }
 pallet-mt = { path = "../mt", default-features = false }
 pallet-verifier = { path = "../verifier", default-features = false }
-darkwebb-primitives = { path = "../../primitives", default-features = false }
+darkwebb-primitives = { path = "../../primitives", default-features = false, features = ["verifying"] }
 orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
 
@@ -59,7 +60,7 @@ std = [
     "sp-std/std",
     "sp-io/std",
     "pallet-hasher/std",
-    "pallet-mt/std",
+    "pallet-linkable-tree/std",
     "pallet-verifier/std",
     "pallet-asset-registry/std",
     "darkwebb-primitives/std",

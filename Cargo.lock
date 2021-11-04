@@ -5506,6 +5506,7 @@ dependencies = [
  "pallet-asset-registry",
  "pallet-balances",
  "pallet-hasher",
+ "pallet-linkable-tree",
  "pallet-mt",
  "pallet-verifier",
  "parity-scale-codec",

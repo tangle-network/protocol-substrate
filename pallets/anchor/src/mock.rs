@@ -28,6 +28,7 @@ pub type AssetId = u32;
 /// Signed version of Balance
 pub type Amount = i128;
 pub type CurrencyId = u32;
+pub type ChainId = u32;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -41,6 +42,7 @@ frame_support::construct_runtime!(
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
 		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
@@ -179,6 +181,18 @@ impl pallet_mt::Config for Test {
 }
 
 parameter_types! {
+	pub const HistoryLength: u32 = 30;
+}
+
+impl pallet_linkable_tree::Config for Test {
+	type ChainId = ChainId;
+	type Event = Event;
+	type HistoryLength = HistoryLength;
+	type Tree = MerkleTree;
+	type WeightInfo = ();
+}
+
+parameter_types! {
 	pub const NativeCurrencyId: AssetId = 0;
 	pub const RegistryStringLimit: u32 = 10;
 }
@@ -216,16 +230,13 @@ impl pallet_asset_registry::Config for Test {
 }
 
 parameter_types! {
-	pub const HistoryLength: u32 = 30;
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 }
 
 impl pallet_anchor::Config for Test {
-	type ChainId = u32;
 	type Currency = Currencies;
 	type Event = Event;
-	type HistoryLength = HistoryLength;
-	type LinkableTree = MerkleTree;
+	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
 	type Verifier = VerifierPallet;

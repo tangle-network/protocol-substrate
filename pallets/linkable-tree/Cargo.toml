@@ -25,11 +25,11 @@ orml-traits = { path = "../../open-runtime-module-library/traits", default-featu
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
 
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false }

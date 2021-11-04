@@ -110,10 +110,6 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		MaintainerSet {
-			old_maintainer: T::AccountId,
-			new_maintainer: T::AccountId,
-		},
 		AnchorCreated,
 		AnchorEdgeAdded,
 		AnchorEdgeUpdated,
