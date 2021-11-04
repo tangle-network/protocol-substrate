@@ -1,5 +1,5 @@
 use codec::{Decode, Encode};
-use pallet_anchor::types::EdgeMetadata;
+use pallet_linkable_tree::types::EdgeMetadata;
 use scale_info::TypeInfo;
 
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo)]

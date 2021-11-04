@@ -1,7 +1,7 @@
 use crate::{mock::*, types::UpdateRecord, AnchorList, Counts, UpdateRecords};
 use frame_support::{assert_err, assert_noop, assert_ok, dispatch::DispatchError};
-use pallet_anchor::types::EdgeMetadata;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
+use pallet_linkable_tree::types::EdgeMetadata;
 
 const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 100;
@@ -63,7 +63,7 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: u32, resource_id: &[u8; 
 	// make sure Tree(with id=0) exists in `pallet_mt` storage
 	assert_eq!(true, <pallet_mt::Trees<Test>>::contains_key(0));
 	// check that anchor has stored `TEST_MAX_EDGES` correctly
-	assert_eq!(TEST_MAX_EDGES, <pallet_anchor::MaxEdges<Test>>::get(0));
+	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test>>::get(0));
 }
 
 // helper function to add relayers and then make a proposal
@@ -180,7 +180,7 @@ fn anchor_update_proposal_edge_add_success() {
 		// edge count should be 1
 		assert_eq!(
 			1,
-			<pallet_anchor::EdgeList<Test>>::iter_prefix_values(0)
+			<pallet_linkable_tree::EdgeList<Test>>::iter_prefix_values(0)
 				.into_iter()
 				.count()
 		);
@@ -188,7 +188,7 @@ fn anchor_update_proposal_edge_add_success() {
 		let expected_tree_id = 0;
 		assert_eq!(
 			edge_metadata,
-			<pallet_anchor::EdgeList<Test>>::get(expected_tree_id, src_chain_id)
+			<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_chain_id)
 		);
 
 		let expected_update_record = UpdateRecord {
@@ -232,14 +232,14 @@ fn anchor_update_proposal_edge_update_success() {
 		// edge count should be 1
 		assert_eq!(
 			1,
-			<pallet_anchor::EdgeList<Test>>::iter_prefix_values(0)
+			<pallet_linkable_tree::EdgeList<Test>>::iter_prefix_values(0)
 				.into_iter()
 				.count()
 		);
 		let expected_tree_id = 0;
 		assert_eq!(
 			edge_metadata,
-			<pallet_anchor::EdgeList<Test>>::get(expected_tree_id, src_chain_id)
+			<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_chain_id)
 		);
 		let expected_update_record = UpdateRecord {
 			tree_id: expected_tree_id,
@@ -264,13 +264,13 @@ fn anchor_update_proposal_edge_update_success() {
 		// edge count should be 1
 		assert_eq!(
 			1,
-			<pallet_anchor::EdgeList<Test>>::iter_prefix_values(0)
+			<pallet_linkable_tree::EdgeList<Test>>::iter_prefix_values(0)
 				.into_iter()
 				.count()
 		);
 		assert_eq!(
 			edge_metadata,
-			<pallet_anchor::EdgeList<Test>>::get(expected_tree_id, src_chain_id)
+			<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_chain_id)
 		);
 		let expected_update_record = UpdateRecord {
 			tree_id: expected_tree_id,

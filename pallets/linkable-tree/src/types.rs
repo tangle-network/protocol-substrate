@@ -3,14 +3,6 @@ use crate::*;
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
-#[derive(Default, Clone, Encode, Decode, TypeInfo)]
-pub struct AnchorMetadata<AccountId, Balance> {
-	/// Creator account
-	pub creator: AccountId,
-	/// Balance size of deposit
-	pub deposit_size: Balance,
-}
-
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
 pub struct EdgeMetadata<ChainID, Element, BlockNumber> {
 	/// chain id

@@ -57,7 +57,7 @@ pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 		src_chain_id: C::ChainId,
 		target: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
-	/// Check if this anchor has this edge
+	/// Check if this linked tree has this edge
 	fn has_edge(id: C::TreeId, src_chain_id: C::ChainId) -> bool;
 
 	fn ensure_max_edges(id: C::TreeId, num_roots: usize) -> Result<(), dispatch::DispatchError>;

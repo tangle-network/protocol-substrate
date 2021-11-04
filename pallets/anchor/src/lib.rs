@@ -328,6 +328,24 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		NullifierHashes::<T, I>::insert(id, nullifier_hash, true);
 		Ok(())
 	}
+
+	fn add_edge(
+		id: T::TreeId,
+		src_chain_id: T::ChainId,
+		root: T::Element,
+		height: T::BlockNumber,
+	) -> Result<(), DispatchError> {
+		T::LinkableTree::add_edge(id, src_chain_id, root, height)
+	}
+
+	fn update_edge(
+		id: T::TreeId,
+		src_chain_id: T::ChainId,
+		root: T::Element,
+		height: T::BlockNumber,
+	) -> Result<(), DispatchError> {
+		T::LinkableTree::update_edge(id, src_chain_id, root, height)
+	}
 }
 
 impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pallet<T, I> {
@@ -341,6 +359,10 @@ impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pal
 			Error::<T, I>::AlreadyRevealedNullifier
 		);
 		Ok(())
+	}
+
+	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
+		T::LinkableTree::has_edge(id, src_chain_id)
 	}
 }
 
