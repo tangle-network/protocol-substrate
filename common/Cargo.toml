@@ -31,7 +31,8 @@ polkadot-runtime-common = { git = 'https://github.com/paritytech/polkadot', bran
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot', branch = "master", default-features = false }
 
 # Local dependencies
-pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
+pallet-treasury = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
+pallet-parachain-staking = { path = "../pallets/parachain-staking", default-features = false }
 
 [dev-dependencies]
 sp-io = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
@@ -52,9 +53,10 @@ std = [
 	'frame-support/std',
 	'frame-executive/std',
 	'frame-system/std',
-	'pallet-collator-selection/std',
+	'pallet-treasury/std',
 	'pallet-balances/std',
 	'node-primitives/std',
 	'polkadot-runtime-common/std',
 	'polkadot-primitives/std',
+	'pallet-parachain-staking/std'
 ]
