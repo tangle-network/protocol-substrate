@@ -2264,7 +2264,6 @@ dependencies = [
  "pallet-balances",
  "pallet-bounties",
  "pallet-bridge",
- "pallet-collator-selection",
  "pallet-collective",
  "pallet-hasher",
  "pallet-hello",
