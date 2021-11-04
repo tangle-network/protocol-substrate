@@ -2103,7 +2103,6 @@ pub mod pallet {
 		}
 
 		fn estimate_current_session_progress(now: T::BlockNumber) -> (Option<Permill>, Weight) {
-			// TODO Benchmark this function
 			let round = <Round<T>>::get();
 			let period: T::BlockNumber = T::BlocksPerRound::get().into();
 
@@ -2117,16 +2116,11 @@ pub mod pallet {
 				Some(Permill::from_rational(now + One::one(), round.first))
 			};
 
-			// Weight note: `estimate_current_session_progress` has no storage reads and
-			// trivial computational overhead. There should be no risk to the chain having
-			// this weight value be zero for now. However, this value of zero was not
-			// properly calculated, and so it would be reasonable to come back here and
-			// properly calculate the weight of this function.
+			// TODO Benchmark this function, weight should not be zero
 			(progress, Zero::zero())
 		}
 
 		fn estimate_next_session_rotation(now: T::BlockNumber) -> (Option<T::BlockNumber>, Weight) {
-			// TODO Benchmark this function
 			let round = <Round<T>>::get();
 			let offset = round.first;
 			let period: T::BlockNumber = T::BlocksPerRound::get().into();
@@ -2146,11 +2140,7 @@ pub mod pallet {
 				offset
 			};
 
-			// Weight note: `estimate_next_session_rotation` has no storage reads and
-			// trivial computational overhead. There should be no risk to the chain having
-			// this weight value be zero for now. However, this value of zero was not
-			// properly calculated, and so it would be reasonable to come back here and
-			// properly calculate the weight of this function.
+			// TODO Benchmark this function, weight should not be zero
 			(Some(next_session), Zero::zero())
 		}
 	}
