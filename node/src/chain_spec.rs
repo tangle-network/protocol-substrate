@@ -181,13 +181,13 @@ pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 				// initial collators candidates.
 				vec![
 					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
+						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+						get_collator_keys_from_seed("Alice//stash"),
 						1_000 * UNITS,
 					),
 					(
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
+						get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+						get_collator_keys_from_seed("Bob//stash"),
 						1_000 * UNITS,
 					),
 				],
