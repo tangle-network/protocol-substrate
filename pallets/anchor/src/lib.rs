@@ -48,6 +48,8 @@
 #[cfg(test)]
 pub mod mock;
 #[cfg(test)]
+mod test_utils;
+#[cfg(test)]
 mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -60,17 +62,23 @@ pub mod weights;
 use codec::{Decode, Encode};
 use darkwebb_primitives::{
 	anchor::{AnchorConfig, AnchorInspector, AnchorInterface},
-	mixer::{MixerInspector, MixerInterface},
+	merkle_tree::{TreeInspector, TreeInterface},
 	verifier::*,
 	ElementTrait,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::MultiCurrency;
-use pallet_mixer::{types::MixerMetadata, BalanceOf, CurrencyIdOf};
 use sp_runtime::traits::{AccountIdConversion, AtLeast32Bit, One, Saturating, Zero};
 use sp_std::prelude::*;
 use types::*;
 pub use weights::WeightInfo;
+
+/// Type alias for the orml_traits::MultiCurrency::Balance type
+pub type BalanceOf<T, I> =
+	<<T as Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
+/// Type alias for the orml_traits::MultiCurrency::CurrencyId type
+pub type CurrencyIdOf<T, I> =
+	<<T as pallet::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
 
 pub use pallet::*;
 
@@ -86,19 +94,29 @@ pub mod pallet {
 
 	#[pallet::config]
 	/// The module configuration trait.
-	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_mixer::Config<I> {
+	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_mt::Config<I> {
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
+
+		#[pallet::constant]
+		type PalletId: Get<PalletId>;
 
 		/// ChainID for anchor edges
 		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 
-		/// The mixer type
-		type Mixer: MixerInterface<Self::AccountId, BalanceOf<Self, I>, CurrencyIdOf<Self, I>, Self::TreeId, Self::Element>
-			+ MixerInspector<Self::AccountId, CurrencyIdOf<Self, I>, Self::TreeId, Self::Element>;
+		/// The tree type
+		type LinkableTree: TreeInterface<Self::AccountId, Self::TreeId, Self::Element>
+			+ TreeInspector<Self::AccountId, Self::TreeId, Self::Element>;
 
 		/// The verifier
 		type Verifier: VerifierModule;
+
+		/// Currency type for taking deposits
+		type Currency: MultiCurrency<Self::AccountId>;
+
+		/// Native currency id
+		#[pallet::constant]
+		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
 
 		/// The pruning length for neighbor root histories
 		type HistoryLength: Get<Self::RootIndex>;
@@ -119,8 +137,19 @@ pub mod pallet {
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
 	#[pallet::getter(fn anchors)]
-	pub type Anchors<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, T::TreeId, AnchorMetadata<T::AccountId, BalanceOf<T, I>>, ValueQuery>;
+	pub type Anchors<T: Config<I>, I: 'static = ()> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::TreeId,
+		Option<AnchorMetadata<T::AccountId, BalanceOf<T, I>, CurrencyIdOf<T, I>>>,
+		ValueQuery,
+	>;
+
+	/// The map of trees to their spent nullifier hashes
+	#[pallet::storage]
+	#[pallet::getter(fn nullifier_hashes)]
+	pub type NullifierHashes<T: Config<I>, I: 'static = ()> =
+		StorageDoubleMap<_, Blake2_128Concat, T::TreeId, Blake2_128Concat, T::Element, bool, ValueQuery>;
 
 	/// The map of trees to the maximum number of anchor edges they can have
 	#[pallet::storage]
@@ -175,10 +204,12 @@ pub mod pallet {
 		InvalidPermissions,
 		/// Invalid Merkle Roots
 		InvalidMerkleRoots,
+		/// Unknown root
+		UnknownRoot,
 		/// Invalid withdraw proof
 		InvalidWithdrawProof,
 		/// Mixer not found.
-		NoMixerFound,
+		NoAnchorFound,
 		/// Invalid neighbor root passed in withdrawal
 		/// (neighbor root is not in neighbor history)
 		InvalidNeighborWithdrawRoot,
@@ -188,6 +219,9 @@ pub mod pallet {
 		EdgeAlreadyExists,
 		/// Edge does not exist
 		EdgeDoesntExists,
+		/// Invalid nullifier that is already used
+		/// (this error is returned when a nullifier is used twice)
+		AlreadyRevealedNullifier,
 	}
 
 	#[pallet::hooks]
@@ -299,13 +333,28 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		max_edges: u32,
 		asset: CurrencyIdOf<T, I>,
 	) -> Result<T::TreeId, DispatchError> {
-		let id = T::Mixer::create(creator, deposit_size, depth, asset)?;
+		let id = T::LinkableTree::create(creator.clone(), depth)?;
+		Anchors::<T, I>::insert(
+			id,
+			Some(AnchorMetadata {
+				creator,
+				deposit_size,
+				asset,
+			}),
+		);
 		MaxEdges::<T, I>::insert(id, max_edges);
 		Ok(id)
 	}
 
 	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {
-		T::Mixer::deposit(depositor, id, leaf)
+		// insert the leaf
+		T::LinkableTree::insert_in_order(id, leaf)?;
+
+		let anchor = Self::get_anchor(id)?;
+		// transfer tokens to the pallet
+		<T as Config<I>>::Currency::transfer(anchor.asset, &depositor, &Self::account_id(), anchor.deposit_size)?;
+
+		Ok(())
 	}
 
 	fn withdraw(
@@ -322,9 +371,9 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		let m = MaxEdges::<T, I>::get(id) as usize;
 		// double check the number of roots
 		ensure!(roots.len() == m, Error::<T, I>::InvalidMerkleRoots);
-		let mixer = Self::get_mixer(id)?;
+		let anchor = Self::get_anchor(id)?;
 		// Check if local root is known
-		T::Mixer::ensure_known_root(id, roots[0])?;
+		Self::ensure_known_root(id, roots[0])?;
 		// Check if neighbor roots are known
 		if roots.len() > 1 {
 			// Get edges and corresponding chain IDs for the anchor
@@ -337,8 +386,8 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		}
 
 		// Check nullifier and add or return `InvalidNullifier`
-		T::Mixer::ensure_nullifier_unused(id, nullifier_hash)?;
-		T::Mixer::add_nullifier_hash(id, nullifier_hash)?;
+		Self::ensure_nullifier_unused(id, nullifier_hash)?;
+		Self::add_nullifier_hash(id, nullifier_hash)?;
 		// Format proof public inputs for verification
 		// FIXME: This is for a specfic gadget so we ought to create a generic handler
 		// FIXME: Such as a unpack/pack public inputs trait
@@ -377,13 +426,8 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		}
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
-		// transafer the assets
-		<T as pallet_mixer::Config<I>>::Currency::transfer(
-			mixer.asset,
-			&Self::account_id(),
-			&recipient,
-			mixer.deposit_size,
-		)?;
+		// transfer the assets
+		<T as Config<I>>::Currency::transfer(anchor.asset, &Self::account_id(), &recipient, anchor.deposit_size)?;
 		Ok(())
 	}
 
@@ -442,9 +486,28 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
 		Ok(())
 	}
+
+	fn add_nullifier_hash(id: T::TreeId, nullifier_hash: T::Element) -> Result<(), DispatchError> {
+		NullifierHashes::<T, I>::insert(id, nullifier_hash, true);
+		Ok(())
+	}
 }
 
 impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pallet<T, I> {
+	fn get_root(tree_id: T::TreeId) -> Result<T::Element, DispatchError> {
+		T::LinkableTree::get_root(tree_id)
+	}
+
+	fn is_known_root(tree_id: T::TreeId, target_root: T::Element) -> Result<bool, DispatchError> {
+		T::LinkableTree::is_known_root(tree_id, target_root)
+	}
+
+	fn ensure_known_root(id: T::TreeId, target: T::Element) -> Result<(), DispatchError> {
+		let is_known: bool = Self::is_known_root(id, target)?;
+		ensure!(is_known, Error::<T, I>::UnknownRoot);
+		Ok(())
+	}
+
 	fn get_neighbor_roots(tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
 		let edges = EdgeList::<T, I>::iter_prefix_values(tree_id)
 			.into_iter()
@@ -509,19 +572,31 @@ impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pal
 		ensure!(is_known, Error::<T, I>::InvalidNeighborWithdrawRoot);
 		Ok(())
 	}
+
+	fn is_nullifier_used(tree_id: T::TreeId, nullifier_hash: T::Element) -> bool {
+		NullifierHashes::<T, I>::contains_key(tree_id, nullifier_hash)
+	}
+
+	fn ensure_nullifier_unused(id: T::TreeId, nullifier: T::Element) -> Result<(), DispatchError> {
+		ensure!(
+			!Self::is_nullifier_used(id, nullifier),
+			Error::<T, I>::AlreadyRevealedNullifier
+		);
+		Ok(())
+	}
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn account_id() -> T::AccountId {
-		<T as pallet_mixer::Config<I>>::PalletId::get().into_account()
+		T::PalletId::get().into_account()
 	}
 
-	pub fn get_mixer(
+	pub fn get_anchor(
 		id: T::TreeId,
-	) -> Result<MixerMetadata<T::AccountId, BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
-		let mixer = pallet_mixer::Mixers::<T, I>::get(id);
-		ensure!(mixer.is_some(), Error::<T, I>::NoMixerFound);
-		Ok(mixer.unwrap())
+	) -> Result<AnchorMetadata<T::AccountId, BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
+		let anchor = Anchors::<T, I>::get(id);
+		ensure!(anchor.is_some(), Error::<T, I>::NoAnchorFound);
+		Ok(anchor.unwrap())
 	}
 }
 

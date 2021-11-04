@@ -1152,15 +1152,20 @@ impl pallet_mixer::Config for Runtime {
 }
 
 parameter_types! {
+	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	pub const HistoryLength: u32 = 30;
 }
 
 impl pallet_anchor::Config for Runtime {
 	type ChainId = ChainId;
+	type Currency = Currencies;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Mixer = Mixer;
 	type PostDepositHook = ();
+	type LinkableTree = MerkleTree;
+	type NativeCurrencyId = NativeCurrencyId;
+	type PalletId = AnchorPalletId;
 	type Verifier = AnchorVerifier;
 	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }
