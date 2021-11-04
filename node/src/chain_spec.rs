@@ -15,7 +15,7 @@ use darkwebb_runtime::{
 	wasm_binary_unwrap, AnchorVerifierConfig, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
 	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig,
 	CouncilConfig, GenesisConfig, MerkleTreeConfig, MixerVerifierConfig, ParachainStakingConfig, SudoConfig,
-	SystemConfig, CENTS, UNITS,
+	SystemConfig, CENTS,
 };
 
 use cumulus_primitives_core::ParaId;
@@ -127,12 +127,12 @@ pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
 					(
 						get_account_id_from_seed::<sr25519::Public>("Alice"),
 						get_collator_keys_from_seed("Alice"),
-						10 * UNITS,
+						10 * CENTS,
 					),
 					(
 						get_account_id_from_seed::<sr25519::Public>("Bob"),
 						get_collator_keys_from_seed("Bob"),
-						10 * UNITS,
+						10 * CENTS,
 					),
 				],
 				// Nominations
@@ -229,9 +229,9 @@ pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 pub fn darkwebb_inflation_config() -> InflationInfo<Balance> {
 	InflationInfo {
 		expect: Range {
-			min: 100_000 * UNITS,
-			ideal: 200_000 * UNITS,
-			max: 500_000 * UNITS,
+			min: 100_000 * CENTS,
+			ideal: 200_000 * CENTS,
+			max: 500_000 * CENTS,
 		},
 		annual: Range {
 			min: Perbill::from_percent(4),
