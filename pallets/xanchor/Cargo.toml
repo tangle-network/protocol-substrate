@@ -10,6 +10,7 @@ serde = { version = "1.0", optional = true, features = ["derive"] }
 
 frame-support = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 frame-system = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
 sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-std = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
@@ -69,11 +70,16 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-hasher/std",
-  "pallet-mt/std",
-  "pallet-verifier/std",
+	"pallet-mt/std",
+	"pallet-verifier/std",
 	"pallet-anchor/std",
 	"orml-traits/std",
 	"darkwebb-primitives/std",
 	"pallet-asset-registry/std",
 ]
 
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-system/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+]

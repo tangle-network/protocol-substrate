@@ -14,7 +14,8 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, ChildParachainAsNative, ChildParachainConvertsVia,
 	ChildSystemParachainAsSuperuser, CurrencyAdapter as XcmCurrencyAdapter, FixedRateOfFungible, FixedWeightBounds,
-	IsConcrete, LocationInverter, SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation,
+	IsConcrete, LocationInverter, SiblingParachainAsNative, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -93,6 +94,7 @@ pub type LocalAssetTransactor =
 
 type LocalOriginConverter = (
 	SovereignSignedViaLocation<SovereignAccountOf, Origin>,
+	SiblingParachainAsNative<origin::Origin, Origin>,
 	ChildParachainAsNative<origin::Origin, Origin>,
 	SignedAccountId32AsNative<KusamaNetwork, Origin>,
 	ChildSystemParachainAsSuperuser<ParaId, Origin>,
@@ -101,7 +103,7 @@ type LocalOriginConverter = (
 parameter_types! {
 	pub const BaseXcmWeight: Weight = 1_000;
 	pub KsmPerSecond: (AssetId, u128) = (Concrete(KsmLocation::get()), 1);
-	pub const MaxInstructions: u32 = 100;
+	pub const MaxInstructions: u32 = 10_000;
 }
 
 pub type XcmRouter = super::RelayChainXcmRouter;

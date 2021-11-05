@@ -6658,6 +6658,7 @@ dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-primitives-core",
  "darkwebb-primitives",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "orml-currencies",

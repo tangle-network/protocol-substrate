@@ -1,3 +1,4 @@
+#![allow(clippy::zero_prefixed_literal)]
 //! Parachain runtime mock.
 use crate as pallet_xanchor;
 
@@ -29,7 +30,8 @@ use xcm::{latest::prelude::*, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin,
 	FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentIsDefault,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -117,7 +119,7 @@ pub type XcmOriginToCallOrigin = (
 parameter_types! {
 	pub const UnitWeightCost: Weight = 1;
 	pub KsmPerSecond: (AssetId, u128) = (Concrete(Parent.into()), 1);
-	pub const MaxInstructions: u32 = 100;
+	pub const MaxInstructions: u32 = 10_00;
 }
 
 pub type LocalAssetTransactor =
@@ -436,7 +438,7 @@ impl pallet_anchor::Config for Runtime {
 	type LinkableTree = MerkleTree;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
-	type PostDepositHook = ();
+	type PostDepositHook = XAnchor;
 	type Verifier = VerifierPallet;
 	type WeightInfo = ();
 }

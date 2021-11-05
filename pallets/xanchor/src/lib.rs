@@ -63,6 +63,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod test_utils;
+
 pub mod types;
 pub use pallet::*;
 
@@ -104,7 +107,7 @@ pub mod pallet {
 	/// * Value: [T::TreeId] -> Other chain's Anchor's tree id (a la
 	/// `RemoteAnchor`).
 	#[pallet::storage]
-	#[pallet::getter(fn anchor_list)]
+	#[pallet::getter(fn linked_anchors)]
 	pub type LinkedAnchors<T: Config<I>, I: 'static = ()> =
 		StorageDoubleMap<_, Blake2_128Concat, T::ChainId, Blake2_128Concat, T::TreeId, T::TreeId, ValueQuery>;
 
@@ -215,9 +218,10 @@ pub mod pallet {
 			r_id: ResourceId,
 			metadata: EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
 		) -> DispatchResultWithPostInfo {
-			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
+			let para = dbg!(ensure_sibling_para(<T as Config<I>>::Origin::from(origin)))?;
 			let caller_chain_id = T::ChainId::from(u32::from(para));
 			let (tree_id, r_chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
+			dbg!(caller_chain_id, r_chain_id, metadata.src_chain_id);
 			// double check that the caller is the same as the chain id of the resource
 			// also the the same from the metadata.
 			ensure!(
@@ -248,7 +252,7 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	fn register_new_resource_id(r_id: ResourceId, target_tree_id: T::TreeId) -> DispatchResult {
+	fn register_new_resource_id(r_id: ResourceId, target_tree_id: T::TreeId) -> DispatchResultWithPostInfo {
 		// extract the resource id information
 		let (tree_id, chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
 		// and we need to also ensure that the anchor exists
@@ -260,7 +264,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		);
 		// finally, register the resource id
 		LinkedAnchors::<T, I>::insert(chain_id, tree_id, target_tree_id);
-		Ok(())
+		// also, add the new edge to the anchor
+		Self::update_anchor(tree_id, EdgeMetadata {
+			src_chain_id: chain_id,
+			..Default::default()
+		})?;
+		Ok(().into())
 	}
 
 	fn update_anchor(
@@ -326,8 +335,8 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 			let r_id = utils::encode_resource_id::<T::TreeId, T::ChainId>(target_tree_id, my_chain_id);
 			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
 			let update_edge = Transact {
-				origin_type: OriginKind::Native,
-				require_weight_at_most: 1_000,
+				origin_type: OriginKind::Xcm,
+				require_weight_at_most: 1_000_000_000,
 				call: <T as Config<I>>::Call::from(Call::<T, I>::update {
 					metadata: metadata.clone(),
 					r_id,
@@ -335,7 +344,7 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 				.encode()
 				.into(),
 			};
-			let dest = (1, Junction::Parachain(other_para_id.into()));
+			let dest = (Parent, Parachain(other_para_id.into()));
 			let result = T::XcmSender::send_xcm(dest, Xcm(vec![update_edge]));
 			match result {
 				Ok(()) => {
