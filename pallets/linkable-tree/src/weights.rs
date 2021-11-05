@@ -32,9 +32,15 @@
 use frame_support::{traits::Get, weights::Weight};
 use sp_std::marker::PhantomData;
 
+pub trait WeightInfo {
+	fn create(i: u32, d: u32, ) -> Weight;
+	fn set_maintainer() -> Weight;
+	fn force_set_maintainer() -> Weight;
+}
+
 /// Weight functions for `pallet_linkable_tree`.
-pub struct WeightInfo<T>(PhantomData<T>);
-impl<T: frame_system::Config> pallet_linkable_tree::WeightInfo for WeightInfo<T> {
+pub struct WebbWeight<T>(PhantomData<T>);
+impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree NextTreeId (r:1 w:1)
 	// Storage: MerkleTree DefaultHashes (r:1 w:0)
 	// Storage: MerkleTree Trees (r:0 w:1)
@@ -59,5 +65,18 @@ impl<T: frame_system::Config> pallet_linkable_tree::WeightInfo for WeightInfo<T>
 		(32_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+	}
+}
+
+#[allow(unused_variables)]
+impl WeightInfo for () {
+	fn create(i: u32, d: u32, ) -> Weight {
+		0
+	}
+	fn set_maintainer() -> Weight {
+		0
+	}
+	fn force_set_maintainer() -> Weight {
+		0
 	}
 }

@@ -32,9 +32,15 @@
 use frame_support::{traits::Get, weights::Weight};
 use sp_std::marker::PhantomData;
 
+pub trait WeightInfo {
+	fn create(i: u32, d: u32, ) -> Weight;
+	fn deposit() -> Weight;
+	fn withdraw() -> Weight;
+}
+
 /// Weight functions for `pallet_anchor`.
-pub struct WeightInfo<T>(PhantomData<T>);
-impl<T: frame_system::Config> pallet_anchor::WeightInfo for WeightInfo<T> {
+pub struct WebbWeight<T>(PhantomData<T>);
+impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree NextTreeId (r:1 w:1)
 	// Storage: MerkleTree DefaultHashes (r:1 w:0)
 	// Storage: MerkleTree Trees (r:0 w:1)
@@ -73,5 +79,19 @@ impl<T: frame_system::Config> pallet_anchor::WeightInfo for WeightInfo<T> {
 		(47_849_000_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(8 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+	}
+}
+
+
+#[allow(unused_variables)]
+impl WeightInfo for () {
+	fn create(i: u32, d: u32, ) -> Weight {
+		0
+	}
+	fn deposit() -> Weight {
+		0
+	}
+	fn withdraw() -> Weight {
+		0
 	}
 }
