@@ -234,11 +234,10 @@ impl pallet_anchor::Config for Test {
 	type Currency = Currencies;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
-	type Mixer = Mixer;
-	type PostDepositHook = ();
 	type LinkableTree = MT;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
+	type PostDepositHook = ();
 	type Verifier = VerifierPallet;
 	type WeightInfo = ();
 }

@@ -13,17 +13,48 @@ frame-system = { default-features = false, version = "4.0.0-dev", git = "https:/
 sp-runtime = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-std = { default-features = false, version = "4.0.0-dev", git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
+pallet-hasher = { path = "../hasher", default-features = false }
+pallet-verifier = { path = "../verifier", default-features = false }
 pallet-mt = { path = "../mt", default-features = false }
-pallet-mixer = { path = "../mixer", default-features = false }
 pallet-anchor = { path = "../anchor", default-features = false }
-pallet-bridge = { path = "../bridge", default-features = false }
 orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
 darkwebb-primitives = { path = "../../primitives", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
 
+# XCM dependencies
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
+
+[dev-dependencies]
+serde = { version = "1.0.119" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false }
+orml-currencies = { path = "../../open-runtime-module-library/currencies", default-features = false }
+rand = "0.8.4"
+
+ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
+ark-ff = { version = "^0.3.0", default-features = false}
+ark-ec = { version = "^0.3.0", default-features = false }
+ark-relations = { version = "^0.3.0", default-features = false }
+ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ]}
+ark-std = { version = "^0.3.0", default-features = false }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"] }
+
+darkwebb-primitives = { path = "../../primitives" }
+
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
+xcm-simulator = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
+polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
+polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 
 [features]
 default = ["std"]
@@ -32,14 +63,15 @@ std = [
 	"scale-info/std",
 	"serde",
 	"cumulus-primitives-core/std",
+	"cumulus-pallet-xcm/std",
 	"sp-std/std",
 	"sp-runtime/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-mt/std",
-	"pallet-mixer/std",
+	"pallet-hasher/std",
+  "pallet-mt/std",
+  "pallet-verifier/std",
 	"pallet-anchor/std",
-	"pallet-bridge/std",
 	"orml-traits/std",
 	"darkwebb-primitives/std",
 	"pallet-asset-registry/std",

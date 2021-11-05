@@ -47,8 +47,12 @@ use darkwebb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
 	utils, ResourceId,
 };
-use frame_support::dispatch::{DispatchResult, DispatchResultWithPostInfo};
-use frame_system::Config as SystemConfig;
+use frame_support::{
+	dispatch::{DispatchResult, DispatchResultWithPostInfo},
+	ensure,
+	pallet_prelude::*,
+};
+use frame_system::{pallet_prelude::*, Config as SystemConfig};
 use pallet_anchor::{types::EdgeMetadata, AnchorConfigration, PostDepositHook};
 use sp_std::prelude::*;
 use xcm::latest::prelude::*;
@@ -66,8 +70,6 @@ pub use pallet::*;
 pub mod pallet {
 	use super::*;
 	use darkwebb_primitives::utils;
-	use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, pallet_prelude::*};
-	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -84,7 +86,7 @@ pub mod pallet {
 		/// The overarching call type; we assume sibling chains use the same
 		/// type.
 		type Call: From<Call<Self, I>> + Encode;
-
+		type ParaId: Get<ParaId>;
 		type XcmSender: SendXcm;
 		/// Anchor Interface
 		type Anchor: AnchorInterface<AnchorConfigration<Self, I>> + AnchorInspector<AnchorConfigration<Self, I>>;
@@ -95,11 +97,16 @@ pub mod pallet {
 	/// The parameter maintainer who can change the parameters
 	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
 
-	/// The map of trees to their anchor metadata
+	/// The map of linked anchors cross other chains.
+	///
+	/// * Key1: [T::ChainId] -> Other chain id (ParachainId).
+	/// * Key2: [T::TreeId] -> Local Anchor's tree id.
+	/// * Value: [T::TreeId] -> Other chain's Anchor's tree id (a la
+	/// `RemoteAnchor`).
 	#[pallet::storage]
 	#[pallet::getter(fn anchor_list)]
-	pub type AnchorList<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, ResourceId, T::TreeId, ValueQuery>;
+	pub type LinkedAnchors<T: Config<I>, I: 'static = ()> =
+		StorageDoubleMap<_, Blake2_128Concat, T::ChainId, Blake2_128Concat, T::TreeId, T::TreeId, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -170,39 +177,35 @@ pub mod pallet {
 			})
 		}
 
+		/// Registers this [ResourceId] to an anchor which exists on the other
+		/// chain.
+		///
+		/// [ResourceId] is already contains the anchor's tree id defined on
+		/// this chain and the chain id of the other chain (which we are try to
+		/// link to). we need also to know the other chain's anchor's tree id to
+		/// complete the link process which is provided by `target_tree_id`.
 		#[pallet::weight(0)]
-		pub fn register_resource_id(origin: OriginFor<T>, r_id: ResourceId) -> DispatchResultWithPostInfo {
+		pub fn register_resource_id(
+			origin: OriginFor<T>,
+			r_id: ResourceId,
+			target_tree_id: T::TreeId,
+		) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			// ensure parameter setter is the maintainer
 			ensure!(origin == Self::maintainer(), Error::<T, I>::InvalidPermissions);
-			// also ensure that this resource id is not already anchored
-			ensure!(
-				!AnchorList::<T, I>::contains_key(r_id),
-				Error::<T, I>::ResourceIsAlreadyAnchored
-			);
-			// extract the resource id information
-			let (tree_id, _) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
-			// and finally, ensure that the anchor exists
-			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
-			// register the resource id
-			AnchorList::<T, I>::insert(r_id, tree_id);
+			Self::register_new_resource_id(r_id, target_tree_id)?;
 			Ok(().into())
 		}
 
+		/// A Forced version of [Self::register_resource_id] which can be only
+		/// called by the Root.
 		#[pallet::weight(0)]
-		pub fn force_register_resource_id(origin: OriginFor<T>, r_id: ResourceId) -> DispatchResultWithPostInfo {
+		pub fn force_register_resource_id(
+			origin: OriginFor<T>,
+			r_id: ResourceId,
+			target_tree_id: T::TreeId,
+		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			// ensure that this resource id is not already anchored
-			ensure!(
-				!AnchorList::<T, I>::contains_key(r_id),
-				Error::<T, I>::ResourceIsAlreadyAnchored
-			);
-			// extract the resource id information
-			let (tree_id, _) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
-			// and finally, ensure that the anchor exists
-			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
-			// register the resource id
-			AnchorList::<T, I>::insert(r_id, tree_id);
+			Self::register_new_resource_id(r_id, target_tree_id)?;
 			Ok(().into())
 		}
 
@@ -224,7 +227,7 @@ pub mod pallet {
 			// and finally, ensure that the anchor exists
 			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 			// now we can update the anchor
-			Self::update_anchor(r_id, metadata)?;
+			Self::update_anchor(tree_id, metadata)?;
 			Ok(().into())
 		}
 
@@ -235,18 +238,35 @@ pub mod pallet {
 			metadata: EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			Self::update_anchor(r_id, metadata)?;
+			let (tree_id, chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
+			ensure!(metadata.src_chain_id == chain_id, Error::<T, I>::InvalidPermissions);
+			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
+			Self::update_anchor(tree_id, metadata)?;
 			Ok(().into())
 		}
 	}
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
+	fn register_new_resource_id(r_id: ResourceId, target_tree_id: T::TreeId) -> DispatchResult {
+		// extract the resource id information
+		let (tree_id, chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
+		// and we need to also ensure that the anchor exists
+		ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
+		// and not already anchored/linked
+		ensure!(
+			!LinkedAnchors::<T, I>::contains_key(chain_id, tree_id),
+			Error::<T, I>::ResourceIsAlreadyAnchored
+		);
+		// finally, register the resource id
+		LinkedAnchors::<T, I>::insert(chain_id, tree_id, target_tree_id);
+		Ok(())
+	}
+
 	fn update_anchor(
-		r_id: ResourceId,
+		tree_id: T::TreeId,
 		metadata: EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
 	) -> DispatchResultWithPostInfo {
-		let tree_id = AnchorList::<T, I>::try_get(r_id).map_err(|_| Error::<T, I>::AnchorHandlerNotFound)?;
 		if T::Anchor::has_edge(tree_id, metadata.src_chain_id) {
 			T::Anchor::update_edge(
 				tree_id,
@@ -269,41 +289,42 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	fn anchor_exists(tree_id: T::TreeId) -> bool {
-		pallet_mixer::Mixers::<T, I>::get(tree_id).is_some()
+		pallet_mt::Trees::<T, I>::contains_key(tree_id)
 	}
 }
 
 impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
-	fn post_deposit(_: T::AccountId, id: T::TreeId, _: T::Element) -> DispatchResult {
+	fn post_deposit(_: T::AccountId, my_tree_id: T::TreeId, _: T::Element) -> DispatchResult {
 		// we get the current anchor tree
-		let tree = pallet_mt::Trees::<T, I>::get(id);
+		let tree = pallet_mt::Trees::<T, I>::get(my_tree_id);
 		// extract the root
 		let root = tree.root;
 		// and the latest leaf index
 		let latest_leaf_index = tree.leaf_count;
 		// get the current parachain id
-		// FIXME: get the chain id somehow from some pallet
-		let para = ParaId::from(2000u32);
+		let my_para_id = T::ParaId::get();
 		// and construct the metadata
 		let metadata = EdgeMetadata {
-			src_chain_id: T::ChainId::from(u32::from(para)),
+			src_chain_id: para_id_to_chain_id::<T, I>(my_para_id),
 			root,
 			latest_leaf_index,
 		};
 		// now we need an iterator for all the edges connected to this anchor
-		let edges = pallet_anchor::EdgeList::<T, I>::iter_prefix_values(id);
+		let edges = pallet_anchor::EdgeList::<T, I>::iter_prefix_values(my_tree_id);
 		// for each edge we do the following:
-		// 1. encode the resource id (my tree id + target chain id).
-		// 2. get the target parachain id.
-		// 3. construct the update call.
-		// 4. and finally, dispatch the update call to other parachain.
+		// 1. get the target tree id on the other chain (using the other chain id, and
+		// my tree id) 2. encode the resource id (target tree id + my chain id).
+		// 3. get the target parachain id.
+		// 4. construct the update call.
+		// 5. and finally, dispatch the update call to other parachain.
 		for edge in edges {
-			let r_id = utils::encode_resource_id::<T::TreeId, T::ChainId>(id, edge.src_chain_id);
-			let chain_id_bytes = edge.src_chain_id.encode();
-			let mut chain_id = [0u8; 4];
-			chain_id.copy_from_slice(&chain_id_bytes[..4]);
-			let chain_id = u32::from_le_bytes(chain_id);
-			let para_id = ParaId::from(chain_id);
+			// first, we get the target chain tree id
+			let other_chain_id = edge.src_chain_id;
+			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id, my_tree_id);
+			let my_chain_id = metadata.src_chain_id;
+			// target_tree_id + my_chain_id
+			let r_id = utils::encode_resource_id::<T::TreeId, T::ChainId>(target_tree_id, my_chain_id);
+			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
 			let update_edge = Transact {
 				origin_type: OriginKind::Native,
 				require_weight_at_most: 1_000,
@@ -314,18 +335,18 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 				.encode()
 				.into(),
 			};
-			let dest = (1, Junction::Parachain(para_id.into()));
+			let dest = (1, Junction::Parachain(other_para_id.into()));
 			let result = T::XcmSender::send_xcm(dest, Xcm(vec![update_edge]));
 			match result {
 				Ok(()) => {
 					Self::deposit_event(Event::RemoteAnchorEdgeUpdated {
-						para_id,
+						para_id: other_para_id,
 						resource_id: r_id,
 					});
 				}
 				Err(e) => {
 					Self::deposit_event(Event::RemoteAnchorEdgeUpdateFailed {
-						para_id,
+						para_id: other_para_id,
 						resource_id: r_id,
 						error: e,
 					});
@@ -334,4 +355,16 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 		}
 		Ok(())
 	}
+}
+
+#[inline(always)]
+pub fn chain_id_to_para_id<T: Config<I>, I: 'static>(chain_id: T::ChainId) -> ParaId {
+	let mut chain_id_bytes = [0u8; 4];
+	chain_id_bytes.copy_from_slice(&chain_id.encode()[..4]);
+	ParaId::from(u32::from_le_bytes(chain_id_bytes))
+}
+
+#[inline(always)]
+pub fn para_id_to_chain_id<T: Config<I>, I: 'static>(para_id: ParaId) -> T::ChainId {
+	T::ChainId::from(u32::from(para_id))
 }
