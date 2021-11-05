@@ -13,7 +13,7 @@
 // --wasm-execution
 // compiled
 // --pallet
-// pallet_anchor
+// pallet_linkable_tree
 // --extrinsic
 // *
 // --steps
@@ -22,7 +22,9 @@
 // 20
 // --raw
 // --output
-// ./pallets/anchor/src/weights.rs
+// ./pallets/linkable-tree/src/weights.rs
+
+// ./target/release/darkwebb-standalone-node benchmark --chain=dev --execution wasm --wasm-execution compiled --pallet pallet_linkable_tree --extrinsic * --steps 50 --repeat 20 --raw --output ./pallets/linkable-tree/src/weights.rs
 
 
 #![cfg_attr(rustfmt, rustfmt_skip)]

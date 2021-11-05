@@ -38,7 +38,6 @@ pub trait AnchorInterface<C: AnchorConfig> {
 	) -> Result<(), dispatch::DispatchError>;
 	// Stores nullifier hash from a spend tx
 	fn add_nullifier_hash(id: C::TreeId, nullifier_hash: C::Element) -> Result<(), dispatch::DispatchError>;
-
 	/// Add an edge to this tree
 	fn add_edge(
 		id: C::TreeId,
@@ -60,9 +59,8 @@ pub trait AnchorInspector<C: AnchorConfig> {
 	/// Check if a nullifier has been used in a tree or returns
 	/// `InvalidNullifier`
 	fn is_nullifier_used(id: C::TreeId, nullifier: C::Element) -> bool;
-
+	/// Check if a nullifier has been used in a tree and throws if not
 	fn ensure_nullifier_unused(id: C::TreeId, nullifier: C::Element) -> Result<(), dispatch::DispatchError>;
-
 	/// Check if this linked tree has this edge (for backwards compatability)
 	fn has_edge(id: C::TreeId, src_chain_id: C::ChainId) -> bool;
 }

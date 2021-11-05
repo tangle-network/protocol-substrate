@@ -43,15 +43,17 @@ pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
 	fn get_neighbor_roots(id: C::TreeId) -> Result<Vec<C::Element>, dispatch::DispatchError>;
 	/// Checks if a merkle root is in a tree's cached history or returns
-	/// `TreeDoesntExist
+	/// `TreeDoesntExist`
 	fn is_known_neighbor_root(
 		id: C::TreeId,
 		src_chain_id: C::ChainId,
 		target: C::Element,
 	) -> Result<bool, dispatch::DispatchError>;
-
+	/// Checks if each root from passed root array is in tree's cached history
+	/// or returns `InvalidNeighborWithdrawRoot`
 	fn ensure_known_neighbor_roots(id: C::TreeId, roots: &Vec<C::Element>) -> Result<(), dispatch::DispatchError>;
-
+	/// Checks if a merkle root is in a tree's cached history or returns
+	/// `InvalidNeighborWithdrawRoot`
 	fn ensure_known_neighbor_root(
 		id: C::TreeId,
 		src_chain_id: C::ChainId,
@@ -59,6 +61,7 @@ pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 	) -> Result<(), dispatch::DispatchError>;
 	/// Check if this linked tree has this edge
 	fn has_edge(id: C::TreeId, src_chain_id: C::ChainId) -> bool;
-
+	/// Check if passed number of roots is the same as max allowed edges or
+	/// returns `InvalidMerkleRoots`
 	fn ensure_max_edges(id: C::TreeId, num_roots: usize) -> Result<(), dispatch::DispatchError>;
 }
