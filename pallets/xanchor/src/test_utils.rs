@@ -115,7 +115,7 @@ pub fn setup_zk_circuit(
 			let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
 			let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_le());
 
-			return (proof_bytes, roots_element, nullifier_hash_element, leaf_element);
+			(proof_bytes, roots_element, nullifier_hash_element, leaf_element)
 		}
 		Curve::Bls381 => {
 			// fit inputs to the curve.
@@ -170,9 +170,9 @@ pub fn setup_zk_circuit(
 
 			let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_le());
 
-			return (proof_bytes, roots_element, nullifier_hash_element, leaf_element);
+			(proof_bytes, roots_element, nullifier_hash_element, leaf_element)
 		}
-	};
+	}
 }
 
 /// Truncate and pad 256 bit slice in reverse

@@ -271,11 +271,14 @@ fn should_bridge_anchors_using_xcm() {
 	ParaB::execute_with(|| {
 		let edge = Anchor::edge_list(para_b_tree_id, PARAID_A);
 		assert_eq!(edge.root, para_a_root);
+		assert_eq!(edge.latest_leaf_index, 1);
 	});
+	// Nice!
 }
 
 #[test]
 fn should_be_able_to_change_the_maintainer() {
+	MockNet::reset();
 	ParaA::execute_with(|| {
 		let default_maintainer_account_id = AccountId::default();
 		let current_maintainer_account_id = XAnchor::maintainer();
@@ -293,6 +296,7 @@ fn should_be_able_to_change_the_maintainer() {
 
 #[test]
 fn should_fail_to_change_the_maintainer_if_not_the_current_maintainer() {
+	MockNet::reset();
 	ParaA::execute_with(|| {
 		let current_maintainer_account_id = Anchor::maintainer();
 		let new_maintainer_account_id = ALICE;
@@ -302,5 +306,88 @@ fn should_fail_to_change_the_maintainer_if_not_the_current_maintainer() {
 		);
 		// maintainer should never be changed.
 		assert_eq!(current_maintainer_account_id, XAnchor::maintainer());
+	});
+}
+
+#[test]
+fn should_fail_to_register_resource_id_if_not_the_current_maintainer() {
+	MockNet::reset();
+	// it should fail to register a resource id if not the current maintainer.
+	ParaA::execute_with(|| {
+		let new_maintainer_account_id = ALICE;
+		assert_ok!(XAnchor::force_set_maintainer(Origin::root(), new_maintainer_account_id));
+		let tree_id = MerkleTree::next_tree_id() - 1;
+		let r_id = encode_resource_id(tree_id, PARAID_B);
+		let target_tree_id = 1;
+		assert_err!(
+			XAnchor::register_resource_id(Origin::signed(BOB), r_id, target_tree_id),
+			crate::Error::<parachain::Runtime, _>::InvalidPermissions,
+		);
+	});
+}
+
+#[test]
+fn should_fail_to_register_resource_id_when_anchor_deos_not_exist() {
+	MockNet::reset();
+	// it should fail to register the resource id if the anchor does not exist.
+	ParaA::execute_with(|| {
+		let new_maintainer_account_id = ALICE;
+		assert_ok!(XAnchor::force_set_maintainer(Origin::root(), new_maintainer_account_id));
+		// anchor/tree does not exist.
+		let tree_id = MerkleTree::next_tree_id() - 1;
+		let r_id = encode_resource_id(tree_id, PARAID_B);
+		let target_tree_id = 1;
+		assert_err!(
+			XAnchor::register_resource_id(Origin::signed(ALICE), r_id, target_tree_id),
+			crate::Error::<parachain::Runtime, _>::AnchorNotFound,
+		);
+	});
+}
+
+#[test]
+fn should_fail_to_link_anchor_if_it_is_already_anchored() {
+	// it should fail if the resource id is already anchored.
+	MockNet::reset();
+	ParaA::execute_with(|| {
+		// first we create the anchor
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		// then we set the maintainer
+		let new_maintainer_account_id = ALICE;
+		assert_ok!(XAnchor::force_set_maintainer(Origin::root(), new_maintainer_account_id));
+		// next we start to register the resource id.
+		let tree_id = MerkleTree::next_tree_id() - 1;
+		let r_id = encode_resource_id(tree_id, PARAID_B);
+		let target_tree_id = 1;
+		assert_ok!(XAnchor::register_resource_id(
+			Origin::signed(ALICE),
+			r_id,
+			target_tree_id
+		));
+		// now we try to link the anchor again, should error.
+		assert_err!(
+			XAnchor::register_resource_id(Origin::signed(ALICE), r_id, target_tree_id),
+			crate::Error::<parachain::Runtime, _>::ResourceIsAlreadyAnchored
+		);
+	});
+}
+
+#[test]
+fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
+	// in this test we need to ensure that the only way you can call `update` is
+	// from another parachain.
+	MockNet::reset();
+	ParaA::execute_with(|| {
+		// try to update the edges, from a normal account!
+		// it should fail.
+		let tree_id = MerkleTree::next_tree_id() - 1;
+		let r_id = encode_resource_id(tree_id, PARAID_B);
+		assert_err!(
+			XAnchor::update(Origin::signed(BOB), r_id, Default::default()),
+			frame_support::error::BadOrigin,
+		);
 	});
 }

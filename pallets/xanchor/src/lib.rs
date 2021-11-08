@@ -323,7 +323,8 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 		let edges = pallet_anchor::EdgeList::<T, I>::iter_prefix_values(my_tree_id);
 		// for each edge we do the following:
 		// 1. get the target tree id on the other chain (using the other chain id, and
-		// my tree id) 2. encode the resource id (target tree id + my chain id).
+		// my tree id)
+		// 2. encode the resource id (target tree id + my chain id).
 		// 3. get the target parachain id.
 		// 4. construct the update call.
 		// 5. and finally, dispatch the update call to other parachain.
@@ -336,6 +337,9 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 			let r_id = utils::encode_resource_id::<T::TreeId, T::ChainId>(target_tree_id, my_chain_id);
 			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
 			let update_edge = Transact {
+				// we should keep using the OriginKind::Native here
+				// as that is the only origin type that gives us the information about
+				// the sibling parachain (the caller parachain Id).
 				origin_type: OriginKind::Native,
 				require_weight_at_most: 1_000_000_000,
 				call: <T as Config<I>>::Call::from(Call::<T, I>::update {
