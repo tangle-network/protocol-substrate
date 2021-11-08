@@ -7,7 +7,7 @@ use super::{
 use arkworks_gadgets::setup::common::Curve;
 use codec::Encode;
 use darkwebb_primitives::utils::encode_resource_id;
-use frame_support::{assert_ok, traits::OnInitialize};
+use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use xcm::latest::prelude::*;
 use xcm_simulator::TestExt;
 
@@ -129,7 +129,7 @@ fn xcmp() {
 }
 
 #[test]
-fn link_two_anchors() {
+fn should_link_two_anchors() {
 	MockNet::reset();
 	let mut para_a_tree_id = 0;
 	let mut para_b_tree_id = 0;
@@ -200,7 +200,7 @@ fn link_two_anchors() {
 }
 
 #[test]
-fn bridge_anchors_using_xcm() {
+fn should_bridge_anchors_using_xcm() {
 	MockNet::reset();
 	let mut para_a_tree_id = 0;
 	let mut para_b_tree_id = 0;
@@ -271,5 +271,36 @@ fn bridge_anchors_using_xcm() {
 	ParaB::execute_with(|| {
 		let edge = Anchor::edge_list(para_b_tree_id, PARAID_A);
 		assert_eq!(edge.root, para_a_root);
+	});
+}
+
+#[test]
+fn should_be_able_to_change_the_maintainer() {
+	ParaA::execute_with(|| {
+		let default_maintainer_account_id = AccountId::default();
+		let current_maintainer_account_id = XAnchor::maintainer();
+		assert_eq!(current_maintainer_account_id, default_maintainer_account_id);
+
+		let new_maintainer_account_id = ALICE;
+		assert_ok!(XAnchor::force_set_maintainer(
+			Origin::root(),
+			new_maintainer_account_id.clone()
+		));
+		let current_maintainer_account_id = Anchor::maintainer();
+		assert_eq!(current_maintainer_account_id, new_maintainer_account_id);
+	});
+}
+
+#[test]
+fn should_fail_to_change_the_maintainer_if_not_the_current_maintainer() {
+	ParaA::execute_with(|| {
+		let current_maintainer_account_id = Anchor::maintainer();
+		let new_maintainer_account_id = ALICE;
+		assert_err!(
+			XAnchor::set_maintainer(Origin::signed(BOB), new_maintainer_account_id),
+			crate::Error::<parachain::Runtime, _>::InvalidPermissions,
+		);
+		// maintainer should never be changed.
+		assert_eq!(current_maintainer_account_id, XAnchor::maintainer());
 	});
 }
