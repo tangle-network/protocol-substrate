@@ -188,24 +188,69 @@ impl pallet_aura::Config for Runtime {
 	type MaxAuthorities = MaxAuthorities;
 }
 
-parameter_types! {
-	pub const Period: u32 = 6 * HOURS;
-	pub const Offset: u32 = 0;
-}
-
 impl pallet_session::Config for Runtime {
 	type Event = Event;
 	type Keys = SessionKeys;
-	type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+	type NextSessionRotation = ParachainStaking;
 	// Essentially just Aura, but lets be pedantic.
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
-	type SessionManager = CollatorSelection;
-	type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+	type SessionManager = ParachainStaking;
+	type ShouldEndSession = ParachainStaking;
 	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	// we don't have stash and controller, thus we don't need the convert as
-	// well.
-	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
+	// we don't have stash and controller, thus we don't need the convert as well.
+	type ValidatorIdOf = pallet_parachain_staking::IdentityCollator;
 	type WeightInfo = weights::pallet_session::WeightInfo<Runtime>;
+}
+
+parameter_types! {
+	pub const  BlocksPerRound: u32 = 6 * HOURS;
+	pub const  MinBlocksPerRound: u32 = 10;
+	/// Collator candidate exits are delayed by 2 rounds
+	pub const LeaveCandidatesDelay: u32 = 2;
+	/// Nominator exits are delayed by 2 rounds
+	pub const LeaveNominatorsDelay: u32 = 2;
+	/// Nomination revocations are delayed by 2 rounds
+	pub const RevokeNominationDelay: u32 = 2;
+	/// Reward payments are delayed by 2 rounds
+	pub const RewardPaymentDelay: u32 = 2;
+	/// Minimum 8 collators selected per round, default at genesis and minimum forever after
+	pub const MinSelectedCandidates: u32 = 2;
+	/// Maximum 100 nominators per collator
+	pub const MaxNominatorsPerCollator: u32 = 100;
+	/// Maximum 100 collators per nominator
+	pub const MaxCollatorsPerNominator: u32 = 100;
+	/// Default fixed percent a collator takes off the top of due rewards is 20%
+	pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
+	/// Default percent of inflation set aside for parachain bond every round
+	pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(30);
+	/// Minimum stake required to become a collator
+	pub const MinCollatorStk: u128 = 2 * CENTS;
+	/// Minimum stake required to be reserved to be a candidate
+	pub const MinCollatorCandidateStk: u128 = CENTS / 10;
+	/// Minimum stake required to be reserved to be a nominator is 5
+	pub const MinNominatorStk: u128 = MILLICENTS;
+}
+
+impl pallet_parachain_staking::Config for Runtime {
+	type BlocksPerRound = BlocksPerRound;
+	type Currency = Balances;
+	type DefaultCollatorCommission = DefaultCollatorCommission;
+	type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
+	type Event = Event;
+	type LeaveCandidatesDelay = LeaveCandidatesDelay;
+	type LeaveNominatorsDelay = LeaveNominatorsDelay;
+	type MaxCollatorsPerNominator = MaxCollatorsPerNominator;
+	type MaxNominatorsPerCollator = MaxNominatorsPerCollator;
+	type MinBlocksPerRound = MinBlocksPerRound;
+	type MinCollatorCandidateStk = MinCollatorCandidateStk;
+	type MinCollatorStk = MinCollatorStk;
+	type MinNomination = MinNominatorStk;
+	type MinNominatorStk = MinNominatorStk;
+	type MinSelectedCandidates = MinSelectedCandidates;
+	type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
+	type RevokeNominationDelay = RevokeNominationDelay;
+	type RewardPaymentDelay = RewardPaymentDelay;
+	type WeightInfo = pallet_parachain_staking::weights::WebbWeight<Runtime>;
 }
 
 parameter_types! {
@@ -213,7 +258,7 @@ parameter_types! {
 }
 
 impl pallet_authorship::Config for Runtime {
-	type EventHandler = (CollatorSelection,);
+	type EventHandler = (ParachainStaking,);
 	type FilterUncle = ();
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
 	type UncleGenerations = UncleGenerations;
@@ -309,6 +354,8 @@ pub enum ProxyType {
 	// Collator selection proxy. Can execute calls related to collator
 	// selection mechanism.
 	Collator,
+	/// Can execute calls related related to staking.
+	Staking,
 }
 impl Default for ProxyType {
 	fn default() -> Self {
@@ -319,13 +366,17 @@ impl InstanceFilter<Call> for ProxyType {
 	fn filter(&self, c: &Call) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::NonTransfer => !matches!(c, Call::Balances { .. } | Call::Assets { .. }),
+			ProxyType::NonTransfer => !matches!(
+				c,
+				Call::Balances { .. } | Call::Assets { .. } | Call::ParachainStaking { .. }
+			),
 			ProxyType::CancelProxy => matches!(
 				c,
 				Call::Proxy(pallet_proxy::Call::reject_announcement { .. })
 					| Call::Utility { .. }
 					| Call::Multisig { .. }
 			),
+			ProxyType::Staking => matches!(c, Call::ParachainStaking { .. }),
 			ProxyType::Assets => {
 				matches!(c, Call::Assets { .. } | Call::Utility { .. } | Call::Multisig { .. })
 			}
@@ -353,7 +404,7 @@ impl InstanceFilter<Call> for ProxyType {
 			),
 			ProxyType::Collator => matches!(
 				c,
-				Call::CollatorSelection { .. } | Call::Utility { .. } | Call::Multisig { .. }
+				Call::ParachainStaking { .. } | Call::Utility { .. } | Call::Multisig { .. }
 			),
 		}
 	}
@@ -598,35 +649,6 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 	type Event = Event;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
-}
-
-parameter_types! {
-	pub const PotId: PalletId = PalletId(*b"PotStake");
-	pub const MaxCandidates: u32 = 1000;
-	pub const MinCandidates: u32 = 5;
-	pub const SessionLength: BlockNumber = 6 * HOURS;
-	pub const MaxInvulnerables: u32 = 100;
-}
-
-/// We allow root and the Relay Chain council to execute privileged collator
-/// selection operations.
-pub type CollatorSelectionUpdateOrigin =
-	EnsureOneOf<AccountId, EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
-
-impl pallet_collator_selection::Config for Runtime {
-	type Currency = Balances;
-	type Event = Event;
-	// should be a multiple of session or things will get inconsistent
-	type KickThreshold = Period;
-	type MaxCandidates = MaxCandidates;
-	type MaxInvulnerables = MaxInvulnerables;
-	type MinCandidates = MinCandidates;
-	type PotId = PotId;
-	type UpdateOrigin = CollatorSelectionUpdateOrigin;
-	type ValidatorId = <Self as frame_system::Config>::AccountId;
-	type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
-	type ValidatorRegistration = Session;
-	type WeightInfo = weights::pallet_collator_selection::WeightInfo<Runtime>;
 }
 
 use pallet_hasher::{Instance1, Instance2, Instance3, Instance4, Instance5};
@@ -982,7 +1004,7 @@ construct_runtime!(
 
 		// Collator support. the order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
-		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
+		ParachainStaking: pallet_parachain_staking::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 24,
