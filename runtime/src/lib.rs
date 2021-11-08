@@ -831,11 +831,11 @@ impl pallet_anchor::Config for Runtime {
 	type Currency = Currencies;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
-	type Mixer = Mixer;
-	type PostDepositHook = ();
 	type LinkableTree = MerkleTree;
+	type Mixer = Mixer;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
+	type PostDepositHook = ();
 	type Verifier = AnchorVerifier;
 	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }
