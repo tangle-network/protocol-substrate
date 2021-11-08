@@ -3,7 +3,7 @@ use frame_support::dispatch;
 use sp_std::vec::Vec;
 
 pub trait LinkableTreeConfig {
-	type BlockNumber;
+	type LeafIndex;
 	type AccountId;
 	type ChainId;
 	type TreeId;
@@ -21,14 +21,14 @@ pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 		id: C::TreeId,
 		src_chain_id: C::ChainId,
 		root: C::Element,
-		height: C::BlockNumber,
+		last_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this tree
 	fn update_edge(
 		id: C::TreeId,
 		src_chain_id: C::ChainId,
 		root: C::Element,
-		height: C::BlockNumber,
+		last_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
 }
 

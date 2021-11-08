@@ -275,6 +275,7 @@ impl pallet_scheduler::Config for Runtime {
 	type MaxScheduledPerBlock = MaxScheduledPerBlock;
 	type MaximumWeight = MaximumSchedulerWeight;
 	type Origin = Origin;
+	type OriginPrivilegeCmp = frame_support::traits::EqualPrivilegeOnly;
 	type PalletsOrigin = OriginCaller;
 	type ScheduleOrigin = EnsureRoot<AccountId>;
 	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
@@ -717,6 +718,7 @@ impl pallet_multisig::Config for Runtime {
 impl pallet_utility::Config for Runtime {
 	type Call = Call;
 	type Event = Event;
+	type PalletsOrigin = OriginCaller;
 	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
 }
 
@@ -1162,6 +1164,7 @@ impl pallet_anchor::Config for Runtime {
 	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
+	type PostDepositHook = ();
 	type Verifier = AnchorVerifier;
 	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }

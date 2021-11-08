@@ -4,6 +4,10 @@ use scale_info::TypeInfo;
 use sp_runtime::traits::MaybeSerializeDeserialize;
 use sp_std::vec::Vec;
 
+/// A type alias to an array of 32 bytes that is going
+/// to be used to locate a anchor in the anchor list.
+pub type ResourceId = [u8; 32];
+
 // Deposit details used in hasher / verifier pallets for
 // tracking the reserved deposits of maintainers of various
 // parameters
@@ -71,12 +75,12 @@ pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy + TypeInfo 
 
 	fn is_zero(&self) -> bool {
 		if self.to_vec().is_empty() {
-			return true;
+			true
 		} else {
 			let vec = self.to_vec();
 			let length = vec.len();
 			let buf: Vec<u8> = Vec::with_capacity(length);
-			return buf == vec;
+			buf == vec
 		}
 	}
 }

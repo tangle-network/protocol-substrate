@@ -59,7 +59,6 @@ std = [
     "frame-system/std",
     "sp-runtime/std",
     "sp-std/std",
-    "sp-io/std",
     "pallet-hasher/std",
     "pallet-linkable-tree/std",
     "pallet-verifier/std",

@@ -239,6 +239,7 @@ impl pallet_anchor::Config for Test {
 	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
+	type PostDepositHook = ();
 	type Verifier = VerifierPallet;
 	type WeightInfo = ();
 }

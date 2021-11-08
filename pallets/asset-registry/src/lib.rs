@@ -497,7 +497,7 @@ impl<T: Config> Pallet<T> {
 					AssetType::PoolShare(pool) => {
 						if !pool.contains(&asset_id) {
 							let mut pool_clone = pool.clone();
-							pool_clone.push(asset_id.clone());
+							pool_clone.push(asset_id);
 							AssetType::PoolShare(pool_clone)
 						} else {
 							return Err(Error::<T>::AssetExistsInPool.into());

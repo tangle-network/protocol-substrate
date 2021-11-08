@@ -3,7 +3,7 @@ use frame_support::dispatch;
 use sp_std::vec::Vec;
 
 pub trait AnchorConfig {
-	type BlockNumber;
+	type LeafIndex;
 	type AccountId;
 	type Balance;
 	type CurrencyId;
@@ -43,14 +43,14 @@ pub trait AnchorInterface<C: AnchorConfig> {
 		id: C::TreeId,
 		src_chain_id: C::ChainId,
 		root: C::Element,
-		height: C::BlockNumber,
+		latest_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this tree
 	fn update_edge(
 		id: C::TreeId,
 		src_chain_id: C::ChainId,
 		root: C::Element,
-		height: C::BlockNumber,
+		latest_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
 }
 

@@ -66,7 +66,7 @@ use darkwebb_primitives::{
 	verifier::*,
 	ElementTrait,
 };
-use frame_support::{ensure, pallet_prelude::DispatchError, traits::Get, PalletId};
+use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::MultiCurrency;
 use sp_runtime::traits::{AccountIdConversion, AtLeast32Bit, One, Saturating, Zero};
 use sp_std::prelude::*;
@@ -85,7 +85,7 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, PalletId};
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
@@ -110,6 +110,8 @@ pub mod pallet {
 
 		/// Currency type for taking deposits
 		type Currency: MultiCurrency<Self::AccountId>;
+
+		type PostDepositHook: PostDepositHook<Self, I>;
 
 		/// Native currency id
 		#[pallet::constant]
@@ -182,7 +184,8 @@ pub mod pallet {
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			<Self as AnchorInterface<_>>::deposit(origin, tree_id, leaf)?;
+			<Self as AnchorInterface<_>>::deposit(origin.clone(), tree_id, leaf)?;
+			T::PostDepositHook::post_deposit(origin, tree_id, leaf)?;
 			Ok(().into())
 		}
 
@@ -221,10 +224,10 @@ pub struct AnchorConfigration<T: Config<I>, I: 'static>(core::marker::PhantomDat
 impl<T: Config<I>, I: 'static> AnchorConfig for AnchorConfigration<T, I> {
 	type AccountId = T::AccountId;
 	type Balance = BalanceOf<T, I>;
-	type BlockNumber = T::BlockNumber;
 	type ChainId = T::ChainId;
 	type CurrencyId = CurrencyIdOf<T, I>;
 	type Element = T::Element;
+	type LeafIndex = T::LeafIndex;
 	type TreeId = T::TreeId;
 }
 
@@ -333,18 +336,18 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
 		root: T::Element,
-		height: T::BlockNumber,
+		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
-		T::LinkableTree::add_edge(id, src_chain_id, root, height)
+		T::LinkableTree::add_edge(id, src_chain_id, root, latest_leaf_index)
 	}
 
 	fn update_edge(
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
 		root: T::Element,
-		height: T::BlockNumber,
+		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
-		T::LinkableTree::update_edge(id, src_chain_id, root, height)
+		T::LinkableTree::update_edge(id, src_chain_id, root, latest_leaf_index)
 	}
 }
 
@@ -380,6 +383,15 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 }
 
+pub trait PostDepositHook<T: Config<I>, I: 'static> {
+	fn post_deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> DispatchResult;
+}
+
+impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for () {
+	fn post_deposit(_: T::AccountId, _: T::TreeId, _: T::Element) -> DispatchResult {
+		Ok(())
+	}
+}
 /// Truncate and pad 256 bit slice
 pub fn truncate_and_pad(t: &[u8]) -> Vec<u8> {
 	let mut truncated_bytes = t[..20].to_vec();
