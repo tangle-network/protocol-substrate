@@ -1,5 +1,5 @@
 use super::*;
-use crate as pallet_anchor;
+use crate as pallet_linkable_tree;
 use codec::{Decode, Encode};
 use sp_core::H256;
 
@@ -8,9 +8,8 @@ pub use darkwebb_primitives::{
 	types::ElementTrait,
 	AccountId,
 };
-use frame_support::{parameter_types, traits::Nothing, PalletId};
+use frame_support::parameter_types;
 use frame_system as system;
-use orml_currencies::BasicCurrencyAdapter;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	testing::Header,
@@ -28,7 +27,6 @@ pub type AssetId = u32;
 /// Signed version of Balance
 pub type Amount = i128;
 pub type CurrencyId = u32;
-pub type ChainId = u32;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -40,13 +38,8 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
-		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
-		Currencies: orml_currencies::{Pallet, Call, Event<T>},
-		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
-		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
-		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -102,18 +95,6 @@ parameter_types! {
 	pub const StringLimit: u32 = 50;
 	pub const MetadataDepositBase: u64 = 1;
 	pub const MetadataDepositPerByte: u64 = 1;
-}
-
-impl pallet_verifier::Config for Test {
-	type Currency = Balances;
-	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ParameterDeposit;
-	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBn254BridgeVerifier;
-	type WeightInfo = ();
 }
 
 impl pallet_hasher::Config for Test {
@@ -181,65 +162,19 @@ impl pallet_mt::Config for Test {
 }
 
 parameter_types! {
-	pub const HistoryLength: u32 = 30;
-}
-
-impl pallet_linkable_tree::Config for Test {
-	type ChainId = ChainId;
-	type Event = Event;
-	type HistoryLength = HistoryLength;
-	type Tree = MerkleTree;
-	type WeightInfo = ();
-}
-
-parameter_types! {
 	pub const NativeCurrencyId: AssetId = 0;
 	pub const RegistryStringLimit: u32 = 10;
 }
 
-/// Tokens Configurations
-impl orml_tokens::Config for Test {
-	type Amount = Amount;
-	type Balance = u128;
-	type CurrencyId = AssetId;
-	type DustRemovalWhitelist = Nothing;
-	type Event = Event;
-	type ExistentialDeposits = AssetRegistry;
-	type MaxLocks = ();
-	type OnDust = ();
-	type WeightInfo = ();
-}
-
-impl orml_currencies::Config for Test {
-	type Event = Event;
-	type GetNativeCurrencyId = NativeCurrencyId;
-	type MultiCurrency = Tokens;
-	type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
-	type WeightInfo = ();
-}
-
-impl pallet_asset_registry::Config for Test {
-	type AssetId = darkwebb_primitives::AssetId;
-	type AssetNativeLocation = ();
-	type Balance = u128;
-	type Event = Event;
-	type NativeAssetId = NativeCurrencyId;
-	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
-	type StringLimit = RegistryStringLimit;
-	type WeightInfo = ();
-}
-
 parameter_types! {
-	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
+	pub const HistoryLength: u32 = 30;
 }
 
-impl pallet_anchor::Config for Test {
-	type Currency = Currencies;
+impl pallet_linkable_tree::Config for Test {
+	type ChainId = u32;
 	type Event = Event;
-	type LinkableTree = LinkableTree;
-	type NativeCurrencyId = NativeCurrencyId;
-	type PalletId = AnchorPalletId;
-	type Verifier = VerifierPallet;
+	type HistoryLength = HistoryLength;
+	type Tree = MerkleTree;
 	type WeightInfo = ();
 }
 

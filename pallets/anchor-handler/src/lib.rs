@@ -52,7 +52,8 @@ use darkwebb_primitives::{
 };
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;
-use pallet_anchor::{types::EdgeMetadata, BalanceOf, CurrencyIdOf};
+use pallet_anchor::{BalanceOf, CurrencyIdOf};
+use pallet_linkable_tree::types::EdgeMetadata;
 pub mod types;
 use pallet_bridge::types::ResourceId;
 use types::*;
@@ -64,7 +65,8 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use pallet_anchor::{types::EdgeMetadata, AnchorConfigration};
+	use pallet_anchor::AnchorConfigration;
+	use pallet_linkable_tree::types::EdgeMetadata;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -110,10 +112,6 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		MaintainerSet {
-			old_maintainer: T::AccountId,
-			new_maintainer: T::AccountId,
-		},
 		AnchorCreated,
 		AnchorEdgeAdded,
 		AnchorEdgeUpdated,

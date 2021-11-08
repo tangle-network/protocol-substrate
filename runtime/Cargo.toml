@@ -26,6 +26,7 @@ darkwebb-primitives = {path = "../primitives", default-features = false, feature
 
 pallet-hasher = {path = "../pallets/hasher", default-features = false}
 pallet-mt = {path = "../pallets/mt", default-features = false}
+pallet-linkable-tree = {path = "../pallets/linkable-tree", default-features = false}
 pallet-mt-rpc-runtime-api = {path = "../pallets/mt/rpc/runtime-api", default-features = false}
 pallet-verifier = {path = "../pallets/verifier", default-features = false}
 pallet-parachain-staking = {path = "../pallets/parachain-staking", default-features = false}
@@ -119,6 +120,7 @@ runtime-benchmarks = [
   "pallet-hasher/runtime-benchmarks",
   "pallet-verifier/runtime-benchmarks",
   "pallet-mt/runtime-benchmarks",
+  "pallet-linkable-tree/runtime-benchmarks",
   "pallet-mixer/runtime-benchmarks",
   "pallet-anchor/runtime-benchmarks",
   "pallet-anchor-handler/runtime-benchmarks",
@@ -185,6 +187,7 @@ std = [
   "pallet-hasher/std",
   "pallet-verifier/std",
   "pallet-mt/std",
+  "pallet-linkable-tree/std",
   "pallet-mixer/std",
   "pallet-anchor/std",
   "pallet-bridge/std",

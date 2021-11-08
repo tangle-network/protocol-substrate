@@ -36,7 +36,8 @@ frame_support::construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
 		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
-		MT: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
+		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
@@ -229,14 +230,20 @@ parameter_types! {
 }
 
 impl pallet_anchor::Config for Test {
-	type ChainId = ChainId;
 	type Currency = Currencies;
 	type Event = Event;
-	type HistoryLength = HistoryLength;
-	type LinkableTree = MT;
+	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
 	type Verifier = VerifierPallet;
+	type WeightInfo = ();
+}
+
+impl pallet_linkable_tree::Config for Test {
+	type ChainId = ChainId;
+	type Event = Event;
+	type HistoryLength = HistoryLength;
+	type Tree = MerkleTree;
 	type WeightInfo = ();
 }
 
