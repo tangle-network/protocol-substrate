@@ -1159,16 +1159,22 @@ parameter_types! {
 }
 
 impl pallet_anchor::Config for Runtime {
-	type ChainId = ChainId;
 	type Currency = Currencies;
 	type Event = Event;
-	type HistoryLength = HistoryLength;
-	type LinkableTree = MerkleTree;
+	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = ();
 	type Verifier = AnchorVerifier;
 	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
+}
+
+impl pallet_linkable_tree::Config for Runtime {
+	type ChainId = ChainId;
+	type Event = Event;
+	type HistoryLength = HistoryLength;
+	type Tree = MerkleTree;
+	type WeightInfo = ();
 }
 
 impl pallet_anchor_handler::Config for Runtime {
@@ -1265,6 +1271,7 @@ construct_runtime!(
 		MixerVerifier: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		AnchorVerifier: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>, Config<T>},
+		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
@@ -1534,6 +1541,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon5x5Hasher);
 			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			list_benchmark!(list, extra, pallet_mt, MerkleTree);
+			list_benchmark!(list, extra, pallet_linkable_tree, LinkableTree);
 			list_benchmark!(list, extra, pallet_anchor, Anchor);
 			list_benchmark!(list, extra, pallet_mixer, Mixer);
 			list_benchmark!(list, extra, pallet_verifier, AnchorVerifier);
@@ -1573,6 +1581,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon5x5Hasher);
 			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			add_benchmark!(params, batches, pallet_mt, MerkleTree);
+			add_benchmark!(params, batches, pallet_linkable_tree, LinkableTree);
 			add_benchmark!(params, batches, pallet_anchor, Anchor);
 			add_benchmark!(params, batches, pallet_mixer, Mixer);
 			add_benchmark!(params, batches, pallet_verifier, AnchorVerifier);

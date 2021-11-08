@@ -62,7 +62,7 @@ pub mod weights;
 use codec::{Decode, Encode};
 use darkwebb_primitives::{
 	anchor::{AnchorConfig, AnchorInspector, AnchorInterface},
-	merkle_tree::{TreeInspector, TreeInterface},
+	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
 	verifier::*,
 	ElementTrait,
 };
@@ -94,19 +94,16 @@ pub mod pallet {
 
 	#[pallet::config]
 	/// The module configuration trait.
-	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_mt::Config<I> {
+	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_linkable_tree::Config<I> {
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;
 
-		/// ChainID for anchor edges
-		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
-
 		/// The tree type
-		type LinkableTree: TreeInterface<Self::AccountId, Self::TreeId, Self::Element>
-			+ TreeInspector<Self::AccountId, Self::TreeId, Self::Element>;
+		type LinkableTree: LinkableTreeInterface<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>
+			+ LinkableTreeInspector<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>;
 
 		/// The verifier
 		type Verifier: VerifierModule;
@@ -118,21 +115,9 @@ pub mod pallet {
 		#[pallet::constant]
 		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
 
-		/// The pruning length for neighbor root histories
-		type HistoryLength: Get<Self::RootIndex>;
-
-		/// A type that implements [PostDepositHook] that would be called when a
-		/// deposit is made.
-		type PostDepositHook: PostDepositHook<Self, I>;
-
 		/// Weight info for pallet
 		type WeightInfo: WeightInfo;
 	}
-
-	#[pallet::storage]
-	#[pallet::getter(fn maintainer)]
-	/// The parameter maintainer who can change the parameters
-	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
 
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
@@ -151,57 +136,15 @@ pub mod pallet {
 	pub type NullifierHashes<T: Config<I>, I: 'static = ()> =
 		StorageDoubleMap<_, Blake2_128Concat, T::TreeId, Blake2_128Concat, T::Element, bool, ValueQuery>;
 
-	/// The map of trees to the maximum number of anchor edges they can have
-	#[pallet::storage]
-	#[pallet::getter(fn max_edges)]
-	pub type MaxEdges<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_128Concat, T::TreeId, u32, ValueQuery>;
-
-	/// The map of trees and chain ids to their edge metadata
-	#[pallet::storage]
-	#[pallet::getter(fn edge_list)]
-	pub type EdgeList<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		T::TreeId,
-		Blake2_128Concat,
-		T::ChainId,
-		EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
-		ValueQuery,
-	>;
-
-	/// A helper map for denoting whether an anchor is bridged to given chain
-	#[pallet::storage]
-	#[pallet::getter(fn anchor_has_edge)]
-	pub type AnchorHasEdge<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, (T::TreeId, T::ChainId), bool, ValueQuery>;
-
-	/// The map of (tree, chain id) pairs to their latest recorded merkle root
-	#[pallet::storage]
-	#[pallet::getter(fn neighbor_roots)]
-	pub type NeighborRoots<T: Config<I>, I: 'static = ()> =
-		StorageDoubleMap<_, Blake2_128Concat, (T::TreeId, T::ChainId), Blake2_128Concat, T::RootIndex, T::Element>;
-
-	/// The next neighbor root index to store the merkle root update record
-	#[pallet::storage]
-	#[pallet::getter(fn curr_neighbor_root_index)]
-	pub type CurrentNeighborRootIndex<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, (T::TreeId, T::ChainId), T::RootIndex, ValueQuery>;
-
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		MaintainerSet {
-			old_maintainer: T::AccountId,
-			new_maintainer: T::AccountId,
-		},
 		/// New tree created
 		AnchorCreation { tree_id: T::TreeId },
 	}
 
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
-		/// Account does not have correct permissions
-		InvalidPermissions,
 		/// Invalid Merkle Roots
 		InvalidMerkleRoots,
 		/// Unknown root
@@ -210,15 +153,6 @@ pub mod pallet {
 		InvalidWithdrawProof,
 		/// Mixer not found.
 		NoAnchorFound,
-		/// Invalid neighbor root passed in withdrawal
-		/// (neighbor root is not in neighbor history)
-		InvalidNeighborWithdrawRoot,
-		/// Anchor is at maximum number of edges for the given tree
-		TooManyEdges,
-		/// Edge already exists
-		EdgeAlreadyExists,
-		/// Edge does not exist
-		EdgeDoesntExists,
 		/// Invalid nullifier that is already used
 		/// (this error is returned when a nullifier is used twice)
 		AlreadyRevealedNullifier,
@@ -251,36 +185,6 @@ pub mod pallet {
 			<Self as AnchorInterface<_>>::deposit(origin.clone(), tree_id, leaf)?;
 			T::PostDepositHook::post_deposit(origin, tree_id, leaf)?;
 			Ok(().into())
-		}
-
-		#[pallet::weight(<T as Config<I>>::WeightInfo::set_maintainer())]
-		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
-			let origin = ensure_signed(origin)?;
-			// ensure parameter setter is the maintainer
-			ensure!(origin == Self::maintainer(), Error::<T, I>::InvalidPermissions);
-			// set the new maintainer
-			Maintainer::<T, I>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer: origin,
-					new_maintainer,
-				});
-				Ok(().into())
-			})
-		}
-
-		#[pallet::weight(<T as Config<I>>::WeightInfo::force_set_maintainer())]
-		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
-			T::ForceOrigin::ensure_origin(origin)?;
-			// set the new maintainer
-			Maintainer::<T, I>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer: Default::default(),
-					new_maintainer,
-				});
-				Ok(().into())
-			})
 		}
 
 		#[pallet::weight(<T as Config<I>>::WeightInfo::withdraw())]
@@ -333,7 +237,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		max_edges: u32,
 		asset: CurrencyIdOf<T, I>,
 	) -> Result<T::TreeId, DispatchError> {
-		let id = T::LinkableTree::create(creator.clone(), depth)?;
+		let id = T::LinkableTree::create(creator.clone(), max_edges, depth)?;
 		Anchors::<T, I>::insert(
 			id,
 			Some(AnchorMetadata {
@@ -342,7 +246,6 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 				asset,
 			}),
 		);
-		MaxEdges::<T, I>::insert(id, max_edges);
 		Ok(id)
 	}
 
@@ -368,22 +271,12 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		fee: BalanceOf<T, I>,
 		refund: BalanceOf<T, I>,
 	) -> Result<(), DispatchError> {
-		let m = MaxEdges::<T, I>::get(id) as usize;
 		// double check the number of roots
-		ensure!(roots.len() == m, Error::<T, I>::InvalidMerkleRoots);
-		let anchor = Self::get_anchor(id)?;
+		T::LinkableTree::ensure_max_edges(id, roots.len())?;
 		// Check if local root is known
-		Self::ensure_known_root(id, roots[0])?;
+		T::LinkableTree::ensure_known_root(id, roots[0])?;
 		// Check if neighbor roots are known
-		if roots.len() > 1 {
-			// Get edges and corresponding chain IDs for the anchor
-			let edges = EdgeList::<T, I>::iter_prefix(id).into_iter().collect::<Vec<_>>();
-
-			// Check membership of provided historical neighbor roots
-			for (i, (chain_id, _)) in edges.iter().enumerate() {
-				<Self as AnchorInspector<_>>::ensure_known_neighbor_root(id, *chain_id, roots[i + 1])?;
-			}
-		}
+		T::LinkableTree::ensure_known_neighbor_roots(id, &roots)?;
 
 		// Check nullifier and add or return `InvalidNullifier`
 		Self::ensure_nullifier_unused(id, nullifier_hash)?;
@@ -421,13 +314,19 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		bytes.extend_from_slice(&fee_bytes);
 		bytes.extend_from_slice(&refund_bytes);
 		bytes.extend_from_slice(&chain_id_bytes);
-		for root in roots.iter().take(m) {
-			bytes.extend_from_slice(&root.encode());
+		for i in 0..roots.len() {
+			bytes.extend_from_slice(&roots[i].encode());
 		}
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 		// transfer the assets
+		let anchor = Self::get_anchor(id)?;
 		<T as Config<I>>::Currency::transfer(anchor.asset, &Self::account_id(), &recipient, anchor.deposit_size)?;
+		Ok(())
+	}
+
+	fn add_nullifier_hash(id: T::TreeId, nullifier_hash: T::Element) -> Result<(), DispatchError> {
+		NullifierHashes::<T, I>::insert(id, nullifier_hash, true);
 		Ok(())
 	}
 
@@ -437,31 +336,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
-		// ensure edge doesn't exists
-		ensure!(
-			!EdgeList::<T, I>::contains_key(id, src_chain_id),
-			Error::<T, I>::EdgeAlreadyExists
-		);
-		// ensure anchor isn't at maximum edges
-		let max_edges: u32 = Self::max_edges(id);
-		let curr_length = EdgeList::<T, I>::iter_prefix_values(id).into_iter().count();
-		ensure!(max_edges > curr_length as u32, Error::<T, I>::TooManyEdges);
-		// craft edge
-		let e_meta = EdgeMetadata {
-			src_chain_id,
-			root,
-			latest_leaf_index,
-		};
-		// update historical neighbor list for this edge's root
-		let neighbor_root_idx = CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id));
-		CurrentNeighborRootIndex::<T, I>::insert(
-			(id, src_chain_id),
-			neighbor_root_idx + T::RootIndex::one() % T::HistoryLength::get(),
-		);
-		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_idx, root);
-		// Append new edge to the end of the edge list for the given tree
-		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
-		Ok(())
+		T::LinkableTree::add_edge(id, src_chain_id, root, height)
 	}
 
 	fn update_edge(
@@ -470,109 +345,11 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
-		ensure!(
-			EdgeList::<T, I>::contains_key(id, src_chain_id),
-			Error::<T, I>::EdgeDoesntExists
-		);
-		let e_meta = EdgeMetadata {
-			src_chain_id,
-			root,
-			latest_leaf_index,
-		};
-		let neighbor_root_idx =
-			(CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id)) + T::RootIndex::one()) % T::HistoryLength::get();
-		CurrentNeighborRootIndex::<T, I>::insert((id, src_chain_id), neighbor_root_idx);
-		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_idx, root);
-		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
-		Ok(())
-	}
-
-	fn add_nullifier_hash(id: T::TreeId, nullifier_hash: T::Element) -> Result<(), DispatchError> {
-		NullifierHashes::<T, I>::insert(id, nullifier_hash, true);
-		Ok(())
+		T::LinkableTree::update_edge(id, src_chain_id, root, height)
 	}
 }
 
 impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pallet<T, I> {
-	fn get_root(tree_id: T::TreeId) -> Result<T::Element, DispatchError> {
-		T::LinkableTree::get_root(tree_id)
-	}
-
-	fn is_known_root(tree_id: T::TreeId, target_root: T::Element) -> Result<bool, DispatchError> {
-		T::LinkableTree::is_known_root(tree_id, target_root)
-	}
-
-	fn ensure_known_root(id: T::TreeId, target: T::Element) -> Result<(), DispatchError> {
-		let is_known: bool = Self::is_known_root(id, target)?;
-		ensure!(is_known, Error::<T, I>::UnknownRoot);
-		Ok(())
-	}
-
-	fn get_neighbor_roots(tree_id: T::TreeId) -> Result<Vec<T::Element>, DispatchError> {
-		let edges = EdgeList::<T, I>::iter_prefix_values(tree_id)
-			.into_iter()
-			.collect::<Vec<EdgeMetadata<_, _, _>>>();
-		let roots = edges.iter().map(|e| e.root).collect::<Vec<_>>();
-		Ok(roots)
-	}
-
-	fn is_known_neighbor_root(
-		tree_id: T::TreeId,
-		src_chain_id: T::ChainId,
-		target_root: T::Element,
-	) -> Result<bool, DispatchError> {
-		if target_root.is_zero() {
-			return Ok(false);
-		}
-
-		let get_next_inx = |inx: T::RootIndex| {
-			if inx.is_zero() {
-				T::HistoryLength::get().saturating_sub(One::one())
-			} else {
-				inx.saturating_sub(One::one())
-			}
-		};
-
-		let curr_root_inx = CurrentNeighborRootIndex::<T, I>::get((tree_id, src_chain_id));
-		let mut historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), curr_root_inx)
-			.unwrap_or_else(|| T::Element::from_bytes(&[0; 32]));
-		if target_root == historical_root {
-			return Ok(true);
-		}
-
-		let mut i = get_next_inx(curr_root_inx);
-
-		while i != curr_root_inx {
-			historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), i)
-				.unwrap_or_else(|| T::Element::from_bytes(&[0; 32]));
-			if target_root == historical_root {
-				return Ok(true);
-			}
-
-			if i == Zero::zero() {
-				i = T::HistoryLength::get();
-			}
-
-			i -= One::one();
-		}
-
-		Ok(false)
-	}
-
-	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
-		EdgeList::<T, I>::contains_key(id, src_chain_id)
-	}
-
-	fn ensure_known_neighbor_root(
-		id: T::TreeId,
-		src_chain_id: T::ChainId,
-		target: T::Element,
-	) -> Result<(), DispatchError> {
-		let is_known = Self::is_known_neighbor_root(id, src_chain_id, target)?;
-		ensure!(is_known, Error::<T, I>::InvalidNeighborWithdrawRoot);
-		Ok(())
-	}
-
 	fn is_nullifier_used(tree_id: T::TreeId, nullifier_hash: T::Element) -> bool {
 		NullifierHashes::<T, I>::contains_key(tree_id, nullifier_hash)
 	}
@@ -583,6 +360,10 @@ impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pal
 			Error::<T, I>::AlreadyRevealedNullifier
 		);
 		Ok(())
+	}
+
+	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
+		T::LinkableTree::has_edge(id, src_chain_id)
 	}
 }
 
