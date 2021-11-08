@@ -29,9 +29,9 @@ use polkadot_parachain::primitives::{DmpMessageHandler, Id as ParaId, Sibling, X
 use xcm::{latest::prelude::*, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin,
-	FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentIsDefault,
-	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation,
+	FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser,
+	ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -101,6 +101,7 @@ impl cumulus_pallet_xcm::Config for Runtime {
 parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
+	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
 }
 
@@ -110,9 +111,30 @@ pub type LocationToAccountId = (
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-pub type XcmOriginToCallOrigin = (
+/// This is the type we use to convert an (incoming) XCM origin into a local
+/// `Origin` instance, ready for dispatching a transaction with Xcm's
+/// `Transact`. There is an `OriginKind` which can biases the kind of local
+/// `Origin` it will become.
+pub type XcmOriginToTransactDispatchOrigin = (
+	// Sovereign account converter; this attempts to derive an `AccountId` from
+	// the origin location using `LocationToAccountId` and then turn that into
+	// the usual `Signed` origin. Useful for foreign chains who want to have a
+	// local sovereign account on this chain which they control.
 	SovereignSignedViaLocation<LocationToAccountId, Origin>,
+	// Native converter for Relay-chain (Parent) location; will converts to a
+	// `Relay` origin when recognised.
+	RelayChainAsNative<RelayChainOrigin, Origin>,
+	// Native converter for sibling Parachains; will convert to a `SiblingPara`
+	// origin when recognised.
+	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
+	// Superuser converter for the Relay-chain (Parent) location. This will
+	// allow it to issue a transaction from the Root origin.
+	ParentAsSuperuser<Origin>,
+	// Native signed account converter; this just converts an `AccountId32`
+	// origin into a normal `Origin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RelayNetwork, Origin>,
+	// Xcm origins can be represented natively under the Xcm pallet's Xcm
+	// origin.
 	XcmPassthrough<Origin>,
 );
 
@@ -138,7 +160,7 @@ impl Config for XcmConfig {
 	type IsReserve = NativeAsset;
 	type IsTeleporter = ();
 	type LocationInverter = LocationInverter<Ancestry>;
-	type OriginConverter = XcmOriginToCallOrigin;
+	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type ResponseHandler = ();
 	type SubscriptionService = ();
 	type Trader = FixedRateOfFungible<KsmPerSecond, ()>;

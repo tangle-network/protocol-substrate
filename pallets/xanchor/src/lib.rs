@@ -54,7 +54,6 @@ use frame_support::{
 };
 use frame_system::{pallet_prelude::*, Config as SystemConfig};
 use pallet_anchor::{types::EdgeMetadata, AnchorConfigration, PostDepositHook};
-use polkadot_parachain::primitives::AccountIdConversion;
 use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 
@@ -69,6 +68,11 @@ mod test_utils;
 
 pub mod types;
 pub use pallet::*;
+
+pub type ChainIdOf<T, I> = <T as pallet_anchor::Config<I>>::ChainId;
+pub type ElementOf<T, I> = <T as pallet_mt::Config<I>>::Element;
+pub type LeafIndexOf<T, I> = <T as pallet_mt::Config<I>>::LeafIndex;
+pub type EdgeMetadataOf<T, I> = EdgeMetadata<ChainIdOf<T, I>, ElementOf<T, I>, LeafIndexOf<T, I>>;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -217,20 +221,17 @@ pub mod pallet {
 		pub fn update(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
-			metadata: EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
+			metadata: EdgeMetadataOf<T, I>,
 		) -> DispatchResultWithPostInfo {
-			// here we check the caller is a sibling parachain
-			// but it is broken due to the xcm simulator does not set the sender
-			// to be the parachain sibiling.
-			// so disabling it for now.
-			// FIXME: recheck for the sibling parachain.
-			// let para = dbg!(ensure_sibling_para(<T as
-			// Config<I>>::Origin::from(origin)))?;
-			ensure_signed(origin)?;
+			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
+			let caller_chain_id = T::ChainId::from(u32::from(para));
 			let (tree_id, r_chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
 			// double check that the caller is the same as the chain id of the resource
 			// also the the same from the metadata.
-			ensure!(metadata.src_chain_id == r_chain_id, Error::<T, I>::InvalidPermissions);
+			ensure!(
+				caller_chain_id == metadata.src_chain_id && caller_chain_id == r_chain_id,
+				Error::<T, I>::InvalidPermissions
+			);
 			// and finally, ensure that the anchor exists
 			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 			// now we can update the anchor
@@ -242,7 +243,7 @@ pub mod pallet {
 		pub fn force_update(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
-			metadata: EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
+			metadata: EdgeMetadataOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			let (tree_id, chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
@@ -275,10 +276,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(().into())
 	}
 
-	fn update_anchor(
-		tree_id: T::TreeId,
-		metadata: EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
-	) -> DispatchResultWithPostInfo {
+	fn update_anchor(tree_id: T::TreeId, metadata: EdgeMetadataOf<T, I>) -> DispatchResultWithPostInfo {
 		if T::Anchor::has_edge(tree_id, metadata.src_chain_id) {
 			T::Anchor::update_edge(
 				tree_id,
@@ -338,7 +336,7 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 			let r_id = utils::encode_resource_id::<T::TreeId, T::ChainId>(target_tree_id, my_chain_id);
 			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
 			let update_edge = Transact {
-				origin_type: OriginKind::SovereignAccount,
+				origin_type: OriginKind::Native,
 				require_weight_at_most: 1_000_000_000,
 				call: <T as Config<I>>::Call::from(Call::<T, I>::update {
 					metadata: metadata.clone(),
