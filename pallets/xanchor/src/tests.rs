@@ -8,10 +8,8 @@ use arkworks_gadgets::setup::common::Curve;
 use codec::Encode;
 use darkwebb_primitives::utils::encode_resource_id;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
-use xcm::latest::prelude::*;
 use xcm_simulator::TestExt;
 
-const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
 const M: usize = 2;
 const DEPOSIT_SIZE: u128 = 10_000;
@@ -38,14 +36,6 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 
 	// finally return the provingkey bytes
 	proving_key_bytes
-}
-
-// Helper function for forming buy execution message
-fn buy_execution<C>(fees: impl Into<MultiAsset>) -> Instruction<C> {
-	BuyExecution {
-		fees: fees.into(),
-		weight_limit: Unlimited,
-	}
 }
 
 // sanity check that XCM is working
@@ -269,7 +259,7 @@ fn should_bridge_anchors_using_xcm() {
 	// we should expect that the edge for ParaA is there, and the merkle root equal
 	// to the one we got from ParaA.
 	ParaB::execute_with(|| {
-		let edge = Anchor::edge_list(para_b_tree_id, PARAID_A);
+		let edge = LinkableTree::edge_list(para_b_tree_id, PARAID_A);
 		assert_eq!(edge.root, para_a_root);
 		assert_eq!(edge.latest_leaf_index, 1);
 	});
@@ -289,7 +279,7 @@ fn should_be_able_to_change_the_maintainer() {
 			Origin::root(),
 			new_maintainer_account_id.clone()
 		));
-		let current_maintainer_account_id = Anchor::maintainer();
+		let current_maintainer_account_id = XAnchor::maintainer();
 		assert_eq!(current_maintainer_account_id, new_maintainer_account_id);
 	});
 }
@@ -298,7 +288,7 @@ fn should_be_able_to_change_the_maintainer() {
 fn should_fail_to_change_the_maintainer_if_not_the_current_maintainer() {
 	MockNet::reset();
 	ParaA::execute_with(|| {
-		let current_maintainer_account_id = Anchor::maintainer();
+		let current_maintainer_account_id = XAnchor::maintainer();
 		let new_maintainer_account_id = ALICE;
 		assert_err!(
 			XAnchor::set_maintainer(Origin::signed(BOB), new_maintainer_account_id),

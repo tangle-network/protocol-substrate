@@ -116,7 +116,7 @@ pub mod pallet {
 		T::TreeId,
 		Blake2_128Concat,
 		T::ChainId,
-		EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>,
+		EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
 		ValueQuery,
 	>;
 
@@ -220,9 +220,9 @@ pub struct LinkableTreeConfigration<T: Config<I>, I: 'static>(
 
 impl<T: Config<I>, I: 'static> LinkableTreeConfig for LinkableTreeConfigration<T, I> {
 	type AccountId = T::AccountId;
-	type BlockNumber = T::BlockNumber;
 	type ChainId = T::ChainId;
 	type Element = T::Element;
+	type LeafIndex = T::LeafIndex;
 	type TreeId = T::TreeId;
 }
 
@@ -241,7 +241,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
 		root: T::Element,
-		height: T::BlockNumber,
+		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
 		// ensure edge doesn't exists
 		ensure!(
@@ -256,7 +256,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		let e_meta = EdgeMetadata {
 			src_chain_id,
 			root,
-			height,
+			latest_leaf_index,
 		};
 		// update historical neighbor list for this edge's root
 		let neighbor_root_inx = CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id));
@@ -274,7 +274,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
 		root: T::Element,
-		height: T::BlockNumber,
+		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
 		ensure!(
 			EdgeList::<T, I>::contains_key(id, src_chain_id),
@@ -283,7 +283,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		let e_meta = EdgeMetadata {
 			src_chain_id,
 			root,
-			height,
+			latest_leaf_index,
 		};
 		let neighbor_root_inx =
 			(CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id)) + T::RootIndex::one()) % T::HistoryLength::get();

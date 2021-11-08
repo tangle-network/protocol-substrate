@@ -6732,6 +6732,7 @@ dependencies = [
  "pallet-asset-registry",
  "pallet-balances",
  "pallet-hasher",
+ "pallet-linkable-tree",
  "pallet-mt",
  "pallet-verifier",
  "pallet-xcm",

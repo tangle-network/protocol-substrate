@@ -53,7 +53,8 @@ use frame_support::{
 	pallet_prelude::*,
 };
 use frame_system::{pallet_prelude::*, Config as SystemConfig};
-use pallet_anchor::{types::EdgeMetadata, AnchorConfigration, PostDepositHook};
+use pallet_anchor::{AnchorConfigration, PostDepositHook};
+use pallet_linkable_tree::types::EdgeMetadata;
 use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 
@@ -69,7 +70,7 @@ mod test_utils;
 pub mod types;
 pub use pallet::*;
 
-pub type ChainIdOf<T, I> = <T as pallet_anchor::Config<I>>::ChainId;
+pub type ChainIdOf<T, I> = <T as pallet_linkable_tree::Config<I>>::ChainId;
 pub type ElementOf<T, I> = <T as pallet_mt::Config<I>>::Element;
 pub type LeafIndexOf<T, I> = <T as pallet_mt::Config<I>>::LeafIndex;
 pub type EdgeMetadataOf<T, I> = EdgeMetadata<ChainIdOf<T, I>, ElementOf<T, I>, LeafIndexOf<T, I>>;
@@ -320,7 +321,7 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 			latest_leaf_index,
 		};
 		// now we need an iterator for all the edges connected to this anchor
-		let edges = pallet_anchor::EdgeList::<T, I>::iter_prefix_values(my_tree_id);
+		let edges = pallet_linkable_tree::EdgeList::<T, I>::iter_prefix_values(my_tree_id);
 		// for each edge we do the following:
 		// 1. get the target tree id on the other chain (using the other chain id, and
 		// my tree id)

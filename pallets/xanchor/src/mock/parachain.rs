@@ -3,7 +3,7 @@
 use crate as pallet_xanchor;
 
 use codec::{Decode, Encode};
-use darkwebb_primitives::{Amount, BlockNumber};
+use darkwebb_primitives::{Amount, BlockNumber, ChainId};
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{Everything, Nothing},
@@ -452,12 +452,18 @@ parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 }
 
-impl pallet_anchor::Config for Runtime {
-	type ChainId = u32;
-	type Currency = Currencies;
+impl pallet_linkable_tree::Config for Runtime {
+	type ChainId = ChainId;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
-	type LinkableTree = MerkleTree;
+	type Tree = MerkleTree;
+	type WeightInfo = ();
+}
+
+impl pallet_anchor::Config for Runtime {
+	type Currency = Currencies;
+	type Event = Event;
+	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = XAnchor;
@@ -495,6 +501,7 @@ construct_runtime!(
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
+		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
 		XAnchor: pallet_xanchor::{Pallet, Call, Storage, Event<T>},
 	}
 );

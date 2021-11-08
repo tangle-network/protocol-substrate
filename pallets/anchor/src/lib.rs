@@ -111,6 +111,8 @@ pub mod pallet {
 		/// Currency type for taking deposits
 		type Currency: MultiCurrency<Self::AccountId>;
 
+		type PostDepositHook: PostDepositHook<Self, I>;
+
 		/// Native currency id
 		#[pallet::constant]
 		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
@@ -336,7 +338,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
-		T::LinkableTree::add_edge(id, src_chain_id, root, height)
+		T::LinkableTree::add_edge(id, src_chain_id, root, latest_leaf_index)
 	}
 
 	fn update_edge(
@@ -345,7 +347,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
-		T::LinkableTree::update_edge(id, src_chain_id, root, height)
+		T::LinkableTree::update_edge(id, src_chain_id, root, latest_leaf_index)
 	}
 }
 
