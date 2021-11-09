@@ -485,6 +485,7 @@ impl<T: Config> Pallet<T> {
 		Self::location_assets(location)
 	}
 
+	#[allow(clippy::ptr_arg)]
 	pub fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
 		let pool_asset_id = Self::retrieve_asset(name)?;
 		Assets::<T>::try_mutate(
@@ -518,6 +519,7 @@ impl<T: Config> Pallet<T> {
 		)
 	}
 
+	#[allow(clippy::ptr_arg)]
 	pub fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
 		let pool_asset_id = Self::retrieve_asset(name)?;
 		Assets::<T>::try_mutate(
@@ -531,7 +533,8 @@ impl<T: Config> Pallet<T> {
 						if pool.contains(&asset_id) {
 							let filtered_pool = pool
 								.iter()
-								.filter(|id| **id != asset_id).copied()
+								.filter(|id| **id != asset_id)
+								.copied()
 								.collect::<Vec<T::AssetId>>();
 							AssetType::PoolShare(filtered_pool)
 						} else {
