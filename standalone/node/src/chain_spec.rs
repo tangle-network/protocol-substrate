@@ -1,10 +1,5 @@
 use arkworks_gadgets::{
 	poseidon::PoseidonParameters,
-	prelude::ark_bn254::Bn254,
-	setup::{
-		common::Curve,
-		mixer::{setup_groth16_circuit_circomx5, setup_groth16_random_circuit_circomx5, setup_random_circuit_circomx5},
-	},
 	utils::{
 		get_mds_poseidon_bls381_x3_5, get_mds_poseidon_bls381_x5_5, get_mds_poseidon_bn254_x3_5,
 		get_mds_poseidon_bn254_x5_5, get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_bls381_x3_5,
@@ -12,21 +7,20 @@ use arkworks_gadgets::{
 		get_rounds_poseidon_circom_bn254_x5_3,
 	},
 };
-use common::{AccountId, AuraId, BabeId, Balance, Signature};
+use common::{AccountId, BabeId, Balance, Signature};
 
 use darkwebb_runtime::{
-	constants::{currency::*, time::*},
-	wasm_binary_unwrap, AnchorVerifierConfig, AuthorityDiscoveryConfig, BLS381Poseidon3x5HasherConfig,
-	BLS381Poseidon5x5HasherConfig, BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig,
-	BN254Poseidon5x5HasherConfig, BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
-	GrandpaConfig, ImOnlineConfig, IndicesConfig, MerkleTreeConfig, MixerVerifierConfig, SessionConfig, StakerStatus,
-	StakingConfig, SudoConfig, SystemConfig,
+	constants::currency::*, wasm_binary_unwrap, AnchorVerifierConfig, AuthorityDiscoveryConfig,
+	BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig, BN254CircomPoseidon3x5HasherConfig,
+	BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BabeConfig, Block, CouncilConfig, DemocracyConfig,
+	ElectionsConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, MerkleTreeConfig,
+	MixerVerifierConfig, SessionConfig, StakerStatus, StakingConfig, SudoConfig,
 };
 use itertools::Itertools;
-use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
+use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
+use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
@@ -51,13 +45,6 @@ pub struct Extensions {
 	pub bad_blocks: sc_client_api::BadBlocks<Block>,
 	/// The light sync state extension used by the sync-state rpc.
 	pub light_sync_state: sc_sync_state_rpc::LightSyncStateExtension,
-}
-
-impl Extensions {
-	/// Try to get the extension from the given `ChainSpec`.
-	pub fn try_get(chain_spec: &dyn sc_service::ChainSpec) -> Option<&Self> {
-		sc_chain_spec::get_extension(chain_spec.extensions())
-	}
 }
 
 type AccountPublic = <Signature as Verify>::Signer;
@@ -203,7 +190,7 @@ fn testnet_genesis(
 		ImOnlineId,
 		AuthorityDiscoveryId,
 	)>,
-	initial_nominators: Vec<AccountId>,
+	mut initial_nominators: Vec<AccountId>,
 	endowed_accounts: Vec<AccountId>,
 	root_key: AccountId,
 ) -> GenesisConfig {
@@ -240,42 +227,30 @@ fn testnet_genesis(
 	let verifier_params = {
 		use std::fs;
 		// let pk_bytes = fs::read("../../fixtures/proving_key.bin").unwrap();
-		let vk_bytes = fs::read("./fixtures/verifying_key.bin").unwrap();
 
-		vk_bytes
+		fs::read("./fixtures/verifying_key.bin").unwrap()
 	};
 
-	let mut endowed_accounts: Vec<AccountId> = endowed_accounts.into();
+	let mut endowed_accounts: Vec<AccountId> = endowed_accounts;
 	// endow all authorities and nominators.
 	initial_authorities
 		.iter()
 		.map(|x| &x.0)
 		.chain(initial_nominators.iter())
 		.for_each(|x| {
-			if !endowed_accounts.contains(&x) {
+			if !endowed_accounts.contains(x) {
 				endowed_accounts.push(x.clone())
 			}
 		});
 
 	let mut unique = vec![];
 	unique.append(&mut endowed_accounts);
-	unique.append(&mut initial_nominators.clone());
-	unique.append(
-		&mut initial_authorities
-			.iter()
-			.map(|x| &x.0)
-			.map(|x| x.clone())
-			.collect::<Vec<_>>(),
-	);
-	unique = unique
-		.into_iter()
-		.unique()
-		.into_iter()
-		.map(|x| x.clone())
-		.collect::<Vec<_>>();
+	unique.append(&mut initial_nominators);
+	unique.append(&mut initial_authorities.iter().map(|x| &x.0).cloned().collect::<Vec<_>>());
+	unique = unique.into_iter().unique().into_iter().collect::<Vec<_>>();
 
 	// stakers: all validators and nominators.
-	let mut rng = rand::thread_rng();
+	let mut _rng = rand::thread_rng();
 
 	let num_endowed_accounts = endowed_accounts.len();
 

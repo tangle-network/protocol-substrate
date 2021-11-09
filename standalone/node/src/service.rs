@@ -23,11 +23,11 @@
 use common::Block;
 use darkwebb_runtime::RuntimeApi;
 use futures::prelude::*;
-use sc_client_api::{ExecutorProvider, RemoteBackend};
+use sc_client_api::ExecutorProvider;
 use sc_consensus_babe::{self, SlotProportion};
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::{Event, NetworkService};
-use sc_service::{config::Configuration, error::Error as ServiceError, RpcHandlers, TaskManager};
+use sc_service::{config::Configuration, error::Error as ServiceError, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
@@ -53,6 +53,7 @@ type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 type FullGrandpaBlockImport = sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>;
 
+#[allow(clippy::type_complexity)]
 pub fn new_partial(
 	config: &Configuration,
 ) -> Result<
@@ -96,7 +97,7 @@ pub fn new_partial(
 	);
 
 	let (client, backend, keystore_container, task_manager) = sc_service::new_full_parts::<Block, RuntimeApi, _>(
-		&config,
+		config,
 		telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 		executor,
 	)?;
@@ -283,7 +284,7 @@ pub fn new_full_base(
 
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		config,
-		backend: backend.clone(),
+		backend,
 		client: client.clone(),
 		keystore: keystore_container.sync_keystore(),
 		network: network.clone(),
