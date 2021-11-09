@@ -1,4 +1,4 @@
-#![allow(clippy::clippy::too_many_arguments, clippy::unnecessary_mut_passed)]
+#![allow(clippy::unnecessary_mut_passed)]
 
 use std::sync::Arc;
 

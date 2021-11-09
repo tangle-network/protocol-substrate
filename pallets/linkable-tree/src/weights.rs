@@ -46,25 +46,25 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree Trees (r:0 w:1)
 	// Storage: LinkableTree MaxEdges (r:0 w:1)
 	fn create(i: u32, d: u32, ) -> Weight {
-		(53_487_000 as Weight)
+		53_487_000_u64
 			// Standard Error: 3_000
-			.saturating_add((4_000 as Weight).saturating_mul(i as Weight))
+			.saturating_add(4_000_u64.saturating_mul(i as Weight))
 			// Standard Error: 33_000
-			.saturating_add((43_000 as Weight).saturating_mul(d as Weight))
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+			.saturating_add(43_000_u64.saturating_mul(d as Weight))
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	// Storage: LinkableTree Maintainer (r:1 w:1)
 	fn set_maintainer() -> Weight {
-		(38_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		38_000_000_u64
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: LinkableTree Maintainer (r:1 w:1)
 	fn force_set_maintainer() -> Weight {
-		(32_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		32_000_000_u64
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 

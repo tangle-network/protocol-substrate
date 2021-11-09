@@ -28,6 +28,7 @@ use xcm::latest::prelude::*;
 
 pub use pallet::*;
 
+#[allow(clippy::large_enum_variant)]
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;

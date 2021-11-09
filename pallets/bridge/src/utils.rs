@@ -14,5 +14,5 @@ pub fn derive_resource_id(chain: u32, id: &[u8]) -> ResourceId {
 	for i in 0..range {
 		r_id[27 - i] = id[range - 1 - i]; // Ensure left padding for eth compatibility
 	}
-	return r_id;
+	r_id
 }

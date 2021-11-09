@@ -98,10 +98,7 @@ fn should_be_able_to_add_neighbors_and_check_history() {
 		assert_eq!(neighbor_index_after, neighbor_index_before + 1);
 
 		for _ in 0..(HistoryLength::get() - 1) {
-			assert_eq!(
-				LinkableTree::is_known_neighbor_root(tree_id, src_chain_id, root).unwrap(),
-				true
-			);
+			assert!(LinkableTree::is_known_neighbor_root(tree_id, src_chain_id, root).unwrap(),);
 
 			let val = thread_rng().gen::<[u8; 32]>();
 			let elt = Element::from_bytes(&val);
@@ -112,15 +109,9 @@ fn should_be_able_to_add_neighbors_and_check_history() {
 				height,
 			));
 
-			assert_eq!(
-				LinkableTree::is_known_neighbor_root(tree_id, src_chain_id, elt).unwrap(),
-				true
-			);
+			assert!(LinkableTree::is_known_neighbor_root(tree_id, src_chain_id, elt).unwrap(),);
 		}
 
-		assert_eq!(
-			LinkableTree::is_known_neighbor_root(tree_id, src_chain_id, root).unwrap(),
-			false
-		);
+		assert!(!LinkableTree::is_known_neighbor_root(tree_id, src_chain_id, root).unwrap(),);
 	});
 }

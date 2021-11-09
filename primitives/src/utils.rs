@@ -1,5 +1,5 @@
 use codec::{Decode, Encode};
-use frame_support::log::debug;
+
 use sp_runtime::traits::AtLeast32Bit;
 
 use crate::ResourceId;

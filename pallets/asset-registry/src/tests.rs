@@ -351,19 +351,16 @@ fn add_asset_to_pool() {
 
 		assert_ok!(Registry::add_asset_to_pool(
 			Origin::root(),
-			b"meme".to_vec().try_into().unwrap(),
+			b"meme".to_vec(),
 			second_token_id
 		));
 
-		assert_eq!(
-			<Registry as ShareTokenRegistry<
-				<Test as crate::Config>::AssetId,
-				Vec<u8>,
-				<Test as crate::Config>::Balance,
-				DispatchError,
-			>>::contains_asset(pool_share_id, second_token_id),
-			true
-		)
+		assert!(<Registry as ShareTokenRegistry<
+			<Test as crate::Config>::AssetId,
+			Vec<u8>,
+			<Test as crate::Config>::Balance,
+			DispatchError,
+		>>::contains_asset(pool_share_id, second_token_id))
 	})
 }
 
@@ -393,19 +390,16 @@ fn delete_asset_from_pool() {
 
 		assert_ok!(Registry::delete_asset_from_pool(
 			Origin::root(),
-			b"meme".to_vec().try_into().unwrap(),
+			b"meme".to_vec(),
 			second_token_id
 		));
 
-		assert_eq!(
-			<Registry as ShareTokenRegistry<
-				<Test as crate::Config>::AssetId,
-				Vec<u8>,
-				<Test as crate::Config>::Balance,
-				DispatchError,
-			>>::contains_asset(pool_share_id, second_token_id),
-			false
-		)
+		assert!(!<Registry as ShareTokenRegistry<
+			<Test as crate::Config>::AssetId,
+			Vec<u8>,
+			<Test as crate::Config>::Balance,
+			DispatchError,
+		>>::contains_asset(pool_share_id, second_token_id),)
 	})
 }
 

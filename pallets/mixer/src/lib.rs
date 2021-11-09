@@ -45,6 +45,7 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::type_complexity, clippy::too_many_arguments)]
 
 #[cfg(test)]
 pub mod mock;

@@ -13,6 +13,7 @@ pub trait MixerInterface<AccountId, Balance, CurrencyId, TreeId, Element> {
 	/// Deposit into the mixer
 	fn deposit(account: AccountId, id: TreeId, leaf: Element) -> Result<(), dispatch::DispatchError>;
 	/// Withdraw from the mixer
+	#[allow(clippy::too_many_arguments)]
 	fn withdraw(
 		id: TreeId,
 		proof_bytes: &[u8],

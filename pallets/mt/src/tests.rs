@@ -120,7 +120,7 @@ fn should_reach_same_root_as_js() {
 #[test]
 fn genesis_config_works() {
 	ExtBuilder::default().with_crate_gen_config().execute_with(|| {
-		assert_eq!(MerkleTree::is_default_hashes_empty(), false);
+		assert!(!MerkleTree::is_default_hashes_empty());
 	})
 }
 

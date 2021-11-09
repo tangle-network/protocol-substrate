@@ -44,7 +44,7 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-
+#![allow(clippy::type_complexity, clippy::too_many_arguments)]
 #[cfg(test)]
 pub mod mock;
 #[cfg(test)]
@@ -59,16 +59,15 @@ mod benchmarking;
 
 pub mod types;
 pub mod weights;
-use codec::{Decode, Encode};
+use codec::Encode;
 use darkwebb_primitives::{
 	anchor::{AnchorConfig, AnchorInspector, AnchorInterface},
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
 	verifier::*,
-	ElementTrait,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::MultiCurrency;
-use sp_runtime::traits::{AccountIdConversion, AtLeast32Bit, One, Saturating, Zero};
+use sp_runtime::traits::AccountIdConversion;
 use sp_std::prelude::*;
 use types::*;
 pub use weights::WeightInfo;
@@ -81,7 +80,6 @@ pub type CurrencyIdOf<T, I> =
 	<<T as pallet::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
 
 pub use pallet::*;
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -316,8 +314,8 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		bytes.extend_from_slice(&fee_bytes);
 		bytes.extend_from_slice(&refund_bytes);
 		bytes.extend_from_slice(&chain_id_bytes);
-		for i in 0..roots.len() {
-			bytes.extend_from_slice(&roots[i].encode());
+		for root in roots {
+			bytes.extend_from_slice(&root.encode());
 		}
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);

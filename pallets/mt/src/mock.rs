@@ -159,13 +159,8 @@ pub fn hasher_params() -> Vec<u8> {
 	params.to_bytes()
 }
 
+#[derive(Default)]
 pub struct ExtBuilder;
-
-impl Default for ExtBuilder {
-	fn default() -> Self {
-		Self {}
-	}
-}
 
 impl ExtBuilder {
 	pub fn with_crate_gen_config(self) -> sp_io::TestExternalities {
@@ -177,7 +172,7 @@ impl ExtBuilder {
 		}
 		.assimilate_storage(&mut storage);
 
-		let __ = crate::GenesisConfig::<Test>::default().assimilate_storage(&mut storage);
+		let _ = crate::GenesisConfig::<Test>::default().assimilate_storage(&mut storage);
 
 		storage.into()
 	}

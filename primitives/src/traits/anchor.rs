@@ -25,6 +25,7 @@ pub trait AnchorInterface<C: AnchorConfig> {
 	/// Deposit into the anchor
 	fn deposit(account: C::AccountId, id: C::TreeId, leaf: C::Element) -> Result<(), dispatch::DispatchError>;
 	/// Withdraw from the anchor
+	#[allow(clippy::too_many_arguments)]
 	fn withdraw(
 		id: C::TreeId,
 		proof_bytes: &[u8],

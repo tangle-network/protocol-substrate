@@ -1,5 +1,5 @@
-use crate::{mock::*, pallet, types::UpdateRecord, AnchorList, Counts, UpdateRecords};
-use frame_support::{assert_err, assert_noop, assert_ok, dispatch::DispatchError};
+use crate::{mock::*, types::UpdateRecord, AnchorList, Counts, UpdateRecords};
+use frame_support::assert_ok;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 use pallet_linkable_tree::types::EdgeMetadata;
 
@@ -47,7 +47,7 @@ fn setup_relayers(src_id: u32) {
 fn mock_anchor_creation_using_pallet_call(src_chain_id: u32, resource_id: &[u8; 32]) {
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
-	assert_eq!(false, <pallet_mt::Trees<Test>>::contains_key(0));
+	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
 
 	let deposit_size = 100;
 	assert_ok!(Anchor::create(
@@ -61,7 +61,7 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: u32, resource_id: &[u8; 
 	AnchorList::<Test>::insert(resource_id, 0);
 	Counts::<Test>::insert(src_chain_id, 0);
 	// make sure Tree(with id=0) exists in `pallet_mt` storage
-	assert_eq!(true, <pallet_mt::Trees<Test>>::contains_key(0));
+	assert!(<pallet_mt::Trees<Test>>::contains_key(0));
 	// check that anchor has stored `TEST_MAX_EDGES` correctly
 	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test>>::get(0));
 }
@@ -75,7 +75,7 @@ fn relay_anchor_update_proposal(
 ) {
 	// create anchor update proposal
 	let resource = b"AnchorHandler.execute_anchor_update_proposal".to_vec();
-	let update_proposal = make_anchor_update_proposal(resource_id, edge_metadata.clone());
+	let update_proposal = make_anchor_update_proposal(resource_id, edge_metadata);
 	// set resource id
 	assert_ok!(Bridge::set_resource(Origin::root(), *resource_id, resource));
 	// make proposals
@@ -91,7 +91,7 @@ fn relay_anchor_update_proposal(
 		prop_id,
 		src_chain_id,
 		*resource_id,
-		Box::new(update_proposal.clone())
+		Box::new(update_proposal)
 	));
 }
 
@@ -115,7 +115,7 @@ fn anchor_create_proposal() {
 
 		// upon successful execution, Tree(with id=0) will be created in `pallet_mt`,
 		// test Tree(with id=0) doesn't exist as of now
-		assert_eq!(false, <pallet_mt::Trees<Test>>::contains_key(0));
+		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
 		// make proposals
 		assert_ok!(Bridge::acknowledge_proposal(
 			Origin::signed(RELAYER_A),
@@ -132,7 +132,7 @@ fn anchor_create_proposal() {
 			Box::new(create_proposal.clone())
 		));
 		// make sure `bridge_pallet` storage is expected
-		let prop = Bridge::votes(src_chain_id, (prop_id.clone(), create_proposal.clone())).unwrap();
+		let prop = Bridge::votes(src_chain_id, (prop_id, create_proposal)).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A, RELAYER_B],
 			votes_against: vec![],
@@ -141,7 +141,7 @@ fn anchor_create_proposal() {
 		};
 		assert_eq!(prop, expected);
 		// make sureTest Tree(with id=0) exists in `pallet_mt` storage
-		assert_eq!(true, <pallet_mt::Trees<Test>>::contains_key(0));
+		assert!(<pallet_mt::Trees<Test>>::contains_key(0));
 		// proposal should be voted successfully
 		// the anchor-handler callback must have been called by bridge
 		// event must be emitted in callback should exist

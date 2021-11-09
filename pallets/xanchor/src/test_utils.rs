@@ -1,3 +1,4 @@
+#![allow(unused, dead_code)]
 use ark_ff::{BigInteger, FromBytes, PrimeField};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use arkworks_gadgets::{
@@ -33,7 +34,7 @@ pub fn get_hash_params<T: PrimeField>(curve: Curve) -> (Vec<u8>, Vec<u8>) {
 	)
 }
 
-pub fn get_keys(curve: Curve, pk_bytes: &mut Vec<u8>, vk_bytes: &mut Vec<u8>) -> () {
+pub fn get_keys(curve: Curve, pk_bytes: &mut Vec<u8>, vk_bytes: &mut Vec<u8>) {
 	let rng = &mut ark_std::test_rng();
 	match curve {
 		Curve::Bn254 => {

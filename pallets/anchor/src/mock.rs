@@ -1,3 +1,5 @@
+#![allow(clippy::zero_prefixed_literal)]
+
 use super::*;
 use crate as pallet_anchor;
 use codec::{Decode, Encode};

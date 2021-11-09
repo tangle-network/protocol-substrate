@@ -46,33 +46,33 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: BN254Poseidon3x5Hasher Deposit (r:1 w:0)
 	// Storage: BN254Poseidon3x5Hasher Parameters (r:1 w:1)
 	fn set_parameters(c: u32, ) -> Weight {
-		(280_652_000 as Weight)
+		280_652_000_u64
 			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+			.saturating_add(2_000_u64.saturating_mul(c as Weight))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: BN254Poseidon3x5Hasher Maintainer (r:1 w:1)
 	fn set_maintainer() -> Weight {
-		(40_643_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		40_643_000_u64
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: BN254Poseidon3x5Hasher Deposit (r:1 w:1)
 	// Storage: System Account (r:1 w:0)
 	// Storage: BN254Poseidon3x5Hasher Parameters (r:1 w:1)
 	fn force_set_parameters(c: u32, ) -> Weight {
-		(125_289_000 as Weight)
+		125_289_000_u64
 			// Standard Error: 0
-			.saturating_add((6_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+			.saturating_add(6_000_u64.saturating_mul(c as Weight))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	// Storage: BN254Poseidon3x5Hasher Maintainer (r:1 w:1)
 	fn force_set_maintainer() -> Weight {
-		(64_507_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		64_507_000_u64
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 

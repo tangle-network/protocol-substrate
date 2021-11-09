@@ -38,7 +38,7 @@ fn should_wrap_token() {
 			Origin::root(),
 			recipient,
 			first_token_id,
-			balance.into()
+			balance
 		));
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
@@ -47,7 +47,7 @@ fn should_wrap_token() {
 			Origin::signed(recipient),
 			first_token_id,
 			pool_share_id,
-			50000 as u128,
+			50000_u128,
 			recipient
 		));
 
@@ -91,7 +91,7 @@ fn should_unwrap_token() {
 			Origin::root(),
 			recipient,
 			first_token_id,
-			balance.into()
+			balance
 		));
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
@@ -100,7 +100,7 @@ fn should_unwrap_token() {
 			Origin::signed(recipient),
 			first_token_id,
 			pool_share_id,
-			50000 as u128,
+			50000_u128,
 			recipient
 		));
 
@@ -114,7 +114,7 @@ fn should_unwrap_token() {
 			Origin::signed(recipient),
 			pool_share_id,
 			first_token_id,
-			50000 as u128,
+			50000_u128,
 			recipient
 		));
 
@@ -156,7 +156,7 @@ fn wrapping_should_fail_if_asset_is_not_in_pool() {
 			Origin::root(),
 			recipient,
 			first_token_id,
-			balance.into()
+			balance
 		));
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
@@ -166,7 +166,7 @@ fn wrapping_should_fail_if_asset_is_not_in_pool() {
 				Origin::signed(recipient),
 				first_token_id,
 				pool_share_id,
-				50000 as u128,
+				50000_u128,
 				recipient
 			),
 			crate::Error::<Test>::NotFoundInPool
@@ -215,7 +215,7 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 			Origin::root(),
 			recipient,
 			first_token_id,
-			balance.into()
+			balance
 		));
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
@@ -224,7 +224,7 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 			Origin::signed(recipient),
 			first_token_id,
 			pool_share_id,
-			50000 as u128,
+			50000_u128,
 			recipient
 		));
 
@@ -239,7 +239,7 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 				Origin::signed(recipient),
 				pool_share_id,
 				second_token_id,
-				50000 as u128,
+				50000_u128,
 				recipient
 			),
 			orml_tokens::Error::<Test>::BalanceTooLow
@@ -279,14 +279,14 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 			Origin::root(),
 			recipient,
 			first_token_id,
-			balance.into()
+			balance
 		));
 
 		assert_ok!(Currencies::update_balance(
 			Origin::root(),
 			TokenWrapper::account_id(),
 			second_token_id,
-			balance.into()
+			balance
 		));
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
@@ -295,7 +295,7 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 			Origin::signed(recipient),
 			first_token_id,
 			pool_share_id,
-			50000 as u128,
+			50000_u128,
 			recipient
 		));
 
@@ -314,7 +314,7 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 			Origin::signed(recipient),
 			pool_share_id,
 			second_token_id,
-			50000 as u128,
+			50000_u128,
 			recipient
 		));
 
@@ -356,7 +356,7 @@ fn should_not_wrap_invalid_amount() {
 			Origin::root(),
 			recipient,
 			first_token_id,
-			balance.into()
+			balance
 		));
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
@@ -366,7 +366,7 @@ fn should_not_wrap_invalid_amount() {
 				Origin::signed(recipient),
 				first_token_id,
 				pool_share_id,
-				0 as u128,
+				0_u128,
 				recipient
 			),
 			crate::Error::<Test>::InvalidAmount

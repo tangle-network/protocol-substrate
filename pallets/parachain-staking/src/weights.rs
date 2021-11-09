@@ -79,279 +79,279 @@ pub trait WeightInfo {
 pub struct WebbWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	fn set_staking_expectations() -> Weight {
-		(20_719_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		20_719_000_u64
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 
 	fn set_inflation() -> Weight {
-		(63_011_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(6 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		63_011_000_u64
+			.saturating_add(T::DbWeight::get().reads(6_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 
 	fn set_parachain_bond_account() -> Weight {
-		(20_434_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		20_434_000_u64
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 
 	fn set_parachain_bond_reserve_percent() -> Weight {
-		(19_239_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		19_239_000_u64
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 
 	fn set_total_selected() -> Weight {
-		(18_402_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		18_402_000_u64
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 
 	fn set_collator_commission() -> Weight {
-		(18_178_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		18_178_000_u64
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 
 	fn set_blocks_per_round() -> Weight {
-		(65_939_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(6 as Weight))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+		65_939_000_u64
+			.saturating_add(T::DbWeight::get().reads(6_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 
 	fn join_candidates(x: u32) -> Weight {
-		(84_807_000 as Weight)
+		84_807_000_u64
 			// Standard Error: 1_000
-			.saturating_add((333_000 as Weight).saturating_mul(x as Weight))
-			.saturating_add(T::DbWeight::get().reads(9 as Weight))
-			.saturating_add(T::DbWeight::get().writes(6 as Weight))
+			.saturating_add(333_000_u64.saturating_mul(x as Weight))
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
 
 	fn leave_candidates(x: u32) -> Weight {
-		(64_426_000 as Weight)
+		64_426_000_u64
 			// Standard Error: 1_000
-			.saturating_add((332_000 as Weight).saturating_mul(x as Weight))
-			.saturating_add(T::DbWeight::get().reads(8 as Weight))
-			.saturating_add(T::DbWeight::get().writes(5 as Weight))
+			.saturating_add(332_000_u64.saturating_mul(x as Weight))
+			.saturating_add(T::DbWeight::get().reads(8_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
 
 	fn go_offline() -> Weight {
-		(36_577_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(7 as Weight))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+		36_577_000_u64
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 
 	fn go_online() -> Weight {
-		(36_134_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(7 as Weight))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+		36_134_000_u64
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 
 	fn candidate_bond_more() -> Weight {
-		(59_735_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(8 as Weight))
-			.saturating_add(T::DbWeight::get().writes(6 as Weight))
+		59_735_000_u64
+			.saturating_add(T::DbWeight::get().reads(8_u64))
+			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
 
 	fn candidate_bond_less() -> Weight {
-		(59_421_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(8 as Weight))
-			.saturating_add(T::DbWeight::get().writes(6 as Weight))
+		59_421_000_u64
+			.saturating_add(T::DbWeight::get().reads(8_u64))
+			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
 
 	fn nominate(x: u32, y: u32) -> Weight {
-		(71_656_000 as Weight)
+		71_656_000_u64
 			// Standard Error: 1_000
-			.saturating_add((1_049_000 as Weight).saturating_mul(x as Weight))
+			.saturating_add(1_049_000_u64.saturating_mul(x as Weight))
 			// Standard Error: 5_000
-			.saturating_add((947_000 as Weight).saturating_mul(y as Weight))
-			.saturating_add(T::DbWeight::get().reads(9 as Weight))
-			.saturating_add(T::DbWeight::get().writes(7 as Weight))
+			.saturating_add(947_000_u64.saturating_mul(y as Weight))
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(7_u64))
 	}
 
 	fn leave_nominators(x: u32) -> Weight {
-		(36_354_000 as Weight)
+		36_354_000_u64
 			// Standard Error: 2_000
-			.saturating_add((694_000 as Weight).saturating_mul(x as Weight))
-			.saturating_add(T::DbWeight::get().reads(7 as Weight))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+			.saturating_add(694_000_u64.saturating_mul(x as Weight))
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 
 	fn revoke_nomination() -> Weight {
-		(37_580_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(7 as Weight))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+		37_580_000_u64
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 
 	fn nominator_bond_more() -> Weight {
-		(70_867_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(9 as Weight))
-			.saturating_add(T::DbWeight::get().writes(7 as Weight))
+		70_867_000_u64
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(7_u64))
 	}
 
 	fn nominator_bond_less() -> Weight {
-		(70_857_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(9 as Weight))
-			.saturating_add(T::DbWeight::get().writes(7 as Weight))
+		70_857_000_u64
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(7_u64))
 	}
 
 	// If this takes up too much block space, run again on code
 	// - #743 benchmarks post reward payout optimization were 3x lower per collator,
 	// 15x lower per nominator
 	fn active_on_initialize(x: u32, y: u32) -> Weight {
-		(0 as Weight)
+		0_u64
 			// Standard Error: 299_000
-			.saturating_add((208_550_000 as Weight).saturating_mul(x as Weight))
+			.saturating_add(208_550_000_u64.saturating_mul(x as Weight))
 			// Standard Error: 27_000
-			.saturating_add((15_580_000 as Weight).saturating_mul(y as Weight))
-			.saturating_add(T::DbWeight::get().reads(26 as Weight))
-			.saturating_add(T::DbWeight::get().reads((4 as Weight).saturating_mul(x as Weight)))
-			.saturating_add(T::DbWeight::get().writes(16 as Weight))
-			.saturating_add(T::DbWeight::get().writes((4 as Weight).saturating_mul(x as Weight)))
+			.saturating_add(15_580_000_u64.saturating_mul(y as Weight))
+			.saturating_add(T::DbWeight::get().reads(26_u64))
+			.saturating_add(T::DbWeight::get().reads(4_u64.saturating_mul(x as Weight)))
+			.saturating_add(T::DbWeight::get().writes(16_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64.saturating_mul(x as Weight)))
 	}
 
 	fn passive_on_initialize() -> Weight {
-		(4_913_000 as Weight).saturating_add(T::DbWeight::get().reads(1 as Weight))
+		4_913_000_u64.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	fn set_staking_expectations() -> Weight {
-		(20_719_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+		20_719_000_u64
+			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 
 	fn set_inflation() -> Weight {
-		(63_011_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(6 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+		63_011_000_u64
+			.saturating_add(RocksDbWeight::get().reads(6_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 
 	fn set_parachain_bond_account() -> Weight {
-		(20_434_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+		20_434_000_u64
+			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 
 	fn set_parachain_bond_reserve_percent() -> Weight {
-		(19_239_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+		19_239_000_u64
+			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 
 	fn set_total_selected() -> Weight {
-		(18_402_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+		18_402_000_u64
+			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 
 	fn set_collator_commission() -> Weight {
-		(18_178_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+		18_178_000_u64
+			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 
 	fn set_blocks_per_round() -> Weight {
-		(65_939_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(6 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
+		65_939_000_u64
+			.saturating_add(RocksDbWeight::get().reads(6_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 
 	fn join_candidates(x: u32) -> Weight {
-		(84_807_000 as Weight)
+		84_807_000_u64
 			// Standard Error: 1_000
-			.saturating_add((333_000 as Weight).saturating_mul(x as Weight))
-			.saturating_add(RocksDbWeight::get().reads(9 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(6 as Weight))
+			.saturating_add(333_000_u64.saturating_mul(x as Weight))
+			.saturating_add(RocksDbWeight::get().reads(9_u64))
+			.saturating_add(RocksDbWeight::get().writes(6_u64))
 	}
 
 	fn leave_candidates(x: u32) -> Weight {
-		(64_426_000 as Weight)
+		64_426_000_u64
 			// Standard Error: 1_000
-			.saturating_add((332_000 as Weight).saturating_mul(x as Weight))
-			.saturating_add(RocksDbWeight::get().reads(8 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(5 as Weight))
+			.saturating_add(332_000_u64.saturating_mul(x as Weight))
+			.saturating_add(RocksDbWeight::get().reads(8_u64))
+			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
 
 	fn go_offline() -> Weight {
-		(36_577_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(7 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
+		36_577_000_u64
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 
 	fn go_online() -> Weight {
-		(36_134_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(7 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
+		36_134_000_u64
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 
 	fn candidate_bond_more() -> Weight {
-		(59_735_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(8 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(6 as Weight))
+		59_735_000_u64
+			.saturating_add(RocksDbWeight::get().reads(8_u64))
+			.saturating_add(RocksDbWeight::get().writes(6_u64))
 	}
 
 	fn candidate_bond_less() -> Weight {
-		(59_421_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(8 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(6 as Weight))
+		59_421_000_u64
+			.saturating_add(RocksDbWeight::get().reads(8_u64))
+			.saturating_add(RocksDbWeight::get().writes(6_u64))
 	}
 
 	fn nominate(x: u32, y: u32) -> Weight {
-		(71_656_000 as Weight)
+		71_656_000_u64
 			// Standard Error: 1_000
-			.saturating_add((1_049_000 as Weight).saturating_mul(x as Weight))
+			.saturating_add(1_049_000_u64.saturating_mul(x as Weight))
 			// Standard Error: 5_000
-			.saturating_add((947_000 as Weight).saturating_mul(y as Weight))
-			.saturating_add(RocksDbWeight::get().reads(9 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(7 as Weight))
+			.saturating_add(947_000_u64.saturating_mul(y as Weight))
+			.saturating_add(RocksDbWeight::get().reads(9_u64))
+			.saturating_add(RocksDbWeight::get().writes(7_u64))
 	}
 
 	fn leave_nominators(x: u32) -> Weight {
-		(36_354_000 as Weight)
+		36_354_000_u64
 			// Standard Error: 2_000
-			.saturating_add((694_000 as Weight).saturating_mul(x as Weight))
-			.saturating_add(RocksDbWeight::get().reads(7 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
+			.saturating_add(694_000_u64.saturating_mul(x as Weight))
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 
 	fn revoke_nomination() -> Weight {
-		(37_580_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(7 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
+		37_580_000_u64
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 
 	fn nominator_bond_more() -> Weight {
-		(70_867_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(9 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(7 as Weight))
+		70_867_000_u64
+			.saturating_add(RocksDbWeight::get().reads(9_u64))
+			.saturating_add(RocksDbWeight::get().writes(7_u64))
 	}
 
 	fn nominator_bond_less() -> Weight {
-		(70_857_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(9 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(7 as Weight))
+		70_857_000_u64
+			.saturating_add(RocksDbWeight::get().reads(9_u64))
+			.saturating_add(RocksDbWeight::get().writes(7_u64))
 	}
 
 	// If this takes up too much block space, run again on code
 	// - #743 benchmarks post reward payout optimization were 3x lower per collator,
 	// 15x lower per nominator
 	fn active_on_initialize(x: u32, y: u32) -> Weight {
-		(0 as Weight)
+		0_u64
 			// Standard Error: 299_000
-			.saturating_add((208_550_000 as Weight).saturating_mul(x as Weight))
+			.saturating_add(208_550_000_u64.saturating_mul(x as Weight))
 			// Standard Error: 27_000
-			.saturating_add((15_580_000 as Weight).saturating_mul(y as Weight))
-			.saturating_add(RocksDbWeight::get().reads(26 as Weight))
-			.saturating_add(RocksDbWeight::get().reads((4 as Weight).saturating_mul(x as Weight)))
-			.saturating_add(RocksDbWeight::get().writes(16 as Weight))
-			.saturating_add(RocksDbWeight::get().writes((4 as Weight).saturating_mul(x as Weight)))
+			.saturating_add(15_580_000_u64.saturating_mul(y as Weight))
+			.saturating_add(RocksDbWeight::get().reads(26_u64))
+			.saturating_add(RocksDbWeight::get().reads(4_u64.saturating_mul(x as Weight)))
+			.saturating_add(RocksDbWeight::get().writes(16_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64.saturating_mul(x as Weight)))
 	}
 
 	fn passive_on_initialize() -> Weight {
-		(4_913_000 as Weight).saturating_add(RocksDbWeight::get().reads(1 as Weight))
+		4_913_000_u64.saturating_add(RocksDbWeight::get().reads(1_u64))
 	}
 }

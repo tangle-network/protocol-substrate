@@ -336,7 +336,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 
 		let curr_root_inx = CurrentNeighborRootIndex::<T, I>::get((tree_id, src_chain_id));
 		let mut historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), curr_root_inx)
-			.unwrap_or(T::Element::from_bytes(&[0; 32]));
+			.unwrap_or_else(|| T::Element::from_bytes(&[0; 32]));
 		if target_root == historical_root {
 			return Ok(true);
 		}
@@ -344,8 +344,8 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		let mut i = get_next_inx(curr_root_inx);
 
 		while i != curr_root_inx {
-			historical_root =
-				NeighborRoots::<T, I>::get((tree_id, src_chain_id), i).unwrap_or(T::Element::from_bytes(&[0; 32]));
+			historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), i)
+				.unwrap_or_else(|| T::Element::from_bytes(&[0; 32]));
 			if target_root == historical_root {
 				return Ok(true);
 			}

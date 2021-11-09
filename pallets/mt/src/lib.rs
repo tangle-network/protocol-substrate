@@ -427,10 +427,10 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 		for i in 0..edge_nodes.len() {
 			hash = if edge_index % two == Zero::zero() {
 				edge_nodes[i] = hash;
-				let h = T::Hasher::hash_two(&hash.to_bytes(), &default_hashes[i].to_bytes())?;
+				let h = T::Hasher::hash_two(hash.to_bytes(), default_hashes[i].to_bytes())?;
 				T::Element::from_vec(h)
 			} else {
-				let h = T::Hasher::hash_two(&edge_nodes[i].to_bytes(), &hash.to_bytes())?;
+				let h = T::Hasher::hash_two(edge_nodes[i].to_bytes(), hash.to_bytes())?;
 				T::Element::from_vec(h)
 			};
 
