@@ -1,11 +1,12 @@
+#![allow(clippy::zero_prefixed_literal)]
+
 use crate as pallet_anchor_handler;
-use codec::{Decode, Encode, Input};
+use codec::{Decode, Encode};
 pub use darkwebb_primitives::{ElementTrait, InstanceHasher};
 use frame_support::{ord_parameter_types, parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
-use orml_traits::parameter_type_with_key;
-use pallet_anchor::PostDepositHook;
+
 pub use pallet_balances;
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
@@ -121,7 +122,7 @@ impl pallet_verifier::Config for Test {
 pub struct TestHasher;
 impl InstanceHasher for TestHasher {
 	fn hash(data: &[u8], _params: &[u8]) -> Result<Vec<u8>, ark_crypto_primitives::Error> {
-		return Ok(data.to_vec());
+		Ok(data.to_vec())
 	}
 }
 
@@ -331,6 +332,6 @@ pub fn assert_events(mut expected: Vec<Event>) {
 
 	for evt in expected {
 		let next = actual.pop().expect("event expected");
-		assert_eq!(next, evt.into(), "Events don't match");
+		assert_eq!(next, evt, "Events don't match");
 	}
 }
