@@ -47,33 +47,33 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MixerVerifier Deposit (r:1 w:0)
 	// Storage: MixerVerifier Parameters (r:1 w:1)
 	fn set_parameters(c: u32, ) -> Weight {
-		(65_597_000 as Weight)
+		65_597_000_u64
 			// Standard Error: 0
-			.saturating_add((3_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+			.saturating_add(3_000_u64.saturating_mul(c as Weight))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: MixerVerifier Maintainer (r:1 w:1)
 	fn set_maintainer() -> Weight {
-		(26_522_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		26_522_000_u64
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: MixerVerifier Deposit (r:1 w:1)
 	// Storage: System Account (r:1 w:0)
 	// Storage: MixerVerifier Parameters (r:1 w:1)
 	fn force_set_parameters(c: u32, ) -> Weight {
-		(37_360_000 as Weight)
+		37_360_000_u64
 			// Standard Error: 0
-			.saturating_add((3_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+			.saturating_add(3_000_u64.saturating_mul(c as Weight))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	// Storage: MixerVerifier Maintainer (r:1 w:1)
 	fn force_set_maintainer() -> Weight {
-		(21_657_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		21_657_000_u64
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 

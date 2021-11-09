@@ -26,7 +26,7 @@ use crate::{
 	Bond, CollatorStatus, Error, Event, NominatorAdded, Range,
 };
 use frame_support::{assert_noop, assert_ok};
-use sp_runtime::{traits::Zero, DispatchError, Perbill, Percent};
+use sp_runtime::{traits::Zero, Perbill, Percent};
 
 /// Prints the diff iff assert_eq fails, should only be used for debugging
 /// purposes
@@ -2413,12 +2413,10 @@ fn nominator_bond_less_updates_just_bottom_nominations() {
 					amount: post_amount,
 				} in &post_call_collator_state.bottom_nominators
 				{
-					if &owner == post_owner {
-						if &amount != post_amount {
-							not_equal = true;
-							break;
-						}
-					}
+					if &owner == post_owner && &amount != post_amount {
+     							not_equal = true;
+     							break;
+     						}
 				}
 			}
 			assert!(not_equal);
@@ -2429,12 +2427,10 @@ fn nominator_bond_less_updates_just_bottom_nominations() {
 					amount: post_amount,
 				} in &post_call_collator_state.top_nominators
 				{
-					if &owner == post_owner {
-						if &amount != post_amount {
-							equal = false;
-							break;
-						}
-					}
+					if &owner == post_owner && &amount != post_amount {
+     							equal = false;
+     							break;
+     						}
 				}
 			}
 			assert!(equal);
@@ -2467,12 +2463,10 @@ fn nominator_bond_less_does_not_delete_bottom_nominations() {
 					amount: post_amount,
 				} in &post_call_collator_state.bottom_nominators
 				{
-					if &owner == post_owner {
-						if &amount != post_amount {
-							equal = false;
-							break;
-						}
-					}
+					if &owner == post_owner && &amount != post_amount {
+     							equal = false;
+     							break;
+     						}
 				}
 			}
 			assert!(equal);
@@ -2483,12 +2477,10 @@ fn nominator_bond_less_does_not_delete_bottom_nominations() {
 					amount: post_amount,
 				} in &post_call_collator_state.top_nominators
 				{
-					if &owner == post_owner {
-						if &amount != post_amount {
-							not_equal = true;
-							break;
-						}
-					}
+					if &owner == post_owner && &amount != post_amount {
+     							not_equal = true;
+     							break;
+     						}
 				}
 			}
 			assert!(not_equal);

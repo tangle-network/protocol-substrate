@@ -1127,7 +1127,7 @@ pub mod pallet {
 			// Initialize the candidates
 			for &(ref candidate, balance) in &self.candidates {
 				assert!(
-					T::Currency::free_balance(&candidate) >= balance,
+					T::Currency::free_balance(candidate) >= balance,
 					"Account does not have enough balance to bond as a candidate."
 				);
 				candidate_count += 1u32;
@@ -1146,15 +1146,15 @@ pub mod pallet {
 			// Initialize the nominations
 			for &(ref nominator, ref target, balance) in &self.nominations {
 				assert!(
-					T::Currency::free_balance(&nominator) >= balance,
+					T::Currency::free_balance(nominator) >= balance,
 					"Account does not have enough balance to place nomination."
 				);
-				let cn_count = if let Some(x) = col_nominator_count.get(&target) {
+				let cn_count = if let Some(x) = col_nominator_count.get(target) {
 					*x
 				} else {
 					0u32
 				};
-				let nn_count = if let Some(x) = nom_nominator_count.get(&nominator) {
+				let nn_count = if let Some(x) = nom_nominator_count.get(nominator) {
 					*x
 				} else {
 					0u32
@@ -1168,12 +1168,12 @@ pub mod pallet {
 				) {
 					log::warn!("Join nominators failed in genesis with error {:?}", error);
 				} else {
-					if let Some(x) = col_nominator_count.get_mut(&target) {
+					if let Some(x) = col_nominator_count.get_mut(target) {
 						*x += 1u32;
 					} else {
 						col_nominator_count.insert(target.clone(), 1u32);
 					};
-					if let Some(x) = nom_nominator_count.get_mut(&nominator) {
+					if let Some(x) = nom_nominator_count.get_mut(nominator) {
 						*x += 1u32;
 					} else {
 						nom_nominator_count.insert(nominator.clone(), 1u32);
@@ -2111,8 +2111,8 @@ pub mod pallet {
 			// i.e. when evaluating the last block in the session the progress should be
 			// 100% (0% is never returned).
 			let progress = if now >= round.first {
-				let current = (now - round.first) % period.clone() + One::one();
-				Some(Permill::from_rational(current.clone(), period.clone()))
+				let current = (now - round.first) % period + One::one();
+				Some(Permill::from_rational(current, period))
 			} else {
 				Some(Permill::from_rational(now + One::one(), round.first))
 			};
@@ -2127,7 +2127,7 @@ pub mod pallet {
 			let period: T::BlockNumber = T::BlocksPerRound::get().into();
 
 			let next_session = if now > offset {
-				let block_after_last_session = (now.clone() - offset) % period.clone();
+				let block_after_last_session = (now - offset) % period;
 				if block_after_last_session > Zero::zero() {
 					now.saturating_add(period.saturating_sub(block_after_last_session))
 				} else {
