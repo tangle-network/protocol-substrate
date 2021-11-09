@@ -1,10 +1,10 @@
 use codec::{Decode, Encode};
-use pallet_anchor::types::EdgeMetadata;
+use pallet_linkable_tree::types::EdgeMetadata;
 use scale_info::TypeInfo;
 
 #[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo)]
-pub struct UpdateRecord<TreeId, ResourceId, ChainID, Element, BlockNumber> {
+pub struct UpdateRecord<TreeId, ResourceId, ChainID, Element, LeafIndex> {
 	pub tree_id: TreeId,
 	pub resource_id: ResourceId,
-	pub edge_metadata: EdgeMetadata<ChainID, Element, BlockNumber>,
+	pub edge_metadata: EdgeMetadata<ChainID, Element, LeafIndex>,
 }

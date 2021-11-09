@@ -1,4 +1,4 @@
-use crate::types::ResourceId;
+use darkwebb_primitives::ResourceId;
 
 /// Helper function to concatenate a chain ID and some bytes to produce a
 /// resource ID. The common format is (31 bytes unique ID + 1 byte chain ID).

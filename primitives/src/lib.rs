@@ -4,6 +4,7 @@ pub mod hasher;
 pub mod runtime;
 pub mod traits;
 pub mod types;
+pub mod utils;
 pub mod verifier;
 
 #[cfg(feature = "hashing")]

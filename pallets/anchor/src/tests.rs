@@ -428,7 +428,7 @@ fn should_fail_when_invalid_merkle_roots() {
 				fee_value.into(),
 				refund_value.into(),
 			),
-			crate::Error::<Test, _>::InvalidMerkleRoots,
+			pallet_linkable_tree::Error::<Test, _>::InvalidMerkleRoots,
 		);
 	});
 }

@@ -318,6 +318,7 @@ impl pallet_multisig::Config for Runtime {
 impl pallet_utility::Config for Runtime {
 	type Call = Call;
 	type Event = Event;
+	type PalletsOrigin = OriginCaller;
 	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
 }
 
@@ -351,7 +352,8 @@ pub enum ProxyType {
 	AssetOwner,
 	/// Asset manager. Can execute calls related to asset management.
 	AssetManager,
-	// Collator selection proxy. Can execute calls related to collator selection mechanism.
+	// Collator selection proxy. Can execute calls related to collator
+	// selection mechanism.
 	Collator,
 	/// Can execute calls related related to staking.
 	Staking,
@@ -508,7 +510,8 @@ pub type LocationToAccountId = (
 	ParentIsDefault<AccountId>,
 	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
-	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
+	// Straight up local `AccountId32` origins just alias directly to
+	// `AccountId`.
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
@@ -516,11 +519,14 @@ pub type LocationToAccountId = (
 pub type LocalAssetTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
-	// Use this currency when it is a fungible asset matching the given location or name:
+	// Use this currency when it is a fungible asset matching the given
+	// location or name:
 	IsConcrete<KsmLocation>,
-	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+	// Do a simple punn to convert an AccountId32 MultiLocation into a native
+	// chain account ID:
 	LocationToAccountId,
-	// Our chain's account ID type (we can't get away without mentioning it explicitly):
+	// Our chain's account ID type (we can't get away without mentioning it
+	// explicitly):
 	AccountId,
 	// We don't track any teleports.
 	(),
@@ -531,23 +537,25 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 /// `Transact`. There is an `OriginKind` which can biases the kind of local
 /// `Origin` it will become.
 pub type XcmOriginToTransactDispatchOrigin = (
-	// Sovereign account converter; this attempts to derive an `AccountId` from the origin location
-	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
-	// foreign chains who want to have a local sovereign account on this chain which they control.
+	// Sovereign account converter; this attempts to derive an `AccountId` from
+	// the origin location using `LocationToAccountId` and then turn that into
+	// the usual `Signed` origin. Useful for foreign chains who want to have a
+	// local sovereign account on this chain which they control.
 	SovereignSignedViaLocation<LocationToAccountId, Origin>,
-	// Native converter for Relay-chain (Parent) location; will converts to a `Relay` origin when
-	// recognised.
+	// Native converter for Relay-chain (Parent) location; will converts to a
+	// `Relay` origin when recognised.
 	RelayChainAsNative<RelayChainOrigin, Origin>,
-	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
-	// recognised.
+	// Native converter for sibling Parachains; will convert to a `SiblingPara`
+	// origin when recognised.
 	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
-	// Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
-	// transaction from the Root origin.
+	// Superuser converter for the Relay-chain (Parent) location. This will
+	// allow it to issue a transaction from the Root origin.
 	ParentAsSuperuser<Origin>,
-	// Native signed account converter; this just converts an `AccountId32` origin into a normal
-	// `Origin::Signed` origin of the same 32-byte value.
+	// Native signed account converter; this just converts an `AccountId32`
+	// origin into a normal `Origin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RelayNetwork, Origin>,
-	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
+	// Xcm origins can be represented natively under the Xcm pallet's Xcm
+	// origin.
 	XcmPassthrough<Origin>,
 );
 
@@ -841,14 +849,21 @@ parameter_types! {
 	pub const HistoryLength: u32 = 30;
 }
 
-impl pallet_anchor::Config for Runtime {
+impl pallet_linkable_tree::Config for Runtime {
 	type ChainId = ChainId;
-	type Currency = Currencies;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
-	type LinkableTree = MerkleTree;
+	type Tree = MerkleTree;
+	type WeightInfo = ();
+}
+
+impl pallet_anchor::Config for Runtime {
+	type Currency = Currencies;
+	type Event = Event;
+	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
+	type PostDepositHook = ();
 	type Verifier = AnchorVerifier;
 	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }
@@ -1030,6 +1045,7 @@ construct_runtime!(
 		MixerVerifier: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		AnchorVerifier: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>, Config<T>},
+		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
@@ -1213,6 +1229,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon5x5Hasher);
 			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			list_benchmark!(list, extra, pallet_mt, MerkleTree);
+			list_benchmark!(list, extra, pallet_linkable_tree, LinkableTree);
 			list_benchmark!(list, extra, pallet_anchor, Anchor);
 			list_benchmark!(list, extra, pallet_mixer, Mixer);
 			list_benchmark!(list, extra, pallet_verifier, AnchorVerifier);
@@ -1253,6 +1270,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon5x5Hasher);
 			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
 			add_benchmark!(params, batches, pallet_mt, MerkleTree);
+			add_benchmark!(params, batches, pallet_linkable_tree, LinkableTree);
 			add_benchmark!(params, batches, pallet_anchor, Anchor);
 			add_benchmark!(params, batches, pallet_mixer, Mixer);
 			add_benchmark!(params, batches, pallet_verifier, AnchorVerifier);

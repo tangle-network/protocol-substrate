@@ -47,8 +47,9 @@ pub mod mock;
 mod tests;
 pub mod types;
 pub mod utils;
-use crate::types::{DepositNonce, ProposalStatus, ProposalVotes, ResourceId};
+use crate::types::{DepositNonce, ProposalStatus, ProposalVotes};
 use codec::{Decode, Encode, EncodeLike};
+use darkwebb_primitives::ResourceId;
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
@@ -65,7 +66,7 @@ use sp_std::prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::types::{DepositNonce, ProposalVotes, ResourceId, DARKWEBB_DEFAULT_RELAYER_THRESHOLD};
+	use crate::types::{DepositNonce, ProposalVotes, DARKWEBB_DEFAULT_RELAYER_THRESHOLD};
 	use frame_support::{
 		dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
 		pallet_prelude::*,
@@ -441,12 +442,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	/// Asserts if a resource is registered
 	pub fn resource_exists(id: ResourceId) -> bool {
-		return Self::resources(id) != None;
+		Self::resources(id) != None
 	}
 
 	/// Checks if a chain exists as a whitelisted destination
 	pub fn chain_whitelisted(id: T::ChainId) -> bool {
-		return Self::chains(id) != None;
+		Self::chains(id) != None
 	}
 
 	// *** Admin methods ***
@@ -534,18 +535,18 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			Self::deposit_event(Event::VoteFor {
 				chain_id: src_id,
 				deposit_nonce: nonce,
-				who: who.clone(),
+				who,
 			});
 		} else {
 			votes.votes_against.push(who.clone());
 			Self::deposit_event(Event::VoteAgainst {
 				chain_id: src_id,
 				deposit_nonce: nonce,
-				who: who.clone(),
+				who,
 			});
 		}
 
-		Votes::<T, I>::insert(src_id, (nonce, prop.clone()), votes.clone());
+		Votes::<T, I>::insert(src_id, (nonce, prop), votes.clone());
 
 		Ok(().into())
 	}
@@ -570,7 +571,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				_ => Ok(().into()),
 			}
 		} else {
-			Err(Error::<T, I>::ProposalDoesNotExist)?
+			Err(Error::<T, I>::ProposalDoesNotExist.into())
 		}
 	}
 

@@ -3,14 +3,14 @@ panic = "unwind"
 
 [workspace]
 members = [
-    "node",
-    "pallets/*",
-    "runtime",
-    "standalone/*",
-		"open-runtime-module-library/currencies",
-		"open-runtime-module-library/tokens",
-		"open-runtime-module-library/traits",
-		"open-runtime-module-library/utilities",
+	"node",
+	"pallets/*",
+	"runtime",
+	"standalone/*",
+	"open-runtime-module-library/currencies",
+	"open-runtime-module-library/tokens",
+	"open-runtime-module-library/traits",
+	"open-runtime-module-library/utilities",
 ]
 
 

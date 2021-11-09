@@ -49,12 +49,13 @@ mod tests;
 use darkwebb_primitives::{
 	anchor::AnchorConfig,
 	traits::anchor::{AnchorInspector, AnchorInterface},
+	ResourceId,
 };
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;
-use pallet_anchor::{types::EdgeMetadata, BalanceOf, CurrencyIdOf};
+use pallet_anchor::{BalanceOf, CurrencyIdOf};
+use pallet_linkable_tree::types::EdgeMetadata;
 pub mod types;
-use pallet_bridge::types::ResourceId;
 use types::*;
 
 pub use pallet::*;
@@ -64,7 +65,8 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use pallet_anchor::{types::EdgeMetadata, AnchorConfigration};
+	use pallet_anchor::AnchorConfigration;
+	use pallet_linkable_tree::types::EdgeMetadata;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -97,7 +99,7 @@ pub mod pallet {
 		T::ChainId,
 		Blake2_128Concat,
 		u64,
-		UpdateRecord<T::TreeId, ResourceId, T::ChainId, T::Element, T::BlockNumber>,
+		UpdateRecord<T::TreeId, ResourceId, T::ChainId, T::Element, T::LeafIndex>,
 		ValueQuery,
 	>;
 
@@ -110,10 +112,6 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		MaintainerSet {
-			old_maintainer: T::AccountId,
-			new_maintainer: T::AccountId,
-		},
 		AnchorCreated,
 		AnchorEdgeAdded,
 		AnchorEdgeUpdated,
@@ -160,7 +158,7 @@ pub mod pallet {
 		pub fn execute_anchor_update_proposal(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
-			anchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>,
+			anchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
 		) -> DispatchResultWithPostInfo {
 			T::BridgeOrigin::ensure_origin(origin)?;
 			Self::update_anchor(r_id, anchor_metadata)
@@ -171,10 +169,10 @@ pub mod pallet {
 impl<T: Config<I>, I: 'static> AnchorConfig for Pallet<T, I> {
 	type AccountId = T::AccountId;
 	type Balance = BalanceOf<T, I>;
-	type BlockNumber = T::BlockNumber;
 	type ChainId = T::ChainId;
 	type CurrencyId = CurrencyIdOf<T, I>;
 	type Element = T::Element;
+	type LeafIndex = T::LeafIndex;
 	type TreeId = T::TreeId;
 }
 
@@ -200,13 +198,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	fn update_anchor(
 		r_id: ResourceId,
-		anchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::BlockNumber>,
+		anchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
 	) -> DispatchResultWithPostInfo {
 		let tree_id = AnchorList::<T, I>::try_get(r_id).map_err(|_| Error::<T, I>::AnchorHandlerNotFound)?;
 		let (src_chain_id, merkle_root, block_height) = (
 			anchor_metadata.src_chain_id,
 			anchor_metadata.root,
-			anchor_metadata.height,
+			anchor_metadata.latest_leaf_index,
 		);
 
 		if T::Anchor::has_edge(tree_id, src_chain_id) {

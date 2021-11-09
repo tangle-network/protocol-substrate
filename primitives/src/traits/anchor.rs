@@ -3,7 +3,7 @@ use frame_support::dispatch;
 use sp_std::vec::Vec;
 
 pub trait AnchorConfig {
-	type BlockNumber;
+	type LeafIndex;
 	type AccountId;
 	type Balance;
 	type CurrencyId;
@@ -36,58 +36,31 @@ pub trait AnchorInterface<C: AnchorConfig> {
 		fee: C::Balance,
 		refund: C::Balance,
 	) -> Result<(), dispatch::DispatchError>;
-	/// Add an edge to this anchor
+	// Stores nullifier hash from a spend tx
+	fn add_nullifier_hash(id: C::TreeId, nullifier_hash: C::Element) -> Result<(), dispatch::DispatchError>;
+	/// Add an edge to this tree
 	fn add_edge(
 		id: C::TreeId,
 		src_chain_id: C::ChainId,
 		root: C::Element,
-		height: C::BlockNumber,
+		latest_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
-	/// Update an edge for this anchor
+	/// Update an edge for this tree
 	fn update_edge(
 		id: C::TreeId,
 		src_chain_id: C::ChainId,
 		root: C::Element,
-		height: C::BlockNumber,
+		latest_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
-	// Stores nullifier hash from a spend tx
-	fn add_nullifier_hash(id: C::TreeId, nullifier_hash: C::Element) -> Result<(), dispatch::DispatchError>;
 }
 
 /// Anchor trait for inspecting tree state
 pub trait AnchorInspector<C: AnchorConfig> {
-	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
-	fn get_root(id: C::TreeId) -> Result<C::Element, dispatch::DispatchError>;
-	/// Checks if a merkle root is in a tree's cached history or returns
-	/// `TreeDoesntExist
-	fn is_known_root(id: C::TreeId, target: C::Element) -> Result<bool, dispatch::DispatchError>;
-
-	fn ensure_known_root(id: C::TreeId, target: C::Element) -> Result<(), dispatch::DispatchError>;
-
-	/// Gets the merkle root for a tree or returns `TreeDoesntExist`
-	fn get_neighbor_roots(id: C::TreeId) -> Result<Vec<C::Element>, dispatch::DispatchError>;
-	/// Checks if a merkle root is in a tree's cached history or returns
-	/// `TreeDoesntExist
-	fn is_known_neighbor_root(
-		id: C::TreeId,
-		src_chain_id: C::ChainId,
-		target: C::Element,
-	) -> Result<bool, dispatch::DispatchError>;
-
-	// let is_known = Self::is_known_neighbor_root(id, src_chain_id, target)?;
-	// ensure!(is_known, Error::<T, I>::InvalidNeighborWithdrawRoot);
-	// Ok(())
-	fn ensure_known_neighbor_root(
-		id: C::TreeId,
-		src_chain_id: C::ChainId,
-		target: C::Element,
-	) -> Result<(), dispatch::DispatchError>;
-	/// Check if this anchor has this edge
-	fn has_edge(id: C::TreeId, src_chain_id: C::ChainId) -> bool;
-
 	/// Check if a nullifier has been used in a tree or returns
 	/// `InvalidNullifier`
 	fn is_nullifier_used(id: C::TreeId, nullifier: C::Element) -> bool;
-
+	/// Check if a nullifier has been used in a tree and throws if not
 	fn ensure_nullifier_unused(id: C::TreeId, nullifier: C::Element) -> Result<(), dispatch::DispatchError>;
+	/// Check if this linked tree has this edge (for backwards compatability)
+	fn has_edge(id: C::TreeId, src_chain_id: C::ChainId) -> bool;
 }
