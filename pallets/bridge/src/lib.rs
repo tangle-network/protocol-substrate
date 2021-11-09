@@ -518,11 +518,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let now = <frame_system::Pallet<T>>::block_number();
 		let mut votes = match Votes::<T, I>::get(src_id, (nonce, prop.clone())) {
 			Some(v) => v,
-			None => {
-				let mut v = ProposalVotes::default();
-				v.expiry = now + T::ProposalLifetime::get();
-				v
-			}
+			None => ProposalVotes {
+				expiry: now + T::ProposalLifetime::get(),
+				..Default::default()
+			},
 		};
 
 		// Ensure the proposal isn't complete and relayer hasn't already voted
@@ -599,6 +598,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Self::try_resolve_proposal(nonce, src_id, prop)
 	}
 
+	#[allow(clippy::boxed_local)]
 	/// Execute the proposal and signals the result as an event
 	fn finalize_execution(
 		src_id: T::ChainId,
