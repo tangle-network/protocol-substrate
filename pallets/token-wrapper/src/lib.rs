@@ -220,18 +220,14 @@ impl<T: Config> Pallet<T> {
 		amount.saturating_mul(percent / T::WrappingFeeDivider::get())
 	}
 
-	pub fn has_sufficient_balance(
-		currency_id: CurrencyIdOf<T>,
-		recipient: &T::AccountId,
-		amount: BalanceOf<T>,
-	) -> bool {
+	pub fn has_sufficient_balance(currency_id: CurrencyIdOf<T>, sender: &T::AccountId, amount: BalanceOf<T>) -> bool {
 		let wrapping_fee = Self::get_wrapping_fee(amount);
 		let total = wrapping_fee.saturating_add(amount);
-		T::Currency::free_balance(currency_id, recipient) > total
+		T::Currency::free_balance(currency_id, sender) > total
 	}
 
-	pub fn get_balance(currency_id: CurrencyIdOf<T>, recipient: &T::AccountId) -> BalanceOf<T> {
-		T::Currency::total_balance(currency_id, recipient)
+	pub fn get_balance(currency_id: CurrencyIdOf<T>, who: &T::AccountId) -> BalanceOf<T> {
+		T::Currency::total_balance(currency_id, who)
 	}
 }
 
