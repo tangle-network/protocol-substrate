@@ -47,9 +47,9 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree DefaultHashes (r:1 w:0)
 	// Storage: MerkleTree Trees (r:0 w:1)
 	fn create(_d: u32, ) -> Weight {
-		(51_295_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		51_295_000_u64
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	// Storage: MerkleTree Trees (r:1 w:1)
 	// Storage: MerkleTree NextLeafIndex (r:1 w:1)
@@ -58,34 +58,34 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree Leaves (r:0 w:1)
 	// Storage: MerkleTree CachedRoots (r:0 w:1)
 	fn insert() -> Weight {
-		(54_848_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes(5 as Weight))
+		54_848_000_u64
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
 	// Storage: MerkleTree Maintainer (r:1 w:1)
 	fn set_maintainer() -> Weight {
-		(24_413_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		24_413_000_u64
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: MerkleTree Maintainer (r:1 w:1)
 	fn force_set_maintainer() -> Weight {
-		(20_762_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		20_762_000_u64
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: MerkleTree DefaultHashes (r:0 w:1)
 	fn force_set_default_hashes(p: u32, ) -> Weight {
-		(3_253_000 as Weight)
+		3_253_000_u64
 			// Standard Error: 0
-			.saturating_add((66_000 as Weight).saturating_mul(p as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+			.saturating_add(66_000_u64.saturating_mul(p as Weight))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
 // For tests and backward compatibility
 impl WeightInfo for () {
-	fn create(d: u32) -> Weight {
+	fn create(_d: u32) -> Weight {
 		0
 	}
 	fn insert() -> Weight {
@@ -97,7 +97,7 @@ impl WeightInfo for () {
 	fn force_set_maintainer() -> Weight{
 		0
 	}
-	fn force_set_default_hashes(p: u32) -> Weight{
+	fn force_set_default_hashes(_p: u32) -> Weight{
 		0
 	}
 }

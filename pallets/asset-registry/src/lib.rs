@@ -508,7 +508,7 @@ impl<T: Config> Pallet<T> {
 				detail.asset_type = asset_type.clone();
 
 				Self::deposit_event(Event::Updated {
-					asset_id: pool_asset_id.clone(),
+					asset_id: pool_asset_id,
 					name: detail.name.clone(),
 					asset_type,
 				});
@@ -531,8 +531,7 @@ impl<T: Config> Pallet<T> {
 						if pool.contains(&asset_id) {
 							let filtered_pool = pool
 								.iter()
-								.filter(|id| **id != asset_id)
-								.map(|id| *id)
+								.filter(|id| **id != asset_id).copied()
 								.collect::<Vec<T::AssetId>>();
 							AssetType::PoolShare(filtered_pool)
 						} else {
@@ -544,7 +543,7 @@ impl<T: Config> Pallet<T> {
 				detail.asset_type = asset_type.clone();
 
 				Self::deposit_event(Event::Updated {
-					asset_id: pool_asset_id.clone(),
+					asset_id: pool_asset_id,
 					name: detail.name.clone(),
 					asset_type,
 				});
@@ -596,7 +595,7 @@ impl<T: Config> ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchErro
 			}
 		}
 
-		return false;
+		false
 	}
 }
 
