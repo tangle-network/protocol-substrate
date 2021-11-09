@@ -1,11 +1,7 @@
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_gadgets::setup::common::Curve;
 
-use darkwebb_primitives::{
-	anchor::{AnchorInspector, AnchorInterface},
-	merkle_tree::TreeInspector,
-	AccountId, ElementTrait,
-};
+use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 
 use codec::Encode;
 
@@ -35,7 +31,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 	let mut verifier_key_bytes = Vec::new();
 	let mut proving_key_bytes = Vec::new();
 
-	get_keys(curve.clone(), &mut proving_key_bytes, &mut verifier_key_bytes);
+	get_keys(curve, &mut proving_key_bytes, &mut verifier_key_bytes);
 
 	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes));
 	// 4. and top-up some accounts with some balance
@@ -166,7 +162,7 @@ fn anchor_works() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element.clone(),
+			leaf_element,
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -225,7 +221,7 @@ fn double_spending_should_fail() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element.clone(),
+			leaf_element,
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -302,7 +298,7 @@ fn should_fail_when_invalid_merkle_roots() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element.clone(),
+			leaf_element,
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -364,7 +360,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element.clone(),
+			leaf_element,
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -427,7 +423,7 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element.clone(),
+			leaf_element,
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -482,7 +478,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element.clone(),
+			leaf_element,
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -538,7 +534,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element.clone(),
+			leaf_element,
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();

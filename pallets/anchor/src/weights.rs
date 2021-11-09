@@ -47,11 +47,11 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: Anchor Anchors (r:0 w:1)
 	// Storage: LinkableTree MaxEdges (r:0 w:1)
 	fn create(_i: u32, d: u32, ) -> Weight {
-		(55_975_000 as Weight)
+		55_975_000_u64
 			// Standard Error: 36_000
-			.saturating_add((217_000 as Weight).saturating_mul(d as Weight))
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+			.saturating_add(217_000_u64.saturating_mul(d as Weight))
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 	// Storage: MerkleTree Trees (r:1 w:1)
 	// Storage: MerkleTree DefaultHashes (r:1 w:0)
@@ -63,9 +63,9 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree Leaves (r:0 w:1)
 	// Storage: MerkleTree CachedRoots (r:0 w:1)
 	fn deposit() -> Weight {
-		(10_971_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(7 as Weight))
-			.saturating_add(T::DbWeight::get().writes(6 as Weight))
+		10_971_000_000_u64
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
 	// Storage: LinkableTree MaxEdges (r:1 w:0)
 	// Storage: MerkleTree Trees (r:1 w:0)
@@ -76,9 +76,9 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: Anchor Anchors (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
 	fn withdraw() -> Weight {
-		(47_849_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(8 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		47_849_000_000_u64
+			.saturating_add(T::DbWeight::get().reads(8_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 }
 
