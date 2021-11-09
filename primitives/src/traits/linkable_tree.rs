@@ -51,6 +51,7 @@ pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 	) -> Result<bool, dispatch::DispatchError>;
 	/// Checks if each root from passed root array is in tree's cached history
 	/// or returns `InvalidNeighborWithdrawRoot`
+	#[allow(clippy::ptr_arg)]
 	fn ensure_known_neighbor_roots(id: C::TreeId, roots: &Vec<C::Element>) -> Result<(), dispatch::DispatchError>;
 	/// Checks if a merkle root is in a tree's cached history or returns
 	/// `InvalidNeighborWithdrawRoot`
