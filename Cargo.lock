@@ -5550,6 +5550,8 @@ dependencies = [
  "pallet-hasher",
  "pallet-linkable-tree",
  "pallet-mt",
+ "pallet-token-wrapper",
+ "pallet-treasury",
  "pallet-verifier",
  "parity-scale-codec",
  "rand 0.8.4",

@@ -167,9 +167,10 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 			recipient: T::AccountId,
 		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
+			let origin = ensure_signed(origin)?;
 
 			<Self as TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>>>::wrap(
+				origin,
 				from_asset_id,
 				into_pool_share_id,
 				amount,
@@ -186,9 +187,10 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 			recipient: T::AccountId,
 		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
+			let origin = ensure_signed(origin)?;
 
 			<Self as TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>>>::unwrap(
+				origin,
 				from_pool_share_id,
 				into_asset_id,
 				amount,
@@ -218,24 +220,20 @@ impl<T: Config> Pallet<T> {
 		amount.saturating_mul(percent / T::WrappingFeeDivider::get())
 	}
 
-	pub fn has_sufficient_balance(
-		currency_id: CurrencyIdOf<T>,
-		recipient: &T::AccountId,
-		amount: BalanceOf<T>,
-	) -> bool {
+	pub fn has_sufficient_balance(currency_id: CurrencyIdOf<T>, sender: &T::AccountId, amount: BalanceOf<T>) -> bool {
 		let wrapping_fee = Self::get_wrapping_fee(amount);
 		let total = wrapping_fee.saturating_add(amount);
-		T::Currency::free_balance(currency_id, recipient) > total
+		T::Currency::free_balance(currency_id, sender) > total
 	}
 
-	#[cfg(test)]
-	pub fn get_balance(currency_id: CurrencyIdOf<T>, recipient: &T::AccountId) -> BalanceOf<T> {
-		T::Currency::total_balance(currency_id, recipient)
+	pub fn get_balance(currency_id: CurrencyIdOf<T>, who: &T::AccountId) -> BalanceOf<T> {
+		T::Currency::total_balance(currency_id, who)
 	}
 }
 
 impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> for Pallet<T> {
 	fn wrap(
+		from: T::AccountId,
 		from_asset_id: T::AssetId,
 		into_pool_share_id: T::AssetId,
 		amount: BalanceOf<T>,
@@ -260,18 +258,18 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 		let pool_share_currency_id = Self::to_currency_id(into_pool_share_id)?;
 
 		ensure!(
-			Self::has_sufficient_balance(from_currency_id, &recipient, amount),
+			Self::has_sufficient_balance(from_currency_id, &from, amount),
 			Error::<T>::InsufficientBalance
 		);
 
 		T::Currency::transfer(
 			from_currency_id,
-			&recipient,
+			&from,
 			&Self::treasury_id(),
 			Self::get_wrapping_fee(amount),
 		)?;
 
-		T::Currency::transfer(from_currency_id, &recipient, &Self::account_id(), amount)?;
+		T::Currency::transfer(from_currency_id, &from, &Self::account_id(), amount)?;
 
 		T::Currency::deposit(pool_share_currency_id, &recipient, amount)?;
 
@@ -285,6 +283,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 	}
 
 	fn unwrap(
+		from: T::AccountId,
 		from_pool_share_id: T::AssetId,
 		into_asset_id: T::AssetId,
 		amount: BalanceOf<T>,
@@ -308,7 +307,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 		let into_currency_id = Self::to_currency_id(into_asset_id)?;
 		let pool_share_currency_id = Self::to_currency_id(from_pool_share_id)?;
 
-		T::Currency::withdraw(pool_share_currency_id, &recipient, amount)?;
+		T::Currency::withdraw(pool_share_currency_id, &from, amount)?;
 
 		T::Currency::transfer(into_currency_id, &Self::account_id(), &recipient, amount)?;
 
