@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
+	Permill,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -45,6 +46,8 @@ frame_support::construct_runtime!(
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
+		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>}
 	}
 );
 
@@ -213,6 +216,50 @@ impl pallet_asset_registry::Config for Test {
 	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const ProposalBond: Permill = Permill::from_percent(5);
+	pub const ProposalBondMinimum: u64 = 1;
+	pub const SpendPeriod: u64 = 2;
+	pub const Burn: Permill = Permill::from_percent(50);
+	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const BountyUpdatePeriod: u32 = 20;
+	pub const BountyCuratorDeposit: Permill = Permill::from_percent(50);
+	pub const BountyValueMinimum: u64 = 1;
+	pub const MaxApprovals: u32 = 100;
+}
+
+impl pallet_treasury::Config for Test {
+	type ApproveOrigin = frame_system::EnsureRoot<AccountId>;
+	type Burn = Burn;
+	type BurnDestination = ();
+	type Currency = pallet_balances::Pallet<Test>;
+	type Event = Event;
+	type MaxApprovals = MaxApprovals;
+	type OnSlash = ();
+	type PalletId = TreasuryPalletId;
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type RejectOrigin = frame_system::EnsureRoot<AccountId>;
+	type SpendFunds = ();
+	type SpendPeriod = SpendPeriod;
+	// Just gets burned.
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const TokenWrapperPalletId: PalletId = PalletId(*b"py/tkwrp");
+	pub const WrappingFeeDivider: u128 = 100;
+}
+
+impl pallet_token_wrapper::Config for Test {
+	type AssetRegistry = AssetRegistry;
+	type Currency = Currencies;
+	type Event = Event;
+	type PalletId = TokenWrapperPalletId;
+	type TreasuryId = TreasuryPalletId;
+	type WrappingFeeDivider = WrappingFeeDivider;
 }
 
 parameter_types! {

@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_gadgets::setup::common::Curve;
 
@@ -11,6 +13,7 @@ use codec::Encode;
 
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, error::BadOrigin, traits::OnInitialize};
+use pallet_asset_registry::AssetType;
 
 use crate::{mock::*, test_utils::*};
 
@@ -225,10 +228,9 @@ fn should_be_able_to_add_neighbors_and_check_history() {
 	});
 }
 
-fn create_anchor() -> u32 {
+fn create_anchor(asset_id: u32) -> u32 {
 	let max_edges = 2;
 	let depth = TREE_DEPTH as u8;
-	let asset_id = 0;
 	assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 	MerkleTree::next_tree_id() - 1
 }
@@ -240,7 +242,7 @@ fn anchor_works() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor();
+		let tree_id = create_anchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -299,7 +301,7 @@ fn double_spending_should_fail() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor();
+		let tree_id = create_anchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -376,7 +378,7 @@ fn should_fail_when_invalid_merkle_roots() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor();
+		let tree_id = create_anchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -438,7 +440,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor();
+		let tree_id = create_anchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -501,7 +503,7 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor();
+		let tree_id = create_anchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -556,7 +558,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor();
+		let tree_id = create_anchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -612,7 +614,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor();
+		let tree_id = create_anchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -658,5 +660,131 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 			),
 			crate::Error::<Test, _>::InvalidWithdrawProof
 		);
+	});
+}
+
+#[test]
+fn anchor_works_for_pool_tokens() {
+	new_test_ext().execute_with(|| {
+		let existential_balance: u32 = 1000;
+		let first_token_id = AssetRegistry::register_asset(
+			b"shib".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+		let second_token_id = AssetRegistry::register_asset(
+			b"doge".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let pool_share_id = AssetRegistry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let curve = Curve::Bn254;
+		let pk_bytes = setup_environment(curve);
+
+		// inputs
+		let tree_id = create_anchor(pool_share_id);
+		let src_chain_id = 1;
+		let sender_account_id = account::<AccountId>("", 1, SEED);
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
+		let fee_value = 0;
+		let refund_value = 0;
+		let balance = 30_000u32;
+
+		assert_ok!(Currencies::update_balance(
+			Origin::root(),
+			sender_account_id.clone(),
+			first_token_id,
+			balance.into()
+		));
+
+		assert_ok!(Currencies::update_balance(
+			Origin::root(),
+			sender_account_id.clone(),
+			second_token_id,
+			balance.into()
+		));
+
+		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 0));
+
+		assert_ok!(TokenWrapper::wrap(
+			Origin::signed(sender_account_id.clone()),
+			first_token_id,
+			pool_share_id,
+			10000 as u128,
+			sender_account_id.clone()
+		));
+
+		assert_ok!(TokenWrapper::wrap(
+			Origin::signed(sender_account_id.clone()),
+			second_token_id,
+			pool_share_id,
+			10000 as u128,
+			sender_account_id.clone()
+		));
+
+		assert_eq!(Tokens::total_issuance(pool_share_id), 20_000u32.into());
+
+		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			src_chain_id,
+			fee_value,
+			refund_value,
+		);
+
+		assert_ok!(Anchor::deposit(
+			Origin::signed(sender_account_id.clone()),
+			tree_id,
+			leaf_element.clone(),
+		));
+
+		let tree_root = MerkleTree::get_root(tree_id).unwrap();
+		// sanity check.
+		assert_eq!(roots_element[0], tree_root);
+
+		let balance_before = TokenWrapper::get_balance(pool_share_id, &recipient_account_id);
+		// fire the call.
+		assert_ok!(Anchor::withdraw(
+			Origin::signed(sender_account_id),
+			tree_id,
+			proof_bytes,
+			src_chain_id,
+			roots_element,
+			nullifier_hash_element,
+			recipient_account_id.clone(),
+			relayer_account_id,
+			fee_value.into(),
+			refund_value.into(),
+		));
+		// now we check the recipient balance again.
+		let balance_after = TokenWrapper::get_balance(pool_share_id, &recipient_account_id);
+		assert_eq!(balance_after, balance_before + DEPOSIT_SIZE);
+
+		assert_ok!(TokenWrapper::unwrap(
+			Origin::signed(recipient_account_id.clone()),
+			pool_share_id,
+			second_token_id,
+			10000 as u128,
+			recipient_account_id.clone()
+		));
+
+		assert_eq!(Tokens::total_issuance(pool_share_id), 10000u32.into());
+
+		assert_eq!(TokenWrapper::get_balance(second_token_id, &recipient_account_id), 10000);
 	});
 }
