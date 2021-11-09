@@ -49,11 +49,11 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: Mixer Mixers (r:0 w:1)
 	// Storage: MerkleTree Trees (r:0 w:1)
 	fn create(d: u32, ) -> Weight {
-		(34_099_000 as Weight)
+		34_099_000_u64
 			// Standard Error: 5_000
-			.saturating_add((43_000 as Weight).saturating_mul(d as Weight))
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+			.saturating_add(43_000_u64.saturating_mul(d as Weight))
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	// Storage: MerkleTree Trees (r:1 w:1)
 	// Storage: MerkleTree DefaultHashes (r:1 w:0)
@@ -65,21 +65,21 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree Leaves (r:0 w:1)
 	// Storage: MerkleTree CachedRoots (r:0 w:1)
 	fn deposit() -> Weight {
-		(9_847_660_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(7 as Weight))
-			.saturating_add(T::DbWeight::get().writes(6 as Weight))
+		9_847_660_000_u64
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
 	// Storage: Mixer Maintainer (r:1 w:1)
 	fn set_maintainer() -> Weight {
-		(22_199_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		22_199_000_u64
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: Mixer Maintainer (r:1 w:1)
 	fn force_set_maintainer() -> Weight {
-		(19_758_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		19_758_000_u64
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: Mixer Mixers (r:1 w:0)
 	// Storage: MerkleTree Trees (r:1 w:0)
@@ -88,9 +88,9 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MixerVerifier Parameters (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
 	fn withdraw() -> Weight {
-		(35_264_966_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(6 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		35_264_966_000_u64
+			.saturating_add(T::DbWeight::get().reads(6_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 }
 

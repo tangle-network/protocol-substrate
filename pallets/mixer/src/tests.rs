@@ -35,7 +35,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 	let mut verifier_key_bytes = Vec::new();
 	let mut proving_key_bytes = Vec::new();
 
-	get_keys(curve.clone(), &mut proving_key_bytes, &mut verifier_key_bytes);
+	get_keys(curve, &mut proving_key_bytes, &mut verifier_key_bytes);
 
 	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes));
 
@@ -99,7 +99,7 @@ fn should_be_able_to_change_the_maintainer() {
 fn mixer_works() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve.clone());
+		let pk_bytes = setup_environment(curve);
 		// now let's create the mixer.
 		let deposit_size = One::one();
 		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
@@ -151,7 +151,7 @@ fn mixer_works() {
 fn mixer_should_fail_with_when_proof_when_any_byte_is_changed_in_proof() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve.clone());
+		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
 		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
@@ -207,7 +207,7 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 
-		let pk_bytes = setup_environment(curve.clone());
+		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
 		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
@@ -261,7 +261,7 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve.clone());
+		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
 		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
@@ -311,7 +311,7 @@ fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation(
 fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve.clone());
+		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
 		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
@@ -361,7 +361,7 @@ fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve.clone());
+		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
 		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
@@ -411,7 +411,7 @@ fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_revers
 fn double_spending_should_fail() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve.clone());
+		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
 		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
@@ -446,8 +446,8 @@ fn double_spending_should_fail() {
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
 			proof_bytes.clone(),
-			root_element.clone(),
-			nullifier_hash_element.clone(),
+			root_element,
+			nullifier_hash_element,
 			recipient_account_id.clone(),
 			relayer_account_id.clone(),
 			fee_value.into(),
