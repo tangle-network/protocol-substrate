@@ -253,6 +253,18 @@ pub mod pallet {
 			Self::update_anchor(tree_id, metadata)?;
 			Ok(().into())
 		}
+
+		/// Sync All the Anchors in this chain to the other chains that are
+		/// already linked.
+		#[pallet::weight(0)]
+		pub fn sync_anchors(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+			ensure_signed(origin)?;
+			let anchors = pallet_anchor::Anchors::<T, I>::iter_keys();
+			for anchor in anchors {
+				Self::sync_anchor(anchor)?;
+			}
+			Ok(().into())
+		}
 	}
 }
 
@@ -302,12 +314,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	fn anchor_exists(tree_id: T::TreeId) -> bool {
 		pallet_mt::Trees::<T, I>::contains_key(tree_id)
 	}
-}
 
-impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
-	fn post_deposit(_: T::AccountId, my_tree_id: T::TreeId, _: T::Element) -> DispatchResult {
+	/// Sync Anchor Edge with other parachains that linked to that anchor
+	/// usinc XCM.
+	fn sync_anchor(tree_id: T::TreeId) -> DispatchResult {
 		// we get the current anchor tree
-		let tree = pallet_mt::Trees::<T, I>::get(my_tree_id);
+		let tree = pallet_mt::Trees::<T, I>::get(tree_id);
 		// extract the root
 		let root = tree.root;
 		// and the latest leaf index
@@ -321,7 +333,7 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 			latest_leaf_index,
 		};
 		// now we need an iterator for all the edges connected to this anchor
-		let edges = pallet_linkable_tree::EdgeList::<T, I>::iter_prefix_values(my_tree_id);
+		let edges = pallet_linkable_tree::EdgeList::<T, I>::iter_prefix_values(tree_id);
 		// for each edge we do the following:
 		// 1. get the target tree id on the other chain (using the other chain id, and
 		// my tree id)
@@ -332,7 +344,7 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 		for edge in edges {
 			// first, we get the target chain tree id
 			let other_chain_id = edge.src_chain_id;
-			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id, my_tree_id);
+			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id, tree_id);
 			let my_chain_id = metadata.src_chain_id;
 			// target_tree_id + my_chain_id
 			let r_id = utils::encode_resource_id::<T::TreeId, T::ChainId>(target_tree_id, my_chain_id);
@@ -369,6 +381,12 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 			}
 		}
 		Ok(())
+	}
+}
+
+impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
+	fn post_deposit(_: T::AccountId, my_tree_id: T::TreeId, _: T::Element) -> DispatchResult {
+		Self::sync_anchor(my_tree_id)
 	}
 }
 

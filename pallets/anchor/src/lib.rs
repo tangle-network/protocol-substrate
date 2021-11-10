@@ -182,6 +182,20 @@ pub mod pallet {
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
+			<Self as AnchorInterface<_>>::deposit(origin, tree_id, leaf)?;
+			Ok(().into())
+		}
+
+		/// Same as [Self::deposit] but with another call to update the linked
+		/// anchors cross-chain (if any).
+		// FIXME: update the weight here
+		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
+		pub fn deposit_update_linked_anchors(
+			origin: OriginFor<T>,
+			tree_id: T::TreeId,
+			leaf: T::Element,
+		) -> DispatchResultWithPostInfo {
+			let origin = ensure_signed(origin)?;
 			<Self as AnchorInterface<_>>::deposit(origin.clone(), tree_id, leaf)?;
 			T::PostDepositHook::post_deposit(origin, tree_id, leaf)?;
 			Ok(().into())
