@@ -240,7 +240,7 @@ fn should_bridge_anchors_using_xcm() {
 		// check the balance before the deposit.
 		let balance_before = Balances::free_balance(account_id.clone());
 		// and we do the deposit
-		assert_ok!(Anchor::deposit(
+		assert_ok!(Anchor::deposit_update_linked_anchors(
 			Origin::signed(account_id.clone()),
 			para_a_tree_id,
 			leaf
