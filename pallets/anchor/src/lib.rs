@@ -190,7 +190,7 @@ pub mod pallet {
 		/// anchors cross-chain (if any).
 		// FIXME: update the weight here
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
-		pub fn deposit_update_linked_anchors(
+		pub fn deposit_and_update_linked_anchors(
 			origin: OriginFor<T>,
 			tree_id: T::TreeId,
 			leaf: T::Element,
