@@ -2414,9 +2414,9 @@ fn nominator_bond_less_updates_just_bottom_nominations() {
 				} in &post_call_collator_state.bottom_nominators
 				{
 					if &owner == post_owner && &amount != post_amount {
-     							not_equal = true;
-     							break;
-     						}
+						not_equal = true;
+						break;
+					}
 				}
 			}
 			assert!(not_equal);
@@ -2428,9 +2428,9 @@ fn nominator_bond_less_updates_just_bottom_nominations() {
 				} in &post_call_collator_state.top_nominators
 				{
 					if &owner == post_owner && &amount != post_amount {
-     							equal = false;
-     							break;
-     						}
+						equal = false;
+						break;
+					}
 				}
 			}
 			assert!(equal);
@@ -2464,9 +2464,9 @@ fn nominator_bond_less_does_not_delete_bottom_nominations() {
 				} in &post_call_collator_state.bottom_nominators
 				{
 					if &owner == post_owner && &amount != post_amount {
-     							equal = false;
-     							break;
-     						}
+						equal = false;
+						break;
+					}
 				}
 			}
 			assert!(equal);
@@ -2478,9 +2478,9 @@ fn nominator_bond_less_does_not_delete_bottom_nominations() {
 				} in &post_call_collator_state.top_nominators
 				{
 					if &owner == post_owner && &amount != post_amount {
-     							not_equal = true;
-     							break;
-     						}
+						not_equal = true;
+						break;
+					}
 				}
 			}
 			assert!(not_equal);
