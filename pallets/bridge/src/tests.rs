@@ -1,7 +1,5 @@
 #![cfg(test)]
 
-
-
 use super::{
 	mock::{
 		assert_events, new_test_ext, Balances, Bridge, Call, ChainIdentifier, Event, Origin, ProposalLifetime, System,

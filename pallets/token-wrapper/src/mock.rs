@@ -163,6 +163,7 @@ impl Config for Test {
 	type Event = Event;
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TreasuryPalletId;
+	type WeightInfo = ();
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
 

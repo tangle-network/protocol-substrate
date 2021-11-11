@@ -983,6 +983,7 @@ impl pallet_token_wrapper::Config for Runtime {
 	type Event = Event;
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TreasuryPalletId;
+	type WeightInfo = pallet_token_wrapper::weights::WebbWeight<Runtime>;
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
 
@@ -1234,6 +1235,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_mixer, Mixer);
 			list_benchmark!(list, extra, pallet_verifier, AnchorVerifier);
 			list_benchmark!(list, extra, pallet_verifier, MixerVerifier);
+			list_benchmark!(list, extra, pallet_token_wrapper, TokenWrapper);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1275,6 +1277,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_mixer, Mixer);
 			add_benchmark!(params, batches, pallet_verifier, AnchorVerifier);
 			add_benchmark!(params, batches, pallet_verifier, MixerVerifier);
+			add_benchmark!(params, batches, pallet_token_wrapper, TokenWrapper);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

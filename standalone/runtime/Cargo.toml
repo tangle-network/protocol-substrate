@@ -120,6 +120,7 @@ runtime-benchmarks = [
   "pallet-bridge/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
   "pallet-collective/runtime-benchmarks",
+  "pallet-token-wrapper/runtime-benchmarks"
 ]
 
 std = [

@@ -48,12 +48,14 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod benchmarking;
 #[cfg(test)]
 pub mod mock;
 #[cfg(test)]
 mod tests;
 
 mod traits;
+pub mod weights;
 
 use codec::{Decode, Encode};
 use sp_runtime::traits::Saturating;
@@ -68,6 +70,7 @@ use frame_support::{
 };
 use orml_traits::MultiCurrency;
 use traits::TokenWrapperInterface;
+use weights::WeightInfo;
 
 pub use pallet::*;
 
@@ -106,6 +109,8 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type WrappingFeeDivider: Get<BalanceOf<Self>>;
+
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::storage]
@@ -147,7 +152,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config>::WeightInfo::set_wrapping_fee())]
 		pub fn set_wrapping_fee(origin: OriginFor<T>, fee: BalanceOf<T>) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 
@@ -159,7 +164,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config>::WeightInfo::wrap())]
 		pub fn wrap(
 			origin: OriginFor<T>,
 			from_asset_id: T::AssetId,
@@ -179,7 +184,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as Config>::WeightInfo::unwrap())]
 		pub fn unwrap(
 			origin: OriginFor<T>,
 			from_pool_share_id: T::AssetId,
