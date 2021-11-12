@@ -8,6 +8,8 @@ use arkworks_gadgets::setup::common::Curve;
 use codec::Encode;
 use darkwebb_primitives::utils::encode_resource_id;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
+use pallet_anchor::BalanceOf;
+use pallet_democracy::{AccountVote, Conviction, Vote};
 use xcm_simulator::TestExt;
 
 const TREE_DEPTH: usize = 30;
@@ -336,4 +338,124 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 			frame_support::error::BadOrigin,
 		);
 	});
+}
+
+// Governance System Tests
+const AYE: Vote = Vote {
+	aye: true,
+	conviction: Conviction::None,
+};
+const NAY: Vote = Vote {
+	aye: false,
+	conviction: Conviction::None,
+};
+
+fn aye(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
+	AccountVote::Standard {
+		vote: AYE,
+		balance: Balances::free_balance(&who),
+	}
+}
+
+fn nay(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
+	AccountVote::Standard {
+		vote: NAY,
+		balance: Balances::free_balance(&who),
+	}
+}
+
+#[test]
+fn governance_system_works() {
+	MockNet::reset();
+	// create an anchor on parachain A.
+	let para_a_tree_id = ParaA::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+	// Also, Create an anchor on parachain B.
+	let para_b_tree_id = ParaB::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+
+	// next, we start doing the linking process through the governance system.
+	ParaA::execute_with(|| {
+		// create a link proposal, saying that we (parachain A) want to link the anchor
+		// (local_tree_id) to the anchor (target_tree_id) located on Parachain B
+		// (target_chain_id).
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(para_b_tree_id),
+			local_tree_id: para_a_tree_id,
+		};
+		let value = 100;
+		assert_ok!(XAnchor::propose_to_link_anchor(
+			Origin::signed(AccountThree::get()),
+			payload,
+			value
+		));
+		// we should see this anchor link in the pending list
+		assert_eq!(
+			XAnchor::pending_linked_anchors(PARAID_B, para_a_tree_id),
+			Some(para_b_tree_id),
+		);
+
+		// start of 2 => next referendum scheduled.
+		fast_forward_to(2);
+		// now we need to vote on the proposal.
+		let referendum_index = Democracy::referendum_count() - 1;
+		assert_ok!(Democracy::vote(
+			Origin::signed(AccountOne::get()),
+			referendum_index,
+			aye(AccountOne::get())
+		));
+		// referendum runs during 2 and 3, ends @ start of 4.
+		fast_forward_to(4);
+		// referendum passes and wait another two blocks for enactment.
+		fast_forward_to(6);
+		// at this point the proposal should be enacted and we sent a message to
+		// the other chain.
+	});
+
+	// now we do the on-chain proposal checking on chain B.
+	ParaB::execute_with(|| {
+		// we should see the anchor in the pending list.
+		assert_eq!(
+			XAnchor::pending_linked_anchors(PARAID_A, para_b_tree_id),
+			Some(para_a_tree_id),
+		);
+		// start of 8 => next referendum scheduled.
+		fast_forward_to(8);
+		// now we need to vote on the proposal.
+		let referendum_index = Democracy::referendum_count() - 1;
+		assert_ok!(Democracy::vote(
+			Origin::signed(AccountTwo::get()),
+			referendum_index,
+			aye(AccountTwo::get())
+		));
+		// referendum runs during 8 and 9, ends @ start of 10.
+		fast_forward_to(10);
+		// referendum passes and wait another two blocks for enactment.
+		fast_forward_to(12);
+		// at this point the proposal should be enacted and the anchors should be linked
+		// on this chain.
+		assert_eq!(XAnchor::pending_linked_anchors(PARAID_A, para_b_tree_id), None,);
+		assert_eq!(XAnchor::linked_anchors(PARAID_A, para_b_tree_id), para_a_tree_id);
+	});
+
+	// on chain A we should find them linked too.
+	ParaA::execute_with(|| {
+		assert_eq!(XAnchor::pending_linked_anchors(PARAID_B, para_a_tree_id), None);
+		assert_eq!(XAnchor::linked_anchors(PARAID_B, para_a_tree_id), para_b_tree_id);
+	});
+
+	// the link process is now done!
 }

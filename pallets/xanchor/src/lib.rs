@@ -237,36 +237,41 @@ pub mod pallet {
 			// we need now to signal the other chain to start a link proposal on that chain
 			// too.
 			let other_para_id = chain_id_to_para_id::<T, I>(payload.target_chain_id);
-			let handle_link_anchor_message = Transact {
+			let my_para_id = T::ParaId::get();
+			let payload = LinkProposal {
+				target_chain_id: para_id_to_chain_id::<T, I>(my_para_id),
+				..payload
+			};
+			let save_link_proposal = Transact {
 				origin_type: OriginKind::Native,
+				require_weight_at_most: 1_000_000_000,
+				call: <T as Config<I>>::Call::from(Call::<T, I>::save_link_proposal {
+					payload: payload.clone(),
+				})
+				.encode()
+				.into(),
+			};
+			let handle_link_anchor_message = Transact {
+				origin_type: OriginKind::SovereignAccount,
 				require_weight_at_most: 1_000_000_000,
 				call: <T as Config<I>>::Call::from(Call::<T, I>::handle_link_anchor_message { payload, value })
 					.encode()
 					.into(),
 			};
 			let dest = (Parent, Parachain(other_para_id.into()));
-			T::XcmSender::send_xcm(dest, Xcm(vec![handle_link_anchor_message]))
+			T::XcmSender::send_xcm(dest, Xcm(vec![save_link_proposal, handle_link_anchor_message]))
 				.map_err(|_| Error::<T, I>::SendingLinkProposalFailed)?;
 			Ok(().into())
 		}
 
-		/// Handles the Link anchor proposal from other chain, by creating an
-		/// on-chain proposal that once passed will link the anchors on the
-		/// local chain, also signals back the caller chain with the proposal
-		/// hash, so the caller chain know that the link process is complete.
-		///
 		/// **Note**: This method requires the `origin` to be a sibling
 		/// parachain.
 		#[pallet::weight(0)]
-		pub fn handle_link_anchor_message(
-			origin: OriginFor<T>,
-			payload: LinkProposalOf<T, I>,
-			value: BalanceOf<T, I>,
-		) -> DispatchResultWithPostInfo {
-			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin.clone()))?;
+		pub fn save_link_proposal(origin: OriginFor<T>, payload: LinkProposalOf<T, I>) -> DispatchResultWithPostInfo {
+			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
 			let caller_chain_id = para_id_to_chain_id::<T, I>(para);
 			// now we on the other chain (if you look at it from the caller point of view)
-			// here, we do first check if there is a requested anchor is exists (if any).
+			// here, we do first check if the requested anchor exists (if any).
 			let my_tree_id = match payload.target_tree_id {
 				Some(tree_id) => {
 					ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
@@ -279,17 +284,51 @@ pub mod pallet {
 				!LinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
 				Error::<T, I>::ResourceIsAlreadyAnchored
 			);
+			// we double check again, if there is not a pending link for this
+			// anchor/proposal.
+			ensure!(
+				!PendingLinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
+				Error::<T, I>::AnchorLinkIsAlreadyPending
+			);
+			// now we save the link proposal.
+			PendingLinkedAnchors::<T, I>::insert(caller_chain_id, my_tree_id, Some(payload.local_tree_id));
+			Ok(().into())
+		}
+
+		/// Handles the Link anchor proposal from other chain, by creating an
+		/// on-chain proposal that once passed will link the anchors on the
+		/// local chain, also signals back the caller chain with the proposal
+		/// hash, so the caller chain know that the link process is complete.
+		#[pallet::weight(0)]
+		pub fn handle_link_anchor_message(
+			origin: OriginFor<T>,
+			payload: LinkProposalOf<T, I>,
+			value: BalanceOf<T, I>,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin.clone())?;
+			let my_tree_id = match payload.target_tree_id {
+				Some(tree_id) => {
+					ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
+					tree_id
+				}
+				None => todo!("create an anchor if the caller does not provide one"),
+			};
+			// double check that it is already in the pending link storage.
+			ensure!(
+				PendingLinkedAnchors::<T, I>::contains_key(payload.target_chain_id, my_tree_id),
+				Error::<T, I>::AnchorLinkNotFound
+			);
 			// finally, we create the on-chain proposal, that's when passed will link the
 			// anchors locally and send back to the other chain that the link process is
 			// done.
 			let payload = LinkProposal {
-				target_chain_id: caller_chain_id,
 				target_tree_id: Some(payload.local_tree_id),
 				local_tree_id: my_tree_id,
+				..payload
 			};
 			let proposal = <T as Config<I>>::Call::from(Call::<T, I>::link_anchors { payload });
 			// finally we can create the proposal.
-			T::DemocracyGovernanceDelegate::propose(origin, proposal, value)?;
+			dbg!(T::DemocracyGovernanceDelegate::propose(origin, proposal, value))?;
 			Ok(().into())
 		}
 
@@ -300,6 +339,12 @@ pub mod pallet {
 			// so we link them locally, and also signal back to the other chain that
 			// requested the link that the link process is done.
 			let other_para_id = chain_id_to_para_id::<T, I>(payload.target_chain_id);
+			ensure!(
+				PendingLinkedAnchors::<T, I>::contains_key(payload.target_chain_id, payload.local_tree_id),
+				Error::<T, I>::AnchorLinkNotFound,
+			);
+			// now we can remove the pending linked anchor.
+			PendingLinkedAnchors::<T, I>::remove(payload.target_chain_id, payload.local_tree_id);
 			let r_id = utils::encode_resource_id(payload.local_tree_id, payload.target_chain_id);
 			// unwrap here is safe, since we are sure that it has the value of the tree id.
 			let target_tree_id = payload.target_tree_id.unwrap();

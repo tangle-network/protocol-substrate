@@ -1,6 +1,8 @@
 pub mod parachain;
 pub mod relay_chain;
 
+use std::ops::Mul;
+
 use frame_support::traits::{GenesisBuild, OnInitialize};
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_runtime::traits::AccountIdConversion;
@@ -59,12 +61,14 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
 
 	pallet_balances::GenesisConfig::<Runtime> {
 		balances: vec![
-			(parachain::AccountOne::get(), INITIAL_BALANCE),
-			(parachain::AccountTwo::get(), INITIAL_BALANCE),
-			(parachain::AccountThree::get(), INITIAL_BALANCE),
-			(parachain::AccountFour::get(), INITIAL_BALANCE),
-			(parachain::AccountFive::get(), INITIAL_BALANCE),
-			(parachain::AccountSix::get(), INITIAL_BALANCE),
+			(parachain::AccountOne::get(), INITIAL_BALANCE.mul(1u128)),
+			(parachain::AccountTwo::get(), INITIAL_BALANCE.mul(2u128)),
+			(parachain::AccountThree::get(), INITIAL_BALANCE.mul(3u128)),
+			(parachain::AccountFour::get(), INITIAL_BALANCE.mul(4u128)),
+			(parachain::AccountFive::get(), INITIAL_BALANCE.mul(5u128)),
+			(parachain::AccountSix::get(), INITIAL_BALANCE.mul(6u128)),
+			(para_account_id(PARAID_A), INITIAL_BALANCE),
+			(para_account_id(PARAID_B), INITIAL_BALANCE),
 		],
 	}
 	.assimilate_storage(&mut t)
