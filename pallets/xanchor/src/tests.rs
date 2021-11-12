@@ -235,7 +235,7 @@ fn should_bridge_anchors_using_xcm() {
 	// and check the edges on the other chain (ParaB).
 	let mut para_a_root = Element::from_bytes(&[0u8; 32]);
 	ParaA::execute_with(|| {
-		let account_id = ALICE;
+		let account_id = parachain::AccountOne::get();
 		let leaf = Element::from_bytes(&[1u8; 32]);
 		// check the balance before the deposit.
 		let balance_before = Balances::free_balance(account_id.clone());
@@ -275,7 +275,7 @@ fn should_fail_to_register_resource_id_if_not_the_democracy() {
 		let r_id = encode_resource_id(tree_id, PARAID_B);
 		let target_tree_id = 1;
 		assert_err!(
-			XAnchor::register_resource_id(Origin::signed(BOB), r_id, target_tree_id),
+			XAnchor::register_resource_id(Origin::signed(parachain::AccountTwo::get()), r_id, target_tree_id),
 			frame_support::error::BadOrigin,
 		);
 	});
@@ -332,7 +332,7 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let r_id = encode_resource_id(tree_id, PARAID_B);
 		assert_err!(
-			XAnchor::update(Origin::signed(BOB), r_id, Default::default()),
+			XAnchor::update(Origin::signed(parachain::AccountTwo::get()), r_id, Default::default()),
 			frame_support::error::BadOrigin,
 		);
 	});
