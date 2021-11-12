@@ -34,6 +34,8 @@ serde = { version = "1.0.119" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-democracy = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-scheduler = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false }
 orml-currencies = { path = "../../open-runtime-module-library/currencies", default-features = false }

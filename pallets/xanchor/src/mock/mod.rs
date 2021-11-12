@@ -1,6 +1,7 @@
 pub mod parachain;
 pub mod relay_chain;
 
+use frame_support::traits::OnInitialize;
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_runtime::traits::AccountIdConversion;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
@@ -96,3 +97,15 @@ pub fn relay_ext() -> sp_io::TestExternalities {
 
 pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
 pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
+
+pub fn next_block() {
+	parachain::System::set_block_number(parachain::System::block_number() + 1);
+	parachain::Scheduler::on_initialize(parachain::System::block_number());
+	parachain::Democracy::on_initialize(parachain::System::block_number());
+}
+
+pub fn fast_forward_to(n: u64) {
+	while parachain::System::block_number() < n {
+		next_block();
+	}
+}
