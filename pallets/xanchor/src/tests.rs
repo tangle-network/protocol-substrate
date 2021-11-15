@@ -8,6 +8,8 @@ use arkworks_gadgets::setup::common::Curve;
 use codec::Encode;
 use darkwebb_primitives::utils::encode_resource_id;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
+use pallet_anchor::BalanceOf;
+use pallet_democracy::{AccountVote, Conviction, Vote};
 use xcm_simulator::TestExt;
 
 const TREE_DEPTH: usize = 30;
@@ -235,12 +237,12 @@ fn should_bridge_anchors_using_xcm() {
 	// and check the edges on the other chain (ParaB).
 	let mut para_a_root = Element::from_bytes(&[0u8; 32]);
 	ParaA::execute_with(|| {
-		let account_id = ALICE;
+		let account_id = parachain::AccountOne::get();
 		let leaf = Element::from_bytes(&[1u8; 32]);
 		// check the balance before the deposit.
 		let balance_before = Balances::free_balance(account_id.clone());
 		// and we do the deposit
-		assert_ok!(Anchor::deposit_update_linked_anchors(
+		assert_ok!(Anchor::deposit_and_update_linked_anchors(
 			Origin::signed(account_id.clone()),
 			para_a_tree_id,
 			leaf
@@ -267,51 +269,16 @@ fn should_bridge_anchors_using_xcm() {
 }
 
 #[test]
-fn should_be_able_to_change_the_maintainer() {
-	MockNet::reset();
-	ParaA::execute_with(|| {
-		let default_maintainer_account_id = AccountId::default();
-		let current_maintainer_account_id = XAnchor::maintainer();
-		assert_eq!(current_maintainer_account_id, default_maintainer_account_id);
-
-		let new_maintainer_account_id = ALICE;
-		assert_ok!(XAnchor::force_set_maintainer(
-			Origin::root(),
-			new_maintainer_account_id.clone()
-		));
-		let current_maintainer_account_id = XAnchor::maintainer();
-		assert_eq!(current_maintainer_account_id, new_maintainer_account_id);
-	});
-}
-
-#[test]
-fn should_fail_to_change_the_maintainer_if_not_the_current_maintainer() {
-	MockNet::reset();
-	ParaA::execute_with(|| {
-		let current_maintainer_account_id = XAnchor::maintainer();
-		let new_maintainer_account_id = ALICE;
-		assert_err!(
-			XAnchor::set_maintainer(Origin::signed(BOB), new_maintainer_account_id),
-			crate::Error::<parachain::Runtime, _>::InvalidPermissions,
-		);
-		// maintainer should never be changed.
-		assert_eq!(current_maintainer_account_id, XAnchor::maintainer());
-	});
-}
-
-#[test]
-fn should_fail_to_register_resource_id_if_not_the_current_maintainer() {
+fn should_fail_to_register_resource_id_if_not_the_democracy() {
 	MockNet::reset();
 	// it should fail to register a resource id if not the current maintainer.
 	ParaA::execute_with(|| {
-		let new_maintainer_account_id = ALICE;
-		assert_ok!(XAnchor::force_set_maintainer(Origin::root(), new_maintainer_account_id));
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let r_id = encode_resource_id(tree_id, PARAID_B);
 		let target_tree_id = 1;
 		assert_err!(
-			XAnchor::register_resource_id(Origin::signed(BOB), r_id, target_tree_id),
-			crate::Error::<parachain::Runtime, _>::InvalidPermissions,
+			XAnchor::register_resource_id(Origin::signed(parachain::AccountTwo::get()), r_id, target_tree_id),
+			frame_support::error::BadOrigin,
 		);
 	});
 }
@@ -321,14 +288,12 @@ fn should_fail_to_register_resource_id_when_anchor_deos_not_exist() {
 	MockNet::reset();
 	// it should fail to register the resource id if the anchor does not exist.
 	ParaA::execute_with(|| {
-		let new_maintainer_account_id = ALICE;
-		assert_ok!(XAnchor::force_set_maintainer(Origin::root(), new_maintainer_account_id));
 		// anchor/tree does not exist.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let r_id = encode_resource_id(tree_id, PARAID_B);
 		let target_tree_id = 1;
 		assert_err!(
-			XAnchor::register_resource_id(Origin::signed(ALICE), r_id, target_tree_id),
+			XAnchor::register_resource_id(Origin::root(), r_id, target_tree_id),
 			crate::Error::<parachain::Runtime, _>::AnchorNotFound,
 		);
 	});
@@ -345,21 +310,14 @@ fn should_fail_to_link_anchor_if_it_is_already_anchored() {
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
 		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
-		// then we set the maintainer
-		let new_maintainer_account_id = ALICE;
-		assert_ok!(XAnchor::force_set_maintainer(Origin::root(), new_maintainer_account_id));
 		// next we start to register the resource id.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let r_id = encode_resource_id(tree_id, PARAID_B);
 		let target_tree_id = 1;
-		assert_ok!(XAnchor::register_resource_id(
-			Origin::signed(ALICE),
-			r_id,
-			target_tree_id
-		));
+		assert_ok!(XAnchor::register_resource_id(Origin::root(), r_id, target_tree_id));
 		// now we try to link the anchor again, should error.
 		assert_err!(
-			XAnchor::register_resource_id(Origin::signed(ALICE), r_id, target_tree_id),
+			XAnchor::register_resource_id(Origin::root(), r_id, target_tree_id),
 			crate::Error::<parachain::Runtime, _>::ResourceIsAlreadyAnchored
 		);
 	});
@@ -376,8 +334,128 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let r_id = encode_resource_id(tree_id, PARAID_B);
 		assert_err!(
-			XAnchor::update(Origin::signed(BOB), r_id, Default::default()),
+			XAnchor::update(Origin::signed(parachain::AccountTwo::get()), r_id, Default::default()),
 			frame_support::error::BadOrigin,
 		);
 	});
+}
+
+// Governance System Tests
+const AYE: Vote = Vote {
+	aye: true,
+	conviction: Conviction::None,
+};
+const NAY: Vote = Vote {
+	aye: false,
+	conviction: Conviction::None,
+};
+
+fn aye(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
+	AccountVote::Standard {
+		vote: AYE,
+		balance: Balances::free_balance(&who),
+	}
+}
+
+fn nay(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
+	AccountVote::Standard {
+		vote: NAY,
+		balance: Balances::free_balance(&who),
+	}
+}
+
+#[test]
+fn governance_system_works() {
+	MockNet::reset();
+	// create an anchor on parachain A.
+	let para_a_tree_id = ParaA::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+	// Also, Create an anchor on parachain B.
+	let para_b_tree_id = ParaB::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+
+	// next, we start doing the linking process through the governance system.
+	ParaA::execute_with(|| {
+		// create a link proposal, saying that we (parachain A) want to link the anchor
+		// (local_tree_id) to the anchor (target_tree_id) located on Parachain B
+		// (target_chain_id).
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(para_b_tree_id),
+			local_tree_id: para_a_tree_id,
+		};
+		let value = 100;
+		assert_ok!(XAnchor::propose_to_link_anchor(
+			Origin::signed(AccountThree::get()),
+			payload,
+			value
+		));
+		// we should see this anchor link in the pending list
+		assert_eq!(
+			XAnchor::pending_linked_anchors(PARAID_B, para_a_tree_id),
+			Some(para_b_tree_id),
+		);
+
+		// start of 2 => next referendum scheduled.
+		fast_forward_to(2);
+		// now we need to vote on the proposal.
+		let referendum_index = Democracy::referendum_count() - 1;
+		assert_ok!(Democracy::vote(
+			Origin::signed(AccountOne::get()),
+			referendum_index,
+			aye(AccountOne::get())
+		));
+		// referendum runs during 2 and 3, ends @ start of 4.
+		fast_forward_to(4);
+		// referendum passes and wait another two blocks for enactment.
+		fast_forward_to(6);
+		// at this point the proposal should be enacted and we sent a message to
+		// the other chain.
+	});
+
+	// now we do the on-chain proposal checking on chain B.
+	ParaB::execute_with(|| {
+		// we should see the anchor in the pending list.
+		assert_eq!(
+			XAnchor::pending_linked_anchors(PARAID_A, para_b_tree_id),
+			Some(para_a_tree_id),
+		);
+		// start of 2 => next referendum scheduled.
+		fast_forward_to(2);
+		// now we need to vote on the proposal.
+		let referendum_index = Democracy::referendum_count() - 1;
+		assert_ok!(Democracy::vote(
+			Origin::signed(AccountTwo::get()),
+			referendum_index,
+			aye(AccountTwo::get())
+		));
+		// referendum runs during 4 and 5, ends @ start of 6.
+		fast_forward_to(4);
+		// referendum passes and wait another two blocks for enactment.
+		fast_forward_to(6);
+		// at this point the proposal should be enacted and the anchors should be linked
+		// on this chain.
+		assert_eq!(XAnchor::pending_linked_anchors(PARAID_A, para_b_tree_id), None,);
+		assert_eq!(XAnchor::linked_anchors(PARAID_A, para_b_tree_id), para_a_tree_id);
+	});
+
+	// on chain A we should find them linked too.
+	ParaA::execute_with(|| {
+		assert_eq!(XAnchor::pending_linked_anchors(PARAID_B, para_a_tree_id), None);
+		assert_eq!(XAnchor::linked_anchors(PARAID_B, para_a_tree_id), para_b_tree_id);
+	});
+
+	// the link process is now done!
 }

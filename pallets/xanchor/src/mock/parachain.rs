@@ -5,16 +5,21 @@ use crate as pallet_xanchor;
 use codec::{Decode, Encode};
 use darkwebb_primitives::{Amount, BlockNumber, ChainId};
 use frame_support::{
-	construct_runtime, parameter_types,
-	traits::{Everything, Nothing},
+	construct_runtime,
+	dispatch::DispatchResult,
+	ord_parameter_types, parameter_types,
+	traits::{Everything, Nothing, SortedMembers},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 	Deserialize, PalletId, Serialize,
 };
+use frame_system::{pallet_prelude::OriginFor, EnsureRoot, EnsureSignedBy};
 use orml_currencies::BasicCurrencyAdapter;
+use pallet_anchor::BalanceOf;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{Hash, IdentityLookup},
+	traits::{BlakeTwo256, Hash, IdentityLookup},
+	Perbill,
 };
 use sp_std::{convert::TryFrom, prelude::*};
 
@@ -42,6 +47,8 @@ pub type OrmlAssetId = u32;
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::simple_max(1_000_000);
 }
 
 impl frame_system::Config for Runtime {
@@ -107,6 +114,7 @@ parameter_types! {
 
 pub type LocationToAccountId = (
 	ParentIsDefault<AccountId>,
+	SiblingParachainConvertsVia<ParaId, AccountId>,
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
@@ -474,10 +482,105 @@ impl pallet_anchor::Config for Runtime {
 impl pallet_xanchor::Config for Runtime {
 	type Anchor = Anchor;
 	type Call = Call;
+	type DemocracyGovernanceDelegate = Democracy;
+	type DemocracyOrigin = EnsureRoot<AccountId>;
 	type Event = Event;
 	type Origin = Origin;
 	type ParaId = MsgQueue;
 	type XcmSender = XcmRouter;
+}
+
+parameter_types! {
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) * BlockWeights::get().max_block;
+}
+
+impl pallet_scheduler::Config for Runtime {
+	type Call = Call;
+	type Event = Event;
+	type MaxScheduledPerBlock = ();
+	type MaximumWeight = MaximumSchedulerWeight;
+	type Origin = Origin;
+	type OriginPrivilegeCmp = frame_support::traits::EqualPrivilegeOnly;
+	type PalletsOrigin = OriginCaller;
+	type ScheduleOrigin = EnsureRoot<AccountId>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const LaunchPeriod: u64 = 2;
+	pub const VotingPeriod: u64 = 2;
+	pub const FastTrackVotingPeriod: u64 = 2;
+	pub const MinimumDeposit: u64 = 1;
+	pub const EnactmentPeriod: u64 = 2;
+	pub const VoteLockingPeriod: u64 = 3;
+	pub const CooloffPeriod: u64 = 2;
+	pub const MaxVotes: u32 = 100;
+	pub const MaxProposals: u32 = 100;
+	pub static PreimageByteDeposit: u64 = 0;
+	pub static InstantAllowed: bool = false;
+}
+
+ord_parameter_types! {
+	pub const AccountOne: AccountId = sp_runtime::AccountId32::new([1u8; 32]);
+	pub const AccountTwo: AccountId = sp_runtime::AccountId32::new([2u8; 32]);
+	pub const AccountThree: AccountId = sp_runtime::AccountId32::new([3u8; 32]);
+	pub const AccountFour: AccountId = sp_runtime::AccountId32::new([4u8; 32]);
+	pub const AccountFive: AccountId = sp_runtime::AccountId32::new([5u8; 32]);
+	pub const AccountSix: AccountId = sp_runtime::AccountId32::new([6u8; 32]);
+}
+
+pub struct OneToFive;
+impl SortedMembers<AccountId> for OneToFive {
+	fn sorted_members() -> Vec<AccountId> {
+		(1..=5)
+			.into_iter()
+			.map(|x| sp_runtime::AccountId32::new([x; 32]))
+			.collect()
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn add(_m: &AccountId) {}
+}
+
+impl pallet_democracy::Config for Runtime {
+	type BlacklistOrigin = EnsureRoot<AccountId>;
+	type CancelProposalOrigin = EnsureRoot<AccountId>;
+	type CancellationOrigin = EnsureSignedBy<AccountFour, AccountId>;
+	type CooloffPeriod = CooloffPeriod;
+	type Currency = pallet_balances::Pallet<Self>;
+	type EnactmentPeriod = EnactmentPeriod;
+	type Event = Event;
+	type ExternalDefaultOrigin = EnsureSignedBy<AccountOne, AccountId>;
+	type ExternalMajorityOrigin = EnsureSignedBy<AccountThree, AccountId>;
+	type ExternalOrigin = EnsureSignedBy<AccountTwo, AccountId>;
+	type FastTrackOrigin = EnsureSignedBy<AccountFive, AccountId>;
+	type FastTrackVotingPeriod = FastTrackVotingPeriod;
+	type InstantAllowed = InstantAllowed;
+	type InstantOrigin = EnsureSignedBy<AccountSix, AccountId>;
+	type LaunchPeriod = LaunchPeriod;
+	type MaxProposals = MaxProposals;
+	type MaxVotes = MaxVotes;
+	type MinimumDeposit = MinimumDeposit;
+	type OperationalPreimageOrigin = EnsureSignedBy<AccountSix, AccountId>;
+	type PalletsOrigin = OriginCaller;
+	type PreimageByteDeposit = PreimageByteDeposit;
+	type Proposal = Call;
+	type Scheduler = Scheduler;
+	type Slash = ();
+	type VetoOrigin = EnsureSignedBy<OneToFive, AccountId>;
+	type VoteLockingPeriod = VoteLockingPeriod;
+	type VotingPeriod = VotingPeriod;
+	type WeightInfo = ();
+}
+
+impl crate::types::DemocracyGovernanceDelegate<Runtime, Call, BalanceOf<Runtime, ()>> for Democracy {
+	fn propose(origin: OriginFor<Runtime>, proposal: Call, value: BalanceOf<Runtime, ()>) -> DispatchResult {
+		let encoded_proposal = proposal.encode();
+		let proposal_hash = BlakeTwo256::hash(&encoded_proposal[..]);
+		Democracy::note_preimage(origin.clone(), encoded_proposal)?;
+		Democracy::propose(origin, proposal_hash, value)?;
+		Ok(())
+	}
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
@@ -491,6 +594,8 @@ construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
 		MsgQueue: mock_msg_queue::{Pallet, Storage, Event<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin},
