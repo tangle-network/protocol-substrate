@@ -275,8 +275,8 @@ impl pallet_token_wrapper::Config for Test {
 	type Event = Event;
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TreasuryPalletId;
-	type WrappingFeeDivider = WrappingFeeDivider;
 	type WeightInfo = ();
+	type WrappingFeeDivider = WrappingFeeDivider;
 }
 
 parameter_types! {
@@ -294,7 +294,15 @@ impl pallet_anchor::Config for Test {
 	type WeightInfo = ();
 }
 
+pub fn assert_last_event<T: pallet_anchor::Config>(generic_event: <T as pallet_anchor::Config>::Event) {
+	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
+}
+
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+	let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
+
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.execute_with(|| System::set_block_number(1));
+	ext
 }
