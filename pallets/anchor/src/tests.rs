@@ -67,25 +67,25 @@ fn should_create_new_anchor() {
 	});
 }
 
-// #[test]
-// fn should_fail_to_create_new_anchor_if_not_root() {
-// 	new_test_ext().execute_with(|| {
-// 		setup_environment(Curve::Bn254);
-// 		let max_edges = M as _;
-// 		let depth = TREE_DEPTH as u8;
-// 		let asset_id = 0;
-// 		assert_err!(
-// 			Anchor::create(
-// 				Origin::signed(account::<AccountId>("", 1, SEED)),
-// 				DEPOSIT_SIZE,
-// 				max_edges,
-// 				depth,
-// 				asset_id
-// 			),
-// 			BadOrigin,
-// 		);
-// 	});
-// }
+#[test]
+fn should_fail_to_create_new_anchor_if_not_root() {
+	new_test_ext().execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_err!(
+			Anchor::create(
+				Origin::signed(account::<AccountId>("", 1, SEED)),
+				DEPOSIT_SIZE,
+				max_edges,
+				depth,
+				asset_id
+			),
+			BadOrigin,
+		);
+	});
+}
 
 #[test]
 fn should_be_able_to_deposit() {

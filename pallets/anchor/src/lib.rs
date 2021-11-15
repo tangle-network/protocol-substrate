@@ -141,7 +141,7 @@ pub mod pallet {
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// New tree created
 		AnchorCreation { tree_id: T::TreeId },
-		/// Amount has been withdraw from the anchor
+		/// Amount has been withdrawn from the anchor
 		Withdraw { who: T::AccountId, amount: BalanceOf<T, I> },
 		/// Amount has been deposited into the anchor
 		Deposit {
