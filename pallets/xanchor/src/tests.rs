@@ -432,7 +432,7 @@ fn governance_system_works() {
 			XAnchor::pending_linked_anchors(PARAID_A, para_b_tree_id),
 			Some(para_a_tree_id),
 		);
-		// start of 8 => next referendum scheduled.
+		// start of 2 => next referendum scheduled.
 		fast_forward_to(2);
 		// now we need to vote on the proposal.
 		let referendum_index = Democracy::referendum_count() - 1;
@@ -441,7 +441,7 @@ fn governance_system_works() {
 			referendum_index,
 			aye(AccountTwo::get())
 		));
-		// referendum runs during 8 and 9, ends @ start of 10.
+		// referendum runs during 4 and 5, ends @ start of 6.
 		fast_forward_to(4);
 		// referendum passes and wait another two blocks for enactment.
 		fast_forward_to(6);
