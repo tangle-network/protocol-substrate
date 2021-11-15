@@ -433,7 +433,7 @@ fn governance_system_works() {
 			Some(para_a_tree_id),
 		);
 		// start of 8 => next referendum scheduled.
-		fast_forward_to(8);
+		fast_forward_to(2);
 		// now we need to vote on the proposal.
 		let referendum_index = Democracy::referendum_count() - 1;
 		assert_ok!(Democracy::vote(
@@ -442,9 +442,9 @@ fn governance_system_works() {
 			aye(AccountTwo::get())
 		));
 		// referendum runs during 8 and 9, ends @ start of 10.
-		fast_forward_to(10);
+		fast_forward_to(4);
 		// referendum passes and wait another two blocks for enactment.
-		fast_forward_to(12);
+		fast_forward_to(6);
 		// at this point the proposal should be enacted and the anchors should be linked
 		// on this chain.
 		assert_eq!(XAnchor::pending_linked_anchors(PARAID_A, para_b_tree_id), None,);

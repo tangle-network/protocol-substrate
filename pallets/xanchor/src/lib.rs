@@ -305,7 +305,7 @@ pub mod pallet {
 			payload: LinkProposalOf<T, I>,
 			value: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin.clone())?;
+			let _caller = ensure_signed(origin.clone())?;
 			let my_tree_id = match payload.target_tree_id {
 				Some(tree_id) => {
 					ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
@@ -328,7 +328,7 @@ pub mod pallet {
 			};
 			let proposal = <T as Config<I>>::Call::from(Call::<T, I>::link_anchors { payload });
 			// finally we can create the proposal.
-			dbg!(T::DemocracyGovernanceDelegate::propose(origin, proposal, value))?;
+			T::DemocracyGovernanceDelegate::propose(origin, proposal, value)?;
 			Ok(().into())
 		}
 

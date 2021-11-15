@@ -114,6 +114,7 @@ parameter_types! {
 
 pub type LocationToAccountId = (
 	ParentIsDefault<AccountId>,
+	SiblingParachainConvertsVia<ParaId, AccountId>,
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
@@ -147,7 +148,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 
 parameter_types! {
 	pub const UnitWeightCost: Weight = 1;
-	pub KsmPerSecond: (AssetId, u128) = (Concrete(Parent.into()), 1);
+pub KsmPerSecond: (AssetId, u128) = (Concrete(Parent.into()), 1);
 	pub const MaxInstructions: u32 = 10_00;
 }
 
@@ -538,7 +539,7 @@ impl SortedMembers<AccountId> for OneToFive {
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
-	fn add(_m: &u64) {}
+	fn add(_m: &AccountId) {}
 }
 
 impl pallet_democracy::Config for Runtime {
