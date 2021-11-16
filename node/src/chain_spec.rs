@@ -230,6 +230,7 @@ pub fn darkwebb_test_genesis_inflation_config() -> InflationInfo<Balance> {
 	InflationInfo {
 		expect: Range {
 			min: 10_000_000_000 * UNITS,
+			// 60% of total issuance at a yearly inflation rate of 5%
 			ideal: 30_000_000_000 * UNITS,
 			max: 40_000_000_000 * UNITS,
 		},

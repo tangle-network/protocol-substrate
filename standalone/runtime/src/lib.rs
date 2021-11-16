@@ -329,6 +329,7 @@ pallet_staking_reward_curve::build! {
 	const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
 		min_inflation: 0_400_000,
 		max_inflation: 0_500_000,
+		// 60% of total issuance at a yearly inflation rate of 5%
 		ideal_stake: 0_600_000,
 		falloff: 0_050_000,
 		max_piece_count: 40,
