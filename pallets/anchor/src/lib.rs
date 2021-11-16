@@ -141,6 +141,21 @@ pub mod pallet {
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// New tree created
 		AnchorCreation { tree_id: T::TreeId },
+		/// Amount has been withdrawn from the anchor
+		Withdraw { who: T::AccountId, amount: BalanceOf<T, I> },
+		/// Amount has been deposited into the anchor
+		Deposit {
+			depositor: T::AccountId,
+			tree_id: T::TreeId,
+			leaf: T::Element,
+			amount: BalanceOf<T, I>,
+		},
+		/// Post deposit hook has executed successfully
+		PostDeposit {
+			depositor: T::AccountId,
+			tree_id: T::TreeId,
+			leaf: T::Element,
+		},
 	}
 
 	#[pallet::error]
@@ -197,7 +212,12 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			<Self as AnchorInterface<_>>::deposit(origin.clone(), tree_id, leaf)?;
-			T::PostDepositHook::post_deposit(origin, tree_id, leaf)?;
+			T::PostDepositHook::post_deposit(origin.clone(), tree_id, leaf)?;
+			Self::deposit_event(Event::PostDeposit {
+				depositor: origin,
+				tree_id,
+				leaf,
+			});
 			Ok(().into())
 		}
 
@@ -271,6 +291,13 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		// transfer tokens to the pallet
 		<T as Config<I>>::Currency::transfer(anchor.asset, &depositor, &Self::account_id(), anchor.deposit_size)?;
 
+		Self::deposit_event(Event::Deposit {
+			depositor: depositor.clone(),
+			tree_id: id,
+			leaf,
+			amount: anchor.deposit_size,
+		});
+
 		Ok(())
 	}
 
@@ -336,6 +363,10 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		// transfer the assets
 		let anchor = Self::get_anchor(id)?;
 		<T as Config<I>>::Currency::transfer(anchor.asset, &Self::account_id(), &recipient, anchor.deposit_size)?;
+		Self::deposit_event(Event::Withdraw {
+			who: recipient.clone(),
+			amount: anchor.deposit_size,
+		});
 		Ok(())
 	}
 

@@ -59,7 +59,11 @@ fn should_create_new_anchor() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
+
 		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+
+		let tree_id = MerkleTree::next_tree_id() - 1;
+		crate::mock::assert_last_event::<Test>(crate::Event::<Test>::AnchorCreation { tree_id }.into());
 	});
 }
 
@@ -102,12 +106,21 @@ fn should_be_able_to_deposit() {
 		// and we do the deposit
 		assert_ok!(Anchor::deposit(Origin::signed(account_id.clone()), tree_id, leaf));
 		// now we check the balance after the deposit.
-		let balance_after = Balances::free_balance(account_id);
+		let balance_after = Balances::free_balance(account_id.clone());
 		// the balance should be less now with `deposit_size`
 		assert_eq!(balance_after, balance_before - DEPOSIT_SIZE);
 		// now we need also to check if the state got updated.
 		let tree = MerkleTree::trees(tree_id);
 		assert_eq!(tree.leaf_count, 1);
+		crate::mock::assert_last_event::<Test>(
+			crate::Event::<Test>::Deposit {
+				depositor: account_id,
+				tree_id,
+				leaf,
+				amount: DEPOSIT_SIZE,
+			}
+			.into(),
+		);
 	});
 }
 
@@ -186,9 +199,17 @@ fn anchor_works() {
 			refund_value.into(),
 		));
 		// now we check the recipient balance again.
-		let balance_after = Balances::free_balance(recipient_account_id);
+		let balance_after = Balances::free_balance(recipient_account_id.clone());
 		assert_eq!(balance_after, balance_before + DEPOSIT_SIZE);
 		// perfect
+
+		crate::mock::assert_last_event::<Test>(
+			crate::Event::<Test>::Withdraw {
+				who: recipient_account_id,
+				amount: DEPOSIT_SIZE,
+			}
+			.into(),
+		);
 	});
 }
 
@@ -655,8 +676,7 @@ fn anchor_works_for_pool_tokens() {
 		// sanity check.
 		assert_eq!(roots_element[0], tree_root);
 
-		let balance_before = TokenWrapper::get_balance(pool_share_id, &recipient_account_id);
-		// fire the call.
+		let balance_before = TokenWrapper::get_balance(pool_share_id, &recipient_account_id); // fire the call.
 		assert_ok!(Anchor::withdraw(
 			Origin::signed(sender_account_id),
 			tree_id,
@@ -684,5 +704,44 @@ fn anchor_works_for_pool_tokens() {
 		assert_eq!(Tokens::total_issuance(pool_share_id), 10000u32.into());
 
 		assert_eq!(TokenWrapper::get_balance(second_token_id, &recipient_account_id), 10000);
+	});
+}
+
+#[test]
+fn should_run_post_deposit_hook_sucessfully() {
+	new_test_ext().execute_with(|| {
+		setup_environment(Curve::Bn254);
+
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as _;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+
+		let tree_id = MerkleTree::next_tree_id() - 1;
+		let account_id = account::<AccountId>("", 1, SEED);
+		let leaf = Element::from_bytes(&[1u8; 32]);
+		// check the balance before the deposit.
+		let balance_before = Balances::free_balance(account_id.clone());
+		println!("Balance before: {}", balance_before);
+		// and we do the deposit
+		assert_ok!(Anchor::deposit_and_update_linked_anchors(
+			Origin::signed(account_id.clone()),
+			tree_id,
+			leaf
+		));
+		// now we check the balance after the deposit.
+		let balance_after = Balances::free_balance(account_id.clone());
+		// the balance should be less now with `deposit_size`
+		assert_eq!(balance_after, balance_before - DEPOSIT_SIZE);
+		// now we need also to check if the state got updated.
+		let tree = MerkleTree::trees(tree_id);
+		crate::mock::assert_last_event::<Test>(
+			crate::Event::<Test>::PostDeposit {
+				depositor: account_id,
+				tree_id,
+				leaf,
+			}
+			.into(),
+		);
 	});
 }
