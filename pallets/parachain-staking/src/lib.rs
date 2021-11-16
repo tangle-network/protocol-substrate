@@ -2095,7 +2095,7 @@ pub mod pallet {
 	impl<T: Config> ShouldEndSession<T::BlockNumber> for Pallet<T> {
 		fn should_end_session(now: T::BlockNumber) -> bool {
 			let round = <Round<T>>::get();
-			round.should_update(now)
+			round.first == now
 		}
 	}
 
@@ -2113,8 +2113,8 @@ pub mod pallet {
 			// i.e. when evaluating the last block in the session the progress should be
 			// 100% (0% is never returned).
 			let progress = if now >= round.first {
-				let current = (now - round.first) % period + One::one();
-				Some(Permill::from_rational(current, period))
+				let current = (now - round.first) % period.clone() + One::one();
+				Some(Permill::from_rational(current.clone(), period.clone()))
 			} else {
 				Some(Permill::from_rational(now + One::one(), round.first))
 			};
@@ -2129,7 +2129,7 @@ pub mod pallet {
 			let period: T::BlockNumber = T::BlocksPerRound::get().into();
 
 			let next_session = if now > offset {
-				let block_after_last_session = (now - offset) % period;
+				let block_after_last_session = (now.clone() - offset) % period.clone();
 				if block_after_last_session > Zero::zero() {
 					now.saturating_add(period.saturating_sub(block_after_last_session))
 				} else {
