@@ -56,6 +56,8 @@
 mod benchmarks;
 mod inflation;
 #[cfg(test)]
+mod inflation_targets;
+#[cfg(test)]
 mod mock;
 mod set;
 #[cfg(test)]

@@ -275,8 +275,8 @@ impl pallet_token_wrapper::Config for Test {
 	type Event = Event;
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TreasuryPalletId;
-	type WrappingFeeDivider = WrappingFeeDivider;
 	type WeightInfo = ();
+	type WrappingFeeDivider = WrappingFeeDivider;
 }
 
 parameter_types! {
