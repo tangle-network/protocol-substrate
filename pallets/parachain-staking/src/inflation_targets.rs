@@ -1,7 +1,6 @@
 use sp_runtime::Perbill;
 
 pub const YEARLY_INFLATION_TARGET: Perbill = Perbill::from_percent(5);
-pub const YEARLY_INTEREST_RATE_TARGET: Perbill = Perbill::from_percent(20);
 
 /// Inflation rate (I) is approximately
 ///     I = i * x
