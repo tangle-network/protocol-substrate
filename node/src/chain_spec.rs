@@ -27,7 +27,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
 use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
-	Perbill,
+	Perbill, Percent,
 };
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
@@ -226,13 +226,19 @@ pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 	))
 }
 
-pub fn darkwebb_test_genesis_inflation_config() -> InflationInfo<Balance> {
+pub const ENDOWMENT: u128 = UNITS * 4096_000;
+
+pub fn darkwebb_test_genesis_inflation_config(endowed_accounts: Vec<AccountId>) -> InflationInfo<Balance> {
+	let total = endowed_accounts.len() as u128;
+	let total_issuance = total * ENDOWMENT;
+	let sixty_percent = Percent::from_percent(60) * total_issuance;
+
 	InflationInfo {
 		expect: Range {
-			min: 10_000_000_000 * UNITS,
+			min: sixty_percent - (Percent::from_percent(10) * sixty_percent),
 			// 60% of total issuance at a yearly inflation rate of 5%
-			ideal: 30_000_000_000 * UNITS,
-			max: 40_000_000_000 * UNITS,
+			ideal: sixty_percent,
+			max: sixty_percent + (Percent::from_percent(10) * sixty_percent),
 		},
 		annual: Range {
 			min: Perbill::from_percent(4),
@@ -306,11 +312,7 @@ fn testnet_genesis(
 			changes_trie_config: Default::default(),
 		},
 		balances: darkwebb_runtime::BalancesConfig {
-			balances: endowed_accounts
-				.iter()
-				.cloned()
-				.map(|k| (k, UNITS * 4096_000))
-				.collect(),
+			balances: endowed_accounts.iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
 		},
 		parachain_info: darkwebb_runtime::ParachainInfoConfig { parachain_id: id },
 		session: darkwebb_runtime::SessionConfig {
@@ -374,7 +376,7 @@ fn testnet_genesis(
 				.map(|(account, _, bond)| (account, bond))
 				.collect(),
 			nominations,
-			inflation_config: darkwebb_test_genesis_inflation_config(),
+			inflation_config: darkwebb_test_genesis_inflation_config(endowed_accounts),
 		},
 	}
 }
