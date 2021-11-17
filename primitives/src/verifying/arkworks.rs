@@ -12,6 +12,11 @@ use sp_std::marker::PhantomData;
 
 pub struct ArkworksMixerVerifierGroth16<E: PairingEngine>(PhantomData<E>);
 pub struct ArkworksBridgeVerifierGroth16<E: PairingEngine>(PhantomData<E>);
+pub struct ArkworksVAnchorVerifierGroth16<
+	E: PairingEngine,
+	I: const usize,
+	O: const usize
+>(PhantomData<E>);
 
 impl<E: PairingEngine> InstanceVerifier for ArkworksMixerVerifierGroth16<E> {
 	fn verify(public_inp_bytes: &[u8], proof_bytes: &[u8], vk_bytes: &[u8]) -> Result<bool, Error> {
@@ -64,10 +69,45 @@ impl<E: PairingEngine> InstanceVerifier for ArkworksBridgeVerifierGroth16<E> {
 	}
 }
 
+impl<E: PairingEngine, IN: const usize, OUT: const usize, M: const usize> InstanceVerifier for
+ArkworksVAnchorVerifierGroth16<E> {
+	fn verify(public_inp_bytes: &[u8], proof_bytes: &[u8], vk_bytes: &[u8]) -> Result<bool, Error> {
+		let public_input_field_elts = to_field_elements::<E::Fr>(public_inp_bytes)?;
+		// let public_amount = public_input_field_elts[0];
+		// let ext_data = public_input_field_elts[1];
+		
+		// let input_nullifier_offset = 2;
+		// let mut input_nullifiers = [E::Fr::zero(); IN];
+		// for (i, nullifier) in input_nullifiers.iter_mut().enumerate() {
+		// 	*nullifier = *public_input_field_elts.get(i + input_nullifier_offset).unwrap_or(&E::Fr::zero());
+		// }
+
+		// let output_commitment_offset = input_nullifier_offset + input_nullifiers.len();
+		// let mut output_commitments = [E::Fr::zero(); OUT];
+		// for (i, out_commitment) in output_commitments.iter_mut().enumerate() {
+		// 	*out_commitment = *public_input_field_elts.get(i + output_commitment_offset).unwrap_or(&E::Fr::zero());
+		// }
+
+		// let roots_offset = output_commitment_offset + output_commitments.len();
+		// let mut roots = [E::Fr::zero(); M];
+		// for (i, root) in roots.iter_mut().enumerate() {
+		// 	*root = *public_input_field_elts.get(i + roots_offset).unwrap_or(&E::Fr::zero());
+		// }
+
+		let mut public_inputs = Vec::new();
+		let vk = VerifyingKey::<E>::deserialize(vk_bytes)?;
+		let proof = Proof::<E>::deserialize(proof_bytes)?;
+		let res = verify_groth16::<E>(&vk, &public_input_field_elts, &proof);
+		Ok(res)
+	}
+}
+
 use ark_bls12_381::Bls12_381;
 pub type ArkworksBls381MixerVerifier = ArkworksMixerVerifierGroth16<Bls12_381>;
 pub type ArkworksBls381BridgeVerifier = ArkworksBridgeVerifierGroth16<Bls12_381>;
+pub type ArkworksBls381VAnchor2x2Verifier = ArkworksVAnchorVerifierGroth16<Bls12_381, 2, 2>;
 
 use ark_bn254::Bn254;
 pub type ArkworksBn254MixerVerifier = ArkworksMixerVerifierGroth16<Bn254>;
 pub type ArkworksBn254BridgeVerifier = ArkworksBridgeVerifierGroth16<Bn254>;
+pub type ArkworksBn254VAnchorVerifier = ArkworksVAnchorVerifierGroth16<Bn254, 2, 2>;
