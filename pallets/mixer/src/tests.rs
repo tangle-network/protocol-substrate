@@ -8,7 +8,9 @@ use codec::Encode;
 use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
-use sp_runtime::traits::One;
+use orml_traits::MultiCurrency;
+use pallet_asset_registry::AssetType;
+use sp_runtime::traits::{One, Zero};
 
 use crate::mock::*;
 
@@ -471,6 +473,65 @@ fn double_spending_should_fail() {
 				refund_value.into(),
 			),
 			crate::Error::<Test>::AlreadyRevealedNullifier
+		);
+	});
+}
+
+#[test]
+fn deposit_with_non_native_asset_should_work() {
+	new_test_ext().execute_with(|| {
+		// create an Asset first
+		assert_ok!(
+			AssetRegistry::get_or_create_asset(String::from("ETH").into(), AssetType::Token, Zero::zero()),
+			1
+		);
+
+		let currency_id = AssetRegistry::next_asset_id() - 1;
+
+		let curve = Curve::Bn254;
+		let pk_bytes = setup_environment(curve);
+
+		let deposit_size = One::one();
+		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, currency_id));
+		// now with mixer created, we should setup the circuit.
+		let tree_id = MerkleTree::next_tree_id() - 1;
+		let sender_account_id = account::<AccountId>("", 1, SEED);
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
+		let fee_value = 0;
+		let refund_value = 0;
+
+		// inputs
+		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+
+		let (_, _, _, leaf_element) =
+			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
+		// check my balance first, before sending the deposit
+		assert_eq!(Currencies::free_balance(currency_id, &sender_account_id), Zero::zero());
+		// now we add some balance
+		let new_balance = 100;
+		assert_ok!(Currencies::update_balance(
+			Origin::root(),
+			sender_account_id.clone(),
+			currency_id,
+			new_balance,
+		));
+		// now we do check the balance again, it should be updated
+		assert_eq!(
+			Currencies::free_balance(currency_id, &sender_account_id),
+			new_balance as _
+		);
+		// and then we do the deposit
+		assert_ok!(Mixer::deposit(
+			Origin::signed(sender_account_id.clone()),
+			tree_id,
+			leaf_element,
+		));
+		// our balance should be updated again
+		assert_eq!(
+			Currencies::free_balance(currency_id, &sender_account_id),
+			(new_balance - deposit_size as i128) as _
 		);
 	});
 }
