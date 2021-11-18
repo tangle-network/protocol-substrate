@@ -7,7 +7,7 @@ use sp_core::H256;
 
 pub use darkwebb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
-	types::ElementTrait,
+	types::{ElementTrait, IntoAbiToken},
 	AccountId,
 };
 use frame_support::{parameter_types, traits::Nothing, PalletId};
@@ -281,13 +281,16 @@ impl pallet_token_wrapper::Config for Test {
 
 parameter_types! {
 	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
+	pub const MaxFee: Balance = 100;
+	pub const MaxDepositAmount: Balance = 1000;
 }
 
 impl pallet_vanchor::Config for Test {
-	type Amount = Amount;
 	type Currency = Currencies;
 	type Event = Event;
 	type LinkableTree = LinkableTree;
+	type MaxDepositAmount = MaxDepositAmount;
+	type MaxFee = MaxFee;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = VAnchorPalletId;
 	type PostDepositHook = ();

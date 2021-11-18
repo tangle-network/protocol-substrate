@@ -24,6 +24,7 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 	) -> Result<C::TreeId, dispatch::DispatchError>;
 	/// Transaction
 	fn transact(
+		transactor: C::AccountId,
 		id: C::TreeId,
 		proof_bytes: &[u8],
 		public_amount: C::Balance,

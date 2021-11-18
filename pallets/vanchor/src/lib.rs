@@ -59,20 +59,23 @@ mod zk_config;
 
 pub mod types;
 pub mod weights;
-use codec::Encode;
+use codec::FullCodec;
 use darkwebb_primitives::{
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
+	types::{IntoAbiToken, Token},
 	vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
 	verifier::*,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::{
 	arithmetic::{Signed, SimpleArithmetic},
-	MultiCurrency,
+	MultiCurrency, MultiCurrencyExtended,
 };
-use sp_runtime::traits::{AccountIdConversion, Zero};
+use scale_info::TypeInfo;
+use sp_runtime::traits::{AccountIdConversion, AtLeast32BitUnsigned, MaybeSerializeDeserialize, Zero};
 use sp_std::{
 	convert::{TryFrom, TryInto},
+	fmt::Debug,
 	prelude::*,
 };
 use types::*;
@@ -81,6 +84,9 @@ pub use weights::WeightInfo;
 /// Type alias for the orml_traits::MultiCurrency::Balance type
 pub type BalanceOf<T, I> =
 	<<T as Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
+/// Type alias for the orml_traits::MultiCurrency::Balance type
+pub type AmountOf<T, I> =
+	<<T as Config<I>>::Currency as MultiCurrencyExtended<<T as frame_system::Config>::AccountId>>::Amount;
 /// Type alias for the orml_traits::MultiCurrency::CurrencyId type
 pub type CurrencyIdOf<T, I> =
 	<<T as pallet::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
@@ -113,7 +119,7 @@ pub mod pallet {
 		type Verifier: VerifierModule;
 
 		/// Currency type for taking deposits
-		type Currency: MultiCurrency<Self::AccountId>;
+		type Currency: MultiCurrencyExtended<Self::AccountId>;
 
 		type PostDepositHook: PostDepositHook<Self, I>;
 
@@ -124,15 +130,8 @@ pub mod pallet {
 		/// Weight info for pallet
 		type WeightInfo: WeightInfo;
 
-		type Amount: Signed
-			+ TryInto<BalanceOf<Self, I>>
-			+ TryFrom<BalanceOf<Self, I>>
-			+ Parameter
-			+ Member
-			+ SimpleArithmetic
-			+ Default
-			+ Copy
-			+ MaybeSerializeDeserialize;
+		type MaxDepositAmount: Get<BalanceOf<Self, I>>;
+		type MaxFee: Get<BalanceOf<Self, I>>;
 	}
 
 	/// The map of trees to their anchor metadata
@@ -162,7 +161,7 @@ pub mod pallet {
 			transactor: T::AccountId,
 			tree_id: T::TreeId,
 			leafs: Vec<T::Element>,
-			amount: T::Amount,
+			amount: AmountOf<T, I>,
 		},
 		/// Post deposit hook has executed successfully
 		PostDeposit {
@@ -185,6 +184,8 @@ pub mod pallet {
 		/// Invalid nullifier that is already used
 		/// (this error is returned when a nullifier is used twice)
 		AlreadyRevealedNullifier,
+		// Invalid external amount
+		InvalidExtAmount,
 	}
 
 	#[pallet::hooks]
@@ -211,7 +212,7 @@ pub mod pallet {
 			id: T::TreeId,
 			proof_bytes: Vec<u8>,
 			public_amount: BalanceOf<T, I>,
-			ext_amount: T::Amount,
+			ext_amount: AmountOf<T, I>,
 			ext_data_hash: T::Element,
 			input_nullifiers: Vec<T::Element>,
 			output_commitments: Vec<T::Element>,
@@ -220,8 +221,9 @@ pub mod pallet {
 			relayer: T::AccountId,
 			fee: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
+			let sener = ensure_signed(origin)?;
 			<Self as VAnchorInterface<_>>::transact(
+				sener,
 				id,
 				&proof_bytes,
 				public_amount,
@@ -243,7 +245,7 @@ pub struct VAnchorConfigration<T: Config<I>, I: 'static>(core::marker::PhantomDa
 
 impl<T: Config<I>, I: 'static> VAnchorConfig for VAnchorConfigration<T, I> {
 	type AccountId = T::AccountId;
-	type Amount = T::Amount;
+	type Amount = AmountOf<T, I>;
 	type Balance = BalanceOf<T, I>;
 	type ChainId = T::ChainId;
 	type CurrencyId = CurrencyIdOf<T, I>;
@@ -264,10 +266,11 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 	}
 
 	fn transact(
+		transactor: T::AccountId,
 		id: T::TreeId,
 		proof_bytes: &[u8],
 		public_amount: BalanceOf<T, I>,
-		ext_amount: T::Amount,
+		ext_amount: AmountOf<T, I>,
 		ext_data_hash: T::Element,
 		input_nullifiers: Vec<T::Element>,
 		output_commitments: Vec<T::Element>,
@@ -288,9 +291,20 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			Self::ensure_nullifier_unused(id, nullifier)?;
 		}
 
-		let is_deposit = public_amount > BalanceOf::<T, I>::zero();
+		let vanchor = Self::get_vanchor(id)?;
 
-		if is_deposit {}
+		let is_deposit = ext_amount > AmountOf::<T, I>::zero();
+
+		if is_deposit {
+			let ext_unsigned: BalanceOf<T, I> = ext_amount.try_into().map_err(|_| Error::<T, I>::InvalidExtAmount)?;
+			ensure!(
+				ext_unsigned <= T::MaxDepositAmount::get(),
+				Error::<T, I>::InvalidExtAmount
+			);
+
+			// transfer tokens to the pallet
+			<T as Config<I>>::Currency::transfer(vanchor.asset, &transactor, &Self::account_id(), ext_unsigned)?;
+		}
 
 		// Format proof public inputs for verification
 		// FIXME: This is for a specfic gadget so we ought to create a generic handler

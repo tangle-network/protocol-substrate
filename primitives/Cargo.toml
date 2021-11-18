@@ -33,6 +33,9 @@ ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-featu
 arkworks-gadgets = { version = "^0.3", features = ["default_poseidon", "default_mimc", "r1cs"], default-features = false, optional = true }
 codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "2.2.0" }
 
+ethabi = {version = "15.0.0"}
+hex-literal = {version = "0.3.4"}
+tiny-keccak = {version = "2.0.2"}
 
 [features]
 default = ["std", "hashing", "verifying"]
