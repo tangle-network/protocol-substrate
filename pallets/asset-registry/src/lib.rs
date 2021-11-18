@@ -159,8 +159,8 @@ pub mod pallet {
 		fn default() -> Self {
 			GenesisConfig::<T> {
 				asset_names: vec![],
-				native_asset_name: b"BSX".to_vec(),
-				native_existential_deposit: Default::default(),
+				native_asset_name: b"UNIT".to_vec(),
+				native_existential_deposit: Zero::zero(),
 			}
 		}
 	}
