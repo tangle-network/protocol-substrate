@@ -15,13 +15,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Anchor pallet benchmarking.
+//! VAnchor pallet benchmarking.
 
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
 
-use darkwebb_primitives::{anchor::AnchorInterface, traits::merkle_tree::TreeInspector, ElementTrait};
+use darkwebb_primitives::{traits::merkle_tree::TreeInspector, vanchor::VAnchorInterface, ElementTrait};
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
 use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
@@ -31,7 +31,7 @@ use orml_traits::MultiCurrency;
 // benchmark
 use zk_config::*;
 
-use crate::Pallet as Anchor;
+use crate::Pallet as VAnchor;
 use frame_support::{
 	storage,
 	traits::{Currency, Get, OnInitialize, PalletInfo},
@@ -60,7 +60,7 @@ benchmarks! {
 	  let asset_id = <<T as crate::Config>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, _>>>::get();
 	  let depth = <T as pallet_mt::Config>::MaxTreeDepth::get();
 
-	  let tree_id = <Anchor<T> as AnchorInterface<AnchorConfigration<T, _>>>::create(T::AccountId::default(), deposit_size.into(), depth, MAX_EDGES as u32, asset_id)?;
+	  let tree_id = <VAnchor<T> as VAnchorInterface<VAnchorConfigration<T, _>>>::create(T::AccountId::default(), deposit_size.into(), depth, MAX_EDGES as u32, asset_id)?;
 	  let leaf = <T as pallet_mt::Config>::Element::from_bytes(&[1u8; 32]);
 	  <<T as pallet_mt::Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
 
@@ -99,9 +99,9 @@ benchmarks! {
 		let depth = <T as pallet_mt::Config>::MaxTreeDepth::get();
 		let asset_id = <<T as crate::Config>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, _>>>::get();
 
-		let tree_id = <Anchor<T> as AnchorInterface<AnchorConfigration<T, _>>>::create(T::AccountId::default(), deposit_size.into(), depth, 2, asset_id)?;
+		let tree_id = <VAnchor<T> as VAnchorInterface<VAnchorConfigration<T, _>>>::create(T::AccountId::default(), deposit_size.into(), depth, 2, asset_id)?;
 
-		<Anchor<T> as AnchorInterface<AnchorConfigration<T, _>>>::deposit(
+		<VAnchor<T> as VAnchorInterface<VAnchorConfigration<T, _>>>::deposit(
 			caller.clone(),
 			tree_id,
 			<T as pallet_mt::Config>::Element::from_bytes(&LEAF[..]),

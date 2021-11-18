@@ -1,7 +1,7 @@
 #![allow(clippy::zero_prefixed_literal)]
 
 use super::*;
-use crate as pallet_anchor;
+use crate as pallet_vanchor;
 use codec::{Decode, Encode};
 use sp_core::H256;
 
@@ -49,7 +49,7 @@ frame_support::construct_runtime!(
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
-		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
+		VAnchor: pallet_vanchor::{Pallet, Call, Storage, Event<T>},
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>}
 	}
@@ -280,21 +280,22 @@ impl pallet_token_wrapper::Config for Test {
 }
 
 parameter_types! {
-	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
+	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
 }
 
-impl pallet_anchor::Config for Test {
+impl pallet_vanchor::Config for Test {
+	type Amount = Amount;
 	type Currency = Currencies;
 	type Event = Event;
 	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
-	type PalletId = AnchorPalletId;
+	type PalletId = VAnchorPalletId;
 	type PostDepositHook = ();
 	type Verifier = VerifierPallet;
 	type WeightInfo = ();
 }
 
-pub fn assert_last_event<T: pallet_anchor::Config>(generic_event: <T as pallet_anchor::Config>::Event) {
+pub fn assert_last_event<T: pallet_vanchor::Config>(generic_event: <T as pallet_vanchor::Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 

@@ -6,6 +6,7 @@ pub trait VAnchorConfig {
 	type LeafIndex;
 	type AccountId;
 	type Balance;
+	type Amount;
 	type CurrencyId;
 	type ChainId;
 	type TreeId;
@@ -26,10 +27,14 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		id: C::TreeId,
 		proof_bytes: &[u8],
 		public_amount: C::Balance,
-		ext_data: C::Element,
+		ext_amount: C::Amount,
+		ext_data_hash: C::Element,
 		input_nullifiers: Vec<C::Element>,
 		output_commitments: Vec<C::Element>,
 		roots: Vec<C::Element>,
+		recipient: C::AccountId,
+		relayer: C::AccountId,
+		fee: C::Balance,
 	) -> Result<(), dispatch::DispatchError>;
 	// Stores nullifier hash from a spend tx
 	fn add_nullifier_hash(id: C::TreeId, nullifier_hash: C::Element) -> Result<(), dispatch::DispatchError>;

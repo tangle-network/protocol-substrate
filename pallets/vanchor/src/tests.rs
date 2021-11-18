@@ -52,29 +52,29 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 }
 
 #[test]
-fn should_create_new_anchor() {
+fn should_create_new_vanchor() {
 	new_test_ext().execute_with(|| {
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
 
-		assert_ok!(Anchor::create(Origin::root(), max_edges, depth, asset_id));
+		assert_ok!(VAnchor::create(Origin::root(), max_edges, depth, asset_id));
 
 		let tree_id = MerkleTree::next_tree_id() - 1;
-		crate::mock::assert_last_event::<Test>(crate::Event::<Test>::AnchorCreation { tree_id }.into());
+		crate::mock::assert_last_event::<Test>(crate::Event::<Test>::VAnchorCreation { tree_id }.into());
 	});
 }
 
 #[test]
-fn should_fail_to_create_new_anchor_if_not_root() {
+fn should_fail_to_create_new_vanchor_if_not_root() {
 	new_test_ext().execute_with(|| {
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
 		assert_err!(
-			Anchor::create(
+			VAnchor::create(
 				Origin::signed(account::<AccountId>("", 1, SEED)),
 				max_edges,
 				depth,
@@ -89,70 +89,31 @@ fn should_fail_to_create_new_anchor_if_not_root() {
 fn should_be_able_to_deposit() {
 	new_test_ext().execute_with(|| {
 		setup_environment(Curve::Bn254);
-
-		// let max_edges = M as _;
-		// let depth = TREE_DEPTH as _;
-		// let asset_id = 0;
-		// assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges,
-		// depth, asset_id));
-
-		// let tree_id = MerkleTree::next_tree_id() - 1;
-		// let account_id = account::<AccountId>("", 1, SEED);
-		// let leaf = Element::from_bytes(&[1u8; 32]);
-		// // check the balance before the deposit.
-		// let balance_before = Balances::free_balance(account_id.clone());
-		// println!("Balance before: {}", balance_before);
-		// // and we do the deposit
-		// assert_ok!(Anchor::deposit(Origin::signed(account_id.clone()),
-		// tree_id, leaf)); // now we check the balance after the deposit.
-		// let balance_after = Balances::free_balance(account_id.clone());
-		// // the balance should be less now with `deposit_size`
-		// assert_eq!(balance_after, balance_before - DEPOSIT_SIZE);
-		// // now we need also to check if the state got updated.
-		// let tree = MerkleTree::trees(tree_id);
-		// assert_eq!(tree.leaf_count, 1);
-		// crate::mock::assert_last_event::<Test>(
-		// 	crate::Event::<Test>::Deposit {
-		// 		depositor: account_id,
-		// 		tree_id,
-		// 		leaf,
-		// 		amount: DEPOSIT_SIZE,
-		// 	}
-		// 	.into(),
-		// );
 	});
 }
 
 #[test]
-fn should_fail_to_deposit_if_anchor_not_found() {
+fn should_fail_to_deposit_if_vanchor_not_found() {
 	new_test_ext().execute_with(|| {
 		setup_environment(Curve::Bn254);
-		// assert_err!(
-		// 	Anchor::deposit(
-		// 		Origin::signed(account::<AccountId>("", 1, SEED)),
-		// 		2,
-		// 		Element::from_bytes(&[1u8; 32])
-		// 	),
-		// 	crate::Error::<Test, _>::NoAnchorFound,
-		// );
 	});
 }
 
-fn create_anchor(asset_id: u32) -> u32 {
+fn create_vanchor(asset_id: u32) -> u32 {
 	let max_edges = 2;
 	let depth = TREE_DEPTH as u8;
-	assert_ok!(Anchor::create(Origin::root(), max_edges, depth, asset_id));
+	assert_ok!(VAnchor::create(Origin::root(), max_edges, depth, asset_id));
 	MerkleTree::next_tree_id() - 1
 }
 
 #[test]
-fn anchor_works() {
+fn vanchor_works() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor(0);
+		let tree_id = create_vanchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -172,44 +133,6 @@ fn anchor_works() {
 			fee_value,
 			refund_value,
 		);
-
-		// assert_ok!(Anchor::deposit(
-		// 	Origin::signed(sender_account_id.clone()),
-		// 	tree_id,
-		// 	leaf_element,
-		// ));
-
-		// let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		// // sanity check.
-		// assert_eq!(roots_element[0], tree_root);
-
-		// let balance_before =
-		// Balances::free_balance(recipient_account_id.clone()); // fire the
-		// call. assert_ok!(Anchor::withdraw(
-		// 	Origin::signed(sender_account_id),
-		// 	tree_id,
-		// 	proof_bytes,
-		// 	src_chain_id,
-		// 	roots_element,
-		// 	nullifier_hash_element,
-		// 	recipient_account_id.clone(),
-		// 	relayer_account_id,
-		// 	fee_value.into(),
-		// 	refund_value.into(),
-		// ));
-		// // now we check the recipient balance again.
-		// let balance_after =
-		// Balances::free_balance(recipient_account_id.clone());
-		// assert_eq!(balance_after, balance_before + DEPOSIT_SIZE);
-		// // perfect
-
-		// crate::mock::assert_last_event::<Test>(
-		// 	crate::Event::<Test>::Withdraw {
-		// 		who: recipient_account_id,
-		// 		amount: DEPOSIT_SIZE,
-		// 	}
-		// 	.into(),
-		// );
 	});
 }
 
@@ -220,7 +143,7 @@ fn double_spending_should_fail() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor(0);
+		let tree_id = create_vanchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -240,54 +163,6 @@ fn double_spending_should_fail() {
 			fee_value,
 			refund_value,
 		);
-
-		// assert_ok!(Anchor::deposit(
-		// 	Origin::signed(sender_account_id.clone()),
-		// 	tree_id,
-		// 	leaf_element,
-		// ));
-
-		// let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		// assert_eq!(roots_element[0], tree_root);
-		// // all ready, call withdraw.
-		// // but first check the balance before that.
-
-		// let balance_before =
-		// Balances::free_balance(recipient_account_id.clone()); // fire the
-		// call. assert_ok!(Anchor::withdraw(
-		// 	Origin::signed(sender_account_id.clone()),
-		// 	tree_id,
-		// 	proof_bytes.clone(),
-		// 	src_chain_id,
-		// 	roots_element.clone(),
-		// 	nullifier_hash_element,
-		// 	recipient_account_id.clone(),
-		// 	relayer_account_id.clone(),
-		// 	fee_value.into(),
-		// 	refund_value.into(),
-		// ));
-		// // now we check the recipient balance again.
-		// let balance_after =
-		// Balances::free_balance(recipient_account_id.clone());
-		// assert_eq!(balance_after, balance_before + DEPOSIT_SIZE);
-		// // perfect
-
-		// // now double spending should fail.
-		// assert_err!(
-		// 	Anchor::withdraw(
-		// 		Origin::signed(sender_account_id),
-		// 		tree_id,
-		// 		proof_bytes,
-		// 		src_chain_id,
-		// 		roots_element,
-		// 		nullifier_hash_element,
-		// 		recipient_account_id,
-		// 		relayer_account_id,
-		// 		fee_value.into(),
-		// 		refund_value.into(),
-		// 	),
-		// 	crate::Error::<Test, _>::AlreadyRevealedNullifier
-		// );
 	});
 }
 
@@ -298,7 +173,7 @@ fn should_fail_when_invalid_merkle_roots() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor(0);
+		let tree_id = create_vanchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -318,38 +193,6 @@ fn should_fail_when_invalid_merkle_roots() {
 			fee_value,
 			refund_value,
 		);
-
-		// assert_ok!(Anchor::deposit(
-		// 	Origin::signed(sender_account_id.clone()),
-		// 	tree_id,
-		// 	leaf_element,
-		// ));
-
-		// let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		// assert_eq!(roots_element[0], tree_root);
-
-		// // invalid root length
-		// roots_element.push(Element::from_bytes(
-		// 	&ark_bn254::Fr::default().into_repr().to_bytes_le()[..],
-		// ));
-		// // all ready, call withdraw.
-
-		// // fire the call.
-		// assert_err!(
-		// 	Anchor::withdraw(
-		// 		Origin::signed(sender_account_id),
-		// 		tree_id,
-		// 		proof_bytes,
-		// 		src_chain_id,
-		// 		roots_element,
-		// 		nullifier_hash_element,
-		// 		recipient_account_id,
-		// 		relayer_account_id,
-		// 		fee_value.into(),
-		// 		refund_value.into(),
-		// 	),
-		// 	pallet_linkable_tree::Error::<Test, _>::InvalidMerkleRoots,
-		// );
 	});
 }
 
@@ -360,7 +203,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor(0);
+		let tree_id = create_vanchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -380,39 +223,6 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 			fee_value,
 			refund_value,
 		);
-
-		// assert_ok!(Anchor::deposit(
-		// 	Origin::signed(sender_account_id.clone()),
-		// 	tree_id,
-		// 	leaf_element,
-		// ));
-
-		// let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		// assert_eq!(roots_element[0], tree_root);
-
-		// // now double spending should fail.
-
-		// let a = proof_bytes[0];
-		// let b = proof_bytes[1];
-
-		// proof_bytes[0] = b;
-		// proof_bytes[1] = a;
-
-		// assert_err!(
-		// 	Anchor::withdraw(
-		// 		Origin::signed(sender_account_id),
-		// 		tree_id,
-		// 		proof_bytes,
-		// 		src_chain_id,
-		// 		roots_element,
-		// 		nullifier_hash_element,
-		// 		recipient_account_id,
-		// 		relayer_account_id,
-		// 		fee_value.into(),
-		// 		refund_value.into(),
-		// 	),
-		// 	crate::Error::<Test, _>::InvalidWithdrawProof
-		// );
 	});
 }
 
@@ -423,7 +233,7 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor(0);
+		let tree_id = create_vanchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -443,31 +253,6 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 			fee_value,
 			refund_value,
 		);
-
-		// assert_ok!(Anchor::deposit(
-		// 	Origin::signed(sender_account_id.clone()),
-		// 	tree_id,
-		// 	leaf_element,
-		// ));
-
-		// let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		// assert_eq!(roots_element[0], tree_root);
-
-		// assert_err!(
-		// 	Anchor::withdraw(
-		// 		Origin::signed(sender_account_id),
-		// 		tree_id,
-		// 		proof_bytes,
-		// 		src_chain_id,
-		// 		roots_element,
-		// 		nullifier_hash_element,
-		// 		recipient_account_id.clone(),
-		// 		recipient_account_id,
-		// 		fee_value.into(),
-		// 		refund_value.into(),
-		// 	),
-		// 	crate::Error::<Test, _>::InvalidWithdrawProof
-		// );
 	});
 }
 
@@ -478,7 +263,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor(0);
+		let tree_id = create_vanchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -498,32 +283,6 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 			fee_value,
 			refund_value,
 		);
-
-		// assert_ok!(Anchor::deposit(
-		// 	Origin::signed(sender_account_id.clone()),
-		// 	tree_id,
-		// 	leaf_element,
-		// ));
-
-		// let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		// assert_eq!(roots_element[0], tree_root);
-
-		// // now double spending should fail.
-		// assert_err!(
-		// 	Anchor::withdraw(
-		// 		Origin::signed(sender_account_id),
-		// 		tree_id,
-		// 		proof_bytes,
-		// 		src_chain_id,
-		// 		roots_element,
-		// 		nullifier_hash_element,
-		// 		recipient_account_id,
-		// 		relayer_account_id,
-		// 		100u128,
-		// 		refund_value.into(),
-		// 	),
-		// 	crate::Error::<Test, _>::InvalidWithdrawProof
-		// );
 	});
 }
 
@@ -534,7 +293,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor(0);
+		let tree_id = create_vanchor(0);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -554,37 +313,11 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 			fee_value,
 			refund_value,
 		);
-
-		// assert_ok!(Anchor::deposit(
-		// 	Origin::signed(sender_account_id.clone()),
-		// 	tree_id,
-		// 	leaf_element,
-		// ));
-
-		// let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		// assert_eq!(roots_element[0], tree_root);
-
-		// // now double spending should fail.
-		// assert_err!(
-		// 	Anchor::withdraw(
-		// 		Origin::signed(sender_account_id),
-		// 		tree_id,
-		// 		proof_bytes,
-		// 		src_chain_id,
-		// 		roots_element,
-		// 		nullifier_hash_element,
-		// 		recipient_account_id,
-		// 		relayer_account_id,
-		// 		fee_value.into(),
-		// 		refund_value.into(),
-		// 	),
-		// 	crate::Error::<Test, _>::InvalidWithdrawProof
-		// );
 	});
 }
 
 #[test]
-fn anchor_works_for_pool_tokens() {
+fn vanchor_works_for_pool_tokens() {
 	new_test_ext().execute_with(|| {
 		let existential_balance: u32 = 1000;
 		let first_token_id = AssetRegistry::register_asset(
@@ -611,7 +344,7 @@ fn anchor_works_for_pool_tokens() {
 		let pk_bytes = setup_environment(curve);
 
 		// inputs
-		let tree_id = create_anchor(pool_share_id);
+		let tree_id = create_vanchor(pool_share_id);
 		let src_chain_id = 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -666,47 +399,6 @@ fn anchor_works_for_pool_tokens() {
 			fee_value,
 			refund_value,
 		);
-
-		// assert_ok!(Anchor::deposit(
-		// 	Origin::signed(sender_account_id.clone()),
-		// 	tree_id,
-		// 	leaf_element.clone(),
-		// ));
-
-		// let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		// // sanity check.
-		// assert_eq!(roots_element[0], tree_root);
-
-		// let balance_before = TokenWrapper::get_balance(pool_share_id,
-		// &recipient_account_id); // fire the call. assert_ok!(Anchor::
-		// withdraw( 	Origin::signed(sender_account_id),
-		// 	tree_id,
-		// 	proof_bytes,
-		// 	src_chain_id,
-		// 	roots_element,
-		// 	nullifier_hash_element,
-		// 	recipient_account_id.clone(),
-		// 	relayer_account_id,
-		// 	fee_value.into(),
-		// 	refund_value.into(),
-		// ));
-		// // now we check the recipient balance again.
-		// let balance_after = TokenWrapper::get_balance(pool_share_id,
-		// &recipient_account_id); assert_eq!(balance_after, balance_before +
-		// DEPOSIT_SIZE);
-
-		// assert_ok!(TokenWrapper::unwrap(
-		// 	Origin::signed(recipient_account_id.clone()),
-		// 	pool_share_id,
-		// 	second_token_id,
-		// 	10000 as u128,
-		// 	recipient_account_id.clone()
-		// ));
-
-		// assert_eq!(Tokens::total_issuance(pool_share_id), 10000u32.into());
-
-		// assert_eq!(TokenWrapper::get_balance(second_token_id,
-		// &recipient_account_id), 10000);
 	});
 }
 
@@ -718,7 +410,7 @@ fn should_run_post_deposit_hook_sucessfully() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as _;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), max_edges, depth, asset_id));
+		assert_ok!(VAnchor::create(Origin::root(), max_edges, depth, asset_id));
 
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let account_id = account::<AccountId>("", 1, SEED);
@@ -726,25 +418,5 @@ fn should_run_post_deposit_hook_sucessfully() {
 		// check the balance before the deposit.
 		let balance_before = Balances::free_balance(account_id.clone());
 		println!("Balance before: {}", balance_before);
-		// and we do the deposit
-		// assert_ok!(Anchor::deposit_and_update_linked_anchors(
-		// 	Origin::signed(account_id.clone()),
-		// 	tree_id,
-		// 	leaf
-		// ));
-		// // now we check the balance after the deposit.
-		// let balance_after = Balances::free_balance(account_id.clone());
-		// // the balance should be less now with `deposit_size`
-		// assert_eq!(balance_after, balance_before - DEPOSIT_SIZE);
-		// // now we need also to check if the state got updated.
-		// let tree = MerkleTree::trees(tree_id);
-		// crate::mock::assert_last_event::<Test>(
-		// 	crate::Event::<Test>::PostDeposit {
-		// 		depositor: account_id,
-		// 		tree_id,
-		// 		leaf,
-		// 	}
-		// 	.into(),
-		// );
 	});
 }

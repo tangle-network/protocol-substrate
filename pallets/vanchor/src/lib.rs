@@ -15,15 +15,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Anchor Module
+//! # VAnchor Module
 //!
-//! A simple module for building Anchors.
+//! A simple module for building variable Anchors.
 //!
 //! ## Overview
 //!
-//! The Anchor module provides functionality for the following:
+//! The VAnchor module provides functionality for the following:
 //!
-//! * Inserting elements to the tree
+//! * Creating new instances
+//!
+//! * Making transactions with variable amount of tokens
 //!
 //! The supported dispatchable functions are documented in the [`Call`] enum.
 //!
@@ -31,7 +33,7 @@
 //!
 //! ### Goals
 //!
-//! The Anchor system in Webb is designed to make the following possible:
+//! The VAnchor system in Webb is designed to make the following possible:
 //!
 //! * Define.
 //!
@@ -64,9 +66,15 @@ use darkwebb_primitives::{
 	verifier::*,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
-use orml_traits::MultiCurrency;
-use sp_runtime::traits::AccountIdConversion;
-use sp_std::prelude::*;
+use orml_traits::{
+	arithmetic::{Signed, SimpleArithmetic},
+	MultiCurrency,
+};
+use sp_runtime::traits::{AccountIdConversion, Zero};
+use sp_std::{
+	convert::{TryFrom, TryInto},
+	prelude::*,
+};
 use types::*;
 pub use weights::WeightInfo;
 
@@ -115,16 +123,26 @@ pub mod pallet {
 
 		/// Weight info for pallet
 		type WeightInfo: WeightInfo;
+
+		type Amount: Signed
+			+ TryInto<BalanceOf<Self, I>>
+			+ TryFrom<BalanceOf<Self, I>>
+			+ Parameter
+			+ Member
+			+ SimpleArithmetic
+			+ Default
+			+ Copy
+			+ MaybeSerializeDeserialize;
 	}
 
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
-	#[pallet::getter(fn anchors)]
-	pub type Anchors<T: Config<I>, I: 'static = ()> = StorageMap<
+	#[pallet::getter(fn vanchors)]
+	pub type VAnchors<T: Config<I>, I: 'static = ()> = StorageMap<
 		_,
 		Blake2_128Concat,
 		T::TreeId,
-		Option<AnchorMetadata<T::AccountId, BalanceOf<T, I>, CurrencyIdOf<T, I>>>,
+		Option<VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>>,
 		ValueQuery,
 	>;
 
@@ -138,15 +156,13 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// New tree created
-		AnchorCreation { tree_id: T::TreeId },
-		/// Amount has been withdrawn from the anchor
-		Withdraw { who: T::AccountId, amount: BalanceOf<T, I> },
-		/// Amount has been deposited into the anchor
-		Deposit {
-			depositor: T::AccountId,
+		VAnchorCreation { tree_id: T::TreeId },
+		/// Transaction has been made
+		Transaction {
+			transactor: T::AccountId,
 			tree_id: T::TreeId,
-			leaf: T::Element,
-			amount: BalanceOf<T, I>,
+			leafs: Vec<T::Element>,
+			amount: T::Amount,
 		},
 		/// Post deposit hook has executed successfully
 		PostDeposit {
@@ -164,8 +180,8 @@ pub mod pallet {
 		UnknownRoot,
 		/// Invalid withdraw proof
 		InvalidWithdrawProof,
-		/// Mixer not found.
-		NoAnchorFound,
+		/// Variable Anchor not found.
+		NoVAnchorFound,
 		/// Invalid nullifier that is already used
 		/// (this error is returned when a nullifier is used twice)
 		AlreadyRevealedNullifier,
@@ -183,10 +199,9 @@ pub mod pallet {
 			depth: u8,
 			asset: CurrencyIdOf<T, I>,
 		) -> DispatchResultWithPostInfo {
-			// Should it only be the root who can create anchors?
 			ensure_root(origin)?;
 			let tree_id = <Self as VAnchorInterface<_>>::create(T::AccountId::default(), depth, max_edges, asset)?;
-			Self::deposit_event(Event::AnchorCreation { tree_id });
+			Self::deposit_event(Event::VAnchorCreation { tree_id });
 			Ok(().into())
 		}
 
@@ -196,7 +211,7 @@ pub mod pallet {
 			id: T::TreeId,
 			proof_bytes: Vec<u8>,
 			public_amount: BalanceOf<T, I>,
-			ext_amount: BalanceOf<T, I>,
+			ext_amount: T::Amount,
 			ext_data_hash: T::Element,
 			input_nullifiers: Vec<T::Element>,
 			output_commitments: Vec<T::Element>,
@@ -228,6 +243,7 @@ pub struct VAnchorConfigration<T: Config<I>, I: 'static>(core::marker::PhantomDa
 
 impl<T: Config<I>, I: 'static> VAnchorConfig for VAnchorConfigration<T, I> {
 	type AccountId = T::AccountId;
+	type Amount = T::Amount;
 	type Balance = BalanceOf<T, I>;
 	type ChainId = T::ChainId;
 	type CurrencyId = CurrencyIdOf<T, I>;
@@ -251,7 +267,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		id: T::TreeId,
 		proof_bytes: &[u8],
 		public_amount: BalanceOf<T, I>,
-		ext_amount: BalanceOf<T, I>,
+		ext_amount: T::Amount,
 		ext_data_hash: T::Element,
 		input_nullifiers: Vec<T::Element>,
 		output_commitments: Vec<T::Element>,
@@ -271,6 +287,10 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		for nullifier in input_nullifiers {
 			Self::ensure_nullifier_unused(id, nullifier)?;
 		}
+
+		let is_deposit = public_amount > BalanceOf::<T, I>::zero();
+
+		if is_deposit {}
 
 		// Format proof public inputs for verification
 		// FIXME: This is for a specfic gadget so we ought to create a generic handler
@@ -327,12 +347,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::PalletId::get().into_account()
 	}
 
-	pub fn get_anchor(
-		id: T::TreeId,
-	) -> Result<AnchorMetadata<T::AccountId, BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
-		let anchor = Anchors::<T, I>::get(id);
-		ensure!(anchor.is_some(), Error::<T, I>::NoAnchorFound);
-		Ok(anchor.unwrap())
+	pub fn get_vanchor(id: T::TreeId) -> Result<VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>, DispatchError> {
+		let vanchor = VAnchors::<T, I>::get(id);
+		ensure!(vanchor.is_some(), Error::<T, I>::NoVAnchorFound);
+		Ok(vanchor.unwrap())
 	}
 }
 
