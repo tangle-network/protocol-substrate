@@ -3,6 +3,7 @@
 use super::*;
 use crate as pallet_mixer;
 use codec::Decode;
+use frame_support::traits::GenesisBuild;
 use sp_core::H256;
 
 pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
@@ -230,6 +231,7 @@ impl Config for Test {
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
+	use sp_runtime::traits::Zero;
 	let mut storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let _ = pallet_balances::GenesisConfig::<Test> {
 		balances: vec![
@@ -239,5 +241,12 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		],
 	}
 	.assimilate_storage(&mut storage);
+	pallet_asset_registry::GenesisConfig::<Test> {
+		asset_names: vec![],
+		native_asset_name: b"UNIT".to_vec(),
+		native_existential_deposit: Zero::zero(),
+	}
+	.assimilate_storage(&mut storage)
+	.unwrap();
 	storage.into()
 }

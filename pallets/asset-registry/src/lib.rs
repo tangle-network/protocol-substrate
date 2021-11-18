@@ -42,8 +42,8 @@ pub use pallet::*;
 
 use crate::types::{AssetDetails, AssetMetadata};
 use frame_support::BoundedVec;
+use sp_runtime::traits::Zero;
 pub use traits::{Registry, ShareTokenRegistry};
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -159,8 +159,8 @@ pub mod pallet {
 		fn default() -> Self {
 			GenesisConfig::<T> {
 				asset_names: vec![],
-				native_asset_name: b"BSX".to_vec(),
-				native_existential_deposit: Default::default(),
+				native_asset_name: b"UNIT".to_vec(),
+				native_existential_deposit: Zero::zero(),
 			}
 		}
 	}
