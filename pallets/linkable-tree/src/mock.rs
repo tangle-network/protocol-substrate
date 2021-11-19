@@ -22,6 +22,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub type Balance = u128;
+pub type ChainId = u32;
 
 pub type BlockNumber = u64;
 /// Type for storing the id of an asset.
@@ -170,11 +171,13 @@ parameter_types! {
 
 parameter_types! {
 	pub const HistoryLength: u32 = 30;
+	pub const CurrentChainId: ChainId = 0;
 }
 
 impl pallet_linkable_tree::Config for Test {
-	type ChainId = u32;
+	type ChainId = ChainId;
 	type Event = Event;
+	type GetChainId = CurrentChainId;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();

@@ -65,6 +65,7 @@ pub mod weights;
 use sp_runtime::traits::{Saturating, Zero};
 use sp_std::prelude::*;
 
+use codec::Encode;
 use darkwebb_primitives::{types::DepositDetails, verifier::*};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchError},
@@ -282,6 +283,10 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> VerifierModule for Pallet<T, I> {
+	fn encode_public_inputs<E: Encode>(inputs: &[E]) -> Vec<u8> {
+		T::Verifier::encode_public_inputs(inputs)
+	}
+
 	fn verify(public_inp_bytes: &[u8], proof: &[u8]) -> Result<bool, DispatchError> {
 		let params = Self::parameters();
 		ensure!(!params.is_empty(), Error::<T, I>::ParametersNotInitialized);

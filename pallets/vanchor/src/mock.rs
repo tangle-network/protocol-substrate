@@ -118,7 +118,7 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBn254BridgeVerifier;
+	type Verifier = darkwebb_primitives::verifying::ArkworksBn254VAnchor2x2Verifier;
 	type WeightInfo = ();
 }
 
@@ -188,11 +188,13 @@ impl pallet_mt::Config for Test {
 
 parameter_types! {
 	pub const HistoryLength: u32 = 30;
+	pub const GetChainId: ChainId = 0;
 }
 
 impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
 	type Event = Event;
+	type GetChainId = GetChainId;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();
@@ -296,7 +298,7 @@ impl pallet_vanchor::Config for Test {
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = VAnchorPalletId;
 	type PostDepositHook = ();
-	type Verifier = VerifierPallet;
+	type Verifier2x2 = VerifierPallet;
 	type WeightInfo = ();
 }
 

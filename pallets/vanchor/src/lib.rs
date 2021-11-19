@@ -58,11 +58,15 @@ mod tests;
 mod zk_config;
 
 pub mod weights;
+use codec::Encode;
 use darkwebb_primitives::{
 	hasher::InstanceHasher,
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
-	types::vanchor::{ExtData, ProofData, VAnchorMetadata},
+	types::{
+		vanchor::{ExtData, ProofData, VAnchorMetadata},
+		ElementTrait, IntoAbiToken,
+	},
 	verifier::*,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
@@ -106,7 +110,7 @@ pub mod pallet {
 			+ LinkableTreeInspector<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>;
 
 		/// The verifier
-		type Verifier: VerifierModule;
+		type Verifier2x2: VerifierModule;
 
 		type EthereumHasher: InstanceHasher;
 
@@ -178,6 +182,8 @@ pub mod pallet {
 		AlreadyRevealedNullifier,
 		// Invalid external amount
 		InvalidExtAmount,
+		// Invalid external data
+		InvalidExtData,
 	}
 
 	#[pallet::hooks]
@@ -251,8 +257,8 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		T::LinkableTree::ensure_known_neighbor_roots(id, &proof_data.roots)?;
 
 		// Check nullifier and add or return `InvalidNullifier`
-		for nullifier in proof_data.input_nullifiers {
-			Self::ensure_nullifier_unused(id, nullifier)?;
+		for nullifier in &proof_data.input_nullifiers {
+			Self::ensure_nullifier_unused(id, *nullifier)?;
 		}
 
 		let vanchor = Self::get_vanchor(id)?;
@@ -269,8 +275,27 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 				Error::<T, I>::InvalidExtAmount
 			);
 
-			// transfer tokens to the pallet
+			// deposit tokens to the pallet from the transactor's account
 			<T as Config<I>>::Currency::transfer(vanchor.asset, &transactor, &Self::account_id(), ext_unsigned)?;
+		}
+
+		// Compute hash of abi encoded ext_data, reduced into field from config
+		let computed_ext_data_hash =
+			T::EthereumHasher::hash(&ext_data.encode_abi(), &[]).map_err(|_| Error::<T, I>::InvalidExtData)?;
+		// Ensure that the passed external data hash matches the computed one
+		ensure!(
+			proof_data.ext_data_hash.to_bytes() == &computed_ext_data_hash,
+			Error::<T, I>::InvalidExtData
+		);
+
+		// TODO: ensure public_amount is correct
+
+		if proof_data.input_nullifiers.len() == 2 {
+			let chain_id = <T as pallet_linkable_tree::Config<I>>::GetChainId::get();
+			let mut public_inputs: [Box<dyn Encode>; 1] = [Box::new(chain_id)];
+
+			let input_bytes =
+				T::Verifier2x2::encode_public_inputs(&[chain_id, proof_data.public_amount, proof_data.ext_data_hash]);
 		}
 
 		// Format proof public inputs for verification

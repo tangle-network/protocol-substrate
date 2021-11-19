@@ -1,6 +1,9 @@
 use super::*;
 use crate as pallet_verifier;
-pub use darkwebb_primitives::verifier::{InstanceVerifier, VerifierModule};
+pub use darkwebb_primitives::{
+	verifier::{InstanceVerifier, VerifierModule},
+	verifying::ArkworksBn254MixerVerifier,
+};
 use frame_support::parameter_types;
 use frame_system as system;
 use sp_core::H256;
@@ -87,7 +90,7 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBn254MixerVerifier;
+	type Verifier = ArkworksBn254MixerVerifier;
 	type WeightInfo = ();
 }
 

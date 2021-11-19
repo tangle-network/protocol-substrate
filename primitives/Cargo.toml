@@ -61,4 +61,5 @@ verifying = [
 	"arkworks-gadgets",
 	"ark-bls12-381",
 	"ark-bls12-377",
+	"ark-bn254",
 ]
