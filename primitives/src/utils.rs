@@ -2,7 +2,7 @@ use codec::{Decode, Encode};
 
 use sp_runtime::traits::AtLeast32Bit;
 
-use crate::ResourceId;
+use crate::types::ResourceId;
 
 /// The ResourceId type is a 32 bytes array represented as the following:
 /// ```md

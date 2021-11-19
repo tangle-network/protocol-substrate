@@ -57,28 +57,18 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod zk_config;
 
-pub mod types;
 pub mod weights;
-use codec::FullCodec;
 use darkwebb_primitives::{
+	hasher::InstanceHasher,
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
-	types::{IntoAbiToken, Token},
-	vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
+	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
+	types::vanchor::{ExtData, ProofData, VAnchorMetadata},
 	verifier::*,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
-use orml_traits::{
-	arithmetic::{Signed, SimpleArithmetic},
-	MultiCurrency, MultiCurrencyExtended,
-};
-use scale_info::TypeInfo;
-use sp_runtime::traits::{AccountIdConversion, AtLeast32BitUnsigned, MaybeSerializeDeserialize, Zero};
-use sp_std::{
-	convert::{TryFrom, TryInto},
-	fmt::Debug,
-	prelude::*,
-};
-use types::*;
+use orml_traits::{MultiCurrency, MultiCurrencyExtended};
+use sp_runtime::traits::{AccountIdConversion, Zero};
+use sp_std::{convert::TryInto, prelude::*};
 pub use weights::WeightInfo;
 
 /// Type alias for the orml_traits::MultiCurrency::Balance type
@@ -117,6 +107,8 @@ pub mod pallet {
 
 		/// The verifier
 		type Verifier: VerifierModule;
+
+		type EthereumHasher: InstanceHasher;
 
 		/// Currency type for taking deposits
 		type Currency: MultiCurrencyExtended<Self::AccountId>;
@@ -210,32 +202,11 @@ pub mod pallet {
 		pub fn transact(
 			origin: OriginFor<T>,
 			id: T::TreeId,
-			proof_bytes: Vec<u8>,
-			public_amount: BalanceOf<T, I>,
-			ext_amount: AmountOf<T, I>,
-			ext_data_hash: T::Element,
-			input_nullifiers: Vec<T::Element>,
-			output_commitments: Vec<T::Element>,
-			roots: Vec<T::Element>,
-			recipient: T::AccountId,
-			relayer: T::AccountId,
-			fee: BalanceOf<T, I>,
+			proof_data: ProofData<T::Element, BalanceOf<T, I>>,
+			ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, T::Element>,
 		) -> DispatchResultWithPostInfo {
 			let sener = ensure_signed(origin)?;
-			<Self as VAnchorInterface<_>>::transact(
-				sener,
-				id,
-				&proof_bytes,
-				public_amount,
-				ext_amount,
-				ext_data_hash,
-				input_nullifiers,
-				output_commitments,
-				roots,
-				recipient,
-				relayer,
-				fee,
-			)?;
+			<Self as VAnchorInterface<_>>::transact(sener, id, proof_data, ext_data)?;
 			Ok(().into())
 		}
 	}
@@ -262,41 +233,37 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		asset: CurrencyIdOf<T, I>,
 	) -> Result<T::TreeId, DispatchError> {
 		let id = T::LinkableTree::create(creator.clone(), max_edges, depth)?;
+		VAnchors::<T, I>::insert(id, Some(VAnchorMetadata { creator, asset }));
 		Ok(id)
 	}
 
 	fn transact(
 		transactor: T::AccountId,
 		id: T::TreeId,
-		proof_bytes: &[u8],
-		public_amount: BalanceOf<T, I>,
-		ext_amount: AmountOf<T, I>,
-		ext_data_hash: T::Element,
-		input_nullifiers: Vec<T::Element>,
-		output_commitments: Vec<T::Element>,
-		roots: Vec<T::Element>,
-		recipient: T::AccountId,
-		relayer: T::AccountId,
-		fee: BalanceOf<T, I>,
+		proof_data: ProofData<T::Element, BalanceOf<T, I>>,
+		ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, T::Element>,
 	) -> Result<(), DispatchError> {
 		// double check the number of roots
-		T::LinkableTree::ensure_max_edges(id, roots.len())?;
+		T::LinkableTree::ensure_max_edges(id, proof_data.roots.len())?;
 		// Check if local root is known
-		T::LinkableTree::ensure_known_root(id, roots[0])?;
+		T::LinkableTree::ensure_known_root(id, proof_data.roots[0])?;
 		// Check if neighbor roots are known
-		T::LinkableTree::ensure_known_neighbor_roots(id, &roots)?;
+		T::LinkableTree::ensure_known_neighbor_roots(id, &proof_data.roots)?;
 
 		// Check nullifier and add or return `InvalidNullifier`
-		for nullifier in input_nullifiers {
+		for nullifier in proof_data.input_nullifiers {
 			Self::ensure_nullifier_unused(id, nullifier)?;
 		}
 
 		let vanchor = Self::get_vanchor(id)?;
 
-		let is_deposit = ext_amount > AmountOf::<T, I>::zero();
+		let is_deposit = ext_data.ext_amount > AmountOf::<T, I>::zero();
 
 		if is_deposit {
-			let ext_unsigned: BalanceOf<T, I> = ext_amount.try_into().map_err(|_| Error::<T, I>::InvalidExtAmount)?;
+			let ext_unsigned: BalanceOf<T, I> = ext_data
+				.ext_amount
+				.try_into()
+				.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
 			ensure!(
 				ext_unsigned <= T::MaxDepositAmount::get(),
 				Error::<T, I>::InvalidExtAmount

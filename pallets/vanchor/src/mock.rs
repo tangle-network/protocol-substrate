@@ -7,6 +7,7 @@ use sp_core::H256;
 
 pub use darkwebb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
+	hashing::ethereum::Bn254Keccak256Hasher,
 	types::{ElementTrait, IntoAbiToken},
 	AccountId,
 };
@@ -287,6 +288,7 @@ parameter_types! {
 
 impl pallet_vanchor::Config for Test {
 	type Currency = Currencies;
+	type EthereumHasher = Bn254Keccak256Hasher;
 	type Event = Event;
 	type LinkableTree = LinkableTree;
 	type MaxDepositAmount = MaxDepositAmount;
@@ -304,7 +306,7 @@ pub fn assert_last_event<T: pallet_vanchor::Config>(generic_event: <T as pallet_
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
+	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
 
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));

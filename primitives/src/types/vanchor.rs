@@ -1,7 +1,5 @@
-//! All the traits exposed to be used in other custom pallets
-use crate::*;
+use super::{IntoAbiToken, Token};
 use codec::{Decode, Encode};
-use darkwebb_primitives::types::{IntoAbiToken, Token};
 use scale_info::TypeInfo;
 
 #[derive(Clone, Encode, Decode, TypeInfo)]
@@ -13,22 +11,24 @@ pub struct VAnchorMetadata<AccountId, AssetId> {
 	pub asset: AssetId,
 }
 
-struct Proof<Element, Balance> {
-	proof: Vec<u8>,
-	roots: Vec<Element>,
-	input_nullifiers: Vec<Element>,
-	output_commitments: Vec<Element>,
-	public_amount: Balance,
-	ext_data_hash: Element,
+#[derive(Clone, Encode, Decode, Debug, Eq, PartialEq, TypeInfo)]
+pub struct ProofData<Element, Balance> {
+	pub proof: Vec<u8>,
+	pub roots: Vec<Element>,
+	pub input_nullifiers: Vec<Element>,
+	pub output_commitments: Vec<Element>,
+	pub public_amount: Balance,
+	pub ext_data_hash: Element,
 }
 
+#[derive(Clone, Encode, Decode, Debug, Eq, PartialEq, TypeInfo)]
 pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode, Element: Encode> {
-	recipient: AccountId,
-	ext_amount: Amount,
-	relayer: AccountId,
-	fee: Balance,
-	encrypted_output1: Element,
-	encrypted_output2: Element,
+	pub recipient: AccountId,
+	pub ext_amount: Amount,
+	pub relayer: AccountId,
+	pub fee: Balance,
+	pub encrypted_output1: Element,
+	pub encrypted_output2: Element,
 }
 
 impl<I: Encode, A: Encode, B: Encode, E: Encode> IntoAbiToken for ExtData<I, A, B, E> {

@@ -1,5 +1,7 @@
+pub mod vanchor;
+
 use codec::{Decode, Encode};
-pub use ethabi::Token;
+pub use ethabi::{encode, Token};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::traits::MaybeSerializeDeserialize;
@@ -88,6 +90,11 @@ pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy + TypeInfo 
 
 pub trait IntoAbiToken {
 	fn into_abi(&self) -> Token;
+	fn encode_abi(&self) -> Vec<u8> {
+		let token = self.into_abi();
+		let encoded_input = encode(&[token]);
+		encoded_input
+	}
 }
 
 impl IntoAbiToken for i128 {

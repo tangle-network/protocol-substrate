@@ -1,16 +1,17 @@
 //! All the traits exposed to be used in other custom pallets
+use crate::types::vanchor::{ExtData, ProofData};
+use codec::Encode;
 use frame_support::dispatch;
-use sp_std::vec::Vec;
 
 pub trait VAnchorConfig {
 	type LeafIndex;
-	type AccountId;
-	type Balance;
-	type Amount;
+	type AccountId: Encode;
+	type Balance: Encode;
+	type Amount: Encode;
 	type CurrencyId;
 	type ChainId;
 	type TreeId;
-	type Element;
+	type Element: Encode;
 }
 
 /// Anchor trait definition to be used in other pallets
@@ -26,16 +27,8 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 	fn transact(
 		transactor: C::AccountId,
 		id: C::TreeId,
-		proof_bytes: &[u8],
-		public_amount: C::Balance,
-		ext_amount: C::Amount,
-		ext_data_hash: C::Element,
-		input_nullifiers: Vec<C::Element>,
-		output_commitments: Vec<C::Element>,
-		roots: Vec<C::Element>,
-		recipient: C::AccountId,
-		relayer: C::AccountId,
-		fee: C::Balance,
+		proof_data: ProofData<C::Element, C::Balance>,
+		ext_data: ExtData<C::AccountId, C::Amount, C::Balance, C::Element>,
 	) -> Result<(), dispatch::DispatchError>;
 	// Stores nullifier hash from a spend tx
 	fn add_nullifier_hash(id: C::TreeId, nullifier_hash: C::Element) -> Result<(), dispatch::DispatchError>;
