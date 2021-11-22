@@ -534,3 +534,62 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 		);
 	});
 }
+
+#[test]
+fn should_fail_to_create_proposal_for_already_pending_linking() {
+	MockNet::reset();
+	// create an anchor on parachain A.
+	let para_a_tree_id = ParaA::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+
+	// create an anchor on parachain B.
+	let para_b_tree_id = ParaB::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+
+	// create a proposal on chain A.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(para_b_tree_id),
+			local_tree_id: para_a_tree_id,
+		};
+		let value = 100;
+		assert_ok!(XAnchor::propose_to_link_anchor(
+			Origin::signed(AccountThree::get()),
+			payload,
+			value
+		));
+	});
+
+	// now try create a new proposal on chain A with different Account it should fail.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(para_b_tree_id),
+			local_tree_id: para_a_tree_id,
+		};
+		let value = 100;
+		assert_err!(
+			XAnchor::propose_to_link_anchor(
+				Origin::signed(AccountFour::get()),
+				payload,
+				value
+			),
+			Error::<Runtime>::AnchorLinkIsAlreadyPending
+		);
+	});
+
+
+}
