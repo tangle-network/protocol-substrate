@@ -483,3 +483,54 @@ fn should_fail_to_create_proposal_if_the_anchor_does_not_exist() {
 			);
 		});
 }
+
+#[test]
+fn should_fail_to_create_proposal_for_already_linked_anchors() {
+	MockNet::reset();
+	// create an anchor on parachain A.
+	let para_a_tree_id = ParaA::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+	// create an anchor on parachain B.
+	let para_b_tree_id = ParaB::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+
+	// force link them.
+	ParaA::execute_with(|| {
+		let r_id = encode_resource_id(para_a_tree_id, PARAID_B);
+		assert_ok!(XAnchor::force_register_resource_id(
+			Origin::root(),
+			r_id,
+			para_b_tree_id
+		));
+	});
+
+	// now try create a proposal on chain A, it should fail since it is already linked.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(para_b_tree_id),
+			local_tree_id: para_a_tree_id,
+		};
+		let value = 100;
+		assert_err!(
+			XAnchor::propose_to_link_anchor(
+				Origin::signed(AccountThree::get()),
+				payload,
+				value
+			),
+			Error::<Runtime>::ResourceIsAlreadyAnchored
+		);
+	});
+}
