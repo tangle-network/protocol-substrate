@@ -131,6 +131,7 @@ pub mod pallet {
 
 		type MaxDepositAmount: Get<BalanceOf<Self, I>>;
 		type MinWithdrawAmount: Get<BalanceOf<Self, I>>;
+		type MaxExtAmount: Get<BalanceOf<Self, I>>;
 		type MaxFee: Get<BalanceOf<Self, I>>;
 	}
 
@@ -190,6 +191,10 @@ pub mod pallet {
 		InvalidExtData,
 		// Invalid input nullifiers
 		InvalidInputNullifiers,
+		// Invalid fee
+		InvalidFee,
+		// Invalid public amount
+		InvalidPublicAmount,
 	}
 
 	#[pallet::hooks]
@@ -294,7 +299,23 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			Error::<T, I>::InvalidExtData
 		);
 
-		// TODO: ensure public_amount is correct
+		// Making sure that public amount and fee are correct
+		ensure!(ext_data.fee < T::MaxFee::get(), Error::<T, I>::InvalidFee);
+		let ext_amount_unsigned: BalanceOf<T, I> = ext_data
+			.ext_amount
+			.abs()
+			.try_into()
+			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
+
+		ensure!(
+			ext_amount_unsigned < T::MaxExtAmount::get(),
+			Error::<T, I>::InvalidExtAmount
+		);
+		let calc_public_amount = ext_amount_unsigned - ext_data.fee;
+		ensure!(
+			proof_data.public_amount == calc_public_amount,
+			Error::<T, I>::InvalidPublicAmount
+		);
 
 		if proof_data.input_nullifiers.len() == 2 {
 			let chain_id = <T as pallet_linkable_tree::Config<I>>::GetChainId::get();

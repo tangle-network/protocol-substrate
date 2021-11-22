@@ -287,6 +287,7 @@ parameter_types! {
 	pub const MaxFee: Balance = 100;
 	pub const MaxDepositAmount: Balance = 1000;
 	pub const MinWithdrawAmount: Balance = 100;
+	pub const MaxExtAmount: Balance = 1000;
 }
 
 impl pallet_vanchor::Config for Test {
@@ -295,6 +296,7 @@ impl pallet_vanchor::Config for Test {
 	type Event = Event;
 	type LinkableTree = LinkableTree;
 	type MaxDepositAmount = MaxDepositAmount;
+	type MaxExtAmount = MaxExtAmount;
 	type MaxFee = MaxFee;
 	type MinWithdrawAmount = MinWithdrawAmount;
 	type NativeCurrencyId = NativeCurrencyId;
