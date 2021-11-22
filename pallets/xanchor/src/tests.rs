@@ -615,3 +615,25 @@ fn should_fail_to_call_send_link_anchor_message_as_signed_account() {
 			);
 		}); 
 }
+
+#[test]
+fn should_fail_to_call_save_link_proposal_as_signed_account() {
+		// rest the network.
+		MockNet::reset();
+		// calling save_link_proposal as signed account should fail.
+		// on parachain A.
+		ParaA::execute_with(|| {
+			let payload = LinkProposal {
+				target_chain_id: PARAID_B,
+				target_tree_id: Some(MerkleTree::next_tree_id()),
+				local_tree_id: MerkleTree::next_tree_id(),
+			};
+			assert_err!(
+				XAnchor::save_link_proposal(
+					Origin::signed(AccountThree::get()),
+					payload,
+				),
+				frame_support::error::BadOrigin,
+			);
+		});
+}
