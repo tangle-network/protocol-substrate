@@ -590,6 +590,28 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 			Error::<Runtime>::AnchorLinkIsAlreadyPending
 		);
 	});
+}
 
-
+#[test]
+fn should_fail_to_call_send_link_anchor_message_as_signed_account() {
+		// rest the network.
+		MockNet::reset();
+		// calling send_link_anchor_message as signed account should fail.
+		// on parachain A.
+		ParaA::execute_with(|| {
+			let payload = LinkProposal {
+				target_chain_id: PARAID_B,
+				target_tree_id: Some(MerkleTree::next_tree_id()),
+				local_tree_id: MerkleTree::next_tree_id(),
+			};
+			let value = 100;
+			assert_err!(
+				XAnchor::send_link_anchor_message(
+					Origin::signed(AccountThree::get()),
+					payload,
+					value
+				),
+				frame_support::error::BadOrigin,
+			);
+		}); 
 }
