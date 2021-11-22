@@ -458,11 +458,13 @@ impl pallet_asset_registry::Config for Runtime {
 parameter_types! {
 	pub const HistoryLength: u32 = 30;
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
+	pub const GetChainId: ChainId = 0;
 }
 
 impl pallet_linkable_tree::Config for Runtime {
 	type ChainId = ChainId;
 	type Event = Event;
+	type GetChainId = GetChainId;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();

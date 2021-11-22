@@ -322,43 +322,17 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		// Check nullifier and add or return `InvalidNullifier`
 		Self::ensure_nullifier_unused(id, nullifier_hash)?;
 		Self::add_nullifier_hash(id, nullifier_hash)?;
-		// Format proof public inputs for verification
-		// FIXME: This is for a specfic gadget so we ought to create a generic handler
-		// FIXME: Such as a unpack/pack public inputs trait
-		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
-		//
-		// nullifier_hash (0..32)
-		// recipient (32..64)
-		// relayer (64..96)
-		// fee (96..128)
-		// refund (128..160)
-		// chain_id (160..192)
-		// root[1] (224..256)
-		// root[2] (256..288)
-		// root[m - 1] (...)
-		let mut bytes = vec![];
 
-		let element_encoder = |v: &[u8]| {
-			let mut output = [0u8; 32];
-			output.iter_mut().zip(v).for_each(|(b1, b2)| *b1 = *b2);
-			output
-		};
-		let recipient_bytes = truncate_and_pad(&recipient.using_encoded(element_encoder)[..]);
-		let relayer_bytes = truncate_and_pad(&relayer.using_encoded(element_encoder)[..]);
-		let fee_bytes = fee.using_encoded(element_encoder);
-		let refund_bytes = refund.using_encoded(element_encoder);
-		let chain_id_bytes = chain_id.using_encoded(element_encoder);
-
-		bytes.extend_from_slice(&nullifier_hash.encode());
-		bytes.extend_from_slice(&recipient_bytes);
-		bytes.extend_from_slice(&relayer_bytes);
-		bytes.extend_from_slice(&fee_bytes);
-		bytes.extend_from_slice(&refund_bytes);
-		bytes.extend_from_slice(&chain_id_bytes);
-		for root in roots {
-			bytes.extend_from_slice(&root.encode());
-		}
-		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
+		let public_inputs = [
+			nullifier_hash.encode(),
+			recipient.encode(),
+			relayer.encode(),
+			fee.encode(),
+			refund.encode(),
+			chain_id.encode(),
+			roots.encode(),
+		];
+		let result = <T as pallet::Config<I>>::Verifier::pack_public_inputs_and_verify(&public_inputs, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 		// transfer the assets
 		let anchor = Self::get_anchor(id)?;

@@ -306,10 +306,10 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 				proof_data.input_nullifiers.encode(),
 			];
 
-			let res = T::Verifier2x2::pack_public_inputs_and_verify(&public_inputs, &proof_data.proof);
-			ensure!(res, Error::<T>::InvalidTransactionProof);
+			let res = T::Verifier2x2::pack_public_inputs_and_verify(&public_inputs, &proof_data.proof)?;
+			ensure!(res, Error::<T, I>::InvalidTransactionProof);
 		} else {
-			ensure!(false, Error::<T>::InvalidInputNullifiers);
+			ensure!(false, Error::<T, I>::InvalidInputNullifiers);
 		}
 
 		// Flag nullifiers as used
@@ -341,8 +341,8 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		}
 
 		// Insert output commitments into the tree
-		for comm in proof_data.output_commitments {
-			T::LinkableTree::insert_in_order(id, comm);
+		for comm in &proof_data.output_commitments {
+			T::LinkableTree::insert_in_order(id, *comm)?;
 		}
 
 		Self::deposit_event(Event::Transaction {
