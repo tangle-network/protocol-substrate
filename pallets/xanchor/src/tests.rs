@@ -459,3 +459,27 @@ fn governance_system_works() {
 
 	// the link process is now done!
 }
+
+// Some negtive tests for the governance system.
+
+#[test]
+fn should_fail_to_create_proposal_if_the_anchor_does_not_exist() {
+		MockNet::reset();
+		// creating a proposal for a non-existing anchor.
+		ParaA::execute_with(|| {
+			let payload = LinkProposal {
+				target_chain_id: PARAID_B,
+				target_tree_id: Some(MerkleTree::next_tree_id()),
+				local_tree_id: MerkleTree::next_tree_id(),
+			};
+			let value = 100;
+			assert_err!(
+				XAnchor::propose_to_link_anchor(
+					Origin::signed(AccountThree::get()),
+					payload,
+					value
+				),
+				Error::<Runtime>::AnchorNotFound
+			);
+		});
+}
