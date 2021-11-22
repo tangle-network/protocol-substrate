@@ -106,185 +106,197 @@ fn create_vanchor(asset_id: u32) -> u32 {
 	MerkleTree::next_tree_id() - 1
 }
 
-#[test]
-fn vanchor_works() {
-	new_test_ext().execute_with(|| {
-		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve);
+// #[test]
+// fn vanchor_works() {
+// 	new_test_ext().execute_with(|| {
+// 		let curve = Curve::Bn254;
+// 		let pk_bytes = setup_environment(curve);
 
-		// inputs
-		let tree_id = create_vanchor(0);
-		let src_chain_id = 1;
-		let sender_account_id = account::<AccountId>("", 1, SEED);
-		let recipient_account_id = account::<AccountId>("", 2, SEED);
-		let relayer_account_id = account::<AccountId>("", 0, SEED);
-		let fee_value = 0;
-		let refund_value = 0;
+// 		// inputs
+// 		let tree_id = create_vanchor(0);
+// 		let src_chain_id = 1;
+// 		let sender_account_id = account::<AccountId>("", 1, SEED);
+// 		let recipient_account_id = account::<AccountId>("", 2, SEED);
+// 		let relayer_account_id = account::<AccountId>("", 0, SEED);
+// 		let fee_value = 0;
+// 		let refund_value = 0;
 
-		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
-		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+// 		let recipient_bytes =
+// crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+// 		let relayer_bytes =
+// crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
-	});
-}
+// 		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
+// setup_zk_circuit( 			curve,
+// 			recipient_bytes,
+// 			relayer_bytes,
+// 			pk_bytes,
+// 			src_chain_id,
+// 			fee_value,
+// 			refund_value,
+// 		);
+// 	});
+// }
 
-#[test]
-fn double_spending_should_fail() {
-	new_test_ext().execute_with(|| {
-		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve);
+// #[test]
+// fn double_spending_should_fail() {
+// 	new_test_ext().execute_with(|| {
+// 		let curve = Curve::Bn254;
+// 		let pk_bytes = setup_environment(curve);
 
-		// inputs
-		let tree_id = create_vanchor(0);
-		let src_chain_id = 1;
-		let sender_account_id = account::<AccountId>("", 1, SEED);
-		let recipient_account_id = account::<AccountId>("", 2, SEED);
-		let relayer_account_id = account::<AccountId>("", 0, SEED);
-		let fee_value = 0;
-		let refund_value = 0;
+// 		// inputs
+// 		let tree_id = create_vanchor(0);
+// 		let src_chain_id = 1;
+// 		let sender_account_id = account::<AccountId>("", 1, SEED);
+// 		let recipient_account_id = account::<AccountId>("", 2, SEED);
+// 		let relayer_account_id = account::<AccountId>("", 0, SEED);
+// 		let fee_value = 0;
+// 		let refund_value = 0;
 
-		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
-		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+// 		let recipient_bytes =
+// crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+// 		let relayer_bytes =
+// crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
-	});
-}
+// 		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
+// setup_zk_circuit( 			curve,
+// 			recipient_bytes,
+// 			relayer_bytes,
+// 			pk_bytes,
+// 			src_chain_id,
+// 			fee_value,
+// 			refund_value,
+// 		);
+// 	});
+// }
 
-#[test]
-fn should_fail_when_invalid_merkle_roots() {
-	new_test_ext().execute_with(|| {
-		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve);
+// #[test]
+// fn should_fail_when_invalid_merkle_roots() {
+// 	new_test_ext().execute_with(|| {
+// 		let curve = Curve::Bn254;
+// 		let pk_bytes = setup_environment(curve);
 
-		// inputs
-		let tree_id = create_vanchor(0);
-		let src_chain_id = 1;
-		let sender_account_id = account::<AccountId>("", 1, SEED);
-		let recipient_account_id = account::<AccountId>("", 2, SEED);
-		let relayer_account_id = account::<AccountId>("", 0, SEED);
-		let fee_value = 0;
-		let refund_value = 0;
+// 		// inputs
+// 		let tree_id = create_vanchor(0);
+// 		let src_chain_id = 1;
+// 		let sender_account_id = account::<AccountId>("", 1, SEED);
+// 		let recipient_account_id = account::<AccountId>("", 2, SEED);
+// 		let relayer_account_id = account::<AccountId>("", 0, SEED);
+// 		let fee_value = 0;
+// 		let refund_value = 0;
 
-		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
-		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+// 		let recipient_bytes =
+// crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+// 		let relayer_bytes =
+// crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, mut roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
-	});
-}
+// 		let (proof_bytes, mut roots_element, nullifier_hash_element, leaf_element) =
+// setup_zk_circuit( 			curve,
+// 			recipient_bytes,
+// 			relayer_bytes,
+// 			pk_bytes,
+// 			src_chain_id,
+// 			fee_value,
+// 			refund_value,
+// 		);
+// 	});
+// }
 
-#[test]
-fn should_fail_with_when_any_byte_is_changed_in_proof() {
-	new_test_ext().execute_with(|| {
-		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve);
+// #[test]
+// fn should_fail_with_when_any_byte_is_changed_in_proof() {
+// 	new_test_ext().execute_with(|| {
+// 		let curve = Curve::Bn254;
+// 		let pk_bytes = setup_environment(curve);
 
-		// inputs
-		let tree_id = create_vanchor(0);
-		let src_chain_id = 1;
-		let sender_account_id = account::<AccountId>("", 1, SEED);
-		let recipient_account_id = account::<AccountId>("", 2, SEED);
-		let relayer_account_id = account::<AccountId>("", 0, SEED);
-		let fee_value = 0;
-		let refund_value = 0;
+// 		// inputs
+// 		let tree_id = create_vanchor(0);
+// 		let src_chain_id = 1;
+// 		let sender_account_id = account::<AccountId>("", 1, SEED);
+// 		let recipient_account_id = account::<AccountId>("", 2, SEED);
+// 		let relayer_account_id = account::<AccountId>("", 0, SEED);
+// 		let fee_value = 0;
+// 		let refund_value = 0;
 
-		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
-		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+// 		let recipient_bytes =
+// crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+// 		let relayer_bytes =
+// crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (mut proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
-	});
-}
+// 		let (mut proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
+// setup_zk_circuit( 			curve,
+// 			recipient_bytes,
+// 			relayer_bytes,
+// 			pk_bytes,
+// 			src_chain_id,
+// 			fee_value,
+// 			refund_value,
+// 		);
+// 	});
+// }
 
-#[test]
-fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
-	new_test_ext().execute_with(|| {
-		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve);
+// #[test]
+// fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
+// 	new_test_ext().execute_with(|| {
+// 		let curve = Curve::Bn254;
+// 		let pk_bytes = setup_environment(curve);
 
-		// inputs
-		let tree_id = create_vanchor(0);
-		let src_chain_id = 1;
-		let sender_account_id = account::<AccountId>("", 1, SEED);
-		let recipient_account_id = account::<AccountId>("", 2, SEED);
-		let relayer_account_id = account::<AccountId>("", 0, SEED);
-		let fee_value = 0;
-		let refund_value = 0;
+// 		// inputs
+// 		let tree_id = create_vanchor(0);
+// 		let src_chain_id = 1;
+// 		let sender_account_id = account::<AccountId>("", 1, SEED);
+// 		let recipient_account_id = account::<AccountId>("", 2, SEED);
+// 		let relayer_account_id = account::<AccountId>("", 0, SEED);
+// 		let fee_value = 0;
+// 		let refund_value = 0;
 
-		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
-		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+// 		let recipient_bytes =
+// crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+// 		let relayer_bytes =
+// crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
-	});
-}
+// 		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
+// setup_zk_circuit( 			curve,
+// 			recipient_bytes,
+// 			relayer_bytes,
+// 			pk_bytes,
+// 			src_chain_id,
+// 			fee_value,
+// 			refund_value,
+// 		);
+// 	});
+// }
 
-#[test]
-fn should_fail_with_when_fee_submitted_is_changed() {
-	new_test_ext().execute_with(|| {
-		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve);
+// #[test]
+// fn should_fail_with_when_fee_submitted_is_changed() {
+// 	new_test_ext().execute_with(|| {
+// 		let curve = Curve::Bn254;
+// 		let pk_bytes = setup_environment(curve);
 
-		// inputs
-		let tree_id = create_vanchor(0);
-		let src_chain_id = 1;
-		let sender_account_id = account::<AccountId>("", 1, SEED);
-		let recipient_account_id = account::<AccountId>("", 2, SEED);
-		let relayer_account_id = account::<AccountId>("", 0, SEED);
-		let fee_value = 0;
-		let refund_value = 0;
+// 		// inputs
+// 		let tree_id = create_vanchor(0);
+// 		let src_chain_id = 1;
+// 		let sender_account_id = account::<AccountId>("", 1, SEED);
+// 		let recipient_account_id = account::<AccountId>("", 2, SEED);
+// 		let relayer_account_id = account::<AccountId>("", 0, SEED);
+// 		let fee_value = 0;
+// 		let refund_value = 0;
 
-		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
-		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+// 		let recipient_bytes =
+// crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+// 		let relayer_bytes =
+// crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
-	});
-}
+// 		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
+// setup_zk_circuit( 			curve,
+// 			recipient_bytes,
+// 			relayer_bytes,
+// 			pk_bytes,
+// 			src_chain_id,
+// 			fee_value,
+// 			refund_value,
+// 		);
+// 	});
+// }
 
 #[test]
 fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
@@ -316,91 +328,93 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 	});
 }
 
-#[test]
-fn vanchor_works_for_pool_tokens() {
-	new_test_ext().execute_with(|| {
-		let existential_balance: u32 = 1000;
-		let first_token_id = AssetRegistry::register_asset(
-			b"shib".to_vec().try_into().unwrap(),
-			AssetType::Token,
-			existential_balance.into(),
-		)
-		.unwrap();
-		let second_token_id = AssetRegistry::register_asset(
-			b"doge".to_vec().try_into().unwrap(),
-			AssetType::Token,
-			existential_balance.into(),
-		)
-		.unwrap();
+// #[test]
+// fn vanchor_works_for_pool_tokens() {
+// 	new_test_ext().execute_with(|| {
+// 		let existential_balance: u32 = 1000;
+// 		let first_token_id = AssetRegistry::register_asset(
+// 			b"shib".to_vec().try_into().unwrap(),
+// 			AssetType::Token,
+// 			existential_balance.into(),
+// 		)
+// 		.unwrap();
+// 		let second_token_id = AssetRegistry::register_asset(
+// 			b"doge".to_vec().try_into().unwrap(),
+// 			AssetType::Token,
+// 			existential_balance.into(),
+// 		)
+// 		.unwrap();
 
-		let pool_share_id = AssetRegistry::register_asset(
-			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![second_token_id, first_token_id]),
-			existential_balance.into(),
-		)
-		.unwrap();
+// 		let pool_share_id = AssetRegistry::register_asset(
+// 			b"meme".to_vec().try_into().unwrap(),
+// 			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+// 			existential_balance.into(),
+// 		)
+// 		.unwrap();
 
-		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve);
+// 		let curve = Curve::Bn254;
+// 		let pk_bytes = setup_environment(curve);
 
-		// inputs
-		let tree_id = create_vanchor(pool_share_id);
-		let src_chain_id = 1;
-		let sender_account_id = account::<AccountId>("", 1, SEED);
-		let recipient_account_id = account::<AccountId>("", 2, SEED);
-		let relayer_account_id = account::<AccountId>("", 0, SEED);
-		let fee_value = 0;
-		let refund_value = 0;
-		let balance = 30_000u32;
+// 		// inputs
+// 		let tree_id = create_vanchor(pool_share_id);
+// 		let src_chain_id = 1;
+// 		let sender_account_id = account::<AccountId>("", 1, SEED);
+// 		let recipient_account_id = account::<AccountId>("", 2, SEED);
+// 		let relayer_account_id = account::<AccountId>("", 0, SEED);
+// 		let fee_value = 0;
+// 		let refund_value = 0;
+// 		let balance = 30_000u32;
 
-		assert_ok!(Currencies::update_balance(
-			Origin::root(),
-			sender_account_id.clone(),
-			first_token_id,
-			balance.into()
-		));
+// 		assert_ok!(Currencies::update_balance(
+// 			Origin::root(),
+// 			sender_account_id.clone(),
+// 			first_token_id,
+// 			balance.into()
+// 		));
 
-		assert_ok!(Currencies::update_balance(
-			Origin::root(),
-			sender_account_id.clone(),
-			second_token_id,
-			balance.into()
-		));
+// 		assert_ok!(Currencies::update_balance(
+// 			Origin::root(),
+// 			sender_account_id.clone(),
+// 			second_token_id,
+// 			balance.into()
+// 		));
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 0));
+// 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 0));
 
-		assert_ok!(TokenWrapper::wrap(
-			Origin::signed(sender_account_id.clone()),
-			first_token_id,
-			pool_share_id,
-			10000 as u128,
-			sender_account_id.clone()
-		));
+// 		assert_ok!(TokenWrapper::wrap(
+// 			Origin::signed(sender_account_id.clone()),
+// 			first_token_id,
+// 			pool_share_id,
+// 			10000 as u128,
+// 			sender_account_id.clone()
+// 		));
 
-		assert_ok!(TokenWrapper::wrap(
-			Origin::signed(sender_account_id.clone()),
-			second_token_id,
-			pool_share_id,
-			10000 as u128,
-			sender_account_id.clone()
-		));
+// 		assert_ok!(TokenWrapper::wrap(
+// 			Origin::signed(sender_account_id.clone()),
+// 			second_token_id,
+// 			pool_share_id,
+// 			10000 as u128,
+// 			sender_account_id.clone()
+// 		));
 
-		assert_eq!(Tokens::total_issuance(pool_share_id), 20_000u32.into());
+// 		assert_eq!(Tokens::total_issuance(pool_share_id), 20_000u32.into());
 
-		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
-		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+// 		let recipient_bytes =
+// crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+// 		let relayer_bytes =
+// crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
-	});
-}
+// 		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
+// setup_zk_circuit( 			curve,
+// 			recipient_bytes,
+// 			relayer_bytes,
+// 			pk_bytes,
+// 			src_chain_id,
+// 			fee_value,
+// 			refund_value,
+// 		);
+// 	});
+// }
 
 #[test]
 fn should_run_post_deposit_hook_sucessfully() {

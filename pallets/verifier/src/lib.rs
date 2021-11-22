@@ -283,14 +283,14 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> VerifierModule for Pallet<T, I> {
-	fn encode_public_inputs<E: Encode>(inputs: &[E]) -> Vec<u8> {
-		T::Verifier::encode_public_inputs(inputs)
+	fn pack_public_inputs(inputs: &[Vec<u8>]) -> Vec<u8> {
+		T::Verifier::pack_public_inputs(inputs)
 	}
 
-	fn verify(public_inp_bytes: &[u8], proof: &[u8]) -> Result<bool, DispatchError> {
+	fn pack_public_inputs_and_verify(inputs: &[Vec<u8>], proof_bytes: &[u8]) -> Result<bool, DispatchError> {
 		let params = Self::parameters();
 		ensure!(!params.is_empty(), Error::<T, I>::ParametersNotInitialized);
-		match T::Verifier::verify(public_inp_bytes, proof, &params) {
+		match T::Verifier::pack_public_inputs_and_verify(inputs, proof_bytes, &params) {
 			Ok(verified) => Ok(verified),
 			Err(_) => {
 				// TODO: Handle properly

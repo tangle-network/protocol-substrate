@@ -70,8 +70,11 @@ use darkwebb_primitives::{
 	verifier::*,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
-use orml_traits::{MultiCurrency, MultiCurrencyExtended};
-use sp_runtime::traits::{AccountIdConversion, Zero};
+use orml_traits::{
+	arithmetic::{Signed, Zero},
+	MultiCurrency, MultiCurrencyExtended,
+};
+use sp_runtime::traits::AccountIdConversion;
 use sp_std::{convert::TryInto, prelude::*};
 pub use weights::WeightInfo;
 
@@ -127,6 +130,7 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 
 		type MaxDepositAmount: Get<BalanceOf<Self, I>>;
+		type MinWithdrawAmount: Get<BalanceOf<Self, I>>;
 		type MaxFee: Get<BalanceOf<Self, I>>;
 	}
 
@@ -157,7 +161,7 @@ pub mod pallet {
 			transactor: T::AccountId,
 			tree_id: T::TreeId,
 			leafs: Vec<T::Element>,
-			amount: AmountOf<T, I>,
+			amount: BalanceOf<T, I>,
 		},
 		/// Post deposit hook has executed successfully
 		PostDeposit {
@@ -173,8 +177,8 @@ pub mod pallet {
 		InvalidMerkleRoots,
 		/// Unknown root
 		UnknownRoot,
-		/// Invalid withdraw proof
-		InvalidWithdrawProof,
+		/// Invalid transaction proof
+		InvalidTransactionProof,
 		/// Variable Anchor not found.
 		NoVAnchorFound,
 		/// Invalid nullifier that is already used
@@ -184,6 +188,8 @@ pub mod pallet {
 		InvalidExtAmount,
 		// Invalid external data
 		InvalidExtData,
+		// Invalid input nullifiers
+		InvalidInputNullifiers,
 	}
 
 	#[pallet::hooks]
@@ -263,7 +269,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 
 		let vanchor = Self::get_vanchor(id)?;
 
-		let is_deposit = ext_data.ext_amount > AmountOf::<T, I>::zero();
+		let is_deposit = ext_data.ext_amount.is_positive();
 
 		if is_deposit {
 			let ext_unsigned: BalanceOf<T, I> = ext_data
@@ -292,17 +298,59 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 
 		if proof_data.input_nullifiers.len() == 2 {
 			let chain_id = <T as pallet_linkable_tree::Config<I>>::GetChainId::get();
-			let mut public_inputs: [Box<dyn Encode>; 1] = [Box::new(chain_id)];
+			let public_inputs = [
+				chain_id.encode(),
+				proof_data.public_amount.encode(),
+				proof_data.ext_data_hash.encode(),
+				proof_data.roots.encode(),
+				proof_data.input_nullifiers.encode(),
+			];
 
-			let input_bytes =
-				T::Verifier2x2::encode_public_inputs(&[chain_id, proof_data.public_amount, proof_data.ext_data_hash]);
+			let res = T::Verifier2x2::pack_public_inputs_and_verify(&public_inputs, &proof_data.proof);
+			ensure!(res, Error::<T>::InvalidTransactionProof);
+		} else {
+			ensure!(false, Error::<T>::InvalidInputNullifiers);
 		}
 
-		// Format proof public inputs for verification
-		// FIXME: This is for a specfic gadget so we ought to create a generic handler
-		// FIXME: Such as a unpack/pack public inputs trait
-		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
-		//
+		// Flag nullifiers as used
+		for nullifier in &proof_data.input_nullifiers {
+			Self::add_nullifier_hash(id, *nullifier)?;
+		}
+
+		let is_withdraw = ext_data.ext_amount.is_negative();
+
+		if is_withdraw {
+			let abs_amount: BalanceOf<T, I> = ext_data
+				.ext_amount
+				.abs()
+				.try_into()
+				.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
+			let min_withdraw = T::MinWithdrawAmount::get();
+
+			ensure!(abs_amount >= min_withdraw, Error::<T, I>::InvalidExtAmount);
+
+			// Withdraw to recipient account
+			<T as Config<I>>::Currency::transfer(vanchor.asset, &Self::account_id(), &ext_data.recipient, abs_amount)?;
+		}
+
+		let fee_exists = ext_data.fee > BalanceOf::<T, I>::zero();
+
+		if fee_exists {
+			// Send fee to the relayer
+			<T as Config<I>>::Currency::transfer(vanchor.asset, &Self::account_id(), &ext_data.relayer, ext_data.fee)?;
+		}
+
+		// Insert output commitments into the tree
+		for comm in proof_data.output_commitments {
+			T::LinkableTree::insert_in_order(id, comm);
+		}
+
+		Self::deposit_event(Event::Transaction {
+			transactor: transactor.clone(),
+			tree_id: id,
+			leafs: proof_data.output_commitments,
+			amount: proof_data.public_amount,
+		});
 		Ok(())
 	}
 
@@ -368,10 +416,4 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for () {
 	fn post_deposit(_: T::AccountId, _: T::TreeId, _: T::Element) -> DispatchResult {
 		Ok(())
 	}
-}
-/// Truncate and pad 256 bit slice
-pub fn truncate_and_pad(t: &[u8]) -> Vec<u8> {
-	let mut truncated_bytes = t[..20].to_vec();
-	truncated_bytes.extend_from_slice(&[0u8; 12]);
-	truncated_bytes
 }

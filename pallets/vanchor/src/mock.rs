@@ -286,6 +286,7 @@ parameter_types! {
 	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
 	pub const MaxFee: Balance = 100;
 	pub const MaxDepositAmount: Balance = 1000;
+	pub const MinWithdrawAmount: Balance = 100;
 }
 
 impl pallet_vanchor::Config for Test {
@@ -295,6 +296,7 @@ impl pallet_vanchor::Config for Test {
 	type LinkableTree = LinkableTree;
 	type MaxDepositAmount = MaxDepositAmount;
 	type MaxFee = MaxFee;
+	type MinWithdrawAmount = MinWithdrawAmount;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = VAnchorPalletId;
 	type PostDepositHook = ();
