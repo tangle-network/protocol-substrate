@@ -341,25 +341,22 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 }
 
 // Governance System Tests
-const AYE: Vote = Vote {
-	aye: true,
-	conviction: Conviction::None,
-};
-const NAY: Vote = Vote {
-	aye: false,
-	conviction: Conviction::None,
-};
-
 fn aye(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
 	AccountVote::Standard {
-		vote: AYE,
+		vote: Vote {
+			aye: true,
+			conviction: Conviction::None,
+		},
 		balance: Balances::free_balance(&who),
 	}
 }
 
 fn nay(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
 	AccountVote::Standard {
-		vote: NAY,
+		vote: Vote {
+			aye: false,
+			conviction: Conviction::None,
+		},
 		balance: Balances::free_balance(&who),
 	}
 }
