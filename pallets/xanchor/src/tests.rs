@@ -736,3 +736,18 @@ fn should_fail_to_call_handle_link_anchors_as_signed_account() {
 		);
 	});
 }
+
+#[test]
+fn should_fail_to_call_register_resource_id_as_signed_account() {
+	// reset the network.
+	MockNet::reset();
+	// calling register_resource_id as signed account should fail.
+	// on parachain A.
+	ParaA::execute_with(|| {
+		let r_id = encode_resource_id(MerkleTree::next_tree_id(), PARAID_B);
+		assert_err!(
+			XAnchor::register_resource_id(Origin::signed(AccountThree::get()), r_id, MerkleTree::next_tree_id()),
+			frame_support::error::BadOrigin,
+		);
+	});
+}
