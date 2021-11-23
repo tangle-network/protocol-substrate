@@ -698,3 +698,22 @@ fn should_fail_to_call_handle_link_anchor_message_without_anchor_being_pending()
 		);
 	});
 }
+
+#[test]
+fn should_fail_to_call_link_anchors_as_signed_account() {
+	// reset the network.
+	MockNet::reset();
+	// calling link_anchors as signed account should fail.
+	// on parachain A.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(MerkleTree::next_tree_id()),
+			local_tree_id: MerkleTree::next_tree_id(),
+		};
+		assert_err!(
+			XAnchor::link_anchors(Origin::signed(AccountThree::get()), payload),
+			frame_support::error::BadOrigin,
+		);
+	});
+}
