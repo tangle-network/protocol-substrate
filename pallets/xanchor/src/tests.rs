@@ -751,3 +751,23 @@ fn should_fail_to_call_register_resource_id_as_signed_account() {
 		);
 	});
 }
+
+#[test]
+fn should_fail_to_call_update_as_signed_account() {
+	// reset the network.
+	MockNet::reset();
+	// calling update as signed account should fail.
+	// on parachain A.
+	ParaA::execute_with(|| {
+		let r_id = encode_resource_id(MerkleTree::next_tree_id(), PARAID_B);
+		let edge_metadata = EdgeMetadata {
+			src_chain_id: PARAID_B,
+			root: Element::zero(),
+			latest_leaf_index: 0,
+		};
+		assert_err!(
+			XAnchor::update(Origin::signed(AccountThree::get()), r_id, edge_metadata),
+			frame_support::error::BadOrigin,
+		);
+	});
+}

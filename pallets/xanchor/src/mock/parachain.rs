@@ -386,6 +386,12 @@ parameter_types! {
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Serialize, Deserialize)]
 pub struct Element([u8; 32]);
 
+impl Element {
+	pub const fn zero() -> Self {
+		Element([0; 32])
+	}
+}
+
 impl ElementTrait for Element {
 	fn to_bytes(&self) -> &[u8] {
 		&self.0
