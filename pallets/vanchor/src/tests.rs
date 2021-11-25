@@ -33,7 +33,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 	let mut verifier_key_bytes = Vec::new();
 	let mut proving_key_bytes = Vec::new();
 
-	get_keys(curve, &mut proving_key_bytes, &mut verifier_key_bytes);
+	// get_keys(curve, &mut proving_key_bytes, &mut verifier_key_bytes);
 
 	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes));
 	// 4. and top-up some accounts with some balance

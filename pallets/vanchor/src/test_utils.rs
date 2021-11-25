@@ -1,14 +1,24 @@
-use ark_ff::{BigInteger, FromBytes, PrimeField};
+use ark_crypto_primitives::snark::SNARK;
+use ark_ff::{BigInteger, FromBytes, PrimeField, UniformRand};
+use ark_groth16::{Groth16, Proof, ProvingKey, VerifyingKey};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use ark_std::{
+	rand::{thread_rng, CryptoRng, Rng, RngCore},
+	rc::Rc,
+	vec::Vec,
+};
 use arkworks_gadgets::{
+	arbitrary::vanchor_data::VAnchorArbitraryData,
+	circuit::vanchor::VAnchorCircuit as VACircuit,
+	keypair::vanchor::Keypair,
+	leaf::vanchor::{Private as LeafPrivateInputs, Public as LeafPublicInputs, VAnchorLeaf as Leaf},
+	merkle_tree::SparseMerkleTree,
 	poseidon::PoseidonParameters,
-	prelude::ark_groth16::ProvingKey,
-	setup::{
-		bridge::{
-			prove_groth16_circuit_circomx5, setup_arbitrary_data, setup_groth16_random_circuit_circomx5,
-			setup_leaf_circomx5, setup_set, Circuit_Circomx5,
-		},
-		common::{setup_circom_params_x5_3, setup_circom_params_x5_5, setup_tree_and_create_path_tree_circomx5, Curve},
+	set::membership::SetMembership,
+	setup::common::{
+		setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve, LeafCRH, LeafCRHGadget,
+		PoseidonCRH_x5_2, PoseidonCRH_x5_2Gadget, PoseidonCRH_x5_3Gadget, PoseidonCRH_x5_4, PoseidonCRH_x5_4Gadget,
+		PoseidonCRH_x5_5, PoseidonCRH_x5_5Gadget, TreeConfig_x5, Tree_x5,
 	},
 };
 use darkwebb_primitives::ElementTrait;
@@ -16,6 +26,7 @@ use darkwebb_primitives::ElementTrait;
 use crate::mock::Element;
 
 type Bn254Fr = ark_bn254::Fr;
+type Bn254 = ark_bn254::Bn254;
 type Bls12_381Fr = ark_bls12_381::Fr;
 
 type ProofBytes = Vec<u8>;
@@ -25,29 +36,204 @@ type LeafElement = Element;
 
 const TREE_DEPTH: usize = 30;
 const M: usize = 2;
+const INS: usize = 2;
+const OUTS: usize = 2;
 
 pub fn get_hash_params<T: PrimeField>(curve: Curve) -> (Vec<u8>, Vec<u8>) {
 	(
-		setup_circom_params_x5_3::<T>(curve).to_bytes(),
-		setup_circom_params_x5_5::<T>(curve).to_bytes(),
+		setup_params_x5_3::<T>(curve).to_bytes(),
+		setup_params_x5_5::<T>(curve).to_bytes(),
 	)
 }
 
-pub fn get_keys(curve: Curve, pk_bytes: &mut Vec<u8>, vk_bytes: &mut Vec<u8>) {
-	let rng = &mut ark_std::test_rng();
-	match curve {
-		Curve::Bn254 => {
-			let (pk, vk) = setup_groth16_random_circuit_circomx5::<_, ark_bn254::Bn254, TREE_DEPTH, M>(rng, curve);
-			vk.serialize(vk_bytes).unwrap();
-			pk.serialize(pk_bytes).unwrap();
-		}
-		Curve::Bls381 => {
-			let (pk, vk) =
-				setup_groth16_random_circuit_circomx5::<_, ark_bls12_381::Bls12_381, TREE_DEPTH, M>(rng, curve);
-			vk.serialize(vk_bytes).unwrap();
-			pk.serialize(pk_bytes).unwrap();
-		}
-	};
+fn setup_random_circuit() -> (Vec<u8>, Vec<u8>) {
+	let rng = &mut thread_rng();
+	let hasher_params_w2 = setup_params_x5_2(Curve::Bn254);
+	let hasher_params_w3 = setup_params_x5_3::<Bn254Fr>(Curve::Bn254);
+	let hasher_params_w4 = setup_params_x5_4(Curve::Bn254);
+	let hasher_params_w5 = setup_params_x5_5(Curve::Bn254);
+
+	let chain_id = Bn254Fr::rand(rng);
+
+	// TODO: hash them with keccak
+	let recipient = Bn254Fr::rand(rng);
+	let relayer = Bn254Fr::rand(rng);
+	let fee = Bn254Fr::rand(rng);
+	let refund = Bn254Fr::rand(rng);
+
+	let in_amount_1 = Bn254Fr::rand(rng);
+	let in_amount_2 = Bn254Fr::rand(rng);
+
+	let blinding_1 = Bn254Fr::rand(rng);
+	let blinding_2 = Bn254Fr::rand(rng);
+
+	let private_key_1 = Bn254Fr::rand(rng);
+	let private_key_2 = Bn254Fr::rand(rng);
+
+	let public_amount = Bn254Fr::rand(rng);
+	let ext_data_hash = Bn254Fr::rand(rng);
+
+	let out_chain_id_1 = Bn254Fr::rand(rng);
+	let out_amount_1 = Bn254Fr::rand(rng);
+	let out_pubkey_1 = Bn254Fr::rand(rng);
+	let out_blinding_1 = Bn254Fr::rand(rng);
+
+	let out_chain_id_2 = Bn254Fr::rand(rng);
+	let out_amount_2 = Bn254Fr::rand(rng);
+	let out_pubkey_2 = Bn254Fr::rand(rng);
+	let out_blinding_2 = Bn254Fr::rand(rng);
+
+	let leaf_private_1 = LeafPrivateInputs::<Bn254Fr>::new(in_amount_1, blinding_1);
+	let leaf_private_2 = LeafPrivateInputs::<Bn254Fr>::new(in_amount_2, blinding_2);
+	let leaf_public_input = LeafPublicInputs::<Bn254Fr>::new(chain_id.clone());
+
+	let keypair_1 = Keypair::<_, PoseidonCRH_x5_2<Bn254Fr>>::new(private_key_1.clone());
+	let public_key_1 = keypair_1.public_key(&hasher_params_w2).unwrap();
+	let keypair_2 = Keypair::new(private_key_2.clone());
+	let public_key_2 = keypair_2.public_key(&hasher_params_w2).unwrap();
+
+	let leaf_1 = Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>::create_leaf(
+		&leaf_private_1,
+		&public_key_1,
+		&leaf_public_input,
+		&hasher_params_w5,
+	)
+	.unwrap();
+	let leaf_2 = Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>::create_leaf(
+		&leaf_private_2,
+		&public_key_2,
+		&leaf_public_input,
+		&hasher_params_w5,
+	)
+	.unwrap();
+	let leaves = [leaf_1, leaf_2];
+
+	let inner_params = Rc::new(hasher_params_w3.clone());
+	let tree = Tree_x5::new_sequential(inner_params, Rc::new(()), &leaves).unwrap();
+
+	let path_1 = tree.generate_membership_proof::<TREE_DEPTH>(0);
+	let path_2 = tree.generate_membership_proof::<TREE_DEPTH>(1);
+
+	let vanchor_arbitrary_data = VAnchorArbitraryData::new(ext_data_hash);
+	let root = tree.root().inner();
+
+	let mut root_set = [Bn254Fr::rand(rng); M];
+	root_set[0] = root;
+	let index_0: Bn254Fr = path_1.get_index(&tree.root(), &leaf_1).unwrap();
+	let index_1: Bn254Fr = path_1.get_index(&tree.root(), &leaf_2).unwrap();
+
+	let signature = keypair_1
+		.signature::<PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>(&leaf_1, &index_0, &hasher_params_w4)
+		.unwrap();
+	let nullifier_hash_1 = Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>::create_nullifier(
+		&signature,
+		&leaf_1,
+		&hasher_params_w4,
+		&index_0,
+	)
+	.unwrap();
+	let signature = keypair_2
+		.signature::<PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>(&leaf_2, &index_1, &hasher_params_w4)
+		.unwrap();
+	let nullifier_hash_2 = Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>::create_nullifier(
+		&signature,
+		&leaf_2,
+		&hasher_params_w4,
+		&index_1,
+	)
+	.unwrap();
+
+	let set_private_inputs_1 = SetMembership::generate_secrets(&root, &root_set).unwrap();
+
+	let out_leaf_private_1 = LeafPrivateInputs::new(out_amount_1, out_blinding_1);
+	let out_leaf_private_2 = LeafPrivateInputs::<Bn254Fr>::new(out_amount_2, out_blinding_2);
+
+	let out_leaf_public_1 = LeafPublicInputs::new(out_chain_id_1);
+	let out_leaf_public_2 = LeafPublicInputs::new(out_chain_id_2);
+
+	let output_commitment_1 = Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>::create_leaf(
+		&out_leaf_private_1,
+		&out_pubkey_1,
+		&out_leaf_public_1,
+		&hasher_params_w5,
+	)
+	.unwrap();
+
+	let output_commitment_2 = Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>::create_leaf(
+		&out_leaf_private_2,
+		&out_pubkey_2,
+		&out_leaf_public_2,
+		&hasher_params_w5,
+	)
+	.unwrap();
+
+	let leaf_private_inputs = vec![leaf_private_1.clone(), leaf_private_2.clone()];
+	let keypair_inputs = vec![keypair_1.clone(), keypair_2.clone()];
+	let paths = vec![path_1.clone(), path_2.clone()];
+	let indices = vec![index_0, index_1];
+	let nullifier_hashes = vec![nullifier_hash_1, nullifier_hash_2];
+	let set_private_inputs = vec![set_private_inputs_1.clone(), set_private_inputs_1.clone()];
+	let out_leaf_privates = vec![out_leaf_private_1.clone(), out_leaf_private_2.clone()];
+	let out_leaf_publics = vec![out_leaf_public_1.clone(), out_leaf_public_2.clone()];
+	let out_pubkeys = vec![out_pubkey_1, out_pubkey_2];
+	let output_commitments = vec![output_commitment_1, output_commitment_2];
+
+	let circuit = VACircuit::<
+		Bn254Fr,
+		PoseidonCRH_x5_2<Bn254Fr>,
+		PoseidonCRH_x5_2Gadget<Bn254Fr>,
+		PoseidonCRH_x5_4<Bn254Fr>,
+		PoseidonCRH_x5_4Gadget<Bn254Fr>,
+		PoseidonCRH_x5_5<Bn254Fr>,
+		PoseidonCRH_x5_5Gadget<Bn254Fr>,
+		TreeConfig_x5<Bn254Fr>,
+		LeafCRHGadget<Bn254Fr>,
+		PoseidonCRH_x5_3Gadget<Bn254Fr>,
+		TREE_DEPTH,
+		INS,
+		OUTS,
+		M,
+	>::new(
+		public_amount.clone(),
+		vanchor_arbitrary_data,
+		leaf_private_inputs,
+		keypair_inputs,
+		leaf_public_input,
+		set_private_inputs,
+		root_set.clone(),
+		hasher_params_w2,
+		hasher_params_w4,
+		hasher_params_w5,
+		paths,
+		indices,
+		nullifier_hashes.clone(),
+		output_commitments.clone(),
+		out_leaf_privates,
+		out_leaf_publics,
+		out_pubkeys,
+	);
+
+	let mut public_inputs = Vec::new();
+	public_inputs.push(chain_id);
+	public_inputs.push(public_amount);
+	for root in root_set {
+		public_inputs.push(root);
+	}
+	for nh in nullifier_hashes {
+		public_inputs.push(nh);
+	}
+	for out_cm in output_commitments {
+		public_inputs.push(out_cm);
+	}
+	public_inputs.push(ext_data_hash);
+
+	let (pk, vk) = Groth16::<Bn254>::circuit_specific_setup(circuit.clone(), rng).unwrap();
+
+	let mut pk_bytes = Vec::new();
+	let mut vk_bytes = Vec::new();
+	pk.serialize(&mut pk_bytes).unwrap();
+	vk.serialize(&mut vk_bytes).unwrap();
+	(pk_bytes, vk_bytes)
 }
 
 pub fn setup_zk_circuit(
@@ -64,113 +250,16 @@ pub fn setup_zk_circuit(
 	match curve {
 		Curve::Bn254 => {
 			// fit inputs to the curve.
-			let chain_id = Bn254Fr::from(src_chain_id);
-			let recipient = Bn254Fr::read(&recipient_bytes[..]).unwrap();
-			let relayer = Bn254Fr::read(&relayer_bytes[..]).unwrap();
-			let fee = Bn254Fr::from(fee_value);
-			let refund = Bn254Fr::from(refund_value);
 
-			let (params3_bytes, params5_bytes) = get_hash_params::<Bn254Fr>(curve);
-			let params3 = PoseidonParameters::<Bn254Fr>::from_bytes(&*params3_bytes).unwrap();
-			let params5 = PoseidonParameters::<Bn254Fr>::from_bytes(&*params5_bytes).unwrap();
-			let (leaf_private, leaf_public, leaf, nullifier_hash) = setup_leaf_circomx5(chain_id, &params5, rng);
-
-			// the withdraw process..
-			// we setup the inputs to our proof generator.
-			let (mt, path) = setup_tree_and_create_path_tree_circomx5::<_, TREE_DEPTH>(&[leaf], 0, &params3);
-			let root = mt.root().inner();
-
-			let mut roots = [Bn254Fr::default(); M];
-			roots[0] = root; // local root.
-
-			let set_private_inputs = setup_set(&root, &roots);
-			let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
-
-			// setup the circuit.
-			let circuit = Circuit_Circomx5::new(
-				arbitrary_input,
-				leaf_private,
-				leaf_public,
-				set_private_inputs,
-				roots,
-				params5,
-				path,
-				root,
-				nullifier_hash,
-			);
-			let pk = ProvingKey::<ark_bn254::Bn254>::deserialize(&*pk_bytes).unwrap();
-
-			// generate the proof.
-			let proof = prove_groth16_circuit_circomx5(&pk, circuit, rng);
-
-			// format the input for the pallet.
-			let mut proof_bytes = Vec::new();
-			proof.serialize(&mut proof_bytes).unwrap();
-
-			let roots_element = roots
-				.iter()
-				.map(|v| Element::from_bytes(&v.into_repr().to_bytes_le()))
-				.collect::<Vec<Element>>();
-
-			let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
-			let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_le());
-
-			(proof_bytes, roots_element, nullifier_hash_element, leaf_element)
+			(
+				Vec::new(),
+				Vec::new(),
+				Element::from_bytes(&[]),
+				Element::from_bytes(&[]),
+			)
 		}
 		Curve::Bls381 => {
-			// fit inputs to the curve.
-			let chain_id = Bls12_381Fr::from(src_chain_id);
-			let recipient = Bls12_381Fr::read(&recipient_bytes[..]).unwrap();
-			let relayer = Bls12_381Fr::read(&relayer_bytes[..]).unwrap();
-			let fee = Bls12_381Fr::from(fee_value);
-			let refund = Bls12_381Fr::from(refund_value);
-
-			let (params3_bytes, params5_bytes) = get_hash_params::<Bls12_381Fr>(curve);
-			let params3 = PoseidonParameters::<Bls12_381Fr>::from_bytes(&*params3_bytes).unwrap();
-			let params5 = PoseidonParameters::<Bls12_381Fr>::from_bytes(&*params5_bytes).unwrap();
-			let (leaf_private, leaf_public, leaf, nullifier_hash) = setup_leaf_circomx5(chain_id, &params5, rng);
-
-			// the withdraw process..
-			// we setup the inputs to our proof generator.
-			let (mt, path) = setup_tree_and_create_path_tree_circomx5::<_, TREE_DEPTH>(&[leaf], 0, &params3);
-			let root = mt.root().inner();
-
-			let mut roots = [Bls12_381Fr::default(); M];
-			roots[0] = root; // local root.
-
-			let set_private_inputs = setup_set(&root, &roots);
-			let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
-
-			// setup the circuit.
-			let circuit = Circuit_Circomx5::new(
-				arbitrary_input,
-				leaf_private,
-				leaf_public,
-				set_private_inputs,
-				roots,
-				params5,
-				path,
-				root,
-				nullifier_hash,
-			);
-			let pk = ProvingKey::<ark_bls12_381::Bls12_381>::deserialize(&*pk_bytes).unwrap();
-			// generate the proof.
-			let proof = prove_groth16_circuit_circomx5(&pk, circuit, rng);
-
-			// format the input for the pallet.
-			let mut proof_bytes = Vec::new();
-			proof.serialize(&mut proof_bytes).unwrap();
-
-			let roots_element = roots
-				.iter()
-				.map(|v| Element::from_bytes(&v.into_repr().to_bytes_le()))
-				.collect::<Vec<Element>>();
-
-			let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
-
-			let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_le());
-
-			(proof_bytes, roots_element, nullifier_hash_element, leaf_element)
+			unimplemented!()
 		}
 	}
 }
