@@ -11,8 +11,8 @@ use arkworks_gadgets::{
 	arbitrary::vanchor_data::VAnchorArbitraryData,
 	circuit::vanchor::VAnchorCircuit as VACircuit,
 	keypair::vanchor::Keypair,
-	leaf::vanchor::{Private as LeafPrivateInputs, Public as LeafPublicInputs, VAnchorLeaf as Leaf},
-	merkle_tree::SparseMerkleTree,
+	leaf::vanchor::{Private as LeafPrivateInput, Public as LeafPublicInput, VAnchorLeaf as Leaf},
+	merkle_tree::{Path, SparseMerkleTree},
 	poseidon::PoseidonParameters,
 	set::membership::SetMembership,
 	setup::common::{
@@ -83,9 +83,9 @@ fn setup_random_circuit() -> (Vec<u8>, Vec<u8>) {
 	let out_pubkey_2 = Bn254Fr::rand(rng);
 	let out_blinding_2 = Bn254Fr::rand(rng);
 
-	let leaf_private_1 = LeafPrivateInputs::<Bn254Fr>::new(in_amount_1, blinding_1);
-	let leaf_private_2 = LeafPrivateInputs::<Bn254Fr>::new(in_amount_2, blinding_2);
-	let leaf_public_input = LeafPublicInputs::<Bn254Fr>::new(chain_id.clone());
+	let leaf_private_1 = LeafPrivateInput::<Bn254Fr>::new(in_amount_1, blinding_1);
+	let leaf_private_2 = LeafPrivateInput::<Bn254Fr>::new(in_amount_2, blinding_2);
+	let leaf_public_input = LeafPublicInput::<Bn254Fr>::new(chain_id.clone());
 
 	let keypair_1 = Keypair::<_, PoseidonCRH_x5_2<Bn254Fr>>::new(private_key_1.clone());
 	let public_key_1 = keypair_1.public_key(&hasher_params_w2).unwrap();
@@ -113,14 +113,13 @@ fn setup_random_circuit() -> (Vec<u8>, Vec<u8>) {
 
 	let path_1 = tree.generate_membership_proof::<TREE_DEPTH>(0);
 	let path_2 = tree.generate_membership_proof::<TREE_DEPTH>(1);
-
-	let vanchor_arbitrary_data = VAnchorArbitraryData::new(ext_data_hash);
 	let root = tree.root().inner();
-
 	let mut root_set = [Bn254Fr::rand(rng); M];
 	root_set[0] = root;
 	let index_0: Bn254Fr = path_1.get_index(&tree.root(), &leaf_1).unwrap();
 	let index_1: Bn254Fr = path_1.get_index(&tree.root(), &leaf_2).unwrap();
+
+	let vanchor_arbitrary_data = VAnchorArbitraryData::new(ext_data_hash);
 
 	let signature = keypair_1
 		.signature::<PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>(&leaf_1, &index_0, &hasher_params_w4)
@@ -145,11 +144,11 @@ fn setup_random_circuit() -> (Vec<u8>, Vec<u8>) {
 
 	let set_private_inputs_1 = SetMembership::generate_secrets(&root, &root_set).unwrap();
 
-	let out_leaf_private_1 = LeafPrivateInputs::new(out_amount_1, out_blinding_1);
-	let out_leaf_private_2 = LeafPrivateInputs::<Bn254Fr>::new(out_amount_2, out_blinding_2);
+	let out_leaf_private_1 = LeafPrivateInput::new(out_amount_1, out_blinding_1);
+	let out_leaf_private_2 = LeafPrivateInput::<Bn254Fr>::new(out_amount_2, out_blinding_2);
 
-	let out_leaf_public_1 = LeafPublicInputs::new(out_chain_id_1);
-	let out_leaf_public_2 = LeafPublicInputs::new(out_chain_id_2);
+	let out_leaf_public_1 = LeafPublicInput::new(out_chain_id_1);
+	let out_leaf_public_2 = LeafPublicInput::new(out_chain_id_2);
 
 	let output_commitment_1 = Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>::create_leaf(
 		&out_leaf_private_1,
@@ -236,32 +235,71 @@ fn setup_random_circuit() -> (Vec<u8>, Vec<u8>) {
 	(pk_bytes, vk_bytes)
 }
 
-pub fn setup_zk_circuit(
-	curve: Curve,
-	recipient_bytes: Vec<u8>,
-	relayer_bytes: Vec<u8>,
-	pk_bytes: Vec<u8>,
-	src_chain_id: u32,
-	fee_value: u32,
-	refund_value: u32,
-) -> (ProofBytes, RootsElement, NullifierHashElement, LeafElement) {
-	let rng = &mut ark_std::test_rng();
+pub fn setup_default_leaves(
+	chain_id: u32,
+	amounts: Vec<u32>,
+	keypairs: Vec<Keypair<Bn254Fr, PoseidonCRH_x5_2<Bn254Fr>>>,
+	params2: PoseidonParameters<Bn254Fr>,
+	params5: PoseidonParameters<Bn254Fr>,
+) -> (Vec<Bn254Fr>, Vec<LeafPrivateInput<Bn254Fr>>, LeafPublicInput<Bn254Fr>) {
+	let rng = &mut thread_rng();
 
-	match curve {
-		Curve::Bn254 => {
-			// fit inputs to the curve.
+	let chain_id = Bn254Fr::from(0u32);
 
-			(
-				Vec::new(),
-				Vec::new(),
-				Element::from_bytes(&[]),
-				Element::from_bytes(&[]),
-			)
-		}
-		Curve::Bls381 => {
-			unimplemented!()
-		}
+	let num_inputs = amounts.len();
+
+	let mut leaves = Vec::new();
+	let mut private_inputs = Vec::new();
+
+	// Public inputs are reused
+	let public_input = LeafPublicInput::<Bn254Fr>::new(chain_id.clone());
+	for i in 0..num_inputs {
+		let amount = Bn254Fr::from(amounts[i]);
+		let blinding = Bn254Fr::rand(rng);
+
+		let private_input = LeafPrivateInput::<Bn254Fr>::new(amount, blinding);
+
+		let pub_key = keypairs[i].public_key(&params2).unwrap();
+
+		let leaf = Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>::create_leaf(
+			&private_input,
+			&pub_key,
+			&public_input,
+			&params5,
+		)
+		.unwrap();
+
+		leaves.push(leaf);
+		private_inputs.push(private_input);
 	}
+	(leaves, private_inputs, public_input)
+}
+
+pub fn setup_default_tree(
+	leaves: Vec<Bn254Fr>,
+	params3: PoseidonParameters<Bn254Fr>,
+) -> Vec<Path<TreeConfig_x5<Bn254Fr>, TREE_DEPTH>> {
+	let rng = &mut thread_rng();
+
+	let inner_params = Rc::new(params3.clone());
+	let tree = Tree_x5::new_sequential(inner_params, Rc::new(()), &leaves).unwrap();
+
+	let num_leaves = leaves.len();
+
+	let mut paths = Vec::new();
+	for i in 0..num_leaves {
+		let path = tree.generate_membership_proof::<TREE_DEPTH>(i as u64);
+		paths.push(path);
+	}
+
+	paths
+}
+
+pub fn setup_default_root_set(root: Bn254Fr) -> [Bn254Fr; M] {
+	let rng = &mut thread_rng();
+	let mut root_set = [Bn254Fr::rand(rng); M];
+	root_set[0] = root;
+	root_set
 }
 
 /// Truncate and pad 256 bit slice in reverse

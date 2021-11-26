@@ -123,16 +123,6 @@ fn vanchor_works() {
 
 		let recipient_bytes = truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = truncate_and_pad(&relayer_account_id.encode()[..]);
-
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
 	});
 }
 
@@ -153,16 +143,6 @@ fn double_spending_should_fail() {
 
 		let recipient_bytes = truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = truncate_and_pad(&relayer_account_id.encode()[..]);
-
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
 	});
 }
 
@@ -183,16 +163,6 @@ fn should_fail_when_invalid_merkle_roots() {
 
 		let recipient_bytes = truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = truncate_and_pad(&relayer_account_id.encode()[..]);
-
-		let (proof_bytes, mut roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
 	});
 }
 
@@ -213,16 +183,6 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 
 		let recipient_bytes = truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = truncate_and_pad(&relayer_account_id.encode()[..]);
-
-		let (mut proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
 	});
 }
 
@@ -243,16 +203,6 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 
 		let recipient_bytes = truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = truncate_and_pad(&relayer_account_id.encode()[..]);
-
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
 	});
 }
 
@@ -273,16 +223,6 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 
 		let recipient_bytes = truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = truncate_and_pad(&relayer_account_id.encode()[..]);
-
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
 	});
 }
 
@@ -303,16 +243,6 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 
 		let recipient_bytes = truncate_and_pad_reverse(&recipient_account_id.encode()[..]);
 		let relayer_bytes = truncate_and_pad_reverse(&relayer_account_id.encode()[..]);
-
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
 	});
 }
 
@@ -389,16 +319,6 @@ fn vanchor_works_for_pool_tokens() {
 
 		let recipient_bytes = truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = truncate_and_pad(&relayer_account_id.encode()[..]);
-
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
 	});
 }
 
