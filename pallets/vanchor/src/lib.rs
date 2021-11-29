@@ -164,8 +164,8 @@ pub mod pallet {
 			leafs: Vec<T::Element>,
 			amount: BalanceOf<T, I>,
 		},
-		/// Post deposit hook has executed successfully
-		PostDeposit {
+		/// Deposit hook has executed successfully
+		Deposit {
 			depositor: T::AccountId,
 			tree_id: T::TreeId,
 			leaf: T::Element,
@@ -215,6 +215,18 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[pallet::weight(0)]
+		pub fn deposit(
+			origin: OriginFor<T>,
+			id: T::TreeId,
+			leaf: T::Element,
+			amount: BalanceOf<T, I>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+			<Self as VAnchorInterface<_>>::deposit(sender, id, leaf, amount)?;
+			Ok(().into())
+		}
+
 		#[pallet::weight(0)] // TODO: Fix after benchmarks
 		pub fn transact(
 			origin: OriginFor<T>,
@@ -222,8 +234,8 @@ pub mod pallet {
 			proof_data: ProofData<T::Element, BalanceOf<T, I>>,
 			ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, T::Element>,
 		) -> DispatchResultWithPostInfo {
-			let sener = ensure_signed(origin)?;
-			<Self as VAnchorInterface<_>>::transact(sener, id, proof_data, ext_data)?;
+			let sender = ensure_signed(origin)?;
+			<Self as VAnchorInterface<_>>::transact(sender, id, proof_data, ext_data)?;
 			Ok(().into())
 		}
 	}
@@ -252,6 +264,28 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		let id = T::LinkableTree::create(creator.clone(), max_edges, depth)?;
 		VAnchors::<T, I>::insert(id, Some(VAnchorMetadata { creator, asset }));
 		Ok(id)
+	}
+
+	fn deposit(
+		depositor: T::AccountId,
+		id: T::TreeId,
+		leaf: T::Element,
+		amount: BalanceOf<T, I>,
+	) -> Result<(), DispatchError> {
+		// insert the leaf
+		T::LinkableTree::insert_in_order(id, leaf)?;
+
+		let vanchor = Self::get_vanchor(id)?;
+		// transfer tokens to the pallet
+		<T as Config<I>>::Currency::transfer(vanchor.asset, &depositor, &Self::account_id(), amount)?;
+
+		Self::deposit_event(Event::Deposit {
+			depositor: depositor.clone(),
+			tree_id: id,
+			leaf,
+		});
+
+		Ok(())
 	}
 
 	fn transact(
