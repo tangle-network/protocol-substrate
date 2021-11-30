@@ -56,12 +56,50 @@ pub fn get_hash_params<F: PrimeField>(
 	)
 }
 
-pub fn setup_circuit_with_inputs(
-	chain_ids: Vec<Bn254Fr>,
-	public_amount: Bn254Fr,
-	in_amounts: Vec<Bn254Fr>,
-	out_amounts: Vec<Bn254Fr>,
-	ext_data: Bn254Fr,
+pub fn setup_random_circuit() -> VACircuit<
+	Bn254Fr,
+	PoseidonCRH_x5_2<Bn254Fr>,
+	PoseidonCRH_x5_2Gadget<Bn254Fr>,
+	PoseidonCRH_x5_4<Bn254Fr>,
+	PoseidonCRH_x5_4Gadget<Bn254Fr>,
+	PoseidonCRH_x5_5<Bn254Fr>,
+	PoseidonCRH_x5_5Gadget<Bn254Fr>,
+	TreeConfig_x5<Bn254Fr>,
+	LeafCRHGadget<Bn254Fr>,
+	PoseidonCRH_x5_3Gadget<Bn254Fr>,
+	TREE_DEPTH,
+	INS,
+	OUTS,
+	M,
+> {
+	let rng = &mut thread_rng();
+
+	let public_amount = Bn254Fr::rand(rng);
+	let ext_data = Bn254Fr::rand(rng);
+	let in_chain_id = Bn254Fr::rand(rng);
+	let in_amounts = vec![Bn254Fr::rand(rng); INS];
+	let out_chain_ids = vec![Bn254Fr::rand(rng); OUTS];
+	let out_amounts = vec![Bn254Fr::rand(rng); OUTS];
+
+	let (circuit, ..) = setup_circuit_with_inputs(
+		public_amount,
+		ext_data,
+		in_chain_id,
+		in_amounts,
+		out_chain_ids,
+		out_amounts,
+	);
+
+	circuit
+}
+
+pub fn setup_circuit_with_raw_inputs(
+	public_amount: Balance,
+	ext_data: Element,
+	in_chain_id: ChainId,
+	in_amounts: Vec<Balance>,
+	out_chain_ids: Vec<ChainId>,
+	out_amounts: Vec<Balance>,
 ) -> (
 	VACircuit<
 		Bn254Fr,
@@ -79,44 +117,131 @@ pub fn setup_circuit_with_inputs(
 		OUTS,
 		M,
 	>,
+	Vec<Element>,
+	Vec<Element>,
+	Vec<Element>,
+	Vec<Element>,
+) {
+	let public_amount_f = Bn254Fr::from(public_amount);
+	let ext_data_f = Bn254Fr::from_be_bytes_mod_order(ext_data.to_bytes());
+	let in_chain_id_f = Bn254Fr::from(in_chain_id);
+	let in_amounts_f = in_amounts.iter().map(|x| Bn254Fr::from(*x)).collect();
+	let out_chain_ids_f = out_chain_ids.iter().map(|x| Bn254Fr::from(*x)).collect();
+	let out_amounts_f = out_amounts.iter().map(|x| Bn254Fr::from(*x)).collect();
+
+	let (circuit, root_set, nullifiers, leaves, commitments) = setup_circuit_with_inputs(
+		public_amount_f,
+		ext_data_f,
+		in_chain_id_f,
+		in_amounts_f,
+		out_chain_ids_f,
+		out_amounts_f,
+	);
+
+	let root_elements = root_set
+		.iter()
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
+		.collect();
+	let nullifier_elements = nullifiers
+		.iter()
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
+		.collect();
+	let leaf_elements = leaves
+		.iter()
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
+		.collect();
+	let commitment_elements = commitments
+		.iter()
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
+		.collect();
+
+	(
+		circuit,
+		root_elements,
+		nullifier_elements,
+		leaf_elements,
+		commitment_elements,
+	)
+}
+
+pub fn setup_circuit_with_inputs(
+	public_amount: Bn254Fr,
+	ext_data: Bn254Fr,
+	in_chain_id: Bn254Fr,
+	in_amounts: Vec<Bn254Fr>,
+	out_chain_ids: Vec<Bn254Fr>,
+	out_amounts: Vec<Bn254Fr>,
+) -> (
+	VACircuit<
+		Bn254Fr,
+		PoseidonCRH_x5_2<Bn254Fr>,
+		PoseidonCRH_x5_2Gadget<Bn254Fr>,
+		PoseidonCRH_x5_4<Bn254Fr>,
+		PoseidonCRH_x5_4Gadget<Bn254Fr>,
+		PoseidonCRH_x5_5<Bn254Fr>,
+		PoseidonCRH_x5_5Gadget<Bn254Fr>,
+		TreeConfig_x5<Bn254Fr>,
+		LeafCRHGadget<Bn254Fr>,
+		PoseidonCRH_x5_3Gadget<Bn254Fr>,
+		TREE_DEPTH,
+		INS,
+		OUTS,
+		M,
+	>,
+	[Bn254Fr; M],
+	Vec<Bn254Fr>,
+	Vec<Bn254Fr>,
 	Vec<Bn254Fr>,
 ) {
-	let rng = &mut thread_rng();
 	let (params2, params3, params4, params5) = get_hash_params::<ark_bn254::Fr>(Curve::Bn254);
 
 	// Arbitrary data
 	let arbitrary_data = setup_arbitrary_data(ext_data);
 
+	// Making a vec of same chain ids to be passed into setup_leaves
+	let in_chain_ids = vec![in_chain_id; in_amounts.len()];
+
 	// Input leaves (txos)
 	let in_keypairs = setup_keypairs(in_amounts.len());
 	let (in_leaves, in_nullifiers, in_leaf_privates, in_leaf_publics) =
-		setup_leaves(&chain_ids, &in_amounts, &in_keypairs);
+		setup_leaves(&in_chain_ids, &in_amounts, &in_keypairs, &params2, &params4, &params5);
 
 	// Tree + set for proving input txos
-	let out_pub_keys: Vec<Bn254Fr> = in_keypairs.iter().map(|x| x.public_key(&params2).unwrap()).collect();
-	let (in_paths, in_indices, in_root_set, in_set_private_inputs) = setup_tree_and_set(&in_leaves);
+	let out_keypairs = setup_keypairs(out_amounts.len());
+	let out_pub_keys: Vec<Bn254Fr> = out_keypairs.iter().map(|x| x.public_key(&params2).unwrap()).collect();
+	let (in_paths, in_indices, in_root_set, in_set_private_inputs) = setup_tree_and_set(&in_leaves, &params3);
 
 	// Output leaves (txos)
 	let out_keypairs = setup_keypairs(in_amounts.len());
-	let (out_commitments, _out_nullifiers, out_leaf_privates, out_leaf_publics) =
-		setup_leaves(&chain_ids, &out_amounts, &out_keypairs);
+	let (out_commitments, _out_nullifiers, out_leaf_privates, out_leaf_publics) = setup_leaves(
+		&out_chain_ids,
+		&out_amounts,
+		&out_keypairs,
+		&params2,
+		&params4,
+		&params5,
+	);
 
-	setup_circuit(
+	let circuit = setup_circuit(
 		public_amount,
 		arbitrary_data,
 		in_keypairs,
 		in_leaf_privates,
 		in_leaf_publics[0].clone(),
-		in_nullifiers,
+		in_nullifiers.clone(),
 		in_indices,
 		in_paths,
 		in_set_private_inputs,
 		in_root_set,
 		out_leaf_privates,
 		out_leaf_publics,
-		out_commitments,
+		out_commitments.clone(),
 		out_pub_keys,
-	)
+		params2,
+		params4,
+		params5,
+	);
+	(circuit, in_root_set, in_nullifiers, in_leaves, out_commitments)
 }
 
 pub fn setup_circuit(
@@ -137,29 +262,26 @@ pub fn setup_circuit(
 	out_leaf_publics: Vec<LeafPublicInput<Bn254Fr>>,
 	out_commitments: Vec<Bn254Fr>,
 	out_pub_keys: Vec<Bn254Fr>,
-) -> (
-	VACircuit<
-		Bn254Fr,
-		PoseidonCRH_x5_2<Bn254Fr>,
-		PoseidonCRH_x5_2Gadget<Bn254Fr>,
-		PoseidonCRH_x5_4<Bn254Fr>,
-		PoseidonCRH_x5_4Gadget<Bn254Fr>,
-		PoseidonCRH_x5_5<Bn254Fr>,
-		PoseidonCRH_x5_5Gadget<Bn254Fr>,
-		TreeConfig_x5<Bn254Fr>,
-		LeafCRHGadget<Bn254Fr>,
-		PoseidonCRH_x5_3Gadget<Bn254Fr>,
-		TREE_DEPTH,
-		INS,
-		OUTS,
-		M,
-	>,
-	Vec<Bn254Fr>,
-) {
-	let chain_id = Bn254Fr::from(0u32);
-	let ext_data_hash = arbitrary_data.ext_data.clone();
-	let (params2, _, params4, params5) = get_hash_params::<ark_bn254::Fr>(Curve::Bn254);
-
+	// Hash function parameters
+	params2: PoseidonParameters<Bn254Fr>,
+	params4: PoseidonParameters<Bn254Fr>,
+	params5: PoseidonParameters<Bn254Fr>,
+) -> VACircuit<
+	Bn254Fr,
+	PoseidonCRH_x5_2<Bn254Fr>,
+	PoseidonCRH_x5_2Gadget<Bn254Fr>,
+	PoseidonCRH_x5_4<Bn254Fr>,
+	PoseidonCRH_x5_4Gadget<Bn254Fr>,
+	PoseidonCRH_x5_5<Bn254Fr>,
+	PoseidonCRH_x5_5Gadget<Bn254Fr>,
+	TreeConfig_x5<Bn254Fr>,
+	LeafCRHGadget<Bn254Fr>,
+	PoseidonCRH_x5_3Gadget<Bn254Fr>,
+	TREE_DEPTH,
+	INS,
+	OUTS,
+	M,
+> {
 	let circuit = VACircuit::<
 		Bn254Fr,
 		PoseidonCRH_x5_2<Bn254Fr>,
@@ -195,23 +317,10 @@ pub fn setup_circuit(
 		out_pub_keys,
 	);
 
-	let mut public_inputs = Vec::new();
-	public_inputs.push(chain_id);
-	public_inputs.push(public_amount);
-	for root in in_root_set {
-		public_inputs.push(root);
-	}
-	for nh in in_nullifiers {
-		public_inputs.push(nh);
-	}
-	for out_cm in out_commitments {
-		public_inputs.push(out_cm);
-	}
-	public_inputs.push(ext_data_hash);
-	(circuit, public_inputs)
+	circuit
 }
 
-fn setup_keys(
+pub fn setup_keys(
 	circuit: VACircuit<
 		Bn254Fr,
 		PoseidonCRH_x5_2<Bn254Fr>,
@@ -239,7 +348,7 @@ fn setup_keys(
 	(pk_bytes, vk_bytes)
 }
 
-fn prove(
+pub fn prove(
 	circuit: VACircuit<
 		Bn254Fr,
 		PoseidonCRH_x5_2<Bn254Fr>,
@@ -283,6 +392,9 @@ pub fn setup_leaves(
 	chain_ids: &Vec<Bn254Fr>,
 	amounts: &Vec<Bn254Fr>,
 	keypairs: &Vec<Keypair<Bn254Fr, PoseidonCRH_x5_2<Bn254Fr>>>,
+	params2: &PoseidonParameters<Bn254Fr>,
+	params4: &PoseidonParameters<Bn254Fr>,
+	params5: &PoseidonParameters<Bn254Fr>,
 ) -> (
 	Vec<Bn254Fr>,
 	Vec<Bn254Fr>,
@@ -290,7 +402,6 @@ pub fn setup_leaves(
 	Vec<LeafPublicInput<Bn254Fr>>,
 ) {
 	let rng = &mut thread_rng();
-	let (params2, _, params4, params5) = get_hash_params::<ark_bn254::Fr>(Curve::Bn254);
 
 	let num_inputs = amounts.len();
 
@@ -336,8 +447,10 @@ pub fn setup_leaves(
 	(leaves, nullifiers, private_inputs, public_inputs)
 }
 
-pub fn setup_tree(leaves: &Vec<Bn254Fr>) -> (Vec<Path<TreeConfig_x5<Bn254Fr>, TREE_DEPTH>>, Vec<Bn254Fr>, Bn254Fr) {
-	let (_, params3, ..) = get_hash_params::<ark_bn254::Fr>(Curve::Bn254);
+pub fn setup_tree(
+	leaves: &Vec<Bn254Fr>,
+	params3: &PoseidonParameters<Bn254Fr>,
+) -> (Vec<Path<TreeConfig_x5<Bn254Fr>, TREE_DEPTH>>, Vec<Bn254Fr>, Bn254Fr) {
 	let inner_params = Rc::new(params3.clone());
 	let tree = Tree_x5::new_sequential(inner_params, Rc::new(()), &leaves).unwrap();
 	let root = tree.root();
@@ -370,13 +483,14 @@ pub fn setup_root_set(root: Bn254Fr) -> ([Bn254Fr; M], Vec<SetPrivateInputs<Bn25
 
 pub fn setup_tree_and_set(
 	leaves: &Vec<Bn254Fr>,
+	params3: &PoseidonParameters<Bn254Fr>,
 ) -> (
 	Vec<Path<TreeConfig_x5<Bn254Fr>, TREE_DEPTH>>,
 	Vec<Bn254Fr>,
 	[Bn254Fr; M],
 	Vec<SetPrivateInputs<Bn254Fr, M>>,
 ) {
-	let (paths, indices, root) = setup_tree(&leaves);
+	let (paths, indices, root) = setup_tree(&leaves, params3);
 	let (root_set, set_private_inputs) = setup_root_set(root);
 	(paths, indices, root_set, set_private_inputs)
 }

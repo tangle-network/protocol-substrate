@@ -1,11 +1,16 @@
 use crate::{
 	mock::*,
-	test_utils::{get_hash_params, truncate_and_pad_reverse},
+	test_utils::{get_hash_params, prove, setup_circuit_with_raw_inputs, setup_keys, setup_random_circuit},
 };
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_gadgets::setup::common::Curve;
 use codec::Encode;
-use darkwebb_primitives::{merkle_tree::TreeInspector, utils::truncate_and_pad, AccountId, ElementTrait};
+use darkwebb_primitives::{
+	merkle_tree::TreeInspector,
+	types::vanchor::{ExtData, ProofData},
+	utils::truncate_and_pad,
+	AccountId, ElementTrait,
+};
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, error::BadOrigin, traits::OnInitialize};
 use pallet_asset_registry::AssetType;
@@ -14,6 +19,10 @@ use std::convert::TryInto;
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
 const M: usize = 2;
+
+pub fn get_account(id: u32) -> AccountId {
+	account::<AccountId>("", id, SEED)
+}
 
 fn setup_environment(curve: Curve) -> Vec<u8> {
 	let (_, params3, ..) = get_hash_params::<ark_bn254::Fr>(Curve::Bn254);
@@ -24,7 +33,8 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 	// 3. Setup the VerifierPallet
 	//    but to do so, we need to have a VerifyingKey
 
-	// let (verifier_key_bytes, proving_key_bytes) = setup_random_circuit();
+	let circuit = setup_random_circuit();
+	let (proving_key_bytes, _) = setup_keys(circuit);
 
 	// assert_ok!(VerifierPallet::force_set_parameters(Origin::root(),
 	// verifier_key_bytes)); 4. and top-up some accounts with some balance
@@ -40,7 +50,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 	}
 
 	// finally return the provingkey bytes
-	Vec::new()
+	proving_key_bytes
 }
 
 fn create_vanchor(asset_id: u32) -> u32 {
@@ -64,24 +74,48 @@ fn create_vanchor_with_deposits(amounts: &Vec<Balance>, leaves: &Vec<Element>) -
 #[test]
 fn should_create_new_vanchor() {
 	new_test_ext().execute_with(|| {
-		setup_environment(Curve::Bn254);
-		let chain_id = 0;
+		let pub_key_bytes = setup_environment(Curve::Bn254);
+
+		let recipient: AccountId = get_account(4);
+		let relayer: AccountId = get_account(3);
+		let ext_amount: Amount = 0;
+		let fee: Balance = 0;
+
+		let public_amount = 0;
+		let ext_data_hash = Element::from_bytes(&[0; 32]);
+		let in_chain_id = 0;
 		let in_amounts = vec![5, 5];
+		let out_chain_ids = vec![0, 0];
+		let out_amounts = vec![5, 5];
 
-		// let keypairs = setup_default_keypairs(in_amounts.len());
-		// let (leaves, ..) = setup_tree_with_leaves(chain_id, &in_amounts,
-		// &keypairs); let leaf_elements: Vec<Element> = leaves
-		// 	.iter()
-		// 	.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
-		// 	.collect();
-		// let (tree_id, on_chain_root) =
-		// create_vanchor_with_deposits(&in_amounts, &leaf_elements);
-		// crate::mock::assert_last_event::<Test>(crate::Event::<Test>::
-		// VAnchorCreation { tree_id }.into());
+		let (circuit, root_set, nullifiers, leaves, commitments) = setup_circuit_with_raw_inputs(
+			public_amount,
+			ext_data_hash,
+			in_chain_id,
+			in_amounts.clone(),
+			out_chain_ids,
+			out_amounts,
+		);
 
-		// let out_amounts = vec![5, 5];
-		// let (_, out_leaves, ..) = setup_default_leaves(chain_id,
-		// &out_amounts, &keypairs);
+		let proof = prove(circuit, pub_key_bytes);
+
+		let (tree_id, _) = create_vanchor_with_deposits(&in_amounts, &leaves);
+		crate::mock::assert_last_event::<Test>(crate::Event::<Test>::VAnchorCreation { tree_id }.into());
+
+		let output1 = commitments[0].clone();
+		let output2 = commitments[0].clone();
+		let ext_data =
+			ExtData::<AccountId, Amount, Balance, Element>::new(recipient, relayer, ext_amount, fee, output1, output2);
+
+		let proof_data = ProofData::new(proof, root_set, nullifiers, commitments, public_amount, ext_data_hash);
+
+		let transactor = get_account(0);
+		assert_ok!(VAnchor::transact(
+			Origin::signed(transactor),
+			tree_id,
+			proof_data,
+			ext_data
+		));
 	});
 }
 
