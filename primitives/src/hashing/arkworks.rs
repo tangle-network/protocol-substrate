@@ -27,13 +27,13 @@ impl<F: PrimeField,> InstanceHasher for CircomPoseidonHasher<F> {
 }
 
 use ark_bls12_381::Fr as Bls381;
-pub type BLS381Poseidon3x5Hasher = ArkworksPoseidonHasher<Bls381, PoseidonRounds3x5>;
-pub type BLS381Poseidon5x5Hasher = ArkworksPoseidonHasher<Bls381, PoseidonRounds5x5>;
-pub type BLS381CircomPoseidon3x5Hasher = CircomPoseidonHasher<Bls381, PoseidonRounds3x5>;
-pub type BLS381CircomPoseidon5x5Hasher = CircomPoseidonHasher<Bls381, PoseidonRounds5x5>;
+pub type BLS381Poseidon3x5Hasher = ArkworksPoseidonHasher<Bls381>;
+pub type BLS381Poseidon5x5Hasher = ArkworksPoseidonHasher<Bls381>;
+pub type BLS381CircomPoseidon3x5Hasher = CircomPoseidonHasher<Bls381>;
+pub type BLS381CircomPoseidon5x5Hasher = CircomPoseidonHasher<Bls381>;
 
 use ark_bn254::Fr as Bn254;
-pub type BN254Poseidon3x5Hasher = ArkworksPoseidonHasher<Bn254, PoseidonRounds3x5>;
-pub type BN254Poseidon5x5Hasher = ArkworksPoseidonHasher<Bn254, PoseidonRounds5x5>;
-pub type BN254CircomPoseidon3x5Hasher = CircomPoseidonHasher<Bn254, PoseidonRounds3x5>;
-pub type BN254CircomPoseidon5x5Hasher = CircomPoseidonHasher<Bn254, PoseidonRounds5x5>;
+pub type BN254Poseidon3x5Hasher = ArkworksPoseidonHasher<Bn254>;
+pub type BN254Poseidon5x5Hasher = ArkworksPoseidonHasher<Bn254>;
+pub type BN254CircomPoseidon3x5Hasher = CircomPoseidonHasher<Bn254>;
+pub type BN254CircomPoseidon5x5Hasher = CircomPoseidonHasher<Bn254>;
