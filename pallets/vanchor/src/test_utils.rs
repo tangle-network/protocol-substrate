@@ -1,28 +1,29 @@
 use crate::mock::*;
 use ark_crypto_primitives::snark::SNARK;
-use ark_ff::{BigInteger, FromBytes, PrimeField, UniformRand};
-use ark_groth16::{Groth16, Proof, ProvingKey, VerifyingKey};
+use ark_ff::{to_bytes, BigInteger, PrimeField, ToBytes, UniformRand};
+use ark_groth16::{Groth16, ProvingKey};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use ark_std::{
-	rand::{thread_rng, CryptoRng, Rng, RngCore},
-	rc::Rc,
-	vec::Vec,
-};
+use ark_std::{rand::thread_rng, rc::Rc, vec::Vec};
 use arkworks_gadgets::{
 	arbitrary::vanchor_data::VAnchorArbitraryData,
 	circuit::vanchor::VAnchorCircuit as VACircuit,
 	keypair::vanchor::Keypair,
 	leaf::vanchor::{Private as LeafPrivateInput, Public as LeafPublicInput, VAnchorLeaf as Leaf},
-	merkle_tree::{Path, SparseMerkleTree},
+	merkle_tree::Path,
 	poseidon::PoseidonParameters,
 	set::membership::{Private as SetPrivateInputs, SetMembership},
 	setup::common::{
-		setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve, LeafCRH, LeafCRHGadget,
-		PoseidonCRH_x5_2, PoseidonCRH_x5_2Gadget, PoseidonCRH_x5_3, PoseidonCRH_x5_3Gadget, PoseidonCRH_x5_4,
-		PoseidonCRH_x5_4Gadget, PoseidonCRH_x5_5, PoseidonCRH_x5_5Gadget, TreeConfig_x5, Tree_x5,
+		setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve, LeafCRHGadget,
+		PoseidonCRH_x5_2, PoseidonCRH_x5_2Gadget, PoseidonCRH_x5_3Gadget, PoseidonCRH_x5_4, PoseidonCRH_x5_4Gadget,
+		PoseidonCRH_x5_5, PoseidonCRH_x5_5Gadget, TreeConfig_x5, Tree_x5,
 	},
 };
-use darkwebb_primitives::ElementTrait;
+use codec::Encode;
+use darkwebb_primitives::{
+	hashing::ethereum::keccak256,
+	types::{vanchor::ExtData, IntoAbiToken, Token},
+	ElementTrait,
+};
 
 use crate::mock::Element;
 
@@ -75,7 +76,11 @@ pub fn setup_random_circuit() -> VACircuit<
 	let rng = &mut thread_rng();
 
 	let public_amount = Bn254Fr::rand(rng);
-	let ext_data = Bn254Fr::rand(rng);
+	let recipient = Bn254Fr::rand(rng);
+	let relayer = Bn254Fr::rand(rng);
+	let ext_amount = Bn254Fr::rand(rng);
+	let fee = Bn254Fr::rand(rng);
+
 	let in_chain_id = Bn254Fr::rand(rng);
 	let in_amounts = vec![Bn254Fr::rand(rng); INS];
 	let out_chain_ids = vec![Bn254Fr::rand(rng); OUTS];
@@ -83,7 +88,10 @@ pub fn setup_random_circuit() -> VACircuit<
 
 	let (circuit, ..) = setup_circuit_with_inputs(
 		public_amount,
-		ext_data,
+		recipient.into_repr().to_bytes_le(),
+		relayer.into_repr().to_bytes_le(),
+		ext_amount.into_repr().to_bytes_le(),
+		fee.into_repr().to_bytes_le(),
 		in_chain_id,
 		in_amounts,
 		out_chain_ids,
@@ -94,8 +102,13 @@ pub fn setup_random_circuit() -> VACircuit<
 }
 
 pub fn setup_circuit_with_raw_inputs(
+	// Metadata inputs
 	public_amount: Balance,
-	ext_data: Element,
+	recipient: AccountId,
+	relayer: AccountId,
+	ext_amount: Amount,
+	fee: Balance,
+	// Transaction inputs
 	in_chain_id: ChainId,
 	in_amounts: Vec<Balance>,
 	out_chain_ids: Vec<ChainId>,
@@ -121,17 +134,21 @@ pub fn setup_circuit_with_raw_inputs(
 	Vec<Element>,
 	Vec<Element>,
 	Vec<Element>,
+	Element,
 ) {
 	let public_amount_f = Bn254Fr::from(public_amount);
-	let ext_data_f = Bn254Fr::from_be_bytes_mod_order(ext_data.to_bytes());
+
 	let in_chain_id_f = Bn254Fr::from(in_chain_id);
 	let in_amounts_f = in_amounts.iter().map(|x| Bn254Fr::from(*x)).collect();
 	let out_chain_ids_f = out_chain_ids.iter().map(|x| Bn254Fr::from(*x)).collect();
 	let out_amounts_f = out_amounts.iter().map(|x| Bn254Fr::from(*x)).collect();
 
-	let (circuit, root_set, nullifiers, leaves, commitments) = setup_circuit_with_inputs(
+	let (circuit, root_set, nullifiers, leaves, commitments, ext_data_hash) = setup_circuit_with_inputs(
 		public_amount_f,
-		ext_data_f,
+		recipient.encode(),
+		relayer.encode(),
+		ext_amount.encode(),
+		fee.encode(),
 		in_chain_id_f,
 		in_amounts_f,
 		out_chain_ids_f,
@@ -140,20 +157,21 @@ pub fn setup_circuit_with_raw_inputs(
 
 	let root_elements = root_set
 		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
 		.collect();
 	let nullifier_elements = nullifiers
 		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
 		.collect();
 	let leaf_elements = leaves
 		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
 		.collect();
 	let commitment_elements = commitments
 		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
 		.collect();
+	let ext_data_hash_element = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_le());
 
 	(
 		circuit,
@@ -161,12 +179,16 @@ pub fn setup_circuit_with_raw_inputs(
 		nullifier_elements,
 		leaf_elements,
 		commitment_elements,
+		ext_data_hash_element,
 	)
 }
 
 pub fn setup_circuit_with_inputs(
 	public_amount: Bn254Fr,
-	ext_data: Bn254Fr,
+	recipient: Vec<u8>,
+	relayer: Vec<u8>,
+	ext_amount: Vec<u8>,
+	fee: Vec<u8>,
 	in_chain_id: Bn254Fr,
 	in_amounts: Vec<Bn254Fr>,
 	out_chain_ids: Vec<Bn254Fr>,
@@ -192,11 +214,9 @@ pub fn setup_circuit_with_inputs(
 	Vec<Bn254Fr>,
 	Vec<Bn254Fr>,
 	Vec<Bn254Fr>,
+	Bn254Fr,
 ) {
-	let (params2, params3, params4, params5) = get_hash_params::<ark_bn254::Fr>(Curve::Bn254);
-
-	// Arbitrary data
-	let arbitrary_data = setup_arbitrary_data(ext_data);
+	let (params2, params3, params4, params5) = get_hash_params::<Bn254Fr>(Curve::Bn254);
 
 	// Making a vec of same chain ids to be passed into setup_leaves
 	let in_chain_ids = vec![in_chain_id; in_amounts.len()];
@@ -222,6 +242,19 @@ pub fn setup_circuit_with_inputs(
 		&params5,
 	);
 
+	let ext_data = ExtData::new(
+		recipient,
+		relayer,
+		ext_amount,
+		fee,
+		out_commitments[0].into_repr().to_bytes_le(),
+		out_commitments[1].into_repr().to_bytes_le(),
+	);
+	let ext_data_hash = keccak256(&ext_data.encode_abi());
+	let ext_data_hash_f = Bn254Fr::from_le_bytes_mod_order(&ext_data_hash);
+	// Arbitrary data
+	let arbitrary_data = setup_arbitrary_data(ext_data_hash_f);
+
 	let circuit = setup_circuit(
 		public_amount,
 		arbitrary_data,
@@ -241,7 +274,14 @@ pub fn setup_circuit_with_inputs(
 		params4,
 		params5,
 	);
-	(circuit, in_root_set, in_nullifiers, in_leaves, out_commitments)
+	(
+		circuit,
+		in_root_set,
+		in_nullifiers,
+		in_leaves,
+		out_commitments,
+		ext_data_hash_f,
+	)
 }
 
 pub fn setup_circuit(

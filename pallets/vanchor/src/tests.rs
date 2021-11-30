@@ -6,6 +6,7 @@ use ark_ff::{BigInteger, PrimeField};
 use arkworks_gadgets::setup::common::Curve;
 use codec::Encode;
 use darkwebb_primitives::{
+	hashing::ethereum::keccak256,
 	merkle_tree::TreeInspector,
 	types::vanchor::{ExtData, ProofData},
 	utils::truncate_and_pad,
@@ -34,10 +35,10 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 	//    but to do so, we need to have a VerifyingKey
 
 	let circuit = setup_random_circuit();
-	let (proving_key_bytes, _) = setup_keys(circuit);
+	let (proving_key_bytes, verifier_key_bytes) = setup_keys(circuit);
 
-	// assert_ok!(VerifierPallet::force_set_parameters(Origin::root(),
-	// verifier_key_bytes)); 4. and top-up some accounts with some balance
+	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes));
+	// 4. and top-up some accounts with some balance
 	for account_id in [
 		account::<AccountId>("", 1, SEED),
 		account::<AccountId>("", 2, SEED),
@@ -63,7 +64,7 @@ fn create_vanchor(asset_id: u32) -> u32 {
 fn create_vanchor_with_deposits(amounts: &Vec<Balance>, leaves: &Vec<Element>) -> (u32, Element) {
 	let tree_id = create_vanchor(0);
 	for (leaf, amount) in leaves.iter().zip(amounts.iter()) {
-		VAnchor::deposit(Origin::root(), tree_id, *leaf, *amount).unwrap();
+		VAnchor::deposit(Origin::signed(get_account(1)), tree_id, *leaf, *amount).unwrap();
 	}
 
 	let on_chain_root = MerkleTree::get_root(tree_id).unwrap();
@@ -82,15 +83,17 @@ fn should_create_new_vanchor() {
 		let fee: Balance = 0;
 
 		let public_amount = 0;
-		let ext_data_hash = Element::from_bytes(&[0; 32]);
 		let in_chain_id = 0;
 		let in_amounts = vec![5, 5];
 		let out_chain_ids = vec![0, 0];
 		let out_amounts = vec![5, 5];
 
-		let (circuit, root_set, nullifiers, leaves, commitments) = setup_circuit_with_raw_inputs(
+		let (circuit, root_set, nullifiers, leaves, commitments, ext_data_hash) = setup_circuit_with_raw_inputs(
 			public_amount,
-			ext_data_hash,
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
 			in_chain_id,
 			in_amounts.clone(),
 			out_chain_ids,
@@ -99,17 +102,17 @@ fn should_create_new_vanchor() {
 
 		let proof = prove(circuit, pub_key_bytes);
 
-		let (tree_id, _) = create_vanchor_with_deposits(&in_amounts, &leaves);
-		crate::mock::assert_last_event::<Test>(crate::Event::<Test>::VAnchorCreation { tree_id }.into());
+		let (tree_id, on_chain_root) = create_vanchor_with_deposits(&in_amounts, &leaves);
+		assert_eq!(root_set[0], on_chain_root);
 
 		let output1 = commitments[0].clone();
-		let output2 = commitments[0].clone();
+		let output2 = commitments[1].clone();
 		let ext_data =
 			ExtData::<AccountId, Amount, Balance, Element>::new(recipient, relayer, ext_amount, fee, output1, output2);
 
 		let proof_data = ProofData::new(proof, root_set, nullifiers, commitments, public_amount, ext_data_hash);
 
-		let transactor = get_account(0);
+		let transactor = get_account(1);
 		assert_ok!(VAnchor::transact(
 			Origin::signed(transactor),
 			tree_id,

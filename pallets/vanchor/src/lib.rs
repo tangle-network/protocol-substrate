@@ -174,10 +174,6 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
-		/// Invalid Merkle Roots
-		InvalidMerkleRoots,
-		/// Unknown root
-		UnknownRoot,
 		/// Invalid transaction proof
 		InvalidTransactionProof,
 		/// Variable Anchor not found.
