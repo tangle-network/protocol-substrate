@@ -4,8 +4,8 @@ use ark_ec::PairingEngine;
 use ark_ff::Zero;
 use ark_groth16::{Proof, VerifyingKey};
 use ark_serialize::CanonicalDeserialize;
-use arkworks_circuits::setup::{bridge, common::verify_groth16, mixer};
-use arkworks_utils::utils::to_field_elements;
+use arkworks_circuits::setup::{bridge,  mixer};
+use arkworks_utils::utils::{common::verify_groth16, to_field_elements};
 use sp_std::marker::PhantomData;
 
 pub struct ArkworksMixerVerifierGroth16<E: PairingEngine>(PhantomData<E>);
@@ -38,6 +38,7 @@ impl<E: PairingEngine> InstanceVerifier for ArkworksBridgeVerifierGroth16<E> {
 		let fee = public_input_field_elts[3];
 		let refund = public_input_field_elts[4];
 		let chain_id = public_input_field_elts[5];
+		let commitment = public_input_field_elts[6];
 
 		const M: usize = 2;
 		let mut roots = [E::Fr::zero(); M];
@@ -54,6 +55,7 @@ impl<E: PairingEngine> InstanceVerifier for ArkworksBridgeVerifierGroth16<E> {
 			relayer,
 			fee,
 			refund,
+			commitment,
 		);
 		let vk = VerifyingKey::<E>::deserialize(vk_bytes)?;
 		let proof = Proof::<E>::deserialize(proof_bytes)?;
