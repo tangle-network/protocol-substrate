@@ -1,7 +1,8 @@
 use crate::*;
 use ark_crypto_primitives::{Error, CRH as CRHTrait};
 use ark_ff::{BigInteger, PrimeField};
-use arkworks_gadgets::poseidon::{PoseidonParameters, CRH};
+use arkworks_gadgets::poseidon::CRH;
+use arkworks_utils::poseidon::PoseidonParameters;
 use sp_std::{marker::PhantomData, vec::Vec};
 
 pub struct ArkworksPoseidonHasher<F: PrimeField,>(PhantomData<F>);
