@@ -4,10 +4,8 @@ use ark_ec::PairingEngine;
 use ark_ff::Zero;
 use ark_groth16::{Proof, VerifyingKey};
 use ark_serialize::CanonicalDeserialize;
-use arkworks_gadgets::{
-	setup::{bridge, common::verify_groth16, mixer},
-	utils::to_field_elements,
-};
+use arkworks_circuits::setup::{bridge, common::verify_groth16, mixer};
+use arkworks_utils::utils::to_field_elements;
 use sp_std::marker::PhantomData;
 
 pub struct ArkworksMixerVerifierGroth16<E: PairingEngine>(PhantomData<E>);

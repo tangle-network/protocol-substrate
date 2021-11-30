@@ -1,45 +1,26 @@
 use crate::*;
 use ark_crypto_primitives::{Error, CRH as CRHTrait};
 use ark_ff::{BigInteger, PrimeField};
-use arkworks_gadgets::poseidon::{circom::CircomCRH, sbox::PoseidonSbox, PoseidonParameters, Rounds, CRH};
+use arkworks_gadgets::poseidon::{PoseidonParameters, CRH};
 use sp_std::{marker::PhantomData, vec::Vec};
 
-#[derive(Default, Clone, Copy)]
-pub struct PoseidonRounds3x5;
-#[derive(Default, Clone, Copy)]
-pub struct PoseidonRounds5x5;
+pub struct ArkworksPoseidonHasher<F: PrimeField,>(PhantomData<F>);
 
-impl Rounds for PoseidonRounds3x5 {
-	const FULL_ROUNDS: usize = 8;
-	const PARTIAL_ROUNDS: usize = 57;
-	const SBOX: PoseidonSbox = PoseidonSbox::Exponentiation(5);
-	const WIDTH: usize = 3;
-}
-
-impl Rounds for PoseidonRounds5x5 {
-	const FULL_ROUNDS: usize = 8;
-	const PARTIAL_ROUNDS: usize = 60;
-	const SBOX: PoseidonSbox = PoseidonSbox::Exponentiation(5);
-	const WIDTH: usize = 5;
-}
-
-pub struct ArkworksPoseidonHasher<F: PrimeField, P: Rounds>(PhantomData<F>, PhantomData<P>);
-
-impl<F: PrimeField, P: Rounds> InstanceHasher for ArkworksPoseidonHasher<F, P> {
+impl<F: PrimeField> InstanceHasher for ArkworksPoseidonHasher<F> {
 	fn hash(input: &[u8], param_bytes: &[u8]) -> Result<Vec<u8>, Error> {
 		let params = PoseidonParameters::<F>::from_bytes(param_bytes)?;
-		let output: F = <CRH<F, P> as CRHTrait>::evaluate(&params, input)?;
+		let output: F = <CRH<F> as CRHTrait>::evaluate(&params, input)?;
 		let value = output.into_repr().to_bytes_le();
 		Ok(value)
 	}
 }
 
-pub struct CircomPoseidonHasher<F: PrimeField, P: Rounds>(PhantomData<F>, PhantomData<P>);
+pub struct CircomPoseidonHasher<F: PrimeField>(PhantomData<F>);
 
-impl<F: PrimeField, P: Rounds> InstanceHasher for CircomPoseidonHasher<F, P> {
+impl<F: PrimeField,> InstanceHasher for CircomPoseidonHasher<F> {
 	fn hash(input: &[u8], param_bytes: &[u8]) -> Result<Vec<u8>, Error> {
 		let params = PoseidonParameters::<F>::from_bytes(param_bytes)?;
-		let output: F = <CircomCRH<F, P> as CRHTrait>::evaluate(&params, input)?;
+		let output: F = <CRH<F> as CRHTrait>::evaluate(&params, input)?;
 		let value = output.into_repr().to_bytes_le();
 		Ok(value)
 	}
