@@ -233,6 +233,7 @@ pub mod pallet {
 			relayer: T::AccountId,
 			fee: BalanceOf<T, I>,
 			refund: BalanceOf<T, I>,
+			commitment: T::Element,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			<Self as AnchorInterface<_>>::withdraw(
@@ -245,6 +246,7 @@ pub mod pallet {
 				relayer,
 				fee,
 				refund,
+				commitment,
 			)?;
 			Ok(().into())
 		}
@@ -311,6 +313,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		relayer: T::AccountId,
 		fee: BalanceOf<T, I>,
 		refund: BalanceOf<T, I>,
+		commitment: T::Element,
 	) -> Result<(), DispatchError> {
 		// double check the number of roots
 		T::LinkableTree::ensure_max_edges(id, roots.len())?;
@@ -354,6 +357,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		bytes.extend_from_slice(&relayer_bytes);
 		bytes.extend_from_slice(&fee_bytes);
 		bytes.extend_from_slice(&refund_bytes);
+		bytes.extend_from_slice(&commitment.encode());
 		bytes.extend_from_slice(&chain_id_bytes);
 		for root in roots {
 			bytes.extend_from_slice(&root.encode());
