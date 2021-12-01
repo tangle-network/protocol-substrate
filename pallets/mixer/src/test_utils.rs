@@ -1,20 +1,18 @@
 use ark_ff::{BigInteger, FromBytes, PrimeField};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use arkworks_gadgets::{
-	prelude::ark_groth16::ProvingKey,
-};
 use arkworks_circuits::setup::{
-	mixer::{
-		prove_groth16_circuit_x5, setup_arbitrary_data, setup_groth16_random_circuit_x5,
-		setup_leaf_x5,  Circuit_x5, 
-	},	
 	common::setup_tree_and_create_path_tree_x5,
+	mixer::{
+		prove_groth16_circuit_x5, setup_arbitrary_data, setup_groth16_random_circuit_x5, setup_leaf_x5, Circuit_x5,
+	},
 };
+use arkworks_gadgets::prelude::ark_groth16::ProvingKey;
 
 use arkworks_utils::{
-	poseidon::PoseidonParameters,	
+	poseidon::PoseidonParameters,
 	utils::common::{setup_params_x5_3, setup_params_x5_5, Curve},
-};use darkwebb_primitives::ElementTrait;
+};
+use darkwebb_primitives::ElementTrait;
 
 use crate::mock::Element;
 
@@ -129,8 +127,7 @@ pub fn setup_zk_circuit(
 
 			// the withdraw process..
 			// we setup the inputs to our proof generator.
-			let (mt, path) =
-				setup_tree_and_create_path_tree_x5::<_, TREE_DEPTH>(&[leaf], 0, &params3_deserialized);
+			let (mt, path) = setup_tree_and_create_path_tree_x5::<_, TREE_DEPTH>(&[leaf], 0, &params3_deserialized);
 			let root = mt.root().inner();
 
 			let mut roots = [Bls12_381Fr::default(); M];

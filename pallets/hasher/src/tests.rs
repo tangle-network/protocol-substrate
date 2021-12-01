@@ -1,9 +1,7 @@
 use super::*;
 use crate::mock::*;
 use ark_ff::prelude::*;
-use arkworks_utils::{
-	utils::common::{setup_params_x5_3, Curve},
-};
+use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 use frame_support::{assert_err, assert_ok, instances::Instance1};
 use sp_core::bytes;
 

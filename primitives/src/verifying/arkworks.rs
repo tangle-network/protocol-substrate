@@ -4,7 +4,7 @@ use ark_ec::PairingEngine;
 use ark_ff::Zero;
 use ark_groth16::{Proof, VerifyingKey};
 use ark_serialize::CanonicalDeserialize;
-use arkworks_circuits::setup::{bridge,  mixer};
+use arkworks_circuits::setup::{bridge, mixer};
 use arkworks_utils::utils::{common::verify_groth16, to_field_elements};
 use sp_std::marker::PhantomData;
 

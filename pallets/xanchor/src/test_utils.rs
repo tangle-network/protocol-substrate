@@ -1,19 +1,17 @@
 #![allow(unused, dead_code)]
 use ark_ff::{BigInteger, FromBytes, PrimeField};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use arkworks_gadgets::{
-	prelude::ark_groth16::ProvingKey,
-};
 use arkworks_circuits::setup::{
 	bridge::{
-		prove_groth16_circuit_x5, setup_arbitrary_data, setup_groth16_random_circuit_x5,
-		setup_leaf_x5, setup_set, Circuit_x5, 
-	},	
+		prove_groth16_circuit_x5, setup_arbitrary_data, setup_groth16_random_circuit_x5, setup_leaf_x5, setup_set,
+		Circuit_x5,
+	},
 	common::setup_tree_and_create_path_tree_x5,
 };
+use arkworks_gadgets::prelude::ark_groth16::ProvingKey;
 
 use arkworks_utils::{
-	poseidon::PoseidonParameters,	
+	poseidon::PoseidonParameters,
 	utils::common::{setup_params_x5_3, setup_params_x5_5, Curve},
 };
 use darkwebb_primitives::ElementTrait;
@@ -47,8 +45,7 @@ pub fn get_keys(curve: Curve, pk_bytes: &mut Vec<u8>, vk_bytes: &mut Vec<u8>) {
 			pk.serialize(pk_bytes).unwrap();
 		}
 		Curve::Bls381 => {
-			let (pk, vk) =
-				setup_groth16_random_circuit_x5::<_, ark_bls12_381::Bls12_381, TREE_DEPTH, M>(rng, curve);
+			let (pk, vk) = setup_groth16_random_circuit_x5::<_, ark_bls12_381::Bls12_381, TREE_DEPTH, M>(rng, curve);
 			vk.serialize(vk_bytes).unwrap();
 			pk.serialize(pk_bytes).unwrap();
 		}

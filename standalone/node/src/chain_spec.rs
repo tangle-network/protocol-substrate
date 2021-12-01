@@ -1,6 +1,6 @@
 use arkworks_utils::{
 	poseidon::PoseidonParameters,
-	utils::common::{setup_params_x3_5, setup_params_x5_5, setup_params_x5_3, Curve},
+	utils::common::{setup_params_x3_5, setup_params_x5_3, setup_params_x5_5, Curve},
 };
 use common::{AccountId, BabeId, Balance, Signature};
 
@@ -200,7 +200,7 @@ fn testnet_genesis(
 	let bn254_3x_5_params = setup_params_x3_5(curve_bn254);
 
 	let bn254_5x_5_params = setup_params_x5_5(curve_bn254);
-	
+
 	let verifier_params = {
 		use std::fs;
 		// let pk_bytes = fs::read("../../fixtures/proving_key.bin").unwrap();

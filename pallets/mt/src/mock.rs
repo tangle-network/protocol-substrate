@@ -13,9 +13,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 };
 
-use arkworks_utils::{
-	utils::common::{setup_params_x5_3, Curve},
-};
+use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
