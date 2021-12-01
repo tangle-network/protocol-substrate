@@ -67,6 +67,7 @@ use darkwebb_primitives::{
 		vanchor::{ExtData, ProofData, VAnchorMetadata},
 		ElementTrait, IntoAbiToken,
 	},
+	utils::element_encoder,
 	verifier::*,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
@@ -347,17 +348,25 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			Error::<T, I>::InvalidPublicAmount
 		);
 
-		if proof_data.input_nullifiers.len() == 2 {
-			let chain_id = <T as pallet_linkable_tree::Config<I>>::GetChainId::get();
-			let public_inputs = [
-				chain_id.encode(),
-				proof_data.public_amount.encode(),
-				proof_data.ext_data_hash.encode(),
-				proof_data.roots.encode(),
-				proof_data.input_nullifiers.encode(),
-			];
+		let chain_id = <T as pallet_linkable_tree::Config<I>>::GetChainId::get();
 
-			let res = T::Verifier2x2::pack_public_inputs_and_verify(&public_inputs, &proof_data.proof)?;
+		let mut bytes = Vec::new();
+
+		bytes.extend_from_slice(&chain_id.using_encoded(element_encoder));
+		bytes.extend_from_slice(&proof_data.public_amount.using_encoded(element_encoder));
+		for root in proof_data.roots {
+			bytes.extend_from_slice(&root.encode());
+		}
+		for null in &proof_data.input_nullifiers {
+			bytes.extend_from_slice(&null.encode());
+		}
+		for comm in &proof_data.output_commitments {
+			bytes.extend_from_slice(&comm.encode());
+		}
+		bytes.extend_from_slice(&proof_data.ext_data_hash.encode());
+
+		if proof_data.input_nullifiers.len() == 2 {
+			let res = T::Verifier2x2::verify(&bytes, &proof_data.proof)?;
 			ensure!(res, Error::<T, I>::InvalidTransactionProof);
 		} else {
 			ensure!(false, Error::<T, I>::InvalidInputNullifiers);

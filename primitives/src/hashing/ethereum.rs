@@ -18,7 +18,7 @@ pub struct Keccak256Hasher<F: PrimeField>(PhantomData<F>);
 impl<F: PrimeField> InstanceHasher for Keccak256Hasher<F> {
 	fn hash(data: &[u8], _: &[u8]) -> Result<Vec<u8>, Error> {
 		let res = keccak256(data);
-		let field_res = F::from_be_bytes_mod_order(&res);
+		let field_res = F::from_le_bytes_mod_order(&res);
 		let value = field_res.into_repr().to_bytes_le();
 		Ok(value)
 	}

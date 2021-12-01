@@ -21,7 +21,8 @@ use arkworks_gadgets::{
 use codec::Encode;
 use darkwebb_primitives::{
 	hashing::ethereum::keccak256,
-	types::{vanchor::ExtData, IntoAbiToken, Token},
+	types::{IntoAbiToken, Token},
+	utils::element_encoder,
 	ElementTrait,
 };
 
@@ -40,6 +41,54 @@ const TREE_DEPTH: usize = 30;
 const M: usize = 2;
 const INS: usize = 2;
 const OUTS: usize = 2;
+
+pub struct ExtData {
+	pub recipient_bytes: Vec<u8>,
+	pub relayer_bytes: Vec<u8>,
+	pub ext_amount_bytes: Vec<u8>,
+	pub fee_bytes: Vec<u8>,
+	pub encrypted_output1_bytes: Vec<u8>,
+	pub encrypted_output2_bytes: Vec<u8>,
+}
+
+impl ExtData {
+	pub fn new(
+		recipient_bytes: Vec<u8>,
+		relayer_bytes: Vec<u8>,
+		ext_amount_bytes: Vec<u8>,
+		fee_bytes: Vec<u8>,
+		encrypted_output1_bytes: Vec<u8>,
+		encrypted_output2_bytes: Vec<u8>,
+	) -> Self {
+		Self {
+			recipient_bytes,
+			relayer_bytes,
+			ext_amount_bytes,
+			fee_bytes,
+			encrypted_output1_bytes,
+			encrypted_output2_bytes,
+		}
+	}
+}
+
+impl IntoAbiToken for ExtData {
+	fn into_abi(&self) -> Token {
+		let recipient = Token::Bytes(self.recipient_bytes.clone());
+		let ext_amount = Token::Bytes(self.ext_amount_bytes.clone());
+		let relayer = Token::Bytes(self.relayer_bytes.clone());
+		let fee = Token::Bytes(self.fee_bytes.clone());
+		let encrypted_output1 = Token::Bytes(self.encrypted_output1_bytes.clone());
+		let encrypted_output2 = Token::Bytes(self.encrypted_output2_bytes.clone());
+		Token::Tuple(vec![
+			recipient,
+			relayer,
+			ext_amount,
+			fee,
+			encrypted_output1,
+			encrypted_output2,
+		])
+	}
+}
 
 pub fn get_hash_params<F: PrimeField>(
 	curve: Curve,
@@ -136,9 +185,12 @@ pub fn setup_circuit_with_raw_inputs(
 	Vec<Element>,
 	Element,
 ) {
-	let public_amount_f = Bn254Fr::from(public_amount);
+	let chain_id_bytes = in_chain_id.using_encoded(element_encoder);
+	let in_chain_id_f = Bn254Fr::from_le_bytes_mod_order(&chain_id_bytes);
 
-	let in_chain_id_f = Bn254Fr::from(in_chain_id);
+	let public_amount_bytes = public_amount.using_encoded(element_encoder);
+	let public_amount_f = Bn254Fr::from_le_bytes_mod_order(&public_amount_bytes);
+
 	let in_amounts_f = in_amounts.iter().map(|x| Bn254Fr::from(*x)).collect();
 	let out_chain_ids_f = out_chain_ids.iter().map(|x| Bn254Fr::from(*x)).collect();
 	let out_amounts_f = out_amounts.iter().map(|x| Bn254Fr::from(*x)).collect();
@@ -227,12 +279,11 @@ pub fn setup_circuit_with_inputs(
 		setup_leaves(&in_chain_ids, &in_amounts, &in_keypairs, &params2, &params4, &params5);
 
 	// Tree + set for proving input txos
-	let out_keypairs = setup_keypairs(out_amounts.len());
-	let out_pub_keys: Vec<Bn254Fr> = out_keypairs.iter().map(|x| x.public_key(&params2).unwrap()).collect();
 	let (in_paths, in_indices, in_root_set, in_set_private_inputs) = setup_tree_and_set(&in_leaves, &params3);
 
 	// Output leaves (txos)
-	let out_keypairs = setup_keypairs(in_amounts.len());
+	let out_keypairs = setup_keypairs(out_amounts.len());
+	let out_pub_keys: Vec<Bn254Fr> = out_keypairs.iter().map(|x| x.public_key(&params2).unwrap()).collect();
 	let (out_commitments, _out_nullifiers, out_leaf_privates, out_leaf_publics) = setup_leaves(
 		&out_chain_ids,
 		&out_amounts,
