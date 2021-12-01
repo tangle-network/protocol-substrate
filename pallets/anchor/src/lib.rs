@@ -351,17 +351,19 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		let fee_bytes = fee.using_encoded(element_encoder);
 		let refund_bytes = refund.using_encoded(element_encoder);
 		let chain_id_bytes = chain_id.using_encoded(element_encoder);
-
+		
+		bytes.extend_from_slice(&chain_id_bytes);
 		bytes.extend_from_slice(&nullifier_hash.encode());
+		for root in roots.clone() {
+			bytes.extend_from_slice(&root.encode());
+		}
+		bytes.extend_from_slice(&roots[0].encode());
 		bytes.extend_from_slice(&recipient_bytes);
 		bytes.extend_from_slice(&relayer_bytes);
 		bytes.extend_from_slice(&fee_bytes);
 		bytes.extend_from_slice(&refund_bytes);
 		bytes.extend_from_slice(&commitment.encode());
-		bytes.extend_from_slice(&chain_id_bytes);
-		for root in roots {
-			bytes.extend_from_slice(&root.encode());
-		}
+	
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 		// transfer the assets
