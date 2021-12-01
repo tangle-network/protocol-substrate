@@ -1,17 +1,20 @@
 use ark_ff::{BigInteger, FromBytes, PrimeField};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use arkworks_gadgets::{
-	poseidon::PoseidonParameters,
 	prelude::ark_groth16::ProvingKey,
-	setup::{
-		common::{setup_circom_params_x5_3, setup_circom_params_x5_5, setup_tree_and_create_path_tree_circomx5, Curve},
-		mixer::{
-			prove_groth16_circuit_circomx5, setup_arbitrary_data, setup_groth16_random_circuit_circomx5,
-			setup_leaf_circomx5, Circuit_Circomx5,
-		},
-	},
 };
-use darkwebb_primitives::ElementTrait;
+use arkworks_circuits::setup::{
+	mixer::{
+		prove_groth16_circuit_x5, setup_arbitrary_data, setup_groth16_random_circuit_x5,
+		setup_leaf_x5,  Circuit_x5, 
+	},	
+	common::setup_tree_and_create_path_tree_x5,
+};
+
+use arkworks_utils::{
+	poseidon::PoseidonParameters,	
+	utils::common::{setup_params_x5_3, setup_params_x5_5, Curve},
+};use darkwebb_primitives::ElementTrait;
 
 use crate::mock::Element;
 
@@ -28,8 +31,8 @@ const M: usize = 2;
 
 pub fn get_hash_params<T: PrimeField>(curve: Curve) -> (Vec<u8>, Vec<u8>) {
 	(
-		setup_circom_params_x5_3::<T>(curve).to_bytes(),
-		setup_circom_params_x5_5::<T>(curve).to_bytes(),
+		setup_params_x5_3::<T>(curve).to_bytes(),
+		setup_params_x5_5::<T>(curve).to_bytes(),
 	)
 }
 
@@ -37,12 +40,12 @@ pub fn get_keys(curve: Curve, pk_bytes: &mut Vec<u8>, vk_bytes: &mut Vec<u8>) {
 	let rng = &mut ark_std::test_rng();
 	match curve {
 		Curve::Bn254 => {
-			let (pk, vk) = setup_groth16_random_circuit_circomx5::<_, ark_bn254::Bn254, TREE_DEPTH>(rng, curve);
+			let (pk, vk) = setup_groth16_random_circuit_x5::<_, ark_bn254::Bn254, TREE_DEPTH>(rng, curve);
 			vk.serialize(vk_bytes).unwrap();
 			pk.serialize(pk_bytes).unwrap();
 		}
 		Curve::Bls381 => {
-			let (pk, vk) = setup_groth16_random_circuit_circomx5::<_, ark_bls12_381::Bls12_381, TREE_DEPTH>(rng, curve);
+			let (pk, vk) = setup_groth16_random_circuit_x5::<_, ark_bls12_381::Bls12_381, TREE_DEPTH>(rng, curve);
 			vk.serialize(vk_bytes).unwrap();
 			pk.serialize(pk_bytes).unwrap();
 		}
@@ -70,9 +73,9 @@ pub fn setup_zk_circuit(
 			let (params3, params5) = get_hash_params::<Bn254Fr>(curve);
 			let params3_deserialized = PoseidonParameters::<Bn254Fr>::from_bytes(&*params3).unwrap();
 			let params5_deserialized = PoseidonParameters::<Bn254Fr>::from_bytes(&*params5).unwrap();
-			let (leaf_private, leaf, nullifier_hash) = setup_leaf_circomx5(&params5_deserialized, rng);
+			let (leaf_private, leaf, nullifier_hash) = setup_leaf_x5(&params5_deserialized, rng);
 
-			let (mt, path) = setup_tree_and_create_path_tree_circomx5(&[leaf], 0, &params3_deserialized);
+			let (mt, path) = setup_tree_and_create_path_tree_x5(&[leaf], 0, &params3_deserialized);
 			let root = mt.root().inner();
 
 			let mut roots = [Bn254Fr::default(); M];
@@ -81,7 +84,7 @@ pub fn setup_zk_circuit(
 			let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
 
 			// setup the circuit.
-			let circuit = Circuit_Circomx5::new(
+			let circuit = Circuit_x5::new(
 				arbitrary_input,
 				leaf_private,
 				(),
@@ -94,7 +97,7 @@ pub fn setup_zk_circuit(
 			let pk = ProvingKey::<ark_bn254::Bn254>::deserialize(&*pk_bytes).unwrap();
 
 			// generate the proof.
-			let proof = prove_groth16_circuit_circomx5::<_, ark_bn254::Bn254, TREE_DEPTH>(&pk, circuit, rng);
+			let proof = prove_groth16_circuit_x5::<_, ark_bn254::Bn254, TREE_DEPTH>(&pk, circuit, rng);
 
 			// format the input for the pallet.
 			let mut proof_bytes = Vec::new();
@@ -122,12 +125,12 @@ pub fn setup_zk_circuit(
 			let params3_deserialized = PoseidonParameters::<Bls12_381Fr>::from_bytes(&*params3).unwrap();
 			let params5_deserialized = PoseidonParameters::<Bls12_381Fr>::from_bytes(&*params5).unwrap();
 
-			let (leaf_private, leaf, nullifier_hash) = setup_leaf_circomx5(&params5_deserialized, rng);
+			let (leaf_private, leaf, nullifier_hash) = setup_leaf_x5(&params5_deserialized, rng);
 
 			// the withdraw process..
 			// we setup the inputs to our proof generator.
 			let (mt, path) =
-				setup_tree_and_create_path_tree_circomx5::<_, TREE_DEPTH>(&[leaf], 0, &params3_deserialized);
+				setup_tree_and_create_path_tree_x5::<_, TREE_DEPTH>(&[leaf], 0, &params3_deserialized);
 			let root = mt.root().inner();
 
 			let mut roots = [Bls12_381Fr::default(); M];
@@ -136,7 +139,7 @@ pub fn setup_zk_circuit(
 			let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund);
 
 			// setup the circuit.
-			let circuit = Circuit_Circomx5::new(
+			let circuit = Circuit_x5::new(
 				arbitrary_input,
 				leaf_private,
 				(),
@@ -147,7 +150,7 @@ pub fn setup_zk_circuit(
 			);
 			let pk = ProvingKey::<ark_bls12_381::Bls12_381>::deserialize(&*pk_bytes).unwrap();
 			// generate the proof.
-			let proof = prove_groth16_circuit_circomx5(&pk, circuit, rng);
+			let proof = prove_groth16_circuit_x5(&pk, circuit, rng);
 
 			// format the input for the pallet.
 			let mut proof_bytes = Vec::new();

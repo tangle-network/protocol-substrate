@@ -1,9 +1,8 @@
 use super::*;
 use crate::mock::*;
 use ark_ff::prelude::*;
-use arkworks_gadgets::{
-	poseidon::PoseidonParameters,
-	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
+use arkworks_utils::{
+	utils::common::{setup_params_x5_3, Curve},
 };
 use frame_support::{assert_err, assert_ok, instances::Instance1};
 use sp_core::bytes;
@@ -20,10 +19,10 @@ fn should_fail_with_params_not_initialized() {
 
 #[test]
 fn should_initialize_parameters() {
+	type Fr = ark_bn254::Fr;
 	new_test_ext().execute_with(|| {
-		let rounds = get_rounds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-		let mds = get_mds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-		let params = PoseidonParameters::new(rounds, mds);
+		let curve = Curve::Bn254;
+		let params = setup_params_x5_3::<Fr>(curve);
 		let res = BN254CircomPoseidon3x5Hasher::force_set_parameters(Origin::root(), params.to_bytes());
 		assert_ok!(res);
 	});
@@ -33,9 +32,8 @@ fn should_initialize_parameters() {
 fn should_output_correct_hash() {
 	type Fr = ark_bn254::Fr;
 	new_test_ext().execute_with(|| {
-		let rounds = get_rounds_poseidon_circom_bn254_x5_3::<Fr>();
-		let mds = get_mds_poseidon_circom_bn254_x5_3::<Fr>();
-		let params = PoseidonParameters::new(rounds, mds);
+		let curve = Curve::Bn254;
+		let params = setup_params_x5_3::<Fr>(curve);
 		let res = BN254CircomPoseidon3x5Hasher::force_set_parameters(Origin::root(), params.to_bytes());
 		assert_ok!(res);
 		let left = Fr::one().into_repr().to_bytes_le(); // one
