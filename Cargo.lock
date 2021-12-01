@@ -407,9 +407,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-circuits"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d1ddc1d93a99937bffd17b5887d0d8804a49720da07bcff36944e694008dcbb"
+checksum = "203545b32429996598098f5175852ba69845fe8be7bf8707d0e00edd69ed831f"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -427,7 +427,7 @@ dependencies = [
  "ark-serialize",
  "ark-snark",
  "ark-std",
- "arkworks-gadgets 0.4.0",
+ "arkworks-gadgets 0.4.1",
  "arkworks-utils",
  "blake2",
  "digest 0.9.0",
@@ -466,9 +466,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-gadgets"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8d513d101607a3c7ba1199279a3ae89671770e0e3bb866d40a0fdaafcc83b0c"
+checksum = "17b57e3ff9c092dbb40e59de7039a01ebebe9e7d7990d91e7a1744bfd6c3e5d3"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -497,9 +497,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-utils"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5162ab25063765483544f325016aecdac50718cf7792b30efca5e5b51e38ccb"
+checksum = "df2c32eb58de8ba396da4dad908c63d1d6a0aac4cf2e673c23ae032eb8a88817"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -2300,7 +2300,7 @@ dependencies = [
  "ark-serialize",
  "ark-std",
  "arkworks-circuits",
- "arkworks-gadgets 0.4.0",
+ "arkworks-gadgets 0.4.1",
  "arkworks-utils",
  "blake2",
  "digest 0.9.0",
@@ -5634,7 +5634,9 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-gadgets 0.3.13",
+ "arkworks-circuits",
+ "arkworks-gadgets 0.4.1",
+ "arkworks-utils",
  "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
