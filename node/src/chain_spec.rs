@@ -259,19 +259,19 @@ fn testnet_genesis(
 	let curve_bn254 = Curve::Bn254;
 	let curve_bls381 = Curve::Bls381;
 	log::info!("Circom params");
-	let circom_params = setup_params_x5_3(curve_bn254);
+	let circom_params = setup_params_x5_3::<ark_bn254::Fr>(curve_bn254);
 
 	log::info!("BLS381 3x 5 params");
-	let bls381_3x_5_params = setup_params_x3_5(curve_bls381);
+	let bls381_3x_5_params = setup_params_x3_5::<ark_bls12_381::Fr>(curve_bls381);
 
 	log::info!("BLS381 5x 5 params");
-	let bls381_5x_5_params = setup_params_x5_5(curve_bls381);
+	let bls381_5x_5_params = setup_params_x5_5::<ark_bls12_381::Fr>(curve_bls381);
 
 	log::info!("BN254 3x 5 params");
-	let bn254_3x_5_params = setup_params_x3_5(curve_bn254);
+	let bn254_3x_5_params = setup_params_x3_5::<ark_bn254::Fr>(curve_bn254);
 
 	log::info!("BN254 5x 5 params");
-	let bn254_5x_5_params = setup_params_x5_5(curve_bn254);
+	let bn254_5x_5_params = setup_params_x5_5::<ark_bn254::Fr>(curve_bn254);
 
 	log::info!("Verifier params");
 	let verifier_params = {

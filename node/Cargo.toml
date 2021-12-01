@@ -99,7 +99,8 @@ arkworks-utils = { version = "0.4.1", features = ["std", "r1cs"], default-featur
 
 ark-std = { version = "^0.3.0" }
 ark-serialize = { version = "^0.3.0" }
-
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 [features]
 default = []
 runtime-benchmarks = [

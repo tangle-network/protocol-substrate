@@ -85,7 +85,6 @@ pub fn setup_zk_circuit(
 			let circuit = Circuit_x5::new(
 				arbitrary_input,
 				leaf_private,
-				(),
 				params5_deserialized,
 				path,
 				root,
@@ -139,7 +138,6 @@ pub fn setup_zk_circuit(
 			let circuit = Circuit_x5::new(
 				arbitrary_input,
 				leaf_private,
-				(),
 				params5_deserialized,
 				path,
 				root,

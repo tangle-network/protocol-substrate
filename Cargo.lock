@@ -2190,6 +2190,8 @@ dependencies = [
 name = "darkwebb-node"
 version = "1.0.0"
 dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
  "ark-serialize",
  "ark-std",
  "arkworks-circuits",
@@ -2374,6 +2376,8 @@ dependencies = [
 name = "darkwebb-standalone-node"
 version = "1.0.0"
 dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
  "ark-serialize",
  "ark-std",
  "arkworks-utils",
