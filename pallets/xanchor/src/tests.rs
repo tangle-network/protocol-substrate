@@ -341,25 +341,22 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 }
 
 // Governance System Tests
-const AYE: Vote = Vote {
-	aye: true,
-	conviction: Conviction::None,
-};
-const NAY: Vote = Vote {
-	aye: false,
-	conviction: Conviction::None,
-};
-
 fn aye(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
 	AccountVote::Standard {
-		vote: AYE,
+		vote: Vote {
+			aye: true,
+			conviction: Conviction::None,
+		},
 		balance: Balances::free_balance(&who),
 	}
 }
 
 fn nay(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
 	AccountVote::Standard {
-		vote: NAY,
+		vote: Vote {
+			aye: false,
+			conviction: Conviction::None,
+		},
 		balance: Balances::free_balance(&who),
 	}
 }
@@ -458,4 +455,316 @@ fn governance_system_works() {
 	});
 
 	// the link process is now done!
+}
+
+// Some negtive tests for the governance system.
+
+#[test]
+fn should_fail_to_create_proposal_if_the_anchor_does_not_exist() {
+	MockNet::reset();
+	// creating a proposal for a non-existing anchor.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(MerkleTree::next_tree_id()),
+			local_tree_id: MerkleTree::next_tree_id(),
+		};
+		let value = 100;
+		assert_err!(
+			XAnchor::propose_to_link_anchor(Origin::signed(AccountThree::get()), payload, value),
+			Error::<Runtime>::AnchorNotFound
+		);
+	});
+}
+
+#[test]
+fn should_fail_to_create_proposal_for_already_linked_anchors() {
+	MockNet::reset();
+	// create an anchor on parachain A.
+	let para_a_tree_id = ParaA::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+	// create an anchor on parachain B.
+	let para_b_tree_id = ParaB::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+
+	// force link them.
+	ParaA::execute_with(|| {
+		let r_id = encode_resource_id(para_a_tree_id, PARAID_B);
+		assert_ok!(XAnchor::force_register_resource_id(
+			Origin::root(),
+			r_id,
+			para_b_tree_id
+		));
+	});
+
+	// now try create a proposal on chain A, it should fail since it is already
+	// linked.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(para_b_tree_id),
+			local_tree_id: para_a_tree_id,
+		};
+		let value = 100;
+		assert_err!(
+			XAnchor::propose_to_link_anchor(Origin::signed(AccountThree::get()), payload, value),
+			Error::<Runtime>::ResourceIsAlreadyAnchored
+		);
+	});
+}
+
+#[test]
+fn should_fail_to_create_proposal_for_already_pending_linking() {
+	MockNet::reset();
+	// create an anchor on parachain A.
+	let para_a_tree_id = ParaA::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+
+	// create an anchor on parachain B.
+	let para_b_tree_id = ParaB::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+
+	// create a proposal on chain A.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(para_b_tree_id),
+			local_tree_id: para_a_tree_id,
+		};
+		let value = 100;
+		assert_ok!(XAnchor::propose_to_link_anchor(
+			Origin::signed(AccountThree::get()),
+			payload,
+			value
+		));
+	});
+
+	// now try create a new proposal on chain A with different Account it should
+	// fail.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(para_b_tree_id),
+			local_tree_id: para_a_tree_id,
+		};
+		let value = 100;
+		assert_err!(
+			XAnchor::propose_to_link_anchor(Origin::signed(AccountFour::get()), payload, value),
+			Error::<Runtime>::AnchorLinkIsAlreadyPending
+		);
+	});
+}
+
+#[test]
+fn should_fail_to_call_send_link_anchor_message_as_signed_account() {
+	// reset the network.
+	MockNet::reset();
+	// calling send_link_anchor_message as signed account should fail.
+	// on parachain A.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(MerkleTree::next_tree_id()),
+			local_tree_id: MerkleTree::next_tree_id(),
+		};
+		let value = 100;
+		assert_err!(
+			XAnchor::send_link_anchor_message(Origin::signed(AccountThree::get()), payload, value),
+			frame_support::error::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn should_fail_to_call_save_link_proposal_as_signed_account() {
+	// rest the network.
+	MockNet::reset();
+	// calling save_link_proposal as signed account should fail.
+	// on parachain A.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(MerkleTree::next_tree_id()),
+			local_tree_id: MerkleTree::next_tree_id(),
+		};
+		assert_err!(
+			XAnchor::save_link_proposal(Origin::signed(AccountThree::get()), payload,),
+			frame_support::error::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
+	// rest the network.
+	MockNet::reset();
+	// create an anchor on parachain A.
+	let para_a_tree_id = ParaA::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+
+	// create an anchor on parachain B.
+	let para_b_tree_id = ParaB::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+
+	// force link them.
+	ParaA::execute_with(|| {
+		let r_id = encode_resource_id(para_a_tree_id, PARAID_B);
+		assert_ok!(XAnchor::force_register_resource_id(
+			Origin::root(),
+			r_id,
+			para_b_tree_id
+		));
+	});
+
+	// now creating a proposal on chain A should fail since it is already linked.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(para_b_tree_id),
+			local_tree_id: para_a_tree_id,
+		};
+		let value = 100;
+		assert_err!(
+			XAnchor::propose_to_link_anchor(Origin::signed(AccountThree::get()), payload, value),
+			Error::<Runtime>::ResourceIsAlreadyAnchored
+		);
+	});
+}
+
+#[test]
+fn should_fail_to_call_handle_link_anchor_message_without_anchor_being_pending() {
+	// reset the network.
+	MockNet::reset();
+	// create an anchor on parachain A.
+	let para_a_tree_id = ParaA::execute_with(|| {
+		setup_environment(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		MerkleTree::next_tree_id() - 1
+	});
+	// now calling handle_link_anchor_message directly should fail.
+	// on parachain A, since this anchor is not pending.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(para_a_tree_id),
+			local_tree_id: 0,
+		};
+		let value = 100;
+		assert_err!(
+			XAnchor::handle_link_anchor_message(Origin::signed(AccountThree::get()), payload, value),
+			Error::<Runtime>::AnchorLinkNotFound,
+		);
+	});
+}
+
+#[test]
+fn should_fail_to_call_link_anchors_as_signed_account() {
+	// reset the network.
+	MockNet::reset();
+	// calling link_anchors as signed account should fail.
+	// on parachain A.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(MerkleTree::next_tree_id()),
+			local_tree_id: MerkleTree::next_tree_id(),
+		};
+		assert_err!(
+			XAnchor::link_anchors(Origin::signed(AccountThree::get()), payload),
+			frame_support::error::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn should_fail_to_call_handle_link_anchors_as_signed_account() {
+	// reset the network.
+	MockNet::reset();
+	// calling handle_link_anchors as signed account should fail.
+	// on parachain A.
+	ParaA::execute_with(|| {
+		let payload = LinkProposal {
+			target_chain_id: PARAID_B,
+			target_tree_id: Some(MerkleTree::next_tree_id()),
+			local_tree_id: MerkleTree::next_tree_id(),
+		};
+		assert_err!(
+			XAnchor::handle_link_anchors(Origin::signed(AccountThree::get()), payload),
+			frame_support::error::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn should_fail_to_call_register_resource_id_as_signed_account() {
+	// reset the network.
+	MockNet::reset();
+	// calling register_resource_id as signed account should fail.
+	// on parachain A.
+	ParaA::execute_with(|| {
+		let r_id = encode_resource_id(MerkleTree::next_tree_id(), PARAID_B);
+		assert_err!(
+			XAnchor::register_resource_id(Origin::signed(AccountThree::get()), r_id, MerkleTree::next_tree_id()),
+			frame_support::error::BadOrigin,
+		);
+	});
+}
+
+#[test]
+fn should_fail_to_call_update_as_signed_account() {
+	// reset the network.
+	MockNet::reset();
+	// calling update as signed account should fail.
+	// on parachain A.
+	ParaA::execute_with(|| {
+		let r_id = encode_resource_id(MerkleTree::next_tree_id(), PARAID_B);
+		let edge_metadata = EdgeMetadata {
+			src_chain_id: PARAID_B,
+			root: Element::zero(),
+			latest_leaf_index: 0,
+		};
+		assert_err!(
+			XAnchor::update(Origin::signed(AccountThree::get()), r_id, edge_metadata),
+			frame_support::error::BadOrigin,
+		);
+	});
 }

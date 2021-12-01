@@ -41,6 +41,7 @@ ark-serialize = {version = "^0.3.0", default-features = false, features = ["deri
 ark-std = {version = "^0.3.0", default-features = false}
 arkworks-gadgets = {version = "^0.3", features = ["default_poseidon"]}
 pallet-balances = {git = "https://github.com/paritytech/substrate.git", branch = "master"}
+pallet-asset-registry = { path = "../asset-registry" }
 serde = {version = "1.0.119"}
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"}
 sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"}
