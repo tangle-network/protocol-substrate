@@ -326,6 +326,10 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			ext_amount_unsigned < T::MaxExtAmount::get(),
 			Error::<T, I>::InvalidExtAmount
 		);
+
+		// FIXME: This is not correct. Public amounnt can also be negative, in which
+		// case it would wrap around the field, so we should check if FIELD_SIZE -
+		// public_amount == proof_data.public_amount, in case of a negative ext_amount
 		let calc_public_amount = ext_amount_unsigned - ext_data.fee;
 		ensure!(
 			proof_data.public_amount == calc_public_amount,
