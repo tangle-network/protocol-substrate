@@ -34,6 +34,7 @@ polkadot-primitives = { git = 'https://github.com/paritytech/polkadot', branch =
 pallet-treasury = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
 pallet-parachain-staking = { path = "../pallets/parachain-staking", default-features = false }
 
+
 [dev-dependencies]
 sp-io = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
 pallet-authorship = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
