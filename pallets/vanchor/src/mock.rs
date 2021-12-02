@@ -303,7 +303,6 @@ impl pallet_vanchor::Config for Test {
 	type PalletId = VAnchorPalletId;
 	type PostDepositHook = ();
 	type Verifier2x2 = VerifierPallet;
-	type WeightInfo = ();
 }
 
 pub fn assert_last_event<T: pallet_vanchor::Config>(generic_event: <T as pallet_vanchor::Config>::Event) {

@@ -54,10 +54,6 @@ mod test_utils;
 #[cfg(test)]
 mod tests;
 
-#[cfg(feature = "runtime-benchmarks")]
-mod zk_config;
-
-pub mod weights;
 use codec::Encode;
 use darkwebb_primitives::{
 	hasher::InstanceHasher,
@@ -77,7 +73,6 @@ use orml_traits::{
 };
 use sp_runtime::traits::AccountIdConversion;
 use sp_std::{convert::TryInto, prelude::*};
-pub use weights::WeightInfo;
 
 /// Type alias for the orml_traits::MultiCurrency::Balance type
 pub type BalanceOf<T, I> =
@@ -126,9 +121,6 @@ pub mod pallet {
 		/// Native currency id
 		#[pallet::constant]
 		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
-
-		/// Weight info for pallet
-		type WeightInfo: WeightInfo;
 
 		type MaxDepositAmount: Get<BalanceOf<Self, I>>;
 		type MinWithdrawAmount: Get<BalanceOf<Self, I>>;
@@ -199,7 +191,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		#[pallet::weight(<T as Config<I>>::WeightInfo::create(*depth as u32, *max_edges))]
+		#[pallet::weight(0)]
 		pub fn create(
 			origin: OriginFor<T>,
 			max_edges: u32,

@@ -51,7 +51,7 @@ ark-groth16 = {version = "^0.3.0", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"], git = "https://github.com/webb-tools/arkworks-gadgets", branch = "master" }
+arkworks-gadgets = { version = "^0.3", features = ["default_poseidon"], git = "https://github.com/webb-tools/arkworks-gadgets", branch = "master", default-features = false }
 
 [features]
 default = ["std"]
