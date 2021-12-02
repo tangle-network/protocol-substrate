@@ -305,22 +305,6 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 
 		let vanchor = Self::get_vanchor(id)?;
 
-		let is_deposit = ext_data.ext_amount.is_positive();
-
-		if is_deposit {
-			let ext_unsigned: BalanceOf<T, I> = ext_data
-				.ext_amount
-				.try_into()
-				.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
-			ensure!(
-				ext_unsigned <= T::MaxDepositAmount::get(),
-				Error::<T, I>::InvalidExtAmount
-			);
-
-			// deposit tokens to the pallet from the transactor's account
-			<T as Config<I>>::Currency::transfer(vanchor.asset, &transactor, &Self::account_id(), ext_unsigned)?;
-		}
-
 		// Compute hash of abi encoded ext_data, reduced into field from config
 		let computed_ext_data_hash =
 			T::EthereumHasher::hash(&ext_data.encode_abi(), &[]).map_err(|_| Error::<T, I>::InvalidExtData)?;
@@ -377,16 +361,24 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			Self::add_nullifier_hash(id, *nullifier)?;
 		}
 
-		let is_withdraw = ext_data.ext_amount.is_negative();
+		let is_deposit = ext_data.ext_amount.is_positive();
 
-		if is_withdraw {
-			let abs_amount: BalanceOf<T, I> = ext_data
-				.ext_amount
-				.abs()
-				.try_into()
-				.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
+		let abs_amount: BalanceOf<T, I> = ext_data
+			.ext_amount
+			.abs()
+			.try_into()
+			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
+
+		if is_deposit {
+			ensure!(
+				abs_amount <= T::MaxDepositAmount::get(),
+				Error::<T, I>::InvalidExtAmount
+			);
+
+			// deposit tokens to the pallet from the transactor's account
+			<T as Config<I>>::Currency::transfer(vanchor.asset, &transactor, &Self::account_id(), abs_amount)?;
+		} else {
 			let min_withdraw = T::MinWithdrawAmount::get();
-
 			ensure!(abs_amount >= min_withdraw, Error::<T, I>::InvalidExtAmount);
 
 			// Withdraw to recipient account

@@ -305,16 +305,31 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 		// Check nullifier and add or return `AlreadyRevealedNullifier`
 		Self::ensure_nullifier_unused(id, nullifier_hash)?;
 		Self::add_nullifier_hash(id, nullifier_hash)?;
-
-		let public_inputs = [
-			nullifier_hash.encode(),
-			root.encode(),
-			recipient.encode(),
-			relayer.encode(),
-			fee.encode(),
-			refund.encode(),
-		];
-		let result = T::Verifier::pack_public_inputs_and_verify(&public_inputs, proof_bytes)?;
+		// Format proof public inputs for verification
+		// FIXME: This is for a specfic gadget so we ought to create a generic handler
+		// FIXME: Such as a unpack/pack public inputs trait
+		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
+		let mut bytes = vec![];
+		let element_encoder = |v: &[u8]| {
+			let mut output = [0u8; 32];
+			output.iter_mut().zip(v).for_each(|(b1, b2)| *b1 = *b2);
+			output
+		};
+		let recipient_bytes = truncate_and_pad(&recipient.using_encoded(element_encoder)[..]);
+		let relayer_bytes = truncate_and_pad(&relayer.using_encoded(element_encoder)[..]);
+		let fee_bytes = fee.using_encoded(element_encoder);
+		let refund_bytes = refund.using_encoded(element_encoder);
+		bytes.extend_from_slice(&nullifier_hash.encode());
+		bytes.extend_from_slice(&root.encode());
+		bytes.extend_from_slice(&recipient_bytes);
+		bytes.extend_from_slice(&relayer_bytes);
+		bytes.extend_from_slice(&fee_bytes);
+		bytes.extend_from_slice(&refund_bytes);
+		// TODO: Update gadget being used to include fee as well
+		// TODO: This is not currently included in
+		// arkworks_gadgets::setup::mixer::get_public_inputs bytes.extend_from_slice(&
+		// fee.encode());
+		let result = T::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 
 		<T as pallet::Config<I>>::Currency::transfer(mixer.asset, &Self::account_id(), &recipient, mixer.deposit_size)?;
