@@ -1,5 +1,4 @@
 use arkworks_utils::{
-	poseidon::PoseidonParameters,
 	utils::common::{setup_params_x3_5, setup_params_x5_3, setup_params_x5_5, Curve},
 };
 use common::{AccountId, BabeId, Balance, Signature};

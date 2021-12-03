@@ -50,7 +50,7 @@ ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 arkworks-gadgets  = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "^0.4", default-features = false }
-arkworks-circuits = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "^0.4", default-features = false }
+arkworks-circuits = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "^0.4", features = ["r1cs"],  default-features = false }
 arkworks-utils    = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "^0.4", features = ["default_poseidon", "default_mimc"], default-features = false }
 
 darkwebb-primitives = { path = "../../primitives" }

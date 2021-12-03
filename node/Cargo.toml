@@ -93,9 +93,9 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch =
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
-arkworks-gadgets  = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "0.4.3", default-features = false }
-arkworks-circuits = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "0.4.3", default-features = false }
-arkworks-utils    = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "0.4.3", default-features = false }
+arkworks-gadgets  = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "^0.4", default-features = false }
+arkworks-circuits = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "^0.4", default-features = false }
+arkworks-utils    = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "^0.4", default-features = false }
 
 ark-std = { version = "^0.3.0" }
 ark-serialize = { version = "^0.3.0" }

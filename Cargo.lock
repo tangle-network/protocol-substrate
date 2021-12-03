@@ -407,8 +407,8 @@ dependencies = [
 
 [[package]]
 name = "arkworks-circuits"
-version = "0.4.3"
-source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=hossein/fix_to_use_in_substrate#3b89bb895e75a69c08f129b6c27e616a5557d7c3"
+version = "0.4.4"
+source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=hossein/fix_to_use_in_substrate#125371089f9f68da5db77abb7d153e4dbd5abe19"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -435,8 +435,8 @@ dependencies = [
 
 [[package]]
 name = "arkworks-gadgets"
-version = "0.4.3"
-source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=hossein/fix_to_use_in_substrate#3b89bb895e75a69c08f129b6c27e616a5557d7c3"
+version = "0.4.4"
+source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=hossein/fix_to_use_in_substrate#125371089f9f68da5db77abb7d153e4dbd5abe19"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -457,16 +457,13 @@ dependencies = [
  "arkworks-utils",
  "blake2",
  "digest 0.9.0",
- "ethabi",
- "hex-literal 0.3.4",
  "paste",
- "tiny-keccak",
 ]
 
 [[package]]
 name = "arkworks-utils"
-version = "0.4.3"
-source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=hossein/fix_to_use_in_substrate#3b89bb895e75a69c08f129b6c27e616a5557d7c3"
+version = "0.4.4"
+source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=hossein/fix_to_use_in_substrate#125371089f9f68da5db77abb7d153e4dbd5abe19"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -2808,14 +2805,9 @@ version = "15.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f76ef192b63e8a44b3d08832acebbb984c3fba154b5c26f70037c860202a0d4b"
 dependencies = [
- "anyhow",
  "ethereum-types",
  "hex",
- "serde",
- "serde_json",
  "sha3",
- "thiserror",
- "uint",
 ]
 
 [[package]]
