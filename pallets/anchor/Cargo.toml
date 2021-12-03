@@ -54,7 +54,6 @@ arkworks-gadgets  = { git = "https://github.com/webb-tools/arkworks-gadgets.git"
 arkworks-circuits = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "0.4.3", features = ["r1cs"], default-features = false }
 arkworks-utils    = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "0.4.3", features = ["default_poseidon", "default_mimc"], default-features = false }
 
-getrandom = { version = "0.2", features = ["js"] }
 
 [features]
 default = ["std"]

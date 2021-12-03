@@ -6,7 +6,7 @@ use ark_groth16::{Proof, VerifyingKey};
 use ark_serialize::CanonicalDeserialize;
 use arkworks_utils::utils::{common::verify_groth16, to_field_elements};
 use sp_std::marker::PhantomData;
-
+use ark_std::{vec, vec::Vec};
 pub struct ArkworksMixerVerifierGroth16<E: PairingEngine>(PhantomData<E>);
 pub struct ArkworksBridgeVerifierGroth16<E: PairingEngine>(PhantomData<E>);
 
