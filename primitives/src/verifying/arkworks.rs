@@ -1,5 +1,5 @@
 use crate::*;
-use ark_crypto_primitives::{Error, commitment};
+use ark_crypto_primitives::{Error};
 use ark_ec::PairingEngine;
 use ark_ff::Zero;
 use ark_groth16::{Proof, VerifyingKey};
