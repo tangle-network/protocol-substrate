@@ -3,7 +3,7 @@ use crate::{
 	test_utils::{get_hash_params, prove, setup_circuit_with_raw_inputs, setup_keys, setup_random_circuit},
 };
 use ark_ff::{BigInteger, PrimeField};
-use arkworks_gadgets::setup::common::Curve;
+use arkworks_utils::utils::common::Curve;
 use codec::Encode;
 use darkwebb_primitives::{
 	hashing::ethereum::keccak256,

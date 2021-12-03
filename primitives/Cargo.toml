@@ -30,7 +30,8 @@ blake2 = { version = "0.9", default-features = false }
 digest = "0.9"
 
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
-arkworks-gadgets = { version = "^0.3", features = ["default_poseidon", "default_mimc", "r1cs"], default-features = false, optional = true }
+arkworks-utils = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "0.4.3", default-features = false, optional = true, features = ["default_poseidon", "default_mimc"] }
+arkworks-gadgets = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "0.4.3", default-features = false, optional = true }
 codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "2.2.0" }
 
 ethabi = {version = "15.0.0"}
@@ -53,12 +54,14 @@ std = [
 ]
 hashing = [
 	"arkworks-gadgets",
+	"arkworks-utils",
 	"ark-bls12-381",
 	"ark-bls12-377",
 	"ark-bn254",
 ]
 verifying = [
 	"arkworks-gadgets",
+	"arkworks-utils",
 	"ark-bls12-381",
 	"ark-bls12-377",
 	"ark-bn254",

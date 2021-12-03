@@ -11,6 +11,7 @@ pub use darkwebb_primitives::{
 	types::{ElementTrait, IntoAbiToken},
 	AccountId,
 };
+use darkwebb_primitives::{hashing::BN254PoseidonHasher, verifying::ArkworksBn254Verifier};
 use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
@@ -118,7 +119,7 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBn254VAnchor2x2Verifier;
+	type Verifier = ArkworksBn254Verifier;
 	type WeightInfo = ();
 }
 
@@ -126,7 +127,7 @@ impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::BN254Poseidon3x5Hasher;
+	type Hasher = BN254PoseidonHasher;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
@@ -227,7 +228,7 @@ impl orml_currencies::Config for Test {
 }
 
 impl pallet_asset_registry::Config for Test {
-	type AssetId = darkwebb_primitives::AssetId;
+	type AssetId = AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
 	type Event = Event;

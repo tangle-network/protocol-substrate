@@ -4,19 +4,23 @@ use ark_ff::{to_bytes, BigInteger, PrimeField, ToBytes, UniformRand};
 use ark_groth16::{Groth16, ProvingKey};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::{rand::thread_rng, rc::Rc, vec::Vec};
+use arkworks_circuits::{
+	circuit::vanchor::VAnchorCircuit as VACircuit,
+	setup::common::{
+		LeafCRHGadget, PoseidonCRH_x5_2, PoseidonCRH_x5_2Gadget, PoseidonCRH_x5_3Gadget, PoseidonCRH_x5_4,
+		PoseidonCRH_x5_4Gadget, PoseidonCRH_x5_5, PoseidonCRH_x5_5Gadget, TreeConfig_x5, Tree_x5,
+	},
+};
 use arkworks_gadgets::{
 	arbitrary::vanchor_data::VAnchorArbitraryData,
-	circuit::vanchor::VAnchorCircuit as VACircuit,
 	keypair::vanchor::Keypair,
 	leaf::vanchor::{Private as LeafPrivateInput, Public as LeafPublicInput, VAnchorLeaf as Leaf},
 	merkle_tree::Path,
-	poseidon::PoseidonParameters,
 	set::membership::{Private as SetPrivateInputs, SetMembership},
-	setup::common::{
-		setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve, LeafCRHGadget,
-		PoseidonCRH_x5_2, PoseidonCRH_x5_2Gadget, PoseidonCRH_x5_3Gadget, PoseidonCRH_x5_4, PoseidonCRH_x5_4Gadget,
-		PoseidonCRH_x5_5, PoseidonCRH_x5_5Gadget, TreeConfig_x5, Tree_x5,
-	},
+};
+use arkworks_utils::{
+	poseidon::PoseidonParameters,
+	utils::common::{setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve},
 };
 use codec::Encode;
 use darkwebb_primitives::{
@@ -110,10 +114,6 @@ pub fn setup_random_circuit() -> VACircuit<
 	Bn254Fr,
 	PoseidonCRH_x5_2<Bn254Fr>,
 	PoseidonCRH_x5_2Gadget<Bn254Fr>,
-	PoseidonCRH_x5_4<Bn254Fr>,
-	PoseidonCRH_x5_4Gadget<Bn254Fr>,
-	PoseidonCRH_x5_5<Bn254Fr>,
-	PoseidonCRH_x5_5Gadget<Bn254Fr>,
 	TreeConfig_x5<Bn254Fr>,
 	LeafCRHGadget<Bn254Fr>,
 	PoseidonCRH_x5_3Gadget<Bn254Fr>,
@@ -167,10 +167,6 @@ pub fn setup_circuit_with_raw_inputs(
 		Bn254Fr,
 		PoseidonCRH_x5_2<Bn254Fr>,
 		PoseidonCRH_x5_2Gadget<Bn254Fr>,
-		PoseidonCRH_x5_4<Bn254Fr>,
-		PoseidonCRH_x5_4Gadget<Bn254Fr>,
-		PoseidonCRH_x5_5<Bn254Fr>,
-		PoseidonCRH_x5_5Gadget<Bn254Fr>,
 		TreeConfig_x5<Bn254Fr>,
 		LeafCRHGadget<Bn254Fr>,
 		PoseidonCRH_x5_3Gadget<Bn254Fr>,
@@ -250,10 +246,6 @@ pub fn setup_circuit_with_inputs(
 		Bn254Fr,
 		PoseidonCRH_x5_2<Bn254Fr>,
 		PoseidonCRH_x5_2Gadget<Bn254Fr>,
-		PoseidonCRH_x5_4<Bn254Fr>,
-		PoseidonCRH_x5_4Gadget<Bn254Fr>,
-		PoseidonCRH_x5_5<Bn254Fr>,
-		PoseidonCRH_x5_5Gadget<Bn254Fr>,
 		TreeConfig_x5<Bn254Fr>,
 		LeafCRHGadget<Bn254Fr>,
 		PoseidonCRH_x5_3Gadget<Bn254Fr>,
@@ -361,10 +353,6 @@ pub fn setup_circuit(
 	Bn254Fr,
 	PoseidonCRH_x5_2<Bn254Fr>,
 	PoseidonCRH_x5_2Gadget<Bn254Fr>,
-	PoseidonCRH_x5_4<Bn254Fr>,
-	PoseidonCRH_x5_4Gadget<Bn254Fr>,
-	PoseidonCRH_x5_5<Bn254Fr>,
-	PoseidonCRH_x5_5Gadget<Bn254Fr>,
 	TreeConfig_x5<Bn254Fr>,
 	LeafCRHGadget<Bn254Fr>,
 	PoseidonCRH_x5_3Gadget<Bn254Fr>,
@@ -377,10 +365,6 @@ pub fn setup_circuit(
 		Bn254Fr,
 		PoseidonCRH_x5_2<Bn254Fr>,
 		PoseidonCRH_x5_2Gadget<Bn254Fr>,
-		PoseidonCRH_x5_4<Bn254Fr>,
-		PoseidonCRH_x5_4Gadget<Bn254Fr>,
-		PoseidonCRH_x5_5<Bn254Fr>,
-		PoseidonCRH_x5_5Gadget<Bn254Fr>,
 		TreeConfig_x5<Bn254Fr>,
 		LeafCRHGadget<Bn254Fr>,
 		PoseidonCRH_x5_3Gadget<Bn254Fr>,
@@ -416,10 +400,6 @@ pub fn setup_keys(
 		Bn254Fr,
 		PoseidonCRH_x5_2<Bn254Fr>,
 		PoseidonCRH_x5_2Gadget<Bn254Fr>,
-		PoseidonCRH_x5_4<Bn254Fr>,
-		PoseidonCRH_x5_4Gadget<Bn254Fr>,
-		PoseidonCRH_x5_5<Bn254Fr>,
-		PoseidonCRH_x5_5Gadget<Bn254Fr>,
 		TreeConfig_x5<Bn254Fr>,
 		LeafCRHGadget<Bn254Fr>,
 		PoseidonCRH_x5_3Gadget<Bn254Fr>,
@@ -444,10 +424,6 @@ pub fn prove(
 		Bn254Fr,
 		PoseidonCRH_x5_2<Bn254Fr>,
 		PoseidonCRH_x5_2Gadget<Bn254Fr>,
-		PoseidonCRH_x5_4<Bn254Fr>,
-		PoseidonCRH_x5_4Gadget<Bn254Fr>,
-		PoseidonCRH_x5_5<Bn254Fr>,
-		PoseidonCRH_x5_5Gadget<Bn254Fr>,
 		TreeConfig_x5<Bn254Fr>,
 		LeafCRHGadget<Bn254Fr>,
 		PoseidonCRH_x5_3Gadget<Bn254Fr>,
@@ -512,22 +488,14 @@ pub fn setup_leaves(
 
 		let pub_key = keypairs[i].public_key(&params2).unwrap();
 
-		let leaf = Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>::create_leaf(
-			&private_input,
-			&pub_key,
-			&public_input,
-			&params5,
-		)
-		.unwrap();
+		let leaf =
+			Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>>::create_leaf(&private_input, &public_input, &pub_key, &params5)
+				.unwrap();
 
-		let signature = keypairs[i]
-			.signature::<PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>(&leaf, &index, &params4)
-			.unwrap();
+		let signature = keypairs[i].signature(&leaf, &index, &params4).unwrap();
 
-		let nullfier = Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>, PoseidonCRH_x5_5<Bn254Fr>>::create_nullifier(
-			&signature, &leaf, &params4, &index,
-		)
-		.unwrap();
+		let nullfier =
+			Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>>::create_nullifier(&signature, &leaf, &params4, &index).unwrap();
 
 		leaves.push(leaf);
 		nullifiers.push(nullfier);
