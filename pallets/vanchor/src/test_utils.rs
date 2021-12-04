@@ -152,7 +152,7 @@ pub fn setup_random_circuit() -> VACircuit<
 
 pub fn setup_circuit_with_raw_inputs(
 	// Metadata inputs
-	public_amount: Balance,
+	public_amount: Amount,
 	recipient: AccountId,
 	relayer: AccountId,
 	ext_amount: Amount,
@@ -179,6 +179,7 @@ pub fn setup_circuit_with_raw_inputs(
 	Vec<Element>,
 	Vec<Element>,
 	Vec<Element>,
+	Element,
 	Element,
 ) {
 	let chain_id_bytes = in_chain_id.using_encoded(element_encoder);
@@ -220,6 +221,7 @@ pub fn setup_circuit_with_raw_inputs(
 		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
 		.collect();
 	let ext_data_hash_element = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_le());
+	let public_amount_element = Element::from_bytes(&public_amount_f.into_repr().to_bytes_le());
 
 	(
 		circuit,
@@ -228,6 +230,7 @@ pub fn setup_circuit_with_raw_inputs(
 		leaf_elements,
 		commitment_elements,
 		ext_data_hash_element,
+		public_amount_element,
 	)
 }
 

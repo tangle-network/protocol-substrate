@@ -12,22 +12,22 @@ pub struct VAnchorMetadata<AccountId, AssetId> {
 }
 
 #[derive(Clone, Encode, Decode, Debug, Eq, PartialEq, TypeInfo)]
-pub struct ProofData<Element, Balance> {
+pub struct ProofData<Element> {
 	pub proof: Vec<u8>,
 	pub roots: Vec<Element>,
 	pub input_nullifiers: Vec<Element>,
 	pub output_commitments: Vec<Element>,
-	pub public_amount: Balance,
+	pub public_amount: Element,
 	pub ext_data_hash: Element,
 }
 
-impl<E, B> ProofData<E, B> {
+impl<E> ProofData<E> {
 	pub fn new(
 		proof: Vec<u8>,
 		roots: Vec<E>,
 		input_nullifiers: Vec<E>,
 		output_commitments: Vec<E>,
-		public_amount: B,
+		public_amount: E,
 		ext_data_hash: E,
 	) -> Self {
 		Self {
@@ -59,7 +59,7 @@ impl<I: Encode, A: Encode, B: Encode, E: Encode> ExtData<I, A, B, E> {
 			ext_amount,
 			fee,
 			encrypted_output1,
-			encrypted_output2
+			encrypted_output2,
 		}
 	}
 }

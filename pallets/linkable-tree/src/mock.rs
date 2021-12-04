@@ -104,7 +104,7 @@ impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::BN254CircomPoseidon3x5Hasher;
+	type Hasher = darkwebb_primitives::hashing::BN254PoseidonHasher;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;

@@ -39,7 +39,7 @@ hex-literal = {version = "0.3.4"}
 tiny-keccak = {version = "2.0.2"}
 
 [features]
-default = ["std", "hashing", "verifying"]
+default = ["std", "hashing", "verifying", "field_ops"]
 std = [
 	"codec/std",
 	"frame-support/std",
@@ -51,6 +51,11 @@ std = [
 	"ark-ec/std",
 	"ark-std/std",
 	"ark-relations/std"
+]
+field_ops = [
+	"ark-bls12-381",
+	"ark-bls12-377",
+	"ark-bn254",
 ]
 hashing = [
 	"arkworks-gadgets",

@@ -6,6 +6,7 @@ use codec::{Decode, Encode};
 use sp_core::H256;
 
 pub use darkwebb_primitives::{
+	field_ops::arkworks::ArkworksIntoFieldBn254,
 	hasher::{HasherModule, InstanceHasher},
 	hashing::ethereum::Bn254Keccak256Hasher,
 	types::{ElementTrait, IntoAbiToken},
@@ -295,6 +296,7 @@ impl pallet_vanchor::Config for Test {
 	type Currency = Currencies;
 	type EthereumHasher = Bn254Keccak256Hasher;
 	type Event = Event;
+	type IntoField = ArkworksIntoFieldBn254;
 	type LinkableTree = LinkableTree;
 	type MaxDepositAmount = MaxDepositAmount;
 	type MaxExtAmount = MaxExtAmount;

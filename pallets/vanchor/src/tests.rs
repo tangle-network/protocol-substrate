@@ -89,17 +89,18 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let out_chain_ids = vec![0, 0];
 		let out_amounts = vec![5, 13];
 
-		let (circuit, root_set, nullifiers, leaves, commitments, ext_data_hash) = setup_circuit_with_raw_inputs(
-			public_amount,
-			recipient.clone(),
-			relayer.clone(),
-			ext_amount,
-			fee,
-			in_chain_id,
-			in_amounts.clone(),
-			out_chain_ids,
-			out_amounts,
-		);
+		let (circuit, root_set, nullifiers, leaves, commitments, ext_data_hash, public_amount_el) =
+			setup_circuit_with_raw_inputs(
+				public_amount,
+				recipient.clone(),
+				relayer.clone(),
+				ext_amount,
+				fee,
+				in_chain_id,
+				in_amounts.clone(),
+				out_chain_ids,
+				out_amounts,
+			);
 
 		let proof = prove(circuit, pub_key_bytes);
 
@@ -117,7 +118,14 @@ fn should_complete_2x2_transaction_with_deposit() {
 			output2,
 		);
 
-		let proof_data = ProofData::new(proof, root_set, nullifiers, commitments, public_amount, ext_data_hash);
+		let proof_data = ProofData::new(
+			proof,
+			root_set,
+			nullifiers,
+			commitments,
+			public_amount_el,
+			ext_data_hash,
+		);
 
 		assert_ok!(VAnchor::transact(
 			Origin::signed(recipient.clone()),
@@ -142,28 +150,28 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		let recipient: AccountId = get_account(4);
 		let relayer: AccountId = get_account(3);
 		let ext_amount: Amount = -5;
-		let ext_amount_abs: Balance = 5;
+		let ext_amount_abs: Balance = ext_amount.try_into().unwrap();
 		let fee: Balance = 2;
 
-		let public_amount = 3;
+		let public_amount = -7;
 		let in_chain_id = 0;
 		let in_amounts = vec![5, 5];
 		let out_chain_ids = vec![0, 0];
-		// FIXME: This is incorrect, we should pass negative `public_amount` to the
-		// circuit
-		let out_amounts = vec![5, 8];
+		// After withdrawing -3
+		let out_amounts = vec![5, 2];
 
-		let (circuit, root_set, nullifiers, leaves, commitments, ext_data_hash) = setup_circuit_with_raw_inputs(
-			public_amount,
-			recipient.clone(),
-			relayer.clone(),
-			ext_amount,
-			fee,
-			in_chain_id,
-			in_amounts.clone(),
-			out_chain_ids,
-			out_amounts,
-		);
+		let (circuit, root_set, nullifiers, leaves, commitments, ext_data_hash, public_amount_el) =
+			setup_circuit_with_raw_inputs(
+				public_amount,
+				recipient.clone(),
+				relayer.clone(),
+				ext_amount,
+				fee,
+				in_chain_id,
+				in_amounts.clone(),
+				out_chain_ids,
+				out_amounts,
+			);
 
 		let proof = prove(circuit, pub_key_bytes);
 
@@ -181,7 +189,14 @@ fn should_complete_2x2_transaction_with_withdraw() {
 			output2,
 		);
 
-		let proof_data = ProofData::new(proof, root_set, nullifiers, commitments, public_amount, ext_data_hash);
+		let proof_data = ProofData::new(
+			proof,
+			root_set,
+			nullifiers,
+			commitments,
+			public_amount_el,
+			ext_data_hash,
+		);
 
 		assert_ok!(VAnchor::transact(
 			Origin::signed(recipient.clone()),

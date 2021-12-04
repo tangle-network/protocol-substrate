@@ -56,6 +56,7 @@ mod tests;
 
 use codec::Encode;
 use darkwebb_primitives::{
+	field_ops::IntoFieldElement,
 	hasher::InstanceHasher,
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
@@ -72,7 +73,10 @@ use orml_traits::{
 	MultiCurrency, MultiCurrencyExtended,
 };
 use sp_runtime::traits::AccountIdConversion;
-use sp_std::{convert::TryInto, prelude::*};
+use sp_std::{
+	convert::{TryFrom, TryInto},
+	prelude::*,
+};
 
 /// Type alias for the orml_traits::MultiCurrency::Balance type
 pub type BalanceOf<T, I> =
@@ -113,6 +117,8 @@ pub mod pallet {
 
 		type EthereumHasher: InstanceHasher;
 
+		type IntoField: IntoFieldElement;
+
 		/// Currency type for taking deposits
 		type Currency: MultiCurrencyExtended<Self::AccountId>;
 
@@ -122,9 +128,13 @@ pub mod pallet {
 		#[pallet::constant]
 		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
 
+		// Max deposit amount
 		type MaxDepositAmount: Get<BalanceOf<Self, I>>;
+		// Max withdraw amount
 		type MinWithdrawAmount: Get<BalanceOf<Self, I>>;
+		// Max external amount
 		type MaxExtAmount: Get<BalanceOf<Self, I>>;
+		// Max fee for relayer
 		type MaxFee: Get<BalanceOf<Self, I>>;
 	}
 
@@ -155,7 +165,7 @@ pub mod pallet {
 			transactor: T::AccountId,
 			tree_id: T::TreeId,
 			leafs: Vec<T::Element>,
-			amount: BalanceOf<T, I>,
+			amount: AmountOf<T, I>,
 		},
 		/// Deposit hook has executed successfully
 		Deposit {
@@ -220,7 +230,7 @@ pub mod pallet {
 		pub fn transact(
 			origin: OriginFor<T>,
 			id: T::TreeId,
-			proof_data: ProofData<T::Element, BalanceOf<T, I>>,
+			proof_data: ProofData<T::Element>,
 			ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, T::Element>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
@@ -280,7 +290,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 	fn transact(
 		transactor: T::AccountId,
 		id: T::TreeId,
-		proof_data: ProofData<T::Element, BalanceOf<T, I>>,
+		proof_data: ProofData<T::Element>,
 		ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, T::Element>,
 	) -> Result<(), DispatchError> {
 		// double check the number of roots
@@ -319,12 +329,18 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			Error::<T, I>::InvalidExtAmount
 		);
 
-		// FIXME: This is not correct. Public amounnt can also be negative, in which
+		// Public amounnt can also be negative, in which
 		// case it would wrap around the field, so we should check if FIELD_SIZE -
 		// public_amount == proof_data.public_amount, in case of a negative ext_amount
-		let calc_public_amount = ext_amount_unsigned - ext_data.fee;
+		let fee_amount = AmountOf::<T, I>::try_from(ext_data.fee).map_err(|_| Error::<T, I>::InvalidFee)?;
+		let calc_public_amount = ext_data.ext_amount - fee_amount;
+		println!("passed amount: {:?}", proof_data.public_amount);
+		println!("on chain calc amount: {:?}", calc_public_amount);
+		let calc_public_amount_bytes = T::IntoField::into_field(calc_public_amount);
+		let calc_public_amount_element = T::Element::from_bytes(&calc_public_amount_bytes);
+		println!("on chain calc amount element: {:?}", calc_public_amount_element);
 		ensure!(
-			proof_data.public_amount == calc_public_amount,
+			proof_data.public_amount == calc_public_amount_element,
 			Error::<T, I>::InvalidPublicAmount
 		);
 
@@ -397,7 +413,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			transactor: transactor.clone(),
 			tree_id: id,
 			leafs: proof_data.output_commitments,
-			amount: proof_data.public_amount,
+			amount: calc_public_amount,
 		});
 		Ok(())
 	}

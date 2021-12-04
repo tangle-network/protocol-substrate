@@ -13,6 +13,9 @@ pub mod hashing;
 #[cfg(feature = "verifying")]
 pub mod verifying;
 
+#[cfg(feature = "field_ops")]
+pub mod field_ops;
+
 pub use hasher::*;
 pub use runtime::*;
 pub use traits::*;
