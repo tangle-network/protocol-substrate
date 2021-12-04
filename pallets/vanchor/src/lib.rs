@@ -334,11 +334,8 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		// public_amount == proof_data.public_amount, in case of a negative ext_amount
 		let fee_amount = AmountOf::<T, I>::try_from(ext_data.fee).map_err(|_| Error::<T, I>::InvalidFee)?;
 		let calc_public_amount = ext_data.ext_amount - fee_amount;
-		println!("passed amount: {:?}", proof_data.public_amount);
-		println!("on chain calc amount: {:?}", calc_public_amount);
 		let calc_public_amount_bytes = T::IntoField::into_field(calc_public_amount);
 		let calc_public_amount_element = T::Element::from_bytes(&calc_public_amount_bytes);
-		println!("on chain calc amount element: {:?}", calc_public_amount_element);
 		ensure!(
 			proof_data.public_amount == calc_public_amount_element,
 			Error::<T, I>::InvalidPublicAmount
@@ -349,17 +346,17 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		let mut bytes = Vec::new();
 
 		bytes.extend_from_slice(&chain_id.using_encoded(element_encoder));
-		bytes.extend_from_slice(&proof_data.public_amount.using_encoded(element_encoder));
+		bytes.extend_from_slice(&proof_data.public_amount.to_bytes());
 		for root in proof_data.roots {
-			bytes.extend_from_slice(&root.encode());
+			bytes.extend_from_slice(&root.to_bytes());
 		}
 		for null in &proof_data.input_nullifiers {
-			bytes.extend_from_slice(&null.encode());
+			bytes.extend_from_slice(&null.to_bytes());
 		}
 		for comm in &proof_data.output_commitments {
-			bytes.extend_from_slice(&comm.encode());
+			bytes.extend_from_slice(&comm.to_bytes());
 		}
-		bytes.extend_from_slice(&proof_data.ext_data_hash.encode());
+		bytes.extend_from_slice(&proof_data.ext_data_hash.to_bytes());
 
 		if proof_data.input_nullifiers.len() == 2 {
 			let res = T::Verifier2x2::verify(&bytes, &proof_data.proof)?;

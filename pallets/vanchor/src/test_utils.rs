@@ -1,7 +1,7 @@
 use crate::mock::*;
 use ark_crypto_primitives::snark::SNARK;
 use ark_ff::{to_bytes, BigInteger, PrimeField, ToBytes, UniformRand};
-use ark_groth16::{Groth16, ProvingKey};
+use ark_groth16::{Groth16, Proof, ProvingKey, VerifyingKey};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::{rand::thread_rng, rc::Rc, vec::Vec};
 use arkworks_circuits::{
@@ -20,7 +20,9 @@ use arkworks_gadgets::{
 };
 use arkworks_utils::{
 	poseidon::PoseidonParameters,
-	utils::common::{setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve},
+	utils::common::{
+		setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, verify_groth16, Curve,
+	},
 };
 use codec::Encode;
 use darkwebb_primitives::{
@@ -175,12 +177,14 @@ pub fn setup_circuit_with_raw_inputs(
 		OUTS,
 		M,
 	>,
+	Element,
+	Element,
 	Vec<Element>,
 	Vec<Element>,
 	Vec<Element>,
 	Vec<Element>,
 	Element,
-	Element,
+	Vec<Bn254Fr>,
 ) {
 	let chain_id_bytes = in_chain_id.using_encoded(element_encoder);
 	let in_chain_id_f = Bn254Fr::from_le_bytes_mod_order(&chain_id_bytes);
@@ -222,15 +226,30 @@ pub fn setup_circuit_with_raw_inputs(
 		.collect();
 	let ext_data_hash_element = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_le());
 	let public_amount_element = Element::from_bytes(&public_amount_f.into_repr().to_bytes_le());
+	let chain_id_element = Element::from_bytes(&in_chain_id_f.into_repr().to_bytes_le());
+
+	let mut public_inputs = vec![in_chain_id_f, public_amount_f];
+	for root_f in root_set {
+		public_inputs.push(root_f);
+	}
+	for null in nullifiers {
+		public_inputs.push(null);
+	}
+	for comm in commitments {
+		public_inputs.push(comm);
+	}
+	public_inputs.push(ext_data_hash);
 
 	(
 		circuit,
+		chain_id_element,
+		public_amount_element,
 		root_elements,
 		nullifier_elements,
 		leaf_elements,
 		commitment_elements,
 		ext_data_hash_element,
-		public_amount_element,
+		public_inputs,
 	)
 }
 
@@ -444,6 +463,13 @@ pub fn prove(
 	let mut proof_bytes = Vec::new();
 	proof.serialize(&mut proof_bytes).unwrap();
 	proof_bytes
+}
+
+pub fn verify(public_inputs: Vec<Bn254Fr>, vk: &[u8], proof: &[u8]) -> bool {
+	let vk = VerifyingKey::<Bn254>::deserialize(vk).unwrap();
+	let proof = Proof::<Bn254>::deserialize(proof).unwrap();
+	let ver_res = verify_groth16(&vk, &public_inputs, &proof);
+	ver_res
 }
 
 pub fn setup_keypairs(n: usize) -> Vec<Keypair<Bn254Fr, PoseidonCRH_x5_2<Bn254Fr>>> {

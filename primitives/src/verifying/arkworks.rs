@@ -10,7 +10,7 @@ pub struct ArkworksVerifierGroth16<E: PairingEngine>(PhantomData<E>);
 
 impl<E: PairingEngine> InstanceVerifier for ArkworksVerifierGroth16<E> {
 	fn verify(public_inp_bytes: &[u8], proof_bytes: &[u8], vk_bytes: &[u8]) -> Result<bool, Error> {
-		let public_input_field_elts = to_field_elements::<E::Fr>(public_inp_bytes).unwrap();
+		let public_input_field_elts = to_field_elements::<E::Fr>(public_inp_bytes)?;
 		let vk = VerifyingKey::<E>::deserialize(vk_bytes)?;
 		let proof = Proof::<E>::deserialize(proof_bytes)?;
 		let res = verify_groth16::<E>(&vk, &public_input_field_elts, &proof);
