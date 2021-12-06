@@ -408,7 +408,8 @@ dependencies = [
 [[package]]
 name = "arkworks-circuits"
 version = "0.4.4"
-source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=hossein/fix_to_use_in_substrate#125371089f9f68da5db77abb7d153e4dbd5abe19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27b7f0b328f53931021fb9a95d3a525ff51c2cc398fefb3406d1db154f7902f7"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -436,7 +437,8 @@ dependencies = [
 [[package]]
 name = "arkworks-gadgets"
 version = "0.4.4"
-source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=hossein/fix_to_use_in_substrate#125371089f9f68da5db77abb7d153e4dbd5abe19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c40c310434ba49130dcbeb4bca23b6f5f6ec53bba059834f4caaad6e58327b3"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -463,7 +465,8 @@ dependencies = [
 [[package]]
 name = "arkworks-utils"
 version = "0.4.4"
-source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=hossein/fix_to_use_in_substrate#125371089f9f68da5db77abb7d153e4dbd5abe19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edb3b840ace3f0d8eae4dd96d5b79e08372f70b850c34173166c4adcba3ed87c"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",

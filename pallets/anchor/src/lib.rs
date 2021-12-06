@@ -351,7 +351,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		let fee_bytes = fee.using_encoded(element_encoder);
 		let refund_bytes = refund.using_encoded(element_encoder);
 		let chain_id_bytes = chain_id.using_encoded(element_encoder);
-		
+
 		bytes.extend_from_slice(&nullifier_hash.encode());
 		bytes.extend_from_slice(&recipient_bytes);
 		bytes.extend_from_slice(&relayer_bytes);
