@@ -1,6 +1,7 @@
-use super::{IntoAbiToken, Token};
+use super::{ElementTrait, IntoAbiToken, Token};
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
+use sp_std::vec::Vec;
 
 #[derive(Clone, Encode, Decode, TypeInfo)]
 pub struct VAnchorMetadata<AccountId, AssetId> {
@@ -12,16 +13,16 @@ pub struct VAnchorMetadata<AccountId, AssetId> {
 }
 
 #[derive(Clone, Encode, Decode, Debug, Eq, PartialEq, TypeInfo)]
-pub struct ProofData<Element> {
+pub struct ProofData<E> {
 	pub proof: Vec<u8>,
-	pub roots: Vec<Element>,
-	pub input_nullifiers: Vec<Element>,
-	pub output_commitments: Vec<Element>,
-	pub public_amount: Element,
-	pub ext_data_hash: Element,
+	pub roots: Vec<E>,
+	pub input_nullifiers: Vec<E>,
+	pub output_commitments: Vec<E>,
+	pub public_amount: E,
+	pub ext_data_hash: E,
 }
 
-impl<E> ProofData<E> {
+impl<E: ElementTrait> ProofData<E> {
 	pub fn new(
 		proof: Vec<u8>,
 		roots: Vec<E>,
@@ -72,13 +73,13 @@ impl<I: Encode, A: Encode, B: Encode, E: Encode> IntoAbiToken for ExtData<I, A, 
 		let fee = Token::Bytes(self.fee.encode());
 		let encrypted_output1 = Token::Bytes(self.encrypted_output1.encode());
 		let encrypted_output2 = Token::Bytes(self.encrypted_output2.encode());
-		Token::Tuple(vec![
-			recipient,
-			relayer,
-			ext_amount,
-			fee,
-			encrypted_output1,
-			encrypted_output2,
-		])
+		let mut touple = Vec::new();
+		touple.push(recipient);
+		touple.push(relayer);
+		touple.push(ext_amount);
+		touple.push(fee);
+		touple.push(encrypted_output1);
+		touple.push(encrypted_output2);
+		Token::Tuple(touple)
 	}
 }

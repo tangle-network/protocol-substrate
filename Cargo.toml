@@ -14,4 +14,4 @@ members = [
 	"open-runtime-module-library/utilities",
 ]
 
-
+exclude = ["pallets/vanchor"]

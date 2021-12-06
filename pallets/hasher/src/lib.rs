@@ -286,7 +286,6 @@ impl<T: Config<I>, I: 'static> HasherModule for Pallet<T, I> {
 		match T::Hasher::hash(data, &params) {
 			Ok(hash) => Ok(hash),
 			Err(_e) => {
-				println!("{:?}", _e);
 				// TODO: Handle properly
 				ensure!(false, Error::<T, I>::HashError);
 				Ok(vec![])

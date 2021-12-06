@@ -1,6 +1,6 @@
 use codec::{Decode, Encode};
-
 use sp_runtime::traits::AtLeast32Bit;
+use sp_std::vec::Vec;
 
 use crate::types::ResourceId;
 
