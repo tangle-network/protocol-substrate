@@ -1,13 +1,8 @@
-use arkworks_gadgets::{
+use arkworks_circuits::setup::mixer::setup_groth16_random_circuit_x5;
+use arkworks_gadgets::prelude::ark_bn254::Bn254;
+use arkworks_utils::{
 	poseidon::PoseidonParameters,
-	prelude::ark_bn254::Bn254,
-	setup::{common::Curve, mixer::setup_groth16_random_circuit_circomx5},
-	utils::{
-		get_mds_poseidon_bls381_x3_5, get_mds_poseidon_bls381_x5_5, get_mds_poseidon_bn254_x3_5,
-		get_mds_poseidon_bn254_x5_5, get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_bls381_x3_5,
-		get_rounds_poseidon_bls381_x5_5, get_rounds_poseidon_bn254_x3_5, get_rounds_poseidon_bn254_x5_5,
-		get_rounds_poseidon_circom_bn254_x5_3,
-	},
+	utils::common::{setup_params_x3_5, setup_params_x5_3, setup_params_x5_5, Curve},
 };
 use common::{AccountId, AuraId, Signature};
 use darkwebb_primitives::Balance;
@@ -261,40 +256,22 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	id: ParaId,
 ) -> GenesisConfig {
+	let curve_bn254 = Curve::Bn254;
+	let curve_bls381 = Curve::Bls381;
 	log::info!("Circom params");
-	let circom_params = {
-		let rounds = get_rounds_poseidon_circom_bn254_x5_3::<arkworks_gadgets::prelude::ark_bn254::Fr>();
-		let mds = get_mds_poseidon_circom_bn254_x5_3::<arkworks_gadgets::prelude::ark_bn254::Fr>();
-		PoseidonParameters::new(rounds, mds)
-	};
+	let circom_params = setup_params_x5_3::<ark_bn254::Fr>(curve_bn254);
 
 	log::info!("BLS381 3x 5 params");
-	let bls381_3x_5_params = {
-		let rounds = get_rounds_poseidon_bls381_x3_5::<arkworks_gadgets::prelude::ark_bls12_381::Fr>();
-		let mds = get_mds_poseidon_bls381_x3_5::<arkworks_gadgets::prelude::ark_bls12_381::Fr>();
-		PoseidonParameters::new(rounds, mds)
-	};
+	let bls381_3x_5_params = setup_params_x3_5::<ark_bls12_381::Fr>(curve_bls381);
 
 	log::info!("BLS381 5x 5 params");
-	let bls381_5x_5_params = {
-		let rounds = get_rounds_poseidon_bls381_x5_5::<arkworks_gadgets::prelude::ark_bls12_381::Fr>();
-		let mds = get_mds_poseidon_bls381_x5_5::<arkworks_gadgets::prelude::ark_bls12_381::Fr>();
-		PoseidonParameters::new(rounds, mds)
-	};
+	let bls381_5x_5_params = setup_params_x5_5::<ark_bls12_381::Fr>(curve_bls381);
 
 	log::info!("BN254 3x 5 params");
-	let bn254_3x_5_params = {
-		let rounds = get_rounds_poseidon_bn254_x3_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
-		let mds = get_mds_poseidon_bn254_x3_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
-		PoseidonParameters::new(rounds, mds)
-	};
+	let bn254_3x_5_params = setup_params_x3_5::<ark_bn254::Fr>(curve_bn254);
 
 	log::info!("BN254 5x 5 params");
-	let bn254_5x_5_params = {
-		let rounds = get_rounds_poseidon_bn254_x5_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
-		let mds = get_mds_poseidon_bn254_x5_5::<arkworks_gadgets::prelude::ark_bn254::Fr>();
-		PoseidonParameters::new(rounds, mds)
-	};
+	let bn254_5x_5_params = setup_params_x5_5::<ark_bn254::Fr>(curve_bn254);
 
 	log::info!("Verifier params");
 	let verifier_params = {

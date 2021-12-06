@@ -4,7 +4,7 @@ use super::{
 	*,
 };
 
-use arkworks_gadgets::setup::common::Curve;
+use arkworks_utils::utils::common::Curve;
 use codec::Encode;
 use darkwebb_primitives::utils::encode_resource_id;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};

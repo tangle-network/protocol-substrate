@@ -406,10 +406,67 @@ dependencies = [
 ]
 
 [[package]]
-name = "arkworks-gadgets"
-version = "0.3.13"
+name = "arkworks-circuits"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03ee3a63f1b49e53f5207dc4abf5d964fcda6c42b9be2b1e27a54e6acf11682f"
+checksum = "27b7f0b328f53931021fb9a95d3a525ff51c2cc398fefb3406d1db154f7902f7"
+dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ed-on-bls12-381",
+ "ark-ed-on-bn254",
+ "ark-ff",
+ "ark-groth16",
+ "ark-marlin",
+ "ark-poly",
+ "ark-poly-commit",
+ "ark-r1cs-std",
+ "ark-relations",
+ "ark-serialize",
+ "ark-snark",
+ "ark-std",
+ "arkworks-gadgets",
+ "arkworks-utils",
+ "blake2",
+ "digest 0.9.0",
+ "paste",
+]
+
+[[package]]
+name = "arkworks-gadgets"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c40c310434ba49130dcbeb4bca23b6f5f6ec53bba059834f4caaad6e58327b3"
+dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ed-on-bls12-381",
+ "ark-ed-on-bn254",
+ "ark-ff",
+ "ark-groth16",
+ "ark-marlin",
+ "ark-poly",
+ "ark-poly-commit",
+ "ark-r1cs-std",
+ "ark-relations",
+ "ark-serialize",
+ "ark-snark",
+ "ark-std",
+ "arkworks-utils",
+ "blake2",
+ "digest 0.9.0",
+ "paste",
+]
+
+[[package]]
+name = "arkworks-utils"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edb3b840ace3f0d8eae4dd96d5b79e08372f70b850c34173166c4adcba3ed87c"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -429,7 +486,10 @@ dependencies = [
  "ark-std",
  "blake2",
  "digest 0.9.0",
+ "ethabi",
+ "hex-literal 0.3.4",
  "paste",
+ "tiny-keccak",
 ]
 
 [[package]]
@@ -2124,9 +2184,13 @@ dependencies = [
 name = "darkwebb-node"
 version = "1.0.0"
 dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
  "ark-serialize",
  "ark-std",
+ "arkworks-circuits",
  "arkworks-gadgets",
+ "arkworks-utils",
  "async-trait",
  "common",
  "cumulus-client-cli",
@@ -2207,6 +2271,7 @@ dependencies = [
  "ark-serialize",
  "ark-std",
  "arkworks-gadgets",
+ "arkworks-utils",
  "blake2",
  "digest 0.9.0",
  "frame-support",
@@ -2239,7 +2304,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
- "hex-literal 0.3.3",
+ "hex-literal 0.3.4",
  "log",
  "orml-currencies",
  "orml-tokens",
@@ -2304,9 +2369,11 @@ dependencies = [
 name = "darkwebb-standalone-node"
 version = "1.0.0"
 dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
  "ark-serialize",
  "ark-std",
- "arkworks-gadgets",
+ "arkworks-utils",
  "async-trait",
  "common",
  "darkwebb-standalone-runtime",
@@ -2385,7 +2452,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
- "hex-literal 0.3.3",
+ "hex-literal 0.3.4",
  "log",
  "orml-currencies",
  "orml-tokens",
@@ -2733,6 +2800,17 @@ checksum = "aa68f1b12764fab894d2755d2518754e71b4fd80ecfb822714a1206c2aab39bf"
 dependencies = [
  "cc",
  "libc",
+]
+
+[[package]]
+name = "ethabi"
+version = "15.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f76ef192b63e8a44b3d08832acebbb984c3fba154b5c26f70037c860202a0d4b"
+dependencies = [
+ "ethereum-types",
+ "hex",
+ "sha3",
 ]
 
 [[package]]
@@ -3457,9 +3535,9 @@ dependencies = [
 
 [[package]]
 name = "hex-literal"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21e4590e13640f19f249fe3e4eca5113bc4289f2497710378190e7f4bd96f45b"
+checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
 
 [[package]]
 name = "hex-literal-impl"
@@ -4034,7 +4112,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.3.3",
+ "hex-literal 0.3.4",
  "log",
  "pallet-authority-discovery",
  "pallet-authorship",
@@ -5523,7 +5601,9 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
+ "arkworks-circuits",
  "arkworks-gadgets",
+ "arkworks-utils",
  "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
@@ -5989,7 +6069,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-gadgets",
+ "arkworks-utils",
  "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
@@ -6134,7 +6214,9 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
+ "arkworks-circuits",
  "arkworks-gadgets",
+ "arkworks-utils",
  "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
@@ -6217,6 +6299,7 @@ dependencies = [
  "ark-ff",
  "ark-std",
  "arkworks-gadgets",
+ "arkworks-utils",
  "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
@@ -6707,7 +6790,9 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
+ "arkworks-circuits",
  "arkworks-gadgets",
+ "arkworks-utils",
  "cumulus-pallet-xcm",
  "cumulus-primitives-core",
  "darkwebb-primitives",
@@ -7837,7 +7922,7 @@ source = "git+https://github.com/paritytech/polkadot?branch=master#81013bec9d8ac
 dependencies = [
  "bitvec 0.20.4",
  "frame-system",
- "hex-literal 0.3.3",
+ "hex-literal 0.3.4",
  "parity-scale-codec",
  "parity-util-mem",
  "polkadot-core-primitives",
@@ -7906,7 +7991,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.3.3",
+ "hex-literal 0.3.4",
  "log",
  "pallet-authority-discovery",
  "pallet-authorship",
@@ -8065,7 +8150,7 @@ dependencies = [
  "beefy-primitives",
  "frame-system-rpc-runtime-api",
  "futures 0.3.17",
- "hex-literal 0.3.3",
+ "hex-literal 0.3.4",
  "kusama-runtime",
  "kvdb",
  "kvdb-rocksdb",
@@ -8970,7 +9055,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
- "hex-literal 0.3.3",
+ "hex-literal 0.3.4",
  "log",
  "pallet-authority-discovery",
  "pallet-authorship",
@@ -12519,7 +12604,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.3.3",
+ "hex-literal 0.3.4",
  "log",
  "pallet-authority-discovery",
  "pallet-authorship",

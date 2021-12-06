@@ -1,9 +1,5 @@
 use crate::test_utils::*;
-use arkworks_gadgets::{
-	poseidon::PoseidonParameters,
-	setup::common::Curve,
-	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
-};
+use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 use codec::Encode;
 use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 use frame_benchmarking::account;
@@ -17,9 +13,8 @@ use crate::mock::*;
 const SEED: u32 = 0;
 
 fn hasher_params() -> Vec<u8> {
-	let rounds = get_rounds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-	let mds = get_mds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-	let params = PoseidonParameters::new(rounds, mds);
+	let curve = Curve::Bn254;
+	let params = setup_params_x5_3::<ark_bn254::Fr>(curve);
 	params.to_bytes()
 }
 
