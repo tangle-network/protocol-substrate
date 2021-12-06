@@ -2,20 +2,14 @@ use crate::{
 	mock::*,
 	test_utils::{get_hash_params, prove, setup_circuit_with_raw_inputs, setup_keys, setup_random_circuit, verify},
 };
-use ark_ff::{BigInteger, PrimeField};
 use arkworks_utils::utils::common::Curve;
-use codec::Encode;
 use darkwebb_primitives::{
-	hashing::ethereum::keccak256,
 	merkle_tree::TreeInspector,
 	types::vanchor::{ExtData, ProofData},
-	utils::truncate_and_pad,
-	AccountId, ElementTrait,
+	AccountId,
 };
 use frame_benchmarking::account;
-use frame_support::{assert_err, assert_ok, error::BadOrigin, traits::OnInitialize};
-use pallet_asset_registry::AssetType;
-use std::convert::TryInto;
+use frame_support::{assert_ok, traits::OnInitialize};
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
@@ -148,7 +142,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 #[test]
 fn should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
-		let (pub_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
 
 		let recipient: AccountId = get_account(4);
 		let relayer: AccountId = get_account(3);
@@ -184,7 +178,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 			out_amounts,
 		);
 
-		let proof = prove(circuit, pub_key_bytes);
+		let proof = prove(circuit, proving_key_bytes);
 		let ver = verify(public_inputs, &verifying_key_bytes, &proof);
 		assert!(ver);
 

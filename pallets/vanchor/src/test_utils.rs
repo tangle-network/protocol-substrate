@@ -189,8 +189,7 @@ pub fn setup_circuit_with_raw_inputs(
 	let chain_id_bytes = in_chain_id.using_encoded(element_encoder);
 	let in_chain_id_f = Bn254Fr::from_le_bytes_mod_order(&chain_id_bytes);
 
-	let public_amount_bytes = public_amount.using_encoded(element_encoder);
-	let public_amount_f = Bn254Fr::from_le_bytes_mod_order(&public_amount_bytes);
+	let public_amount_f = Bn254Fr::from(public_amount);
 
 	let in_amounts_f = in_amounts.iter().map(|x| Bn254Fr::from(*x)).collect();
 	let out_chain_ids_f = out_chain_ids.iter().map(|x| Bn254Fr::from(*x)).collect();

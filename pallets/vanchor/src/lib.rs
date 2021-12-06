@@ -56,7 +56,7 @@ mod tests;
 
 use codec::Encode;
 use darkwebb_primitives::{
-	field_ops::IntoFieldElement,
+	field_ops::IntoPrimeField,
 	hasher::InstanceHasher,
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
@@ -117,7 +117,7 @@ pub mod pallet {
 
 		type EthereumHasher: InstanceHasher;
 
-		type IntoField: IntoFieldElement;
+		type IntoField: IntoPrimeField<AmountOf<Self, I>>;
 
 		/// Currency type for taking deposits
 		type Currency: MultiCurrencyExtended<Self::AccountId>;
