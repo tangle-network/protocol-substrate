@@ -91,11 +91,11 @@ pallet-im-online = { git = "https://github.com/paritytech/substrate", branch = "
 sc-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
-arkworks-gadgets  = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "^0.4", default-features = false }
-arkworks-circuits = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "^0.4", default-features = false }
-arkworks-utils    = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "^0.4", default-features = false }
+arkworks-utils    = { version = "0.4.5", features = ["default_poseidon"], default-features = false }
 ark-std = { version = "^0.3.0" }
 ark-serialize = { version = "^0.3.0" }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 
 [features]
 default = []

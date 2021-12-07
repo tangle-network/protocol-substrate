@@ -1,8 +1,7 @@
 use std::convert::TryInto;
 
 use ark_ff::{BigInteger, PrimeField};
-use arkworks_gadgets::setup::common::Curve;
-
+use arkworks_utils::utils::common::Curve;
 use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 
 use codec::Encode;
@@ -177,7 +176,7 @@ fn anchor_works() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element,
+			leaf_element.clone(),
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -197,6 +196,7 @@ fn anchor_works() {
 			relayer_account_id,
 			fee_value.into(),
 			refund_value.into(),
+			leaf_element.clone(),
 		));
 		// now we check the recipient balance again.
 		let balance_after = Balances::free_balance(recipient_account_id.clone());
@@ -244,7 +244,7 @@ fn double_spending_should_fail() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element,
+			leaf_element.clone(),
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -265,6 +265,7 @@ fn double_spending_should_fail() {
 			relayer_account_id.clone(),
 			fee_value.into(),
 			refund_value.into(),
+			leaf_element.clone(),
 		));
 		// now we check the recipient balance again.
 		let balance_after = Balances::free_balance(recipient_account_id.clone());
@@ -284,6 +285,7 @@ fn double_spending_should_fail() {
 				relayer_account_id,
 				fee_value.into(),
 				refund_value.into(),
+				leaf_element.clone(),
 			),
 			crate::Error::<Test, _>::AlreadyRevealedNullifier
 		);
@@ -321,7 +323,7 @@ fn should_fail_when_invalid_merkle_roots() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element,
+			leaf_element.clone(),
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -346,6 +348,7 @@ fn should_fail_when_invalid_merkle_roots() {
 				relayer_account_id,
 				fee_value.into(),
 				refund_value.into(),
+				leaf_element.clone(),
 			),
 			pallet_linkable_tree::Error::<Test, _>::InvalidMerkleRoots,
 		);
@@ -383,7 +386,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element,
+			leaf_element.clone(),
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -409,6 +412,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 				relayer_account_id,
 				fee_value.into(),
 				refund_value.into(),
+				leaf_element
 			),
 			crate::Error::<Test, _>::InvalidWithdrawProof
 		);
@@ -446,7 +450,7 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element,
+			leaf_element.clone(),
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -464,6 +468,7 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 				recipient_account_id,
 				fee_value.into(),
 				refund_value.into(),
+				leaf_element,
 			),
 			crate::Error::<Test, _>::InvalidWithdrawProof
 		);
@@ -501,7 +506,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element,
+			leaf_element.clone(),
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -520,6 +525,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 				relayer_account_id,
 				100u128,
 				refund_value.into(),
+				leaf_element
 			),
 			crate::Error::<Test, _>::InvalidWithdrawProof
 		);
@@ -557,7 +563,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
-			leaf_element,
+			leaf_element.clone(),
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
@@ -576,6 +582,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 				relayer_account_id,
 				fee_value.into(),
 				refund_value.into(),
+				leaf_element,
 			),
 			crate::Error::<Test, _>::InvalidWithdrawProof
 		);
@@ -688,6 +695,7 @@ fn anchor_works_for_pool_tokens() {
 			relayer_account_id,
 			fee_value.into(),
 			refund_value.into(),
+			leaf_element.clone(),
 		));
 		// now we check the recipient balance again.
 		let balance_after = TokenWrapper::get_balance(pool_share_id, &recipient_account_id);

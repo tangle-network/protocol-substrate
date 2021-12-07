@@ -36,6 +36,7 @@ pub trait AnchorInterface<C: AnchorConfig> {
 		relayer: C::AccountId,
 		fee: C::Balance,
 		refund: C::Balance,
+		commitment: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
 	// Stores nullifier hash from a spend tx
 	fn add_nullifier_hash(id: C::TreeId, nullifier_hash: C::Element) -> Result<(), dispatch::DispatchError>;

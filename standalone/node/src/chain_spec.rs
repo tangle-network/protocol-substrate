@@ -1,9 +1,4 @@
-use arkworks_circuits::setup::mixer::setup_groth16_random_circuit_x5;
-use arkworks_gadgets::prelude::ark_bn254::Bn254;
-use arkworks_utils::{
-	poseidon::PoseidonParameters,
-	utils::common::{setup_params_x3_5, setup_params_x5_3, setup_params_x5_5, Curve},
-};
+use arkworks_utils::utils::common::{setup_params_x3_5, setup_params_x5_3, setup_params_x5_5, Curve};
 use common::{AccountId, BabeId, Balance, Signature};
 
 use darkwebb_runtime::{
@@ -186,11 +181,15 @@ fn testnet_genesis(
 ) -> GenesisConfig {
 	let curve_bn254 = Curve::Bn254;
 	let curve_bls381 = Curve::Bls381;
-	log::info!("Bn254 params");
-	let bn254_params = setup_params_x5_3::<ark_bn254::Fr>(curve_bn254);
+	let circom_params = setup_params_x5_3::<ark_bn254::Fr>(curve_bn254);
 
-	log::info!("Bls381 params");
-	let bls381_params = setup_params_x5_3::<ark_bls381::Fr>(curve_bls381);
+	let bls381_3x_5_params = setup_params_x3_5::<ark_bls12_381::Fr>(curve_bls381);
+
+	let bls381_5x_5_params = setup_params_x5_5::<ark_bls12_381::Fr>(curve_bls381);
+
+	let bn254_3x_5_params = setup_params_x3_5::<ark_bn254::Fr>(curve_bn254);
+
+	let bn254_5x_5_params = setup_params_x5_5::<ark_bn254::Fr>(curve_bn254);
 
 	log::info!("Verifier params");
 	let verifier_params = {

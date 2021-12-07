@@ -408,7 +408,8 @@ dependencies = [
 [[package]]
 name = "arkworks-circuits"
 version = "0.4.5"
-source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=hossein/fix_to_use_in_substrate#b117c30722c0fd93a5bd046f2d2346e1317580ac"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d05d3182729c9d270887f75a5b0a88727d772ba5214ff4f0534395e2ae82beb0"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -426,7 +427,7 @@ dependencies = [
  "ark-serialize",
  "ark-snark",
  "ark-std",
- "arkworks-gadgets 0.4.5",
+ "arkworks-gadgets",
  "arkworks-utils",
  "blake2",
  "digest 0.9.0",
@@ -435,35 +436,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-gadgets"
-version = "0.3.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03ee3a63f1b49e53f5207dc4abf5d964fcda6c42b9be2b1e27a54e6acf11682f"
-dependencies = [
- "ark-bls12-381",
- "ark-bn254",
- "ark-crypto-primitives",
- "ark-ec",
- "ark-ed-on-bls12-381",
- "ark-ed-on-bn254",
- "ark-ff",
- "ark-groth16",
- "ark-marlin",
- "ark-poly",
- "ark-poly-commit",
- "ark-r1cs-std",
- "ark-relations",
- "ark-serialize",
- "ark-snark",
- "ark-std",
- "blake2",
- "digest 0.9.0",
- "paste",
-]
-
-[[package]]
-name = "arkworks-gadgets"
 version = "0.4.5"
-source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=hossein/fix_to_use_in_substrate#b117c30722c0fd93a5bd046f2d2346e1317580ac"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a46abf316c00a436d783fd55912793564260640c51fc4cdca0b54cd25180b609"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -490,7 +465,8 @@ dependencies = [
 [[package]]
 name = "arkworks-utils"
 version = "0.4.5"
-source = "git+https://github.com/webb-tools/arkworks-gadgets.git?branch=hossein/fix_to_use_in_substrate#b117c30722c0fd93a5bd046f2d2346e1317580ac"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e6da2a06d8bed50f279df556a57de503e5c21bcdb91618b1fdb98553786f0a4"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -2208,9 +2184,13 @@ dependencies = [
 name = "darkwebb-node"
 version = "1.0.0"
 dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
  "ark-serialize",
  "ark-std",
- "arkworks-gadgets 0.3.13",
+ "arkworks-circuits",
+ "arkworks-gadgets",
+ "arkworks-utils",
  "async-trait",
  "common",
  "cumulus-client-cli",
@@ -2290,7 +2270,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-gadgets 0.4.5",
+ "arkworks-gadgets",
  "arkworks-utils",
  "blake2",
  "digest 0.9.0",
@@ -2392,10 +2372,10 @@ dependencies = [
 name = "darkwebb-standalone-node"
 version = "1.0.0"
 dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
  "ark-serialize",
  "ark-std",
- "arkworks-circuits",
- "arkworks-gadgets 0.4.5",
  "arkworks-utils",
  "async-trait",
  "common",
@@ -5624,7 +5604,9 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-gadgets 0.3.13",
+ "arkworks-circuits",
+ "arkworks-gadgets",
+ "arkworks-utils",
  "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
@@ -6090,7 +6072,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-gadgets 0.3.13",
+ "arkworks-utils",
  "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
@@ -6235,7 +6217,9 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-gadgets 0.3.13",
+ "arkworks-circuits",
+ "arkworks-gadgets",
+ "arkworks-utils",
  "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
@@ -6317,7 +6301,8 @@ dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
  "ark-std",
- "arkworks-gadgets 0.3.13",
+ "arkworks-gadgets",
+ "arkworks-utils",
  "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
@@ -6808,7 +6793,9 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-gadgets 0.3.13",
+ "arkworks-circuits",
+ "arkworks-gadgets",
+ "arkworks-utils",
  "cumulus-pallet-xcm",
  "cumulus-primitives-core",
  "darkwebb-primitives",
@@ -11956,7 +11943,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.10.2",
+ "parking_lot 0.11.2",
  "regex",
  "serde",
  "serde_json",
@@ -12076,8 +12063,8 @@ version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f559b464de2e2bdabcac6a210d12e9b5a5973c251e102c44c585c71d51bd78e"
 dependencies = [
- "cfg-if 0.1.10",
- "rand 0.7.3",
+ "cfg-if 1.0.0",
+ "rand 0.8.4",
  "static_assertions",
 ]
 

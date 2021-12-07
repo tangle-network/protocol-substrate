@@ -13,10 +13,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 };
 
-use arkworks_gadgets::{
-	poseidon::PoseidonParameters,
-	utils::{get_mds_poseidon_circom_bn254_x5_3, get_rounds_poseidon_circom_bn254_x5_3},
-};
+use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -153,9 +150,8 @@ impl Config for Test {
 }
 
 pub fn hasher_params() -> Vec<u8> {
-	let rounds = get_rounds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-	let mds = get_mds_poseidon_circom_bn254_x5_3::<ark_bn254::Fr>();
-	let params = PoseidonParameters::new(rounds, mds);
+	let curve = Curve::Bn254;
+	let params = setup_params_x5_3::<ark_bn254::Fr>(curve);
 	params.to_bytes()
 }
 

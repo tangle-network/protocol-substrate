@@ -29,9 +29,10 @@ tracing = { version = "0.1", default-features = false, features = [ "attributes"
 blake2 = { version = "0.9", default-features = false }
 digest = "0.9"
 
-ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
-arkworks-utils = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "0.4.5", default-features = false, optional = true }
-arkworks-gadgets = { git = "https://github.com/webb-tools/arkworks-gadgets.git", branch ="hossein/fix_to_use_in_substrate", version = "0.4.5", default-features = false, optional = true }
+ark-crypto-primitives = { version = "^0.3.0", default-features = false }
+arkworks-gadgets  = {  version = "0.4.5", default-features = false, optional = true }
+arkworks-utils    = { version = "0.4.5", default-features = false, optional = true }
+
 codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "2.2.0" }
 
 ethabi = { version = "15.0.0", default-features = false }
