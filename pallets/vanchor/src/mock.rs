@@ -8,11 +8,11 @@ use sp_core::H256;
 pub use darkwebb_primitives::{
 	field_ops::arkworks::ArkworksIntoFieldBn254,
 	hasher::{HasherModule, InstanceHasher},
-	hashing::ethereum::Bn254Keccak256Hasher,
+	hashing::ethereum::Keccak256HasherBn254,
 	types::{ElementTrait, IntoAbiToken},
 	AccountId,
 };
-use darkwebb_primitives::{hashing::BN254PoseidonHasher, verifying::ArkworksBn254Verifier};
+use darkwebb_primitives::{hashing::ArkworksPoseidonHasherBn254, verifying::ArkworksVerifierBn254};
 use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
@@ -120,7 +120,7 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = ArkworksBn254Verifier;
+	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
@@ -128,7 +128,7 @@ impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = BN254PoseidonHasher;
+	type Hasher = ArkworksPoseidonHasherBn254;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
@@ -294,7 +294,7 @@ parameter_types! {
 
 impl pallet_vanchor::Config for Test {
 	type Currency = Currencies;
-	type EthereumHasher = Bn254Keccak256Hasher;
+	type EthereumHasher = Keccak256HasherBn254;
 	type Event = Event;
 	type IntoField = ArkworksIntoFieldBn254;
 	type LinkableTree = LinkableTree;

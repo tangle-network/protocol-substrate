@@ -371,6 +371,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		}
 
 		let is_deposit = ext_data.ext_amount.is_positive();
+		let is_negative = ext_data.ext_amount.is_negative();
 
 		let abs_amount: BalanceOf<T, I> = ext_data
 			.ext_amount
@@ -386,7 +387,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 
 			// deposit tokens to the pallet from the transactor's account
 			<T as Config<I>>::Currency::transfer(vanchor.asset, &transactor, &Self::account_id(), abs_amount)?;
-		} else {
+		} else if is_negative {
 			let min_withdraw = T::MinWithdrawAmount::get();
 			ensure!(abs_amount >= min_withdraw, Error::<T, I>::InvalidExtAmount);
 

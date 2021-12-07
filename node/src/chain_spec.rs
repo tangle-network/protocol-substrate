@@ -1,4 +1,3 @@
-use arkworks_circuits::setup::mixer::setup_groth16_random_circuit_x5;
 use arkworks_gadgets::prelude::ark_bn254::Bn254;
 use arkworks_utils::{
 	poseidon::PoseidonParameters,
@@ -7,9 +6,9 @@ use arkworks_utils::{
 use common::{AccountId, AuraId, Signature};
 use darkwebb_primitives::Balance;
 use darkwebb_runtime::{
-	wasm_binary_unwrap, AuraConfig, BalancesConfig, CouncilConfig, GenesisConfig, MerkleTreeBls381Config,
-	MerkleTreeBn254Config, MixerVerifierConfig, ParachainStakingConfig, HasherBls381Config,
-	HasherBn254Config, SudoConfig, SystemConfig, VerifierBn254Config, VerifierBls381Config KUNITS, UNITS,
+	wasm_binary_unwrap, AuraConfig, BalancesConfig, CouncilConfig, GenesisConfig, HasherBls381Config,
+	HasherBn254Config, MerkleTreeBls381Config, MerkleTreeBn254Config, ParachainStakingConfig, SudoConfig, SystemConfig,
+	VerifierBls381Config, VerifierBn254Config, KUNITS, UNITS,
 };
 
 use cumulus_primitives_core::ParaId;
@@ -258,7 +257,7 @@ fn testnet_genesis(
 	let curve_bn254 = Curve::Bn254;
 	let curve_bls381 = Curve::Bls381;
 	log::info!("Bn254 x5 w3 params");
-	let circom_params = setup_params_x5_3::<ark_bn254::Fr>(curve_bn254);
+	let bn254_x5_3_params = setup_params_x5_3::<ark_bn254::Fr>(curve_bn254);
 
 	log::info!("BLS381 x5 w3 params");
 	let bls381_x5_3_params = setup_params_x5_3::<ark_bls12_381::Fr>(curve_bls381);
@@ -302,11 +301,11 @@ fn testnet_genesis(
 			// Assign network admin rights.
 			key: get_account_id_from_seed::<sr25519::Public>("Alice"),
 		},
-		hasher_bn254: HasherBn254Config {
+		hasher_bn_254: HasherBn254Config {
 			parameters: Some(bn254_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		hasher_bls381: HasherBls381Config {
+		hasher_bls_381: HasherBls381Config {
 			parameters: Some(bls381_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},

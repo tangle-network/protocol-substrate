@@ -6747,6 +6747,48 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-vanchor"
+version = "1.0.0"
+dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ff",
+ "ark-groth16",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "arkworks-circuits",
+ "arkworks-gadgets",
+ "arkworks-utils",
+ "darkwebb-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "orml-currencies",
+ "orml-tokens",
+ "orml-traits",
+ "pallet-asset-registry",
+ "pallet-balances",
+ "pallet-hasher",
+ "pallet-linkable-tree",
+ "pallet-mt",
+ "pallet-token-wrapper",
+ "pallet-treasury",
+ "pallet-verifier",
+ "parity-scale-codec",
+ "rand 0.8.4",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-verifier"
 version = "1.0.0"
 dependencies = [
