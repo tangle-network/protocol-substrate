@@ -7,10 +7,9 @@ use arkworks_utils::{
 use common::{AccountId, AuraId, Signature};
 use darkwebb_primitives::Balance;
 use darkwebb_runtime::{
-	wasm_binary_unwrap, AnchorVerifierConfig, AuraConfig, BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig,
-	BN254CircomPoseidon3x5HasherConfig, BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BalancesConfig,
-	CouncilConfig, GenesisConfig, MerkleTreeConfig, MixerVerifierConfig, ParachainStakingConfig, SudoConfig,
-	SystemConfig, KUNITS, UNITS,
+	wasm_binary_unwrap, AuraConfig, BalancesConfig, CouncilConfig, GenesisConfig, MerkleTreeBls381Config,
+	MerkleTreeBn254Config, MixerVerifierConfig, ParachainStakingConfig, HasherBls381Config,
+	HasherBn254Config, SudoConfig, SystemConfig, VerifierBn254Config, VerifierBls381Config KUNITS, UNITS,
 };
 
 use cumulus_primitives_core::ParaId;
@@ -258,20 +257,11 @@ fn testnet_genesis(
 ) -> GenesisConfig {
 	let curve_bn254 = Curve::Bn254;
 	let curve_bls381 = Curve::Bls381;
-	log::info!("Circom params");
+	log::info!("Bn254 x5 w3 params");
 	let circom_params = setup_params_x5_3::<ark_bn254::Fr>(curve_bn254);
 
-	log::info!("BLS381 3x 5 params");
-	let bls381_3x_5_params = setup_params_x3_5::<ark_bls12_381::Fr>(curve_bls381);
-
-	log::info!("BLS381 5x 5 params");
-	let bls381_5x_5_params = setup_params_x5_5::<ark_bls12_381::Fr>(curve_bls381);
-
-	log::info!("BN254 3x 5 params");
-	let bn254_3x_5_params = setup_params_x3_5::<ark_bn254::Fr>(curve_bn254);
-
-	log::info!("BN254 5x 5 params");
-	let bn254_5x_5_params = setup_params_x5_5::<ark_bn254::Fr>(curve_bn254);
+	log::info!("BLS381 x5 w3 params");
+	let bls381_x5_3_params = setup_params_x5_3::<ark_bls12_381::Fr>(curve_bls381);
 
 	log::info!("Verifier params");
 	let verifier_params = {
@@ -312,35 +302,27 @@ fn testnet_genesis(
 			// Assign network admin rights.
 			key: get_account_id_from_seed::<sr25519::Public>("Alice"),
 		},
-		bls381_poseidon_3x_5_hasher: BLS381Poseidon3x5HasherConfig {
-			parameters: Some(bls381_3x_5_params.to_bytes()),
+		hasher_bn254: HasherBn254Config {
+			parameters: Some(bn254_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		bls381_poseidon_5x_5_hasher: BLS381Poseidon5x5HasherConfig {
-			parameters: Some(bls381_5x_5_params.to_bytes()),
+		hasher_bls381: HasherBls381Config {
+			parameters: Some(bls381_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		bn254_poseidon_3x_5_hasher: BN254Poseidon3x5HasherConfig {
-			parameters: Some(bn254_3x_5_params.to_bytes()),
-			phantom: Default::default(),
-		},
-		bn254_poseidon_5x_5_hasher: BN254Poseidon5x5HasherConfig {
-			parameters: Some(bn254_5x_5_params.to_bytes()),
-			phantom: Default::default(),
-		},
-		bn254_circom_poseidon_3x_5_hasher: BN254CircomPoseidon3x5HasherConfig {
-			parameters: Some(circom_params.to_bytes()),
-			phantom: Default::default(),
-		},
-		mixer_verifier: MixerVerifierConfig {
-			parameters: Some(verifier_params.clone()),
-			phantom: Default::default(),
-		},
-		anchor_verifier: AnchorVerifierConfig {
+		verifier_bn_254: VerifierBn254Config {
 			parameters: Some(verifier_params),
 			phantom: Default::default(),
 		},
-		merkle_tree: MerkleTreeConfig {
+		verifier_bls_381: VerifierBls381Config {
+			parameters: None,
+			phantom: Default::default(),
+		},
+		merkle_tree_bn_254: MerkleTreeBn254Config {
+			phantom: Default::default(),
+			default_hashes: None,
+		},
+		merkle_tree_bls_381: MerkleTreeBls381Config {
 			phantom: Default::default(),
 			default_hashes: None,
 		},

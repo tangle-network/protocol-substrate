@@ -75,9 +75,9 @@ use frame_system::{
 };
 
 use darkwebb_primitives::{
-	hashing::{Bls381PoseidonHasher, Bn254PoseidonHasher},
+	hashing::{ArkworksPoseidonHasherBls381, ArkworksPoseidonHasherBn254},
 	types::ElementTrait,
-	verifying::{ArkworksBls381Verifier, ArkworksBn254Verifier},
+	verifying::{ArkworksVerifierBls381, ArkworksVerifierBn254},
 	Amount, ChainId,
 };
 use frame_support::traits::Nothing;
@@ -975,7 +975,7 @@ impl pallet_hasher::Config<pallet_hasher::Instance1> for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = Bn254PoseidonHasher;
+	type Hasher = ArkworksPoseidonHasherBn254;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
@@ -987,7 +987,7 @@ impl pallet_hasher::Config<pallet_hasher::Instance2> for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = Bls381PoseidonHasher;
+	type Hasher = ArkworksPoseidonHasherBls381;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
@@ -1038,7 +1038,7 @@ impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
 	type Element = Element;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = PalletPoseidonHasherBn254;
+	type Hasher = HasherBn254;
 	type LeafIndex = u32;
 	type MaxTreeDepth = MaxTreeDepth;
 	type RootHistorySize = RootHistorySize;
@@ -1058,7 +1058,7 @@ impl pallet_mt::Config<pallet_mt::Instance2> for Runtime {
 	type Element = Element;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = PalletPoseidonHasherBls381;
+	type Hasher = HasherBls381;
 	type LeafIndex = u32;
 	type MaxTreeDepth = MaxTreeDepth;
 	type RootHistorySize = RootHistorySize;
@@ -1078,7 +1078,7 @@ impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
-	type Verifier = ArkworksBn254Verifier;
+	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
@@ -1090,7 +1090,7 @@ impl pallet_verifier::Config<pallet_verifier::Instance2> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
-	type Verifier = ArkworksBls381Verifier;
+	type Verifier = ArkworksVerifierBls381;
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
@@ -1285,8 +1285,8 @@ construct_runtime!(
 		BagsList: pallet_bags_list::{Pallet, Call, Storage, Event<T>},
 
 		// Hasher pallet
-		PalletPoseidonHasherBn254: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
-		PalletPoseidonHasherBls381: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		HasherBn254: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		HasherBls381: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
@@ -1576,8 +1576,8 @@ impl_runtime_apis! {
 
 			let mut list = Vec::<BenchmarkList>::new();
 
-			list_benchmark!(list, extra, pallet_hasher, Bn254PoseidonHasher);
-			list_benchmark!(list, extra, pallet_hasher, Bls381PoseidonHasher);
+			list_benchmark!(list, extra, pallet_hasher, HasherBn254);
+			list_benchmark!(list, extra, pallet_hasher, HasherBls381);
 			list_benchmark!(list, extra, pallet_mt, MerkleTreeBn254);
 			list_benchmark!(list, extra, pallet_mt, MerkleTreeBls381);
 			list_benchmark!(list, extra, pallet_linkable_tree, LinkableTreeBn254);
@@ -1618,8 +1618,8 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
-			add_benchmark!(params, batches, pallet_hasher, Bn254PoseidonHasher);
-			add_benchmark!(params, batches, pallet_hasher, Bls381PoseidonHasher);
+			add_benchmark!(params, batches, pallet_hasher, HasherBn254);
+			add_benchmark!(params, batches, pallet_hasher, HasherBls381);
 			add_benchmark!(params, batches, pallet_mt, MerkleTreeBn254);
 			add_benchmark!(params, batches, pallet_mt, MerkleTreeBls381);
 			add_benchmark!(params, batches, pallet_linkable_tree, LinkableTreeBn254);

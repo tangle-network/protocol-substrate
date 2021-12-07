@@ -2,11 +2,10 @@ use arkworks_utils::utils::common::{setup_params_x3_5, setup_params_x5_3, setup_
 use common::{AccountId, BabeId, Balance, Signature};
 
 use darkwebb_runtime::{
-	constants::currency::*, wasm_binary_unwrap, AnchorVerifierConfig, AuthorityDiscoveryConfig,
-	BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig, BN254CircomPoseidon3x5HasherConfig,
-	BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BabeConfig, Block, CouncilConfig, DemocracyConfig,
-	ElectionsConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, MerkleTreeConfig,
-	MixerVerifierConfig, SessionConfig, StakerStatus, StakingConfig, SudoConfig,
+	constants::currency::*, wasm_binary_unwrap, AuthorityDiscoveryConfig, BabeConfig, Block, CouncilConfig,
+	DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig, HasherBls381Config, HasherBn254Config,
+	ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config, MerkleTreeBn254Config, SessionConfig, StakerStatus,
+	StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config,
 };
 use itertools::Itertools;
 use sc_chain_spec::ChainSpecExtension;
@@ -174,31 +173,57 @@ pub fn darkwebb_local_testnet_config() -> Result<ChainSpec, String> {
 
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
-	candidates: Vec<(AccountId, AuraId, Balance)>,
-	nominations: Vec<(AccountId, AccountId, Balance)>,
+	initial_authorities: Vec<(
+		AccountId,
+		AccountId,
+		GrandpaId,
+		BabeId,
+		ImOnlineId,
+		AuthorityDiscoveryId,
+	)>,
+	mut initial_nominators: Vec<AccountId>,
 	endowed_accounts: Vec<AccountId>,
-	id: ParaId,
+	root_key: AccountId,
 ) -> GenesisConfig {
 	let curve_bn254 = Curve::Bn254;
 	let curve_bls381 = Curve::Bls381;
-	let circom_params = setup_params_x5_3::<ark_bn254::Fr>(curve_bn254);
+	log::info!("Bn254 x5 w3 params");
+	let bn254_x5_3_params = setup_params_x5_3::<ark_bn254::Fr>(curve_bn254);
 
-	let bls381_3x_5_params = setup_params_x3_5::<ark_bls12_381::Fr>(curve_bls381);
-
-	let bls381_5x_5_params = setup_params_x5_5::<ark_bls12_381::Fr>(curve_bls381);
-
-	let bn254_3x_5_params = setup_params_x3_5::<ark_bn254::Fr>(curve_bn254);
-
-	let bn254_5x_5_params = setup_params_x5_5::<ark_bn254::Fr>(curve_bn254);
+	log::info!("BLS381 x5 w3 params");
+	let bls381_x5_3_params = setup_params_x5_3::<ark_bls12_381::Fr>(curve_bls381);
 
 	log::info!("Verifier params");
 	let verifier_params = {
 		use std::fs;
-		// let pk_bytes = fs::read("../../fixtures/proving_key.bin").unwrap();
-		let vk_bytes = include_bytes!("../../fixtures/verifying_key.bin");
-
-		vk_bytes.to_vec()
+		fs::read("./fixtures/verifying_key.bin").unwrap()
 	};
+
+	let mut endowed_accounts: Vec<AccountId> = endowed_accounts;
+	// endow all authorities and nominators.
+	initial_authorities
+		.iter()
+		.map(|x| &x.0)
+		.chain(initial_nominators.iter())
+		.for_each(|x| {
+			if !endowed_accounts.contains(x) {
+				endowed_accounts.push(x.clone())
+			}
+		});
+
+	let mut unique = vec![];
+	unique.append(&mut endowed_accounts);
+	unique.append(&mut initial_nominators);
+	unique.append(&mut initial_authorities.iter().map(|x| &x.0).cloned().collect::<Vec<_>>());
+	unique = unique.into_iter().unique().into_iter().collect::<Vec<_>>();
+
+	// stakers: all validators and nominators.
+	let mut _rng = rand::thread_rng();
+
+	let num_endowed_accounts = endowed_accounts.len();
+
+	const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
+	const STASH: Balance = ENDOWMENT / 1000;
 
 	log::info!("Genesis Config");
 	GenesisConfig {
@@ -207,59 +232,74 @@ fn testnet_genesis(
 			changes_trie_config: Default::default(),
 		},
 		balances: darkwebb_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
+			balances: unique.iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
 		},
-		parachain_info: darkwebb_runtime::ParachainInfoConfig { parachain_id: id },
-		session: darkwebb_runtime::SessionConfig {
-			keys: candidates
+		indices: IndicesConfig { indices: vec![] },
+		session: SessionConfig {
+			keys: initial_authorities
 				.iter()
-				.cloned()
-				.map(|(acc, aura, _)| {
+				.map(|x| {
 					(
-						acc.clone(),                 // account id
-						acc.clone(),                 // validator id
-						darkwebb_session_keys(aura), // session keys
+						x.0.clone(),
+						x.0.clone(),
+						darkwebb_session_keys(x.2.clone(), x.3.clone(), x.4.clone(), x.5.clone()),
 					)
 				})
+				.collect::<Vec<_>>(),
+		},
+		staking: StakingConfig {
+			validator_count: initial_authorities.len() as u32,
+			minimum_validator_count: initial_authorities.len() as u32,
+			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
+			slash_reward_fraction: Perbill::from_percent(10),
+			stakers: initial_authorities
+				.iter()
+				.map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
+				.collect(),
+			..Default::default()
+		},
+		democracy: DemocracyConfig::default(),
+		elections: ElectionsConfig {
+			members: endowed_accounts
+				.iter()
+				.take((num_endowed_accounts + 1) / 2)
+				.cloned()
+				.map(|member| (member, STASH))
 				.collect(),
 		},
-		aura: Default::default(),
-		aura_ext: Default::default(),
-		parachain_system: Default::default(),
-		sudo: SudoConfig {
-			// Assign network admin rights.
-			key: get_account_id_from_seed::<sr25519::Public>("Alice"),
+		council: CouncilConfig::default(),
+		sudo: SudoConfig { key: root_key },
+		babe: BabeConfig {
+			authorities: vec![],
+			epoch_config: Some(darkwebb_runtime::BABE_GENESIS_EPOCH_CONFIG),
 		},
-		poseidon_hasher_bls381: PoseidonBls381HasherConfig {
-			parameters: Some(bls381_params.to_bytes()),
+		im_online: ImOnlineConfig { keys: vec![] },
+		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
+		grandpa: GrandpaConfig { authorities: vec![] },
+		treasury: Default::default(),
+		hasher_bn_254: HasherBn254Config {
+			parameters: Some(bn254_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		poseidon_hasher_bn254: PoseidonHasherBn254Config {
-			parameters: Some(bn254_params.to_bytes()),
+		hasher_bls_381: HasherBls381Config {
+			parameters: Some(bls381_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		verifier_bn254: VerifierConfig {
-			parameters: Some(verifier_params.clone()),
-			phantom: Default::default(),
-		},
-		anchor_verifier: AnchorVerifierConfig {
+		verifier_bn_254: VerifierBn254Config {
 			parameters: Some(verifier_params),
 			phantom: Default::default(),
 		},
-		merkle_tree: MerkleTreeConfig {
+		verifier_bls_381: VerifierBls381Config {
+			parameters: None,
+			phantom: Default::default(),
+		},
+		merkle_tree_bn_254: MerkleTreeBn254Config {
 			phantom: Default::default(),
 			default_hashes: None,
 		},
-		council: CouncilConfig::default(),
-		treasury: Default::default(),
-		parachain_staking: ParachainStakingConfig {
-			candidates: candidates
-				.iter()
-				.cloned()
-				.map(|(account, _, bond)| (account, bond))
-				.collect(),
-			nominations,
-			inflation_config: darkwebb_test_genesis_inflation_config(endowed_accounts),
+		merkle_tree_bls_381: MerkleTreeBls381Config {
+			phantom: Default::default(),
+			default_hashes: None,
 		},
 	}
 }

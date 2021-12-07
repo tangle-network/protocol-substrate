@@ -18,8 +18,8 @@ impl<E: PairingEngine> InstanceVerifier for ArkworksVerifierGroth16<E> {
 	}
 }
 
-use ark_bls12_381::Bls12_381;
-pub type ArkworksBls381Verifier = ArkworksVerifierGroth16<Bls12_381>;
-
 use ark_bn254::Bn254;
-pub type ArkworksBn254Verifier = ArkworksVerifierGroth16<Bn254>;
+pub type ArkworksVerifierBn254 = ArkworksVerifierGroth16<Bn254>;
+
+use ark_bls12_381::Bls12_381;
+pub type ArkworksVerifierBls381 = ArkworksVerifierGroth16<Bls12_381>;
