@@ -8,7 +8,7 @@ use arkworks_circuits::{
 	circuit::vanchor::VAnchorCircuit as VACircuit,
 	setup::common::{
 		LeafCRHGadget, PoseidonCRH_x5_2, PoseidonCRH_x5_2Gadget, PoseidonCRH_x5_3Gadget, PoseidonCRH_x5_4,
-		PoseidonCRH_x5_4Gadget, PoseidonCRH_x5_5, PoseidonCRH_x5_5Gadget, TreeConfig_x5, Tree_x5,
+		TreeConfig_x5, Tree_x5,
 	},
 };
 use arkworks_gadgets::{

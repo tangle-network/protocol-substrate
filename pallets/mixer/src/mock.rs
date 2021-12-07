@@ -100,7 +100,7 @@ impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::BN254CircomPoseidon3x5Hasher;
+	type Hasher = darkwebb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
@@ -168,7 +168,7 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBn254MixerVerifier;
+	type Verifier = darkwebb_primitives::verifying::ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 

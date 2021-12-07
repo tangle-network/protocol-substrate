@@ -115,7 +115,7 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBls381BridgeVerifier;
+	type Verifier = darkwebb_primitives::verifying::ArkworksVerifierBls381;
 	type WeightInfo = ();
 }
 
@@ -229,6 +229,7 @@ impl pallet_asset_registry::Config for Test {
 parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	pub const HistoryLength: u32 = 30;
+	pub const GetChainId: u32 = 0;
 }
 
 impl pallet_anchor::Config for Test {
@@ -244,6 +245,7 @@ impl pallet_anchor::Config for Test {
 
 impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
+	type GetChainId = GetChainId;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
