@@ -346,20 +346,20 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		let chain_id = <T as pallet_linkable_tree::Config<I>>::GetChainId::get();
 
 		let mut bytes = Vec::new();
-
-		bytes.extend_from_slice(&chain_id.using_encoded(element_encoder));
+		
 		bytes.extend_from_slice(&proof_data.public_amount.to_bytes());
-		for root in proof_data.roots {
-			bytes.extend_from_slice(&root.to_bytes());
-		}
+		bytes.extend_from_slice(&proof_data.ext_data_hash.to_bytes());
 		for null in &proof_data.input_nullifiers {
 			bytes.extend_from_slice(&null.to_bytes());
 		}
 		for comm in &proof_data.output_commitments {
 			bytes.extend_from_slice(&comm.to_bytes());
 		}
-		bytes.extend_from_slice(&proof_data.ext_data_hash.to_bytes());
-
+		bytes.extend_from_slice(&chain_id.using_encoded(element_encoder));
+		for root in proof_data.roots {
+			bytes.extend_from_slice(&root.to_bytes());
+		}
+		
 		if proof_data.input_nullifiers.len() == 2 {
 			let res = T::Verifier2x2::verify(&bytes, &proof_data.proof)?;
 			ensure!(res, Error::<T, I>::InvalidTransactionProof);
