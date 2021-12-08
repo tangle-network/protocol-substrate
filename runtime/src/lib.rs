@@ -53,7 +53,8 @@ use serde::{Deserialize, Serialize};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-// Polkadot imports
+use frame_support::traits::Nothing;
+use orml_currencies::BasicCurrencyAdapter;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
@@ -66,9 +67,12 @@ use xcm_builder::{
 };
 use xcm_executor::{Config, XcmExecutor};
 
-use darkwebb_primitives::{types::ElementTrait, Amount, ChainId};
-use frame_support::traits::Nothing;
-use orml_currencies::BasicCurrencyAdapter;
+use darkwebb_primitives::{
+	hashing::{ArkworksPoseidonHasherBls381, ArkworksPoseidonHasherBn254},
+	types::ElementTrait,
+	verifying::{ArkworksVerifierBls381, ArkworksVerifierBn254},
+	Amount, ChainId,
+};
 
 impl_opaque_keys! {
 	pub struct SessionKeys {
@@ -652,17 +656,15 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
-use pallet_hasher::{Instance1, Instance2, Instance3, Instance4, Instance5};
-
 parameter_types! {
 	pub const StringLimit: u32 = 50;
 }
 
-impl pallet_hasher::Config<Instance1> for Runtime {
+impl pallet_hasher::Config<pallet_hasher::Instance1> for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::BLS381Poseidon3x5Hasher;
+	type Hasher = ArkworksPoseidonHasherBn254;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
@@ -670,47 +672,11 @@ impl pallet_hasher::Config<Instance1> for Runtime {
 	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
-impl pallet_hasher::Config<Instance2> for Runtime {
+impl pallet_hasher::Config<pallet_hasher::Instance2> for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::BLS381Poseidon5x5Hasher;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ();
-	type StringLimit = StringLimit;
-	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
-}
-
-impl pallet_hasher::Config<Instance3> for Runtime {
-	type Currency = Balances;
-	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::BN254Poseidon3x5Hasher;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ();
-	type StringLimit = StringLimit;
-	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
-}
-
-impl pallet_hasher::Config<Instance4> for Runtime {
-	type Currency = Balances;
-	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::BN254Poseidon5x5Hasher;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ();
-	type StringLimit = StringLimit;
-	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
-}
-
-impl pallet_hasher::Config<Instance5> for Runtime {
-	type Currency = Balances;
-	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::BN254CircomPoseidon3x5Hasher;
+	type Hasher = ArkworksPoseidonHasherBls381;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
@@ -753,7 +719,7 @@ impl ElementTrait for Element {
 	}
 }
 
-impl pallet_mt::Config for Runtime {
+impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
@@ -761,7 +727,27 @@ impl pallet_mt::Config for Runtime {
 	type Element = Element;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = BN254CircomPoseidon3x5Hasher;
+	type Hasher = HasherBn254;
+	type LeafIndex = u32;
+	type MaxTreeDepth = MaxTreeDepth;
+	type RootHistorySize = RootHistorySize;
+	type RootIndex = u32;
+	type StringLimit = StringLimit;
+	type TreeDeposit = TreeDeposit;
+	type TreeId = u32;
+	type Two = Two;
+	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
+}
+
+impl pallet_mt::Config<pallet_mt::Instance2> for Runtime {
+	type Currency = Balances;
+	type DataDepositBase = LeafDepositBase;
+	type DataDepositPerByte = LeafDepositPerByte;
+	type DefaultZeroElement = NewDefaultZeroElement;
+	type Element = Element;
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Hasher = HasherBls381;
 	type LeafIndex = u32;
 	type MaxTreeDepth = MaxTreeDepth;
 	type RootHistorySize = RootHistorySize;
@@ -781,7 +767,7 @@ impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBn254MixerVerifier;
+	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
@@ -793,7 +779,7 @@ impl pallet_verifier::Config<pallet_verifier::Instance2> for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ();
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBn254BridgeVerifier;
+	type Verifier = ArkworksVerifierBls381;
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
@@ -834,42 +820,80 @@ parameter_types! {
 	pub const RegistryStringLimit: u32 = 10;
 }
 
-impl pallet_mixer::Config for Runtime {
+impl pallet_mixer::Config<pallet_mixer::Instance1> for Runtime {
 	type Currency = Currencies;
 	type Event = Event;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = MixerPalletId;
-	type Tree = MerkleTree;
-	type Verifier = MixerVerifier;
+	type Tree = MerkleTreeBn254;
+	type Verifier = VerifierBn254;
+	type WeightInfo = pallet_mixer::weights::WebbWeight<Runtime>;
+}
+
+impl pallet_mixer::Config<pallet_mixer::Instance2> for Runtime {
+	type Currency = Currencies;
+	type Event = Event;
+	type NativeCurrencyId = NativeCurrencyId;
+	type PalletId = MixerPalletId;
+	type Tree = MerkleTreeBls381;
+	type Verifier = VerifierBls381;
 	type WeightInfo = pallet_mixer::weights::WebbWeight<Runtime>;
 }
 
 parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	pub const HistoryLength: u32 = 30;
+	pub const GetChainId: ChainId = 0;
 }
 
-impl pallet_linkable_tree::Config for Runtime {
+impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance1> for Runtime {
 	type ChainId = ChainId;
 	type Event = Event;
+	type GetChainId = GetChainId;
 	type HistoryLength = HistoryLength;
-	type Tree = MerkleTree;
+	type Tree = MerkleTreeBn254;
 	type WeightInfo = ();
 }
 
-impl pallet_anchor::Config for Runtime {
+impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance2> for Runtime {
+	type ChainId = ChainId;
+	type Event = Event;
+	type GetChainId = GetChainId;
+	type HistoryLength = HistoryLength;
+	type Tree = MerkleTreeBls381;
+	type WeightInfo = ();
+}
+
+impl pallet_anchor::Config<pallet_anchor::Instance1> for Runtime {
 	type Currency = Currencies;
 	type Event = Event;
-	type LinkableTree = LinkableTree;
+	type LinkableTree = LinkableTreeBn254;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = ();
-	type Verifier = AnchorVerifier;
+	type Verifier = VerifierBn254;
 	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }
 
-impl pallet_anchor_handler::Config for Runtime {
-	type Anchor = Anchor;
+impl pallet_anchor::Config<pallet_anchor::Instance2> for Runtime {
+	type Currency = Currencies;
+	type Event = Event;
+	type LinkableTree = LinkableTreeBls381;
+	type NativeCurrencyId = NativeCurrencyId;
+	type PalletId = AnchorPalletId;
+	type PostDepositHook = ();
+	type Verifier = VerifierBls381;
+	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
+}
+
+impl pallet_anchor_handler::Config<pallet_anchor_handler::Instance1> for Runtime {
+	type Anchor = AnchorBn254;
+	type BridgeOrigin = pallet_bridge::EnsureBridge<Runtime, BridgeInstance>;
+	type Event = Event;
+}
+
+impl pallet_anchor_handler::Config<pallet_anchor_handler::Instance2> for Runtime {
+	type Anchor = AnchorBls381;
 	type BridgeOrigin = pallet_bridge::EnsureBridge<Runtime, BridgeInstance>;
 	type Event = Event;
 }
@@ -1032,25 +1056,40 @@ construct_runtime!(
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Bounties: pallet_bounties::{Pallet, Call, Storage, Event<T>},
 
-		BLS381Poseidon3x5Hasher: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
-		BLS381Poseidon5x5Hasher: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
-		BN254Poseidon3x5Hasher: pallet_hasher::<Instance3>::{Pallet, Call, Storage, Event<T>, Config<T>},
-		BN254Poseidon5x5Hasher: pallet_hasher::<Instance4>::{Pallet, Call, Storage, Event<T>, Config<T>},
-		BN254CircomPoseidon3x5Hasher: pallet_hasher::<Instance5>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		// Hasher pallet
+		HasherBn254: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		HasherBls381: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Storage, Call, Event<T>},
 
-		MixerVerifier: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
-		AnchorVerifier: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
-		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>, Config<T>},
-		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
-		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
+		// Verifier
+		VerifierBn254: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		VerifierBls381: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
-		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
-		AnchorHandler: pallet_anchor_handler::{Pallet, Call, Storage, Event<T>},
+		// Merkle Tree
+		MerkleTreeBn254: pallet_mt::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		MerkleTreeBls381: pallet_mt::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
+
+		// Linkable Merkle Tree
+		LinkableTreeBn254: pallet_linkable_tree::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		LinkableTreeBls381: pallet_linkable_tree::<Instance2>::{Pallet, Call, Storage, Event<T>},
+
+		// Mixer
+		MixerBn254: pallet_mixer::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		MixerBls381: pallet_mixer::<Instance2>::{Pallet, Call, Storage, Event<T>},
+
+		// Anchor
+		AnchorBn254: pallet_anchor::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		AnchorBls381: pallet_anchor::<Instance2>::{Pallet, Call, Storage, Event<T>},
+
+		// Anchor Handler
+		AnchorHandlerBn254: pallet_anchor_handler::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		AnchorHandlerBls381: pallet_anchor_handler::<Instance2>::{Pallet, Call, Storage, Event<T>},
+
+		// Bridge
 		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		HelloXcm: pallet_hello::{Pallet, Call, Storage, Event<T>},
 
@@ -1198,7 +1237,7 @@ impl_runtime_apis! {
 
 	impl pallet_mt_rpc_runtime_api::MerkleTreeApi<Block, Element> for Runtime {
 		fn get_leaf(tree_id: u32, index: u32) -> Option<Element> {
-			let v = MerkleTree::leaves(tree_id, index);
+			let v = MerkleTreeBn254::leaves(tree_id, index);
 			if v == Element::default() {
 				None
 			} else {
@@ -1224,17 +1263,18 @@ impl_runtime_apis! {
 
 			let mut list = Vec::<BenchmarkList>::new();
 
-			list_benchmark!(list, extra, pallet_hasher, BLS381Poseidon3x5Hasher);
-			list_benchmark!(list, extra, pallet_hasher, BLS381Poseidon3x5Hasher);
-			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon3x5Hasher);
-			list_benchmark!(list, extra, pallet_hasher, BN254Poseidon5x5Hasher);
-			list_benchmark!(list, extra, pallet_hasher, BN254CircomPoseidon3x5Hasher);
-			list_benchmark!(list, extra, pallet_mt, MerkleTree);
-			list_benchmark!(list, extra, pallet_linkable_tree, LinkableTree);
-			list_benchmark!(list, extra, pallet_anchor, Anchor);
-			list_benchmark!(list, extra, pallet_mixer, Mixer);
-			list_benchmark!(list, extra, pallet_verifier, AnchorVerifier);
-			list_benchmark!(list, extra, pallet_verifier, MixerVerifier);
+			list_benchmark!(list, extra, pallet_hasher, HasherBn254);
+			list_benchmark!(list, extra, pallet_hasher, HasherBls381);
+			list_benchmark!(list, extra, pallet_mt, MerkleTreeBn254);
+			list_benchmark!(list, extra, pallet_mt, MerkleTreeBls381);
+			list_benchmark!(list, extra, pallet_linkable_tree, LinkableTreeBn254);
+			list_benchmark!(list, extra, pallet_linkable_tree, LinkableTreeBls381);
+			list_benchmark!(list, extra, pallet_anchor, AnchorBn254);
+			list_benchmark!(list, extra, pallet_anchor, AnchorBls381);
+			list_benchmark!(list, extra, pallet_mixer, MixerBn254);
+			list_benchmark!(list, extra, pallet_mixer, MixerBls381);
+			list_benchmark!(list, extra, pallet_verifier, VerifierBn254);
+			list_benchmark!(list, extra, pallet_verifier, VerifierBls381);
 			list_benchmark!(list, extra, pallet_token_wrapper, TokenWrapper);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
@@ -1266,17 +1306,18 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
-			add_benchmark!(params, batches, pallet_hasher, BLS381Poseidon3x5Hasher);
-			add_benchmark!(params, batches, pallet_hasher, BLS381Poseidon3x5Hasher);
-			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon3x5Hasher);
-			add_benchmark!(params, batches, pallet_hasher, BN254Poseidon5x5Hasher);
-			add_benchmark!(params, batches, pallet_hasher, BN254CircomPoseidon3x5Hasher);
-			add_benchmark!(params, batches, pallet_mt, MerkleTree);
-			add_benchmark!(params, batches, pallet_linkable_tree, LinkableTree);
-			add_benchmark!(params, batches, pallet_anchor, Anchor);
-			add_benchmark!(params, batches, pallet_mixer, Mixer);
-			add_benchmark!(params, batches, pallet_verifier, AnchorVerifier);
-			add_benchmark!(params, batches, pallet_verifier, MixerVerifier);
+			add_benchmark!(params, batches, pallet_hasher, HasherBn254);
+			add_benchmark!(params, batches, pallet_hasher, HasherBls381);
+			add_benchmark!(params, batches, pallet_mt, MerkleTreeBn254);
+			add_benchmark!(params, batches, pallet_mt, MerkleTreeBls381);
+			add_benchmark!(params, batches, pallet_linkable_tree, LinkableTreeBn254);
+			add_benchmark!(params, batches, pallet_linkable_tree, LinkableTreeBls381);
+			add_benchmark!(params, batches, pallet_anchor, AnchorBn254);
+			add_benchmark!(params, batches, pallet_anchor, AnchorBls381);
+			add_benchmark!(params, batches, pallet_mixer, MixerBn254);
+			add_benchmark!(params, batches, pallet_mixer, MixerBls254);
+			add_benchmark!(params, batches, pallet_verifier, VerifierBn254);
+			add_benchmark!(params, batches, pallet_verifier, VerifierBls381);
 			add_benchmark!(params, batches, pallet_token_wrapper, TokenWrapper);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }

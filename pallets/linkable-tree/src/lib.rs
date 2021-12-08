@@ -86,6 +86,9 @@ pub mod pallet {
 		/// ChainID for anchor edges
 		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 
+		// Getter of id of the current chain
+		type GetChainId: Get<Self::ChainId>;
+
 		/// The tree
 		type Tree: TreeInterface<Self::AccountId, Self::TreeId, Self::Element>
 			+ TreeInspector<Self::AccountId, Self::TreeId, Self::Element>;

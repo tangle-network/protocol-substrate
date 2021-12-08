@@ -2,11 +2,10 @@ use arkworks_utils::utils::common::{setup_params_x3_5, setup_params_x5_3, setup_
 use common::{AccountId, BabeId, Balance, Signature};
 
 use darkwebb_runtime::{
-	constants::currency::*, wasm_binary_unwrap, AnchorVerifierConfig, AuthorityDiscoveryConfig,
-	BLS381Poseidon3x5HasherConfig, BLS381Poseidon5x5HasherConfig, BN254CircomPoseidon3x5HasherConfig,
-	BN254Poseidon3x5HasherConfig, BN254Poseidon5x5HasherConfig, BabeConfig, Block, CouncilConfig, DemocracyConfig,
-	ElectionsConfig, GenesisConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, MerkleTreeConfig,
-	MixerVerifierConfig, SessionConfig, StakerStatus, StakingConfig, SudoConfig,
+	constants::currency::*, wasm_binary_unwrap, AuthorityDiscoveryConfig, BabeConfig, Block, CouncilConfig,
+	DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig, HasherBls381Config, HasherBn254Config,
+	ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config, MerkleTreeBn254Config, SessionConfig, StakerStatus,
+	StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config,
 };
 use itertools::Itertools;
 use sc_chain_spec::ChainSpecExtension;
@@ -188,20 +187,15 @@ fn testnet_genesis(
 ) -> GenesisConfig {
 	let curve_bn254 = Curve::Bn254;
 	let curve_bls381 = Curve::Bls381;
-	let circom_params = setup_params_x5_3::<ark_bn254::Fr>(curve_bn254);
+	log::info!("Bn254 x5 w3 params");
+	let bn254_x5_3_params = setup_params_x5_3::<ark_bn254::Fr>(curve_bn254);
 
-	let bls381_3x_5_params = setup_params_x3_5::<ark_bls12_381::Fr>(curve_bls381);
+	log::info!("BLS381 x5 w3 params");
+	let bls381_x5_3_params = setup_params_x5_3::<ark_bls12_381::Fr>(curve_bls381);
 
-	let bls381_5x_5_params = setup_params_x5_5::<ark_bls12_381::Fr>(curve_bls381);
-
-	let bn254_3x_5_params = setup_params_x3_5::<ark_bn254::Fr>(curve_bn254);
-
-	let bn254_5x_5_params = setup_params_x5_5::<ark_bn254::Fr>(curve_bn254);
-
+	log::info!("Verifier params");
 	let verifier_params = {
 		use std::fs;
-		// let pk_bytes = fs::read("../../fixtures/proving_key.bin").unwrap();
-
 		fs::read("./fixtures/verifying_key.bin").unwrap()
 	};
 
@@ -231,6 +225,7 @@ fn testnet_genesis(
 	const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
 	const STASH: Balance = ENDOWMENT / 1000;
 
+	log::info!("Genesis Config");
 	GenesisConfig {
 		system: darkwebb_runtime::SystemConfig {
 			code: wasm_binary_unwrap().to_vec(),
@@ -282,35 +277,27 @@ fn testnet_genesis(
 		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
 		grandpa: GrandpaConfig { authorities: vec![] },
 		treasury: Default::default(),
-		bls381_poseidon_3x_5_hasher: BLS381Poseidon3x5HasherConfig {
-			parameters: Some(bls381_3x_5_params.to_bytes()),
+		hasher_bn_254: HasherBn254Config {
+			parameters: Some(bn254_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		bls381_poseidon_5x_5_hasher: BLS381Poseidon5x5HasherConfig {
-			parameters: Some(bls381_5x_5_params.to_bytes()),
+		hasher_bls_381: HasherBls381Config {
+			parameters: Some(bls381_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		bn254_poseidon_3x_5_hasher: BN254Poseidon3x5HasherConfig {
-			parameters: Some(bn254_3x_5_params.to_bytes()),
-			phantom: Default::default(),
-		},
-		bn254_poseidon_5x_5_hasher: BN254Poseidon5x5HasherConfig {
-			parameters: Some(bn254_5x_5_params.to_bytes()),
-			phantom: Default::default(),
-		},
-		bn254_circom_poseidon_3x_5_hasher: BN254CircomPoseidon3x5HasherConfig {
-			parameters: Some(circom_params.to_bytes()),
-			phantom: Default::default(),
-		},
-		mixer_verifier: MixerVerifierConfig {
-			parameters: Some(verifier_params.clone()),
-			phantom: Default::default(),
-		},
-		anchor_verifier: AnchorVerifierConfig {
+		verifier_bn_254: VerifierBn254Config {
 			parameters: Some(verifier_params),
 			phantom: Default::default(),
 		},
-		merkle_tree: MerkleTreeConfig {
+		verifier_bls_381: VerifierBls381Config {
+			parameters: None,
+			phantom: Default::default(),
+		},
+		merkle_tree_bn_254: MerkleTreeBn254Config {
+			phantom: Default::default(),
+			default_hashes: None,
+		},
+		merkle_tree_bls_381: MerkleTreeBls381Config {
 			phantom: Default::default(),
 			default_hashes: None,
 		},

@@ -1,4 +1,7 @@
+pub mod vanchor;
+
 use codec::{Decode, Encode};
+pub use ethabi::{encode, Token};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_runtime::traits::MaybeSerializeDeserialize;
@@ -82,5 +85,42 @@ pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy + TypeInfo 
 			let buf: Vec<u8> = Vec::with_capacity(length);
 			buf == vec
 		}
+	}
+}
+
+pub trait IntoAbiToken {
+	fn into_abi(&self) -> Token;
+	fn encode_abi(&self) -> Vec<u8> {
+		let token = self.into_abi();
+		let encoded_input = encode(&[token]);
+		encoded_input
+	}
+}
+
+impl IntoAbiToken for i128 {
+	fn into_abi(&self) -> Token {
+		let bytes = self.encode();
+		let mut bytes32: [u8; 32] = [0; 32];
+		for (i, byte) in bytes.iter().enumerate() {
+			bytes32[i] = *byte;
+		}
+		Token::Int(bytes32.into())
+	}
+}
+
+impl IntoAbiToken for u128 {
+	fn into_abi(&self) -> Token {
+		let bytes = self.encode();
+		let mut bytes32: [u8; 32] = [0; 32];
+		for (i, byte) in bytes.iter().enumerate() {
+			bytes32[i] = *byte;
+		}
+		Token::Uint(bytes32.into())
+	}
+}
+
+impl IntoAbiToken for [u8; 32] {
+	fn into_abi(&self) -> Token {
+		Token::Bytes(self.to_vec())
 	}
 }

@@ -1,31 +1,40 @@
 #![allow(clippy::zero_prefixed_literal)]
 
-use crate as pallet_anchor_handler;
+use super::*;
+use crate as pallet_vanchor;
 use codec::{Decode, Encode};
-pub use darkwebb_primitives::{ElementTrait, InstanceHasher};
-use frame_support::{ord_parameter_types, parameter_types, traits::Nothing, PalletId};
+use sp_core::H256;
+
+pub use darkwebb_primitives::{
+	field_ops::arkworks::ArkworksIntoFieldBn254,
+	hasher::{HasherModule, InstanceHasher},
+	hashing::ethereum::Keccak256HasherBn254,
+	types::{ElementTrait, IntoAbiToken},
+	AccountId,
+};
+use darkwebb_primitives::{hashing::ArkworksPoseidonHasherBn254, verifying::ArkworksVerifierBn254};
+use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
-
-pub use pallet_balances;
 use serde::{Deserialize, Serialize};
-use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, IdentityLookup},
+	Permill,
 };
+
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
-pub type AccountId = u64;
 pub type Balance = u128;
+
 pub type BlockNumber = u64;
-pub type CurrencyId = u32;
-pub type ChainId = u32;
 /// Type for storing the id of an asset.
 pub type AssetId = u32;
 /// Signed version of Balance
 pub type Amount = i128;
+pub type CurrencyId = u32;
+pub type ChainId = u32;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -38,14 +47,14 @@ frame_support::construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
 		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
-		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
-		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
-		AnchorHandler: pallet_anchor_handler::{Pallet, Call, Storage, Event<T>},
-		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		VAnchor: pallet_vanchor::{Pallet, Call, Storage, Event<T>},
+		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
+		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>}
 	}
 );
 
@@ -84,10 +93,6 @@ parameter_types! {
 	pub const ExistentialDeposit: u64 = 1;
 }
 
-ord_parameter_types! {
-	pub const One: u64 = 1;
-}
-
 impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = Balance;
@@ -110,27 +115,20 @@ parameter_types! {
 impl pallet_verifier::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksVerifierBls381;
+	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
-}
-
-pub struct TestHasher;
-impl InstanceHasher for TestHasher {
-	fn hash(data: &[u8], _params: &[u8]) -> Result<Vec<u8>, ark_crypto_primitives::Error> {
-		Ok(data.to_vec())
-	}
 }
 
 impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
-	type Hasher = TestHasher;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Hasher = ArkworksPoseidonHasherBn254;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
@@ -143,15 +141,16 @@ parameter_types! {
 	pub const LeafDepositBase: u64 = 1;
 	pub const LeafDepositPerByte: u64 = 1;
 	pub const Two: u64 = 2;
-	pub const MaxTreeDepth: u8 = 255;
+	pub const MaxTreeDepth: u8 = 30;
 	pub const RootHistorySize: u32 = 1096;
 	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
 	pub const DefaultZeroElement: Element = Element([
-		047, 229, 076, 096, 211, 172, 171, 243,
-		052, 058, 053, 182, 235, 161, 093, 180,
-		130, 027, 052, 015, 118, 231, 065, 226,
-		036, 150, 133, 237, 072, 153, 175, 108,
+		108, 175, 153, 072, 237, 133, 150, 036,
+		226, 065, 231, 118, 015, 052, 027, 130,
+		180, 093, 161, 235, 182, 053, 058, 052,
+		243, 171, 172, 211, 096, 076, 229, 047,
 	]);
+	pub const MockZeroElement: Element = Element([0; 32]);
 }
 
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Serialize, Deserialize)]
@@ -173,10 +172,10 @@ impl pallet_mt::Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
-	type DefaultZeroElement = DefaultZeroElement;
+	type DefaultZeroElement = MockZeroElement;
 	type Element = Element;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
 	type LeafIndex = u32;
 	type MaxTreeDepth = MaxTreeDepth;
@@ -186,6 +185,20 @@ impl pallet_mt::Config for Test {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const HistoryLength: u32 = 30;
+	pub const GetChainId: ChainId = 0;
+}
+
+impl pallet_linkable_tree::Config for Test {
+	type ChainId = ChainId;
+	type Event = Event;
+	type GetChainId = GetChainId;
+	type HistoryLength = HistoryLength;
+	type Tree = MerkleTree;
 	type WeightInfo = ();
 }
 
@@ -216,124 +229,94 @@ impl orml_currencies::Config for Test {
 }
 
 impl pallet_asset_registry::Config for Test {
-	type AssetId = darkwebb_primitives::AssetId;
+	type AssetId = AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
 	type Event = Event;
 	type NativeAssetId = NativeCurrencyId;
-	type RegistryOrigin = frame_system::EnsureRoot<u64>;
+	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
 }
 
 parameter_types! {
-	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
-	pub const HistoryLength: u32 = 30;
-	pub const GetChainId: u32 = 0;
+	pub const ProposalBond: Permill = Permill::from_percent(5);
+	pub const ProposalBondMinimum: u64 = 1;
+	pub const SpendPeriod: u64 = 2;
+	pub const Burn: Permill = Permill::from_percent(50);
+	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const BountyUpdatePeriod: u32 = 20;
+	pub const BountyCuratorDeposit: Permill = Permill::from_percent(50);
+	pub const BountyValueMinimum: u64 = 1;
+	pub const MaxApprovals: u32 = 100;
 }
 
-impl pallet_anchor::Config for Test {
-	type Currency = Currencies;
+impl pallet_treasury::Config for Test {
+	type ApproveOrigin = frame_system::EnsureRoot<AccountId>;
+	type Burn = Burn;
+	type BurnDestination = ();
+	type Currency = pallet_balances::Pallet<Test>;
 	type Event = Event;
-	type LinkableTree = LinkableTree;
-	type NativeCurrencyId = NativeCurrencyId;
-	type PalletId = AnchorPalletId;
-	type PostDepositHook = ();
-	type Verifier = VerifierPallet;
-	type WeightInfo = ();
-}
-
-impl pallet_linkable_tree::Config for Test {
-	type ChainId = ChainId;
-	type GetChainId = GetChainId;
-	type Event = Event;
-	type HistoryLength = HistoryLength;
-	type Tree = MerkleTree;
+	type MaxApprovals = MaxApprovals;
+	type OnSlash = ();
+	type PalletId = TreasuryPalletId;
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type RejectOrigin = frame_system::EnsureRoot<AccountId>;
+	type SpendFunds = ();
+	type SpendPeriod = SpendPeriod;
+	// Just gets burned.
 	type WeightInfo = ();
 }
 
 parameter_types! {
-	pub const ChainIdentifier: u8 = 5;
-	pub const ProposalLifetime: u64 = 50;
-	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
+	pub const TokenWrapperPalletId: PalletId = PalletId(*b"py/tkwrp");
+	pub const WrappingFeeDivider: u128 = 100;
 }
 
-type BridgeInstance = pallet_bridge::Instance1;
-impl pallet_bridge::Config<BridgeInstance> for Test {
-	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
-	type BridgeAccountId = BridgeAccountId;
-	type ChainId = ChainId;
-	type ChainIdentifier = ChainIdentifier;
+impl pallet_token_wrapper::Config for Test {
+	type AssetRegistry = AssetRegistry;
+	type Currency = Currencies;
 	type Event = Event;
-	type Proposal = Call;
-	type ProposalLifetime = ProposalLifetime;
+	type PalletId = TokenWrapperPalletId;
+	type TreasuryId = TreasuryPalletId;
+	type WeightInfo = ();
+	type WrappingFeeDivider = WrappingFeeDivider;
 }
 
-impl pallet_anchor_handler::Config for Test {
-	type Anchor = Anchor;
-	type BridgeOrigin = pallet_bridge::EnsureBridge<Test, BridgeInstance>;
+parameter_types! {
+	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
+	pub const MaxFee: Balance = 100;
+	pub const MaxDepositAmount: Balance = 1000;
+	pub const MinWithdrawAmount: Balance = 1;
+	pub const MaxExtAmount: Balance = 1000;
+}
+
+impl pallet_vanchor::Config for Test {
+	type Currency = Currencies;
+	type EthereumHasher = Keccak256HasherBn254;
 	type Event = Event;
+	type IntoField = ArkworksIntoFieldBn254;
+	type LinkableTree = LinkableTree;
+	type MaxDepositAmount = MaxDepositAmount;
+	type MaxExtAmount = MaxExtAmount;
+	type MaxFee = MaxFee;
+	type MinWithdrawAmount = MinWithdrawAmount;
+	type NativeCurrencyId = NativeCurrencyId;
+	type PalletId = VAnchorPalletId;
+	type PostDepositHook = ();
+	type Verifier2x2 = VerifierPallet;
 }
 
-pub const RELAYER_A: u64 = 0x2;
-pub const RELAYER_B: u64 = 0x3;
-pub const RELAYER_C: u64 = 0x4;
-pub const ENDOWED_BALANCE: u128 = 100_000_000;
+pub fn assert_last_event<T: pallet_vanchor::Config>(generic_event: <T as pallet_vanchor::Config>::Event) {
+	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
+}
 
+// Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let bridge_id = PalletId(*b"dw/bridg").into_account();
-	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(bridge_id, ENDOWED_BALANCE), (RELAYER_A, ENDOWED_BALANCE)],
-	}
-	.assimilate_storage(&mut t)
-	.unwrap();
+	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
+
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
-}
-
-fn last_event() -> Event {
-	system::Pallet::<Test>::events()
-		.pop()
-		.map(|e| e.event)
-		.expect("Event expected")
-}
-
-pub fn expect_event<E: Into<Event>>(e: E) {
-	assert_eq!(last_event(), e.into());
-}
-
-// Asserts that the event was emitted at some point.
-pub fn event_exists<E: Into<Event>>(e: E) {
-	let actual: Vec<Event> = system::Pallet::<Test>::events()
-		.iter()
-		.map(|e| e.event.clone())
-		.collect();
-	let e: Event = e.into();
-	let mut exists = false;
-	for evt in actual {
-		if evt == e {
-			exists = true;
-			break;
-		}
-	}
-	assert!(exists);
-}
-
-// Checks events against the latest. A contiguous set of events must be
-// provided. They must include the most recent event, but do not have to include
-// every past event.
-pub fn assert_events(mut expected: Vec<Event>) {
-	let mut actual: Vec<Event> = system::Pallet::<Test>::events()
-		.iter()
-		.map(|e| e.event.clone())
-		.collect();
-
-	expected.reverse();
-
-	for evt in expected {
-		let next = actual.pop().expect("event expected");
-		assert_eq!(next, evt, "Events don't match");
-	}
 }

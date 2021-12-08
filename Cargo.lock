@@ -407,9 +407,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-circuits"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27b7f0b328f53931021fb9a95d3a525ff51c2cc398fefb3406d1db154f7902f7"
+checksum = "d05d3182729c9d270887f75a5b0a88727d772ba5214ff4f0534395e2ae82beb0"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -436,9 +436,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-gadgets"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3c40c310434ba49130dcbeb4bca23b6f5f6ec53bba059834f4caaad6e58327b3"
+checksum = "a46abf316c00a436d783fd55912793564260640c51fc4cdca0b54cd25180b609"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -464,9 +464,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-utils"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edb3b840ace3f0d8eae4dd96d5b79e08372f70b850c34173166c4adcba3ed87c"
+checksum = "4e6da2a06d8bed50f279df556a57de503e5c21bcdb91618b1fdb98553786f0a4"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -2274,13 +2274,16 @@ dependencies = [
  "arkworks-utils",
  "blake2",
  "digest 0.9.0",
+ "ethabi",
  "frame-support",
  "frame-system",
+ "hex-literal 0.3.4",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
  "sp-runtime",
  "sp-std",
+ "tiny-keccak",
  "tracing",
 ]
 
@@ -6737,6 +6740,48 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-vanchor"
+version = "1.0.0"
+dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ff",
+ "ark-groth16",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "arkworks-circuits",
+ "arkworks-gadgets",
+ "arkworks-utils",
+ "darkwebb-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "orml-currencies",
+ "orml-tokens",
+ "orml-traits",
+ "pallet-asset-registry",
+ "pallet-balances",
+ "pallet-hasher",
+ "pallet-linkable-tree",
+ "pallet-mt",
+ "pallet-token-wrapper",
+ "pallet-treasury",
+ "pallet-verifier",
+ "parity-scale-codec",
+ "rand 0.8.4",
+ "scale-info",
+ "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",

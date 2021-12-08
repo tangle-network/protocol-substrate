@@ -1,8 +1,8 @@
 use codec::{Decode, Encode};
-
 use sp_runtime::traits::AtLeast32Bit;
+use sp_std::vec::Vec;
 
-use crate::ResourceId;
+use crate::types::ResourceId;
 
 /// The ResourceId type is a 32 bytes array represented as the following:
 /// ```md
@@ -57,6 +57,19 @@ where
 	let tree_id = TreeId::decode(&mut &*tree_id_bytes).unwrap();
 	let chain_id = ChainId::decode(&mut &*chain_id_bytes).unwrap();
 	(tree_id, chain_id)
+}
+
+/// Truncate and pad 256 bit slice
+pub fn truncate_and_pad(t: &[u8]) -> Vec<u8> {
+	let mut truncated_bytes = t[..20].to_vec();
+	truncated_bytes.extend_from_slice(&[0u8; 12]);
+	truncated_bytes
+}
+
+pub fn element_encoder(v: &[u8]) -> [u8; 32] {
+	let mut output = [0u8; 32];
+	output.iter_mut().zip(v).for_each(|(b1, b2)| *b1 = *b2);
+	output
 }
 
 #[cfg(test)]

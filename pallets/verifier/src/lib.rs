@@ -65,6 +65,7 @@ pub mod weights;
 use sp_runtime::traits::{Saturating, Zero};
 use sp_std::prelude::*;
 
+use codec::Encode;
 use darkwebb_primitives::{types::DepositDetails, verifier::*};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchError},

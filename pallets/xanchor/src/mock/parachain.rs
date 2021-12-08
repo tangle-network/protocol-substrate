@@ -350,7 +350,7 @@ impl pallet_verifier::Config for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksBn254BridgeVerifier;
+	type Verifier = darkwebb_primitives::verifying::ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
@@ -358,7 +358,7 @@ impl pallet_hasher::Config for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::BN254CircomPoseidon3x5Hasher;
+	type Hasher = darkwebb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
@@ -464,11 +464,13 @@ impl pallet_asset_registry::Config for Runtime {
 parameter_types! {
 	pub const HistoryLength: u32 = 30;
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
+	pub const GetChainId: ChainId = 0;
 }
 
 impl pallet_linkable_tree::Config for Runtime {
 	type ChainId = ChainId;
 	type Event = Event;
+	type GetChainId = GetChainId;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();
