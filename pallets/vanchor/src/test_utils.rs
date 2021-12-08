@@ -227,17 +227,18 @@ pub fn setup_circuit_with_raw_inputs(
 	let public_amount_element = Element::from_bytes(&public_amount_f.into_repr().to_bytes_le());
 	let chain_id_element = Element::from_bytes(&in_chain_id_f.into_repr().to_bytes_le());
 
-	let mut public_inputs = vec![in_chain_id_f, public_amount_f];
-	for root_f in root_set {
-		public_inputs.push(root_f);
-	}
+	let mut public_inputs = vec![public_amount_f];
+	public_inputs.push(ext_data_hash);
 	for null in nullifiers {
 		public_inputs.push(null);
 	}
 	for comm in commitments {
 		public_inputs.push(comm);
 	}
-	public_inputs.push(ext_data_hash);
+	public_inputs.push(in_chain_id_f);
+	for root_f in root_set {
+		public_inputs.push(root_f);
+	}
 
 	(
 		circuit,
