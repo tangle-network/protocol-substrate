@@ -73,13 +73,13 @@ impl<I: Encode, A: Encode, B: Encode, E: Encode> IntoAbiToken for ExtData<I, A, 
 		let fee = Token::Bytes(self.fee.encode());
 		let encrypted_output1 = Token::Bytes(self.encrypted_output1.encode());
 		let encrypted_output2 = Token::Bytes(self.encrypted_output2.encode());
-		let mut touple = Vec::new();
-		touple.push(recipient);
-		touple.push(relayer);
-		touple.push(ext_amount);
-		touple.push(fee);
-		touple.push(encrypted_output1);
-		touple.push(encrypted_output2);
-		Token::Tuple(touple)
+		let mut ext_data_args = Vec::new();
+		ext_data_args.push(recipient);
+		ext_data_args.push(relayer);
+		ext_data_args.push(ext_amount);
+		ext_data_args.push(fee);
+		ext_data_args.push(encrypted_output1);
+		ext_data_args.push(encrypted_output2);
+		Token::Tuple(ext_data_args)
 	}
 }
