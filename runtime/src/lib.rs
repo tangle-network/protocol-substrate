@@ -53,13 +53,6 @@ use serde::{Deserialize, Serialize};
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-// Polkadot imports
-use darkwebb_primitives::{
-	hashing::{ArkworksPoseidonHasherBls381, ArkworksPoseidonHasherBn254},
-	types::ElementTrait,
-	verifying::{ArkworksVerifierBls381, ArkworksVerifierBn254},
-	Amount, ChainId,
-};
 use frame_support::traits::Nothing;
 use orml_currencies::BasicCurrencyAdapter;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody, XcmPassthrough};
@@ -73,6 +66,13 @@ use xcm_builder::{
 	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{Config, XcmExecutor};
+
+use darkwebb_primitives::{
+	hashing::{ArkworksPoseidonHasherBls381, ArkworksPoseidonHasherBn254},
+	types::ElementTrait,
+	verifying::{ArkworksVerifierBls381, ArkworksVerifierBn254},
+	Amount, ChainId,
+};
 
 impl_opaque_keys! {
 	pub struct SessionKeys {

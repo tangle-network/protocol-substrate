@@ -61,6 +61,8 @@ fn create_vanchor(asset_id: u32) -> u32 {
 
 fn create_vanchor_with_deposits(amounts: &Vec<Balance>, leaves: &Vec<Element>) -> (u32, Element) {
 	let tree_id = create_vanchor(0);
+
+	// TODO: Use transact function to insert leafs
 	for (leaf, amount) in leaves.iter().zip(amounts.iter()) {
 		VAnchor::deposit(Origin::signed(get_account(1)), tree_id, *leaf, *amount).unwrap();
 	}

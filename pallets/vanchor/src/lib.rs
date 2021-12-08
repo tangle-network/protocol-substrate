@@ -214,6 +214,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		// TODO: Remove this function, use transact instead
 		#[pallet::weight(0)]
 		pub fn deposit(
 			origin: OriginFor<T>,
@@ -265,6 +266,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		Ok(id)
 	}
 
+	// TODO: Remove this function, use transact instead
 	fn deposit(
 		depositor: T::AccountId,
 		id: T::TreeId,
