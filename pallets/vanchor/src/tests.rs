@@ -63,7 +63,7 @@ fn create_vanchor(asset_id: u32) -> u32 {
 	MerkleTree::next_tree_id() - 1
 }
 
-fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
+fn create_vanchor_with_deposits(amounts: Vec<Balance>, proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
 	let tree_id = create_vanchor(0);
 
 	let transactor = get_account(0);
@@ -75,7 +75,7 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
 	let public_amount = 10;
 	let in_chain_id = 0;
 	let in_amounts = vec![0, 0];
-	let out_amounts = vec![5, 5];
+
 	let out_chain_ids = vec![0, 0];
 
 	let (circuit, public_inputs_el, _, _, out_utxos) = setup_circuit_with_data_raw(
@@ -87,7 +87,7 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
 		in_chain_id,
 		in_amounts.clone(),
 		out_chain_ids,
-		out_amounts.to_vec(),
+		amounts,
 	);
 
 	let proof = prove(circuit, proving_key_bytes);
@@ -128,7 +128,8 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
 fn should_complete_2x2_transaction_with_deposit() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(&proving_key_bytes);
+		let initial_amounts = vec![5, 5];
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(initial_amounts, &proving_key_bytes);
 
 		let recipient: AccountId = get_account(4);
 		let relayer: AccountId = get_account(3);
@@ -139,7 +140,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let out_chain_ids = vec![0, 0];
 		let out_amounts = vec![5, 13];
 
-		let (circuit, public_inputs_el, ..) = setup_circuit_with_input_utxos_raw(
+		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_input_utxos_raw(
 			public_amount,
 			recipient.clone(),
 			relayer.clone(),
@@ -151,6 +152,10 @@ fn should_complete_2x2_transaction_with_deposit() {
 		);
 
 		let proof = prove(circuit, &proving_key_bytes);
+
+		// Check locally
+		let res = verify(public_inputs_f, &verifying_key_bytes, &proof);
+		assert!(res);
 
 		// Deconstructing public inputs
 		let public_amount = public_inputs_el[1];
@@ -193,7 +198,8 @@ fn should_complete_2x2_transaction_with_deposit() {
 fn should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(&proving_key_bytes);
+		let initial_amounts = vec![5, 5];
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(initial_amounts, &proving_key_bytes);
 
 		let recipient: AccountId = get_account(4);
 		let relayer: AccountId = get_account(3);
@@ -205,7 +211,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		// After withdrawing -7
 		let out_amounts = vec![1, 2];
 
-		let (circuit, public_inputs_el, ..) = setup_circuit_with_input_utxos_raw(
+		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_input_utxos_raw(
 			public_amount,
 			recipient.clone(),
 			relayer.clone(),
@@ -217,6 +223,10 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		);
 
 		let proof = prove(circuit, &proving_key_bytes);
+
+		// Check locally
+		let res = verify(public_inputs_f, &verifying_key_bytes, &proof);
+		assert!(res);
 
 		// Deconstructing public inputs
 		let public_amount = public_inputs_el[1];
