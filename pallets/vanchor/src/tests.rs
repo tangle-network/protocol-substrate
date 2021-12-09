@@ -1,6 +1,9 @@
 use crate::{
 	mock::*,
-	test_utils::{get_hash_params, prove, setup_circuit_with_raw_inputs, setup_keys, setup_random_circuit, verify},
+	test_utils::{
+		get_hash_params, prove, setup_circuit_with_data_raw, setup_circuit_with_input_utxos_raw, setup_keys,
+		setup_random_circuit, verify, Utxos,
+	},
 };
 use arkworks_utils::utils::common::Curve;
 use darkwebb_primitives::{
@@ -38,6 +41,7 @@ fn setup_environment(curve: Curve) -> (Vec<u8>, Vec<u8>) {
 	));
 	// 4. and top-up some accounts with some balance
 	for account_id in [
+		account::<AccountId>("", 0, SEED),
 		account::<AccountId>("", 1, SEED),
 		account::<AccountId>("", 2, SEED),
 		account::<AccountId>("", 3, SEED),
@@ -59,23 +63,72 @@ fn create_vanchor(asset_id: u32) -> u32 {
 	MerkleTree::next_tree_id() - 1
 }
 
-fn create_vanchor_with_deposits(amounts: &Vec<Balance>, leaves: &Vec<Element>) -> (u32, Element) {
+fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
 	let tree_id = create_vanchor(0);
 
-	// TODO: Use transact function to insert leafs
-	for (leaf, amount) in leaves.iter().zip(amounts.iter()) {
-		VAnchor::deposit(Origin::signed(get_account(1)), tree_id, *leaf, *amount).unwrap();
-	}
+	let transactor = get_account(0);
+	let recipient: AccountId = get_account(0);
+	let relayer: AccountId = get_account(0);
+	let ext_amount: Amount = 10;
+	let fee: Balance = 0;
 
-	let on_chain_root = MerkleTree::get_root(tree_id).unwrap();
+	let public_amount = 10;
+	let in_chain_id = 0;
+	let in_amounts = vec![0, 0];
+	let out_amounts = vec![5, 5];
+	let out_chain_ids = vec![0, 0];
 
-	(tree_id, on_chain_root)
+	let (circuit, public_inputs_el, _, _, out_utxos) = setup_circuit_with_data_raw(
+		public_amount,
+		recipient.clone(),
+		relayer.clone(),
+		ext_amount,
+		fee,
+		in_chain_id,
+		in_amounts.clone(),
+		out_chain_ids,
+		out_amounts.to_vec(),
+	);
+
+	let proof = prove(circuit, proving_key_bytes);
+
+	// Deconstructing public inputs
+	let public_amount = public_inputs_el[1];
+	let root_set = public_inputs_el[1..3].to_vec();
+	let nullifiers = public_inputs_el[3..5].to_vec();
+	let commitments = public_inputs_el[5..7].to_vec();
+	let ext_data_hash = public_inputs_el[8];
+
+	// Constructing external data
+	let output1 = commitments[0].clone();
+	let output2 = commitments[1].clone();
+	let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		recipient.clone(),
+		relayer.clone(),
+		ext_amount,
+		fee,
+		output1,
+		output2,
+	);
+
+	// Constructing proof data
+	let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+	assert_ok!(VAnchor::transact(
+		Origin::signed(transactor),
+		tree_id,
+		proof_data,
+		ext_data
+	));
+
+	(tree_id, out_utxos)
 }
 
 #[test]
 fn should_complete_2x2_transaction_with_deposit() {
 	new_test_ext().execute_with(|| {
-		let (pub_key_bytes, _) = setup_environment(Curve::Bn254);
+		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(&proving_key_bytes);
 
 		let recipient: AccountId = get_account(4);
 		let relayer: AccountId = get_account(3);
@@ -83,29 +136,30 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let fee: Balance = 2;
 
 		let public_amount = 8;
-		let in_chain_id = 0;
-		let in_amounts = vec![5, 5];
 		let out_chain_ids = vec![0, 0];
 		let out_amounts = vec![5, 13];
 
-		let (circuit, _chain_id_el, public_amount_el, root_set, nullifiers, leaves, commitments, ext_data_hash, _) =
-			setup_circuit_with_raw_inputs(
-				public_amount,
-				recipient.clone(),
-				relayer.clone(),
-				ext_amount,
-				fee,
-				in_chain_id,
-				in_amounts.clone(),
-				out_chain_ids,
-				out_amounts,
-			);
+		let (circuit, public_inputs_el, ..) = setup_circuit_with_input_utxos_raw(
+			public_amount,
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			in_utxos,
+			out_chain_ids,
+			out_amounts.to_vec(),
+		);
 
-		let proof = prove(circuit, pub_key_bytes);
+		let proof = prove(circuit, &proving_key_bytes);
 
-		let (tree_id, on_chain_root) = create_vanchor_with_deposits(&in_amounts, &leaves);
-		assert_eq!(root_set[0], on_chain_root);
+		// Deconstructing public inputs
+		let public_amount = public_inputs_el[1];
+		let root_set = public_inputs_el[1..3].to_vec();
+		let nullifiers = public_inputs_el[3..5].to_vec();
+		let commitments = public_inputs_el[5..7].to_vec();
+		let ext_data_hash = public_inputs_el[8];
 
+		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
 		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
@@ -117,14 +171,8 @@ fn should_complete_2x2_transaction_with_deposit() {
 			output2,
 		);
 
-		let proof_data = ProofData::new(
-			proof,
-			root_set,
-			nullifiers,
-			commitments,
-			public_amount_el,
-			ext_data_hash,
-		);
+		// Constructing proof data
+		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_ok!(VAnchor::transact(
 			Origin::signed(recipient.clone()),
@@ -145,6 +193,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 fn should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(&proving_key_bytes);
 
 		let recipient: AccountId = get_account(4);
 		let relayer: AccountId = get_account(3);
@@ -152,41 +201,31 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		let fee: Balance = 2;
 
 		let public_amount = -7;
-		let in_chain_id = 0;
-		let in_amounts = vec![5, 5];
 		let out_chain_ids = vec![0, 0];
 		// After withdrawing -7
 		let out_amounts = vec![1, 2];
 
-		let (
-			circuit,
-			_chain_id_el,
-			public_amount_el,
-			root_set,
-			nullifiers,
-			leaves,
-			commitments,
-			ext_data_hash,
-			public_inputs,
-		) = setup_circuit_with_raw_inputs(
+		let (circuit, public_inputs_el, ..) = setup_circuit_with_input_utxos_raw(
 			public_amount,
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			in_chain_id,
-			in_amounts.clone(),
+			in_utxos,
 			out_chain_ids,
-			out_amounts,
+			out_amounts.to_vec(),
 		);
 
-		let proof = prove(circuit, proving_key_bytes);
-		let ver = verify(public_inputs, &verifying_key_bytes, &proof);
-		assert!(ver);
+		let proof = prove(circuit, &proving_key_bytes);
 
-		let (tree_id, on_chain_root) = create_vanchor_with_deposits(&in_amounts, &leaves);
-		assert_eq!(root_set[0], on_chain_root);
+		// Deconstructing public inputs
+		let public_amount = public_inputs_el[1];
+		let root_set = public_inputs_el[1..3].to_vec();
+		let nullifiers = public_inputs_el[3..5].to_vec();
+		let commitments = public_inputs_el[5..7].to_vec();
+		let ext_data_hash = public_inputs_el[8];
 
+		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
 		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
@@ -198,14 +237,8 @@ fn should_complete_2x2_transaction_with_withdraw() {
 			output2,
 		);
 
-		let proof_data = ProofData::new(
-			proof,
-			root_set,
-			nullifiers,
-			commitments,
-			public_amount_el,
-			ext_data_hash,
-		);
+		// Constructing proof data
+		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_ok!(VAnchor::transact(
 			Origin::signed(recipient.clone()),
