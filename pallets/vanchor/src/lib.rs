@@ -186,6 +186,10 @@ pub mod pallet {
 		AlreadyRevealedNullifier,
 		// Invalid external amount
 		InvalidExtAmount,
+		// Maximum deposit amount exceeded
+		InvalidDepositAmount,
+		// Maximum withdraw amount exceeded
+		InvalidWithdrawAmount,
 		// Invalid external data
 		InvalidExtData,
 		// Invalid input nullifiers
@@ -320,12 +324,12 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 
 		// Making sure that public amount and fee are correct
 		ensure!(ext_data.fee < T::MaxFee::get(), Error::<T, I>::InvalidFee);
+
 		let ext_amount_unsigned: BalanceOf<T, I> = ext_data
 			.ext_amount
 			.abs()
 			.try_into()
 			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
-
 		ensure!(
 			ext_amount_unsigned < T::MaxExtAmount::get(),
 			Error::<T, I>::InvalidExtAmount
@@ -360,12 +364,11 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		}
 		bytes.extend_from_slice(&proof_data.ext_data_hash.to_bytes());
 
-		if proof_data.input_nullifiers.len() == 2 {
-			let res = T::Verifier2x2::verify(&bytes, &proof_data.proof)?;
-			ensure!(res, Error::<T, I>::InvalidTransactionProof);
-		} else {
-			ensure!(false, Error::<T, I>::InvalidInputNullifiers);
-		}
+		let res = match (proof_data.input_nullifiers.len(), proof_data.output_commitments.len()) {
+			(2, 2) => T::Verifier2x2::verify(&bytes, &proof_data.proof)?,
+			_ => false,
+		};
+		ensure!(res, Error::<T, I>::InvalidTransactionProof);
 
 		// Flag nullifiers as used
 		for nullifier in &proof_data.input_nullifiers {
@@ -384,14 +387,14 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		if is_deposit {
 			ensure!(
 				abs_amount <= T::MaxDepositAmount::get(),
-				Error::<T, I>::InvalidExtAmount
+				Error::<T, I>::InvalidDepositAmount
 			);
 
 			// deposit tokens to the pallet from the transactor's account
 			<T as Config<I>>::Currency::transfer(vanchor.asset, &transactor, &Self::account_id(), abs_amount)?;
 		} else if is_negative {
 			let min_withdraw = T::MinWithdrawAmount::get();
-			ensure!(abs_amount >= min_withdraw, Error::<T, I>::InvalidExtAmount);
+			ensure!(abs_amount >= min_withdraw, Error::<T, I>::InvalidWithdrawAmount);
 
 			// Withdraw to recipient account
 			<T as Config<I>>::Currency::transfer(vanchor.asset, &Self::account_id(), &ext_data.recipient, abs_amount)?;

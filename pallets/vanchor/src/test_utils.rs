@@ -237,10 +237,7 @@ pub fn setup_circuit_with_data_raw(
 		out_amounts_f,
 	);
 
-	let root_set = public_inputs_f[2..4].to_vec();
-	let nullifiers = public_inputs_f[4..6].to_vec();
-	let commitments = public_inputs_f[6..8].to_vec();
-	let ext_data_hash = public_inputs_f[8];
+	let (_, _, root_set, nullifiers, commitments, ext_data_hash) = deconstruct_public_inputs(&public_inputs_f);
 
 	let chain_id_element = Element::from_bytes(&in_chain_id_f.into_repr().to_bytes_le());
 	let public_amount_element = Element::from_bytes(&public_amount_f.into_repr().to_bytes_le());
@@ -313,10 +310,7 @@ pub fn setup_circuit_with_input_utxos_raw(
 		out_amounts_f,
 	);
 
-	let root_set = public_inputs_f[2..4].to_vec();
-	let nullifiers = public_inputs_f[4..6].to_vec();
-	let commitments = public_inputs_f[6..8].to_vec();
-	let ext_data_hash = public_inputs_f[8];
+	let (_, _, root_set, nullifiers, commitments, ext_data_hash) = deconstruct_public_inputs(&public_inputs_f);
 
 	let chain_id_element = Element::from_bytes(&chain_id.into_repr().to_bytes_le());
 	let public_amount_element = Element::from_bytes(&public_amount_f.into_repr().to_bytes_le());
@@ -730,6 +724,58 @@ pub fn setup_tree_and_set(
 
 pub fn setup_arbitrary_data(ext_data: Bn254Fr) -> VAnchorArbitraryData<Bn254Fr> {
 	VAnchorArbitraryData::new(ext_data)
+}
+
+pub fn deconstruct_public_inputs(
+	public_inputs: &Vec<Bn254Fr>,
+) -> (
+	Bn254Fr,      // Chain Id
+	Bn254Fr,      // Public amount
+	Vec<Bn254Fr>, // Roots
+	Vec<Bn254Fr>, // Input tx Nullifiers
+	Vec<Bn254Fr>, // Output tx commitments
+	Bn254Fr,      // External amount
+) {
+	let chain_id = public_inputs[0];
+	let public_amount = public_inputs[1];
+	let root_set = public_inputs[2..4].to_vec();
+	let nullifiers = public_inputs[4..6].to_vec();
+	let commitments = public_inputs[6..8].to_vec();
+	let ext_data_hash = public_inputs[8];
+	(
+		chain_id,
+		public_amount,
+		root_set,
+		nullifiers,
+		commitments,
+		ext_data_hash,
+	)
+}
+
+pub fn deconstruct_public_inputs_el(
+	public_inputs: &Vec<Element>,
+) -> (
+	Element,      // Chain Id
+	Element,      // Public amount
+	Vec<Element>, // Roots
+	Vec<Element>, // Input tx Nullifiers
+	Vec<Element>, // Output tx commitments
+	Element,      // External amount
+) {
+	let chain_id = public_inputs[0];
+	let public_amount = public_inputs[1];
+	let root_set = public_inputs[2..4].to_vec();
+	let nullifiers = public_inputs[4..6].to_vec();
+	let commitments = public_inputs[6..8].to_vec();
+	let ext_data_hash = public_inputs[8];
+	(
+		chain_id,
+		public_amount,
+		root_set,
+		nullifiers,
+		commitments,
+		ext_data_hash,
+	)
 }
 
 /// Truncate and pad 256 bit slice in reverse

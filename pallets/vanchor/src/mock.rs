@@ -286,10 +286,10 @@ impl pallet_token_wrapper::Config for Test {
 
 parameter_types! {
 	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
-	pub const MaxFee: Balance = 100;
-	pub const MaxDepositAmount: Balance = 1000;
-	pub const MinWithdrawAmount: Balance = 1;
-	pub const MaxExtAmount: Balance = 1000;
+	pub const MaxFee: Balance = 5;
+	pub const MaxDepositAmount: Balance = 10;
+	pub const MinWithdrawAmount: Balance = 3;
+	pub const MaxExtAmount: Balance = 21;
 }
 
 impl pallet_vanchor::Config for Test {

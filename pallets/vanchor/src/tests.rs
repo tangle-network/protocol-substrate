@@ -1,29 +1,35 @@
 use crate::{
 	mock::*,
 	test_utils::{
-		get_hash_params, prove, setup_circuit_with_data_raw, setup_circuit_with_input_utxos_raw, setup_keys,
-		setup_random_circuit, verify, Utxos,
+		deconstruct_public_inputs_el, get_hash_params, prove, setup_circuit_with_data_raw,
+		setup_circuit_with_input_utxos_raw, setup_keys, setup_random_circuit, verify, Utxos,
 	},
+	Error,
 };
 use arkworks_utils::utils::common::Curve;
 use darkwebb_primitives::{
-	merkle_tree::TreeInspector,
 	types::vanchor::{ExtData, ProofData},
 	AccountId,
 };
 use frame_benchmarking::account;
-use frame_support::{assert_ok, traits::OnInitialize};
+use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
 const M: usize = 2;
-const DEFAULT_BALANCE: u128 = 100_000_000;
+const DEFAULT_BALANCE: u128 = 10;
+const BIG_DEFAULT_BALANCE: u128 = 20;
+
+const TRANSACTOR_ACCOUNT_ID: u32 = 0;
+const RECIPIENT_ACCOUNT_ID: u32 = 1;
+const BIG_TRANSACTOR_ACCOUNT_ID: u32 = 2;
+const RELAYER_ACCOUNT_ID: u32 = 3;
 
 pub fn get_account(id: u32) -> AccountId {
 	account::<AccountId>("", id, SEED)
 }
 
-fn setup_environment(curve: Curve) -> (Vec<u8>, Vec<u8>) {
+fn setup_environment(_curve: Curve) -> (Vec<u8>, Vec<u8>) {
 	let (_, params3, ..) = get_hash_params::<ark_bn254::Fr>(Curve::Bn254);
 	// 1. Setup The Hasher Pallet.
 	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
@@ -39,18 +45,20 @@ fn setup_environment(curve: Curve) -> (Vec<u8>, Vec<u8>) {
 		Origin::root(),
 		verifier_key_bytes.clone()
 	));
-	// 4. and top-up some accounts with some balance
-	for account_id in [
-		account::<AccountId>("", 0, SEED),
-		account::<AccountId>("", 1, SEED),
-		account::<AccountId>("", 2, SEED),
-		account::<AccountId>("", 3, SEED),
-		account::<AccountId>("", 4, SEED),
-		account::<AccountId>("", 5, SEED),
-		account::<AccountId>("", 6, SEED),
-	] {
-		assert_ok!(Balances::set_balance(Origin::root(), account_id, DEFAULT_BALANCE, 0));
-	}
+
+	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
+	let big_transactor = account::<AccountId>("", BIG_TRANSACTOR_ACCOUNT_ID, SEED);
+
+	// Transactor should have some amount
+	assert_ok!(Balances::set_balance(Origin::root(), transactor, DEFAULT_BALANCE, 0));
+
+	// Big transactor should have even more amount
+	assert_ok!(Balances::set_balance(
+		Origin::root(),
+		big_transactor,
+		BIG_DEFAULT_BALANCE,
+		0
+	));
 
 	// finally return the provingkey bytes
 	(proving_key_bytes, verifier_key_bytes)
@@ -63,19 +71,20 @@ fn create_vanchor(asset_id: u32) -> u32 {
 	MerkleTree::next_tree_id() - 1
 }
 
-fn create_vanchor_with_deposits(amounts: Vec<Balance>, proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
+fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
 	let tree_id = create_vanchor(0);
 
-	let transactor = get_account(0);
-	let recipient: AccountId = get_account(0);
-	let relayer: AccountId = get_account(0);
-	let ext_amount: Amount = 10;
+	let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
+	let recipient = get_account(RECIPIENT_ACCOUNT_ID);
+	let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+	let ext_amount: Amount = DEFAULT_BALANCE as i128;
 	let fee: Balance = 0;
 
-	let public_amount = 10;
+	let public_amount = DEFAULT_BALANCE as i128;
 	let in_chain_id = 0;
 	let in_amounts = vec![0, 0];
 	let out_chain_ids = vec![0, 0];
+	let out_amounts = vec![DEFAULT_BALANCE, 0];
 
 	let (circuit, public_inputs_el, _, _, out_utxos) = setup_circuit_with_data_raw(
 		public_amount,
@@ -86,17 +95,14 @@ fn create_vanchor_with_deposits(amounts: Vec<Balance>, proving_key_bytes: &Vec<u
 		in_chain_id,
 		in_amounts.clone(),
 		out_chain_ids,
-		amounts,
+		out_amounts,
 	);
 
 	let proof = prove(circuit, proving_key_bytes);
 
 	// Deconstructing public inputs
-	let public_amount = public_inputs_el[1];
-	let root_set = public_inputs_el[2..4].to_vec();
-	let nullifiers = public_inputs_el[4..6].to_vec();
-	let commitments = public_inputs_el[6..8].to_vec();
-	let ext_data_hash = public_inputs_el[8];
+	let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+		deconstruct_public_inputs_el(&public_inputs_el);
 
 	// Constructing external data
 	let output1 = commitments[0].clone();
@@ -127,27 +133,31 @@ fn create_vanchor_with_deposits(amounts: Vec<Balance>, proving_key_bytes: &Vec<u
 fn should_complete_2x2_transaction_with_deposit() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
-		let initial_amounts = vec![5, 5];
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(initial_amounts, &proving_key_bytes);
+		let tree_id = create_vanchor(0);
 
-		let recipient: AccountId = get_account(4);
-		let relayer: AccountId = get_account(3);
-		let ext_amount: Amount = 10;
-		let fee: Balance = 2;
+		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
 
-		let public_amount = 8;
+		let ext_amount: Amount = DEFAULT_BALANCE as i128;
+		let public_amount = DEFAULT_BALANCE as i128;
+		let fee: Balance = 0;
+
+		let in_chain_id = 0;
+		let in_amounts = vec![0, 0];
 		let out_chain_ids = vec![0, 0];
-		let out_amounts = vec![5, 13];
+		let out_amounts = vec![DEFAULT_BALANCE, 0];
 
-		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_input_utxos_raw(
+		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_data_raw(
 			public_amount,
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			in_utxos,
+			in_chain_id,
+			in_amounts.clone(),
 			out_chain_ids,
-			out_amounts.to_vec(),
+			out_amounts,
 		);
 
 		let proof = prove(circuit, &proving_key_bytes);
@@ -157,11 +167,8 @@ fn should_complete_2x2_transaction_with_deposit() {
 		assert!(res);
 
 		// Deconstructing public inputs
-		let public_amount = public_inputs_el[1];
-		let root_set = public_inputs_el[2..4].to_vec();
-		let nullifiers = public_inputs_el[4..6].to_vec();
-		let commitments = public_inputs_el[6..8].to_vec();
-		let ext_data_hash = public_inputs_el[8];
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs_el);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -179,17 +186,20 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_ok!(VAnchor::transact(
-			Origin::signed(recipient.clone()),
+			Origin::signed(transactor.clone()),
 			tree_id,
 			proof_data,
 			ext_data
 		));
 
+		// Relayer balance should be zero since the fee was zero
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, DEFAULT_BALANCE + fee);
+		assert_eq!(relayer_balance_after, 0);
 
-		let recipient_balance_after = Balances::free_balance(recipient);
-		assert_eq!(recipient_balance_after, DEFAULT_BALANCE - ext_amount as u128);
+		// Transactor balance should be zero, since they deposited all the money to the
+		// mixer
+		let transactor_balance_after = Balances::free_balance(transactor);
+		assert_eq!(transactor_balance_after, 0);
 	});
 }
 
@@ -197,11 +207,11 @@ fn should_complete_2x2_transaction_with_deposit() {
 fn should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
-		let initial_amounts = vec![5, 5];
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(initial_amounts, &proving_key_bytes);
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(&proving_key_bytes);
 
-		let recipient: AccountId = get_account(4);
-		let relayer: AccountId = get_account(3);
+		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
 		let ext_amount: Amount = -5;
 		let fee: Balance = 2;
 
@@ -228,11 +238,8 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		assert!(res);
 
 		// Deconstructing public inputs
-		let public_amount = public_inputs_el[1];
-		let root_set = public_inputs_el[2..4].to_vec();
-		let nullifiers = public_inputs_el[4..6].to_vec();
-		let commitments = public_inputs_el[6..8].to_vec();
-		let ext_data_hash = public_inputs_el[8];
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs_el);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -250,16 +257,468 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_ok!(VAnchor::transact(
-			Origin::signed(recipient.clone()),
+			Origin::signed(transactor.clone()),
 			tree_id,
 			proof_data,
 			ext_data
 		));
 
+		// Should be equal to the `fee` since the transaction was sucessful
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, DEFAULT_BALANCE + fee);
+		assert_eq!(relayer_balance_after, fee);
 
+		// Should be equal to the amount that is withdrawn
 		let recipient_balance_after = Balances::free_balance(recipient);
-		assert_eq!(recipient_balance_after, DEFAULT_BALANCE + (-ext_amount as u128));
+		assert_eq!(recipient_balance_after, ext_amount.unsigned_abs());
 	});
 }
+
+#[test]
+fn should_not_complete_transaction_if_ext_data_is_invalid() {
+	new_test_ext().execute_with(|| {
+		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let tree_id = create_vanchor(0);
+
+		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+
+		let ext_amount: Amount = DEFAULT_BALANCE as i128;
+		let public_amount = DEFAULT_BALANCE as i128;
+		let fee: Balance = 0;
+
+		let in_chain_id = 0;
+		let in_amounts = vec![0, 0];
+		let out_chain_ids = vec![0, 0];
+		let out_amounts = vec![DEFAULT_BALANCE, 0];
+
+		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_data_raw(
+			public_amount,
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			in_chain_id,
+			in_amounts.clone(),
+			out_chain_ids,
+			out_amounts,
+		);
+
+		let proof = prove(circuit, &proving_key_bytes);
+
+		// Check locally
+		let res = verify(public_inputs_f, &verifying_key_bytes, &proof);
+		assert!(res);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs_el);
+
+		// Constructing external data
+		let output1 = commitments[0].clone();
+
+		// INVALID output commitment
+		let output2 = Element::from_bytes(&[0u8; 32]);
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			output1,
+			output2,
+		);
+
+		// Constructing proof data
+		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		assert_err!(
+			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			Error::<Test, _>::InvalidExtData,
+		);
+
+		// Relayer balance should be zero since the fee was zero and the transaction
+		// failed
+		let relayer_balance_after = Balances::free_balance(relayer);
+		assert_eq!(relayer_balance_after, 0);
+
+		// Transactor balance should be the default one, since the deposit failed
+		let transactor_balance_after = Balances::free_balance(transactor);
+		assert_eq!(transactor_balance_after, DEFAULT_BALANCE);
+
+		// Recipient balance should be zero since the withdraw was not successful
+		let recipient_balance_after = Balances::free_balance(recipient);
+		assert_eq!(recipient_balance_after, 0);
+	});
+}
+
+#[test]
+fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
+	new_test_ext().execute_with(|| {
+		let (proving_key_bytes, _) = setup_environment(Curve::Bn254);
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(&proving_key_bytes);
+
+		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+
+		let public_amount = -7;
+		let ext_amount: Amount = -5;
+		let fee: Balance = 2;
+
+		let out_chain_ids = vec![0, 0];
+		// Withdraw amount too big
+		let out_amounts = vec![100, 200];
+
+		let (circuit, public_inputs_el, ..) = setup_circuit_with_input_utxos_raw(
+			public_amount,
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			in_utxos,
+			out_chain_ids,
+			out_amounts.to_vec(),
+		);
+
+		let proof = prove(circuit, &proving_key_bytes);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs_el);
+
+		// Constructing external data
+		let output1 = commitments[0].clone();
+		let output2 = commitments[1].clone();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			output1,
+			output2,
+		);
+
+		// Constructing proof data
+		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		// Should fail with invalid external data error
+		assert_err!(
+			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			Error::<Test, _>::InvalidTransactionProof
+		);
+
+		// Should be zero, since transaction failed
+		let relayer_balance_after = Balances::free_balance(relayer);
+		assert_eq!(relayer_balance_after, 0);
+
+		// Transactors balance is zero since they deposited all of their money to the
+		// mixer
+		let transactor_balance_after = Balances::free_balance(transactor);
+		assert_eq!(transactor_balance_after, 0);
+
+		// Recipient balance is zero, since the withdraw failed
+		let recipient_balance_after = Balances::free_balance(recipient);
+		assert_eq!(recipient_balance_after, 0);
+	});
+}
+
+#[test]
+fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
+	new_test_ext().execute_with(|| {
+		let (proving_key_bytes, _) = setup_environment(Curve::Bn254);
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(&proving_key_bytes);
+
+		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+
+		let ext_amount: Amount = -5;
+		let fee: Balance = 2;
+
+		let public_amount = -7;
+		let out_chain_ids = vec![0, 0];
+		// Withdraw amount too small
+		let out_amounts = vec![1, 0];
+
+		let (circuit, public_inputs_el, ..) = setup_circuit_with_input_utxos_raw(
+			public_amount,
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			in_utxos,
+			out_chain_ids,
+			out_amounts.to_vec(),
+		);
+
+		let proof = prove(circuit, &proving_key_bytes);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs_el);
+
+		// Constructing external data
+		let output1 = commitments[0].clone();
+		let output2 = commitments[1].clone();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			output1,
+			output2,
+		);
+
+		// Constructing proof data
+		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		// Should fail with invalid external data error
+		assert_err!(
+			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			Error::<Test, _>::InvalidTransactionProof
+		);
+
+		// Should be zero, since transaction failed
+		let relayer_balance_after = Balances::free_balance(relayer);
+		assert_eq!(relayer_balance_after, 0);
+
+		// Transactors balance is zero since they deposited all of their money to the
+		// mixer
+		let transactor_balance_after = Balances::free_balance(transactor);
+		assert_eq!(transactor_balance_after, 0);
+
+		// Recipient balance is zero, since the withdraw failed
+		let recipient_balance_after = Balances::free_balance(recipient);
+		assert_eq!(recipient_balance_after, 0);
+	});
+}
+
+#[test]
+fn should_not_be_able_to_double_spend() {
+	new_test_ext().execute_with(|| {
+		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(&proving_key_bytes);
+
+		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+		let ext_amount: Amount = -5;
+		let fee: Balance = 2;
+
+		let public_amount = -7;
+		let out_chain_ids = vec![0, 0];
+		// After withdrawing -7
+		let out_amounts = vec![1, 2];
+
+		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_input_utxos_raw(
+			public_amount,
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			in_utxos,
+			out_chain_ids,
+			out_amounts.to_vec(),
+		);
+
+		let proof = prove(circuit, &proving_key_bytes);
+
+		// Check locally
+		let res = verify(public_inputs_f, &verifying_key_bytes, &proof);
+		assert!(res);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs_el);
+
+		// Constructing external data
+		let output1 = commitments[0].clone();
+		let output2 = commitments[1].clone();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			output1,
+			output2,
+		);
+
+		// Constructing proof data
+		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		assert_ok!(VAnchor::transact(
+			Origin::signed(transactor.clone()),
+			tree_id,
+			proof_data.clone(),
+			ext_data.clone()
+		));
+		assert_err!(
+			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			Error::<Test, _>::AlreadyRevealedNullifier
+		);
+
+		// Fee is paid out once
+		let relayer_balance_after = Balances::free_balance(relayer);
+		assert_eq!(relayer_balance_after, fee);
+
+		// Recipient is paid out once
+		let recipient_balance_after = Balances::free_balance(recipient);
+		assert_eq!(recipient_balance_after, (-ext_amount as u128));
+
+		// Transactor is 0 after one deposit
+		let transactor_balance_after = Balances::free_balance(transactor);
+		assert_eq!(transactor_balance_after, 0);
+	});
+}
+
+#[test]
+fn should_not_be_able_to_exceed_max_fee() {
+	new_test_ext().execute_with(|| {
+		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let tree_id = create_vanchor(0);
+
+		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+
+		let ext_amount: Amount = DEFAULT_BALANCE as i128;
+		let public_amount = 4;
+		let fee: Balance = 6;
+
+		let in_chain_id = 0;
+		let in_amounts = vec![0, 0];
+		let out_chain_ids = vec![0, 0];
+		let out_amounts = vec![4, 0];
+
+		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_data_raw(
+			public_amount,
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			in_chain_id,
+			in_amounts.clone(),
+			out_chain_ids,
+			out_amounts,
+		);
+
+		let proof = prove(circuit, &proving_key_bytes);
+
+		// Check locally
+		let res = verify(public_inputs_f, &verifying_key_bytes, &proof);
+		assert!(res);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs_el);
+
+		// Constructing external data
+		let output1 = commitments[0].clone();
+		let output2 = commitments[1].clone();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			output1,
+			output2,
+		);
+
+		// Constructing proof data
+		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		assert_err!(
+			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			Error::<Test, _>::InvalidFee
+		);
+
+		// Relayer balance should be zero since the fee was zero
+		let relayer_balance_after = Balances::free_balance(relayer);
+		assert_eq!(relayer_balance_after, 0);
+
+		// Transactor balance should not be changed, since the transaction has failed
+		let transactor_balance_after = Balances::free_balance(transactor);
+		assert_eq!(transactor_balance_after, DEFAULT_BALANCE);
+	});
+}
+
+#[test]
+fn should_not_be_able_to_exceed_max_deposit() {
+	new_test_ext().execute_with(|| {
+		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let tree_id = create_vanchor(0);
+
+		let transactor = get_account(BIG_TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+
+		let ext_amount: Amount = BIG_DEFAULT_BALANCE as i128;
+		let public_amount = BIG_DEFAULT_BALANCE as i128;
+		let fee: Balance = 0;
+
+		let in_chain_id = 0;
+		let in_amounts = vec![0, 0];
+		let out_chain_ids = vec![0, 0];
+		let out_amounts = vec![BIG_DEFAULT_BALANCE, 0];
+
+		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_data_raw(
+			public_amount,
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			in_chain_id,
+			in_amounts.clone(),
+			out_chain_ids,
+			out_amounts,
+		);
+
+		let proof = prove(circuit, &proving_key_bytes);
+
+		// Check locally
+		let res = verify(public_inputs_f, &verifying_key_bytes, &proof);
+		assert!(res);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs_el);
+
+		// Constructing external data
+		let output1 = commitments[0].clone();
+		let output2 = commitments[1].clone();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			output1,
+			output2,
+		);
+
+		// Constructing proof data
+		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		assert_err!(
+			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			Error::<Test, _>::InvalidDepositAmount
+		);
+
+		// Relayer balance should be zero since the fee was zero
+		let relayer_balance_after = Balances::free_balance(relayer);
+		assert_eq!(relayer_balance_after, 0);
+
+		// Transactor balance should not be changed, since the transaction has failed
+		let transactor_balance_after = Balances::free_balance(transactor);
+		assert_eq!(transactor_balance_after, BIG_DEFAULT_BALANCE);
+	});
+}
+
+// #[test]
+// fn should_not_be_able_to_exceed_external_amount() {
+// 	new_test_ext().execute_with(|| {});
+// }
+
+// #[test]
+// fn should_not_be_able_to_withdraw_less_than_minimum() {
+// 	new_test_ext().execute_with(|| {});
+// }
