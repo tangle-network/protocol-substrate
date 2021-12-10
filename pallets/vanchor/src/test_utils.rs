@@ -42,6 +42,7 @@ const M: usize = 2;
 const INS: usize = 2;
 const OUTS: usize = 2;
 
+#[derive(Debug)]
 pub struct ExtData {
 	pub recipient_bytes: Vec<u8>,
 	pub relayer_bytes: Vec<u8>,
@@ -236,9 +237,9 @@ pub fn setup_circuit_with_data_raw(
 		out_amounts_f,
 	);
 
-	let root_set = public_inputs_f[1..3].to_vec();
-	let nullifiers = public_inputs_f[3..5].to_vec();
-	let commitments = public_inputs_f[5..7].to_vec();
+	let root_set = public_inputs_f[2..4].to_vec();
+	let nullifiers = public_inputs_f[4..6].to_vec();
+	let commitments = public_inputs_f[6..8].to_vec();
 	let ext_data_hash = public_inputs_f[8];
 
 	let chain_id_element = Element::from_bytes(&in_chain_id_f.into_repr().to_bytes_le());
@@ -312,9 +313,9 @@ pub fn setup_circuit_with_input_utxos_raw(
 		out_amounts_f,
 	);
 
-	let root_set = public_inputs_f[1..3].to_vec();
-	let nullifiers = public_inputs_f[3..5].to_vec();
-	let commitments = public_inputs_f[5..7].to_vec();
+	let root_set = public_inputs_f[2..4].to_vec();
+	let nullifiers = public_inputs_f[4..6].to_vec();
+	let commitments = public_inputs_f[6..8].to_vec();
 	let ext_data_hash = public_inputs_f[8];
 
 	let chain_id_element = Element::from_bytes(&chain_id.into_repr().to_bytes_le());
@@ -464,6 +465,7 @@ pub fn setup_circuit_with_data(
 		out_utxos.commitments[0].into_repr().to_bytes_le(),
 		out_utxos.commitments[1].into_repr().to_bytes_le(),
 	);
+
 	let ext_data_hash = keccak256(&ext_data.encode_abi());
 	let ext_data_hash_f = Bn254Fr::from_le_bytes_mod_order(&ext_data_hash);
 	// Arbitrary data

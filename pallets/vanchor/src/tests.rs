@@ -75,7 +75,6 @@ fn create_vanchor_with_deposits(amounts: Vec<Balance>, proving_key_bytes: &Vec<u
 	let public_amount = 10;
 	let in_chain_id = 0;
 	let in_amounts = vec![0, 0];
-
 	let out_chain_ids = vec![0, 0];
 
 	let (circuit, public_inputs_el, _, _, out_utxos) = setup_circuit_with_data_raw(
@@ -94,9 +93,9 @@ fn create_vanchor_with_deposits(amounts: Vec<Balance>, proving_key_bytes: &Vec<u
 
 	// Deconstructing public inputs
 	let public_amount = public_inputs_el[1];
-	let root_set = public_inputs_el[1..3].to_vec();
-	let nullifiers = public_inputs_el[3..5].to_vec();
-	let commitments = public_inputs_el[5..7].to_vec();
+	let root_set = public_inputs_el[2..4].to_vec();
+	let nullifiers = public_inputs_el[4..6].to_vec();
+	let commitments = public_inputs_el[6..8].to_vec();
 	let ext_data_hash = public_inputs_el[8];
 
 	// Constructing external data
@@ -159,9 +158,9 @@ fn should_complete_2x2_transaction_with_deposit() {
 
 		// Deconstructing public inputs
 		let public_amount = public_inputs_el[1];
-		let root_set = public_inputs_el[1..3].to_vec();
-		let nullifiers = public_inputs_el[3..5].to_vec();
-		let commitments = public_inputs_el[5..7].to_vec();
+		let root_set = public_inputs_el[2..4].to_vec();
+		let nullifiers = public_inputs_el[4..6].to_vec();
+		let commitments = public_inputs_el[6..8].to_vec();
 		let ext_data_hash = public_inputs_el[8];
 
 		// Constructing external data
@@ -230,9 +229,9 @@ fn should_complete_2x2_transaction_with_withdraw() {
 
 		// Deconstructing public inputs
 		let public_amount = public_inputs_el[1];
-		let root_set = public_inputs_el[1..3].to_vec();
-		let nullifiers = public_inputs_el[3..5].to_vec();
-		let commitments = public_inputs_el[5..7].to_vec();
+		let root_set = public_inputs_el[2..4].to_vec();
+		let nullifiers = public_inputs_el[4..6].to_vec();
+		let commitments = public_inputs_el[6..8].to_vec();
 		let ext_data_hash = public_inputs_el[8];
 
 		// Constructing external data
