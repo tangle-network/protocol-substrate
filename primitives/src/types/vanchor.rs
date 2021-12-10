@@ -15,28 +15,28 @@ pub struct VAnchorMetadata<AccountId, AssetId> {
 #[derive(Clone, Encode, Decode, Debug, Eq, PartialEq, TypeInfo)]
 pub struct ProofData<E> {
 	pub proof: Vec<u8>,
+	pub public_amount: E,
 	pub roots: Vec<E>,
 	pub input_nullifiers: Vec<E>,
 	pub output_commitments: Vec<E>,
-	pub public_amount: E,
 	pub ext_data_hash: E,
 }
 
 impl<E: ElementTrait> ProofData<E> {
 	pub fn new(
 		proof: Vec<u8>,
+		public_amount: E,
 		roots: Vec<E>,
 		input_nullifiers: Vec<E>,
 		output_commitments: Vec<E>,
-		public_amount: E,
 		ext_data_hash: E,
 	) -> Self {
 		Self {
 			proof,
+			public_amount,
 			roots,
 			input_nullifiers,
 			output_commitments,
-			public_amount,
 			ext_data_hash,
 		}
 	}
