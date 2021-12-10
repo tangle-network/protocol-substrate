@@ -324,12 +324,19 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 
 		// Making sure that public amount and fee are correct
 		ensure!(ext_data.fee < T::MaxFee::get(), Error::<T, I>::InvalidFee);
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8e421fe8988b2aa025c43c26f75ddd748ef65e2b
 		let ext_amount_unsigned: BalanceOf<T, I> = ext_data
 			.ext_amount
 			.abs()
 			.try_into()
 			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8e421fe8988b2aa025c43c26f75ddd748ef65e2b
 		ensure!(
 			ext_amount_unsigned < T::MaxExtAmount::get(),
 			Error::<T, I>::InvalidExtAmount

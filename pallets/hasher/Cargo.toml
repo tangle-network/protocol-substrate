@@ -39,7 +39,7 @@ ark-serialize = { version = "^0.3.0", default-features = false, features = [ "de
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ] }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-arkworks-utils    = { version = "0.4.5", features = ["poseidon_bls381_x5_3", "poseidon_bn254_x5_3"], default-features = false } # just for testing we will enclude everything.
+arkworks-utils    = { version = "0.4.6", features = ["poseidon_bls381_x5_3", "poseidon_bn254_x5_3"], default-features = false } # just for testing we will enclude everything.
 
 [features]
 default = ["std"]
