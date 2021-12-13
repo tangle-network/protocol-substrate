@@ -19,11 +19,13 @@ const TREE_DEPTH: usize = 30;
 const M: usize = 2;
 const DEFAULT_BALANCE: u128 = 10;
 const BIG_DEFAULT_BALANCE: u128 = 20;
+const BIGGER_DEFAULT_BALANCE: u128 = 30;
 
 const TRANSACTOR_ACCOUNT_ID: u32 = 0;
 const RECIPIENT_ACCOUNT_ID: u32 = 1;
 const BIG_TRANSACTOR_ACCOUNT_ID: u32 = 2;
-const RELAYER_ACCOUNT_ID: u32 = 3;
+const BIGGER_TRANSACTOR_ACCOUNT_ID: u32 = 3;
+const RELAYER_ACCOUNT_ID: u32 = 4;
 
 pub fn get_account(id: u32) -> AccountId {
 	account::<AccountId>("", id, SEED)
@@ -48,6 +50,7 @@ fn setup_environment(_curve: Curve) -> (Vec<u8>, Vec<u8>) {
 
 	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
 	let big_transactor = account::<AccountId>("", BIG_TRANSACTOR_ACCOUNT_ID, SEED);
+	let bigger_transactor = account::<AccountId>("", BIGGER_TRANSACTOR_ACCOUNT_ID, SEED);
 
 	// Transactor should have some amount
 	assert_ok!(Balances::set_balance(Origin::root(), transactor, DEFAULT_BALANCE, 0));
@@ -57,6 +60,13 @@ fn setup_environment(_curve: Curve) -> (Vec<u8>, Vec<u8>) {
 		Origin::root(),
 		big_transactor,
 		BIG_DEFAULT_BALANCE,
+		0
+	));
+
+	assert_ok!(Balances::set_balance(
+		Origin::root(),
+		bigger_transactor,
+		BIGGER_DEFAULT_BALANCE,
 		0
 	));
 
@@ -713,12 +723,145 @@ fn should_not_be_able_to_exceed_max_deposit() {
 	});
 }
 
-// #[test]
-// fn should_not_be_able_to_exceed_external_amount() {
-// 	new_test_ext().execute_with(|| {});
-// }
+#[test]
+fn should_not_be_able_to_exceed_external_amount() {
+	new_test_ext().execute_with(|| {
+		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let tree_id = create_vanchor(0);
 
-// #[test]
-// fn should_not_be_able_to_withdraw_less_than_minimum() {
-// 	new_test_ext().execute_with(|| {});
-// }
+		let transactor = get_account(BIGGER_TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+
+		// The external amount will be 3 more than allowed
+		let ext_amount: Amount = 23;
+		let public_amount = 20;
+		let fee: Balance = 3;
+
+		let in_chain_id = 0;
+		let in_amounts = vec![0, 0];
+		let out_chain_ids = vec![0, 0];
+		let out_amounts = vec![20, 0];
+
+		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
+			public_amount,
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			in_chain_id,
+			in_amounts.clone(),
+			out_chain_ids,
+			out_amounts,
+		);
+
+		let proof = prove(circuit, &proving_key_bytes);
+
+		// Check locally
+		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
+		assert!(res);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs_f);
+
+		// Constructing external data
+		let output1 = commitments[0].clone();
+		let output2 = commitments[1].clone();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			output1,
+			output2,
+		);
+
+		// Constructing proof data
+		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		assert_err!(
+			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			Error::<Test, _>::InvalidExtAmount
+		);
+
+		// Relayer balance should be zero since the transaction failed
+		let relayer_balance_after = Balances::free_balance(relayer);
+		assert_eq!(relayer_balance_after, 0);
+
+		// Transactor balance should not be changed, since the transaction has failed
+		let transactor_balance_after = Balances::free_balance(transactor);
+		assert_eq!(transactor_balance_after, BIGGER_DEFAULT_BALANCE);
+	});
+}
+
+#[test]
+fn should_not_be_able_to_withdraw_less_than_minimum() {
+	new_test_ext().execute_with(|| {
+		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(&proving_key_bytes);
+
+		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+		let ext_amount: Amount = -2;
+		let fee: Balance = 4;
+
+		let public_amount = -6;
+		let out_chain_ids = vec![0, 0];
+		// After withdrawing -7
+		let out_amounts = vec![2, 2];
+
+		let (circuit, public_inputs_f, ..) = setup_circuit_with_input_utxos_raw(
+			public_amount,
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			in_utxos,
+			out_chain_ids,
+			out_amounts.to_vec(),
+		);
+
+		let proof = prove(circuit, &proving_key_bytes);
+
+		// Check locally
+		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
+		assert!(res);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs_f);
+
+		// Constructing external data
+		let output1 = commitments[0].clone();
+		let output2 = commitments[1].clone();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			output1,
+			output2,
+		);
+
+		// Constructing proof data
+		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		assert_err!(
+			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			Error::<Test, _>::InvalidWithdrawAmount
+		);
+
+		// Fee is not paid out
+		let relayer_balance_after = Balances::free_balance(relayer);
+		assert_eq!(relayer_balance_after, 0);
+
+		// Recipient is not paid
+		let recipient_balance_after = Balances::free_balance(recipient);
+		assert_eq!(recipient_balance_after, 0);
+
+		let transactor_balance_after = Balances::free_balance(transactor);
+		assert_eq!(transactor_balance_after, 0);
+	});
+}

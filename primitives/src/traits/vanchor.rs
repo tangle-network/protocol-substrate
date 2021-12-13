@@ -23,12 +23,6 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		max_edges: u32,
 		asset: C::CurrencyId,
 	) -> Result<C::TreeId, dispatch::DispatchError>;
-	fn deposit(
-		depositor: C::AccountId,
-		id: C::TreeId,
-		leaf: C::Element,
-		amount: C::Balance,
-	) -> Result<(), dispatch::DispatchError>;
 	/// Transaction
 	fn transact(
 		transactor: C::AccountId,
