@@ -86,7 +86,7 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
 	let out_chain_ids = vec![0, 0];
 	let out_amounts = vec![DEFAULT_BALANCE, 0];
 
-	let (circuit, public_inputs_el, _, _, out_utxos) = setup_circuit_with_data_raw(
+	let (circuit, public_inputs, _, out_utxos) = setup_circuit_with_data_raw(
 		public_amount,
 		recipient.clone(),
 		relayer.clone(),
@@ -102,7 +102,7 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
 
 	// Deconstructing public inputs
 	let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-		deconstruct_public_inputs_el(&public_inputs_el);
+		deconstruct_public_inputs_el(&public_inputs);
 
 	// Constructing external data
 	let output1 = commitments[0].clone();
@@ -148,7 +148,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let out_chain_ids = vec![0, 0];
 		let out_amounts = vec![DEFAULT_BALANCE, 0];
 
-		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_data_raw(
+		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
 			public_amount,
 			recipient.clone(),
 			relayer.clone(),
@@ -163,12 +163,12 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let proof = prove(circuit, &proving_key_bytes);
 
 		// Check locally
-		let res = verify(public_inputs_f, &verifying_key_bytes, &proof);
+		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
 		assert!(res);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_el);
+			deconstruct_public_inputs_el(&public_inputs_f);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -196,8 +196,8 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let relayer_balance_after = Balances::free_balance(relayer);
 		assert_eq!(relayer_balance_after, 0);
 
-		// Transactor balance should be zero, since they deposited all the money to the
-		// mixer
+		// Transactor balance should be zero, since they deposited all the
+		// money to the mixer
 		let transactor_balance_after = Balances::free_balance(transactor);
 		assert_eq!(transactor_balance_after, 0);
 	});
@@ -220,7 +220,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		// After withdrawing -7
 		let out_amounts = vec![1, 2];
 
-		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_input_utxos_raw(
+		let (circuit, public_inputs_f, ..) = setup_circuit_with_input_utxos_raw(
 			public_amount,
 			recipient.clone(),
 			relayer.clone(),
@@ -234,12 +234,12 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		let proof = prove(circuit, &proving_key_bytes);
 
 		// Check locally
-		let res = verify(public_inputs_f, &verifying_key_bytes, &proof);
+		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
 		assert!(res);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_el);
+			deconstruct_public_inputs_el(&public_inputs_f);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -292,7 +292,7 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		let out_chain_ids = vec![0, 0];
 		let out_amounts = vec![DEFAULT_BALANCE, 0];
 
-		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_data_raw(
+		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
 			public_amount,
 			recipient.clone(),
 			relayer.clone(),
@@ -307,12 +307,12 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		let proof = prove(circuit, &proving_key_bytes);
 
 		// Check locally
-		let res = verify(public_inputs_f, &verifying_key_bytes, &proof);
+		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
 		assert!(res);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_el);
+			deconstruct_public_inputs_el(&public_inputs_f);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -510,7 +510,7 @@ fn should_not_be_able_to_double_spend() {
 		// After withdrawing -7
 		let out_amounts = vec![1, 2];
 
-		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_input_utxos_raw(
+		let (circuit, public_inputs_f, ..) = setup_circuit_with_input_utxos_raw(
 			public_amount,
 			recipient.clone(),
 			relayer.clone(),
@@ -524,12 +524,12 @@ fn should_not_be_able_to_double_spend() {
 		let proof = prove(circuit, &proving_key_bytes);
 
 		// Check locally
-		let res = verify(public_inputs_f, &verifying_key_bytes, &proof);
+		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
 		assert!(res);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_el);
+			deconstruct_public_inputs_el(&public_inputs_f);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -590,7 +590,7 @@ fn should_not_be_able_to_exceed_max_fee() {
 		let out_chain_ids = vec![0, 0];
 		let out_amounts = vec![4, 0];
 
-		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_data_raw(
+		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
 			public_amount,
 			recipient.clone(),
 			relayer.clone(),
@@ -605,12 +605,12 @@ fn should_not_be_able_to_exceed_max_fee() {
 		let proof = prove(circuit, &proving_key_bytes);
 
 		// Check locally
-		let res = verify(public_inputs_f, &verifying_key_bytes, &proof);
+		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
 		assert!(res);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_el);
+			deconstruct_public_inputs_el(&public_inputs_f);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -661,7 +661,7 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		let out_chain_ids = vec![0, 0];
 		let out_amounts = vec![BIG_DEFAULT_BALANCE, 0];
 
-		let (circuit, public_inputs_el, public_inputs_f, ..) = setup_circuit_with_data_raw(
+		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
 			public_amount,
 			recipient.clone(),
 			relayer.clone(),
@@ -676,12 +676,12 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		let proof = prove(circuit, &proving_key_bytes);
 
 		// Check locally
-		let res = verify(public_inputs_f, &verifying_key_bytes, &proof);
+		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
 		assert!(res);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_el);
+			deconstruct_public_inputs_el(&public_inputs_f);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();

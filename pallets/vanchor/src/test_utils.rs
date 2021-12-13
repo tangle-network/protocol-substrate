@@ -211,7 +211,6 @@ pub fn setup_circuit_with_data_raw(
 		OUTS,
 		M,
 	>,
-	Vec<Element>,
 	Vec<Bn254Fr>,
 	Utxos,
 	Utxos,
@@ -237,31 +236,7 @@ pub fn setup_circuit_with_data_raw(
 		out_amounts_f,
 	);
 
-	let (_, _, root_set, nullifiers, commitments, ext_data_hash) = deconstruct_public_inputs(&public_inputs_f);
-
-	let chain_id_element = Element::from_bytes(&in_chain_id_f.into_repr().to_bytes_le());
-	let public_amount_element = Element::from_bytes(&public_amount_f.into_repr().to_bytes_le());
-	let root_elements: Vec<Element> = root_set
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
-		.collect();
-	let nullifier_elements: Vec<Element> = nullifiers
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
-		.collect();
-	let commitment_elements: Vec<Element> = commitments
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
-		.collect();
-	let ext_data_hash_element = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_le());
-
-	let mut public_input_elements = vec![chain_id_element, public_amount_element];
-	public_input_elements.extend(root_elements);
-	public_input_elements.extend(nullifier_elements);
-	public_input_elements.extend(commitment_elements);
-	public_input_elements.push(ext_data_hash_element);
-
-	(circuit, public_input_elements, public_inputs_f, in_utxos, out_utxos)
+	(circuit, public_inputs_f, in_utxos, out_utxos)
 }
 
 pub fn setup_circuit_with_input_utxos_raw(
@@ -289,11 +264,9 @@ pub fn setup_circuit_with_input_utxos_raw(
 		OUTS,
 		M,
 	>,
-	Vec<Element>,
 	Vec<Bn254Fr>,
 	Utxos,
 ) {
-	let chain_id = in_utxos.chain_ids[0].clone();
 	let public_amount_f = Bn254Fr::from(public_amount);
 
 	let out_chain_ids_f = out_chain_ids.iter().map(|x| Bn254Fr::from(*x)).collect();
@@ -310,31 +283,7 @@ pub fn setup_circuit_with_input_utxos_raw(
 		out_amounts_f,
 	);
 
-	let (_, _, root_set, nullifiers, commitments, ext_data_hash) = deconstruct_public_inputs(&public_inputs_f);
-
-	let chain_id_element = Element::from_bytes(&chain_id.into_repr().to_bytes_le());
-	let public_amount_element = Element::from_bytes(&public_amount_f.into_repr().to_bytes_le());
-	let root_elements: Vec<Element> = root_set
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
-		.collect();
-	let nullifier_elements: Vec<Element> = nullifiers
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
-		.collect();
-	let commitment_elements: Vec<Element> = commitments
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
-		.collect();
-	let ext_data_hash_element = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_le());
-
-	let mut public_input_elements = vec![chain_id_element, public_amount_element];
-	public_input_elements.extend(root_elements);
-	public_input_elements.extend(nullifier_elements);
-	public_input_elements.extend(commitment_elements);
-	public_input_elements.push(ext_data_hash_element);
-
-	(circuit, public_input_elements, public_inputs_f, out_utxos)
+	(circuit, public_inputs_f, out_utxos)
 }
 
 pub fn setup_circuit_with_input_utxos(
@@ -400,11 +349,14 @@ pub fn setup_circuit_with_input_utxos(
 		params5,
 	);
 
-	let mut public_inputs = vec![in_utxos.leaf_publics[0].chain_id, public_amount];
-	public_inputs.extend(in_root_set);
-	public_inputs.extend(in_utxos.nullifiers);
-	public_inputs.extend(out_utxos.commitments.clone());
-	public_inputs.push(ext_data_hash_f);
+	let public_inputs = construct_public_inputs(
+		in_utxos.leaf_publics[0].chain_id,
+		public_amount,
+		in_root_set.to_vec(),
+		in_utxos.nullifiers,
+		out_utxos.commitments.clone(),
+		ext_data_hash_f,
+	);
 
 	(circuit, public_inputs, out_utxos)
 }
@@ -479,11 +431,14 @@ pub fn setup_circuit_with_data(
 		params5,
 	);
 
-	let mut public_inputs = vec![in_utxos.leaf_publics[0].chain_id.clone(), public_amount];
-	public_inputs.extend(in_root_set);
-	public_inputs.extend(in_utxos.nullifiers.clone());
-	public_inputs.extend(out_utxos.commitments.clone());
-	public_inputs.push(ext_data_hash_f);
+	let public_inputs = construct_public_inputs(
+		in_utxos.leaf_publics[0].chain_id,
+		public_amount,
+		in_root_set.to_vec(),
+		in_utxos.nullifiers.clone(),
+		out_utxos.commitments.clone(),
+		ext_data_hash_f,
+	);
 
 	(circuit, public_inputs, in_utxos, out_utxos)
 }
@@ -604,7 +559,7 @@ pub fn prove(
 	proof_bytes
 }
 
-pub fn verify(public_inputs: Vec<Bn254Fr>, vk: &[u8], proof: &[u8]) -> bool {
+pub fn verify(public_inputs: &Vec<Bn254Fr>, vk: &[u8], proof: &[u8]) -> bool {
 	let vk = VerifyingKey::<Bn254>::deserialize(vk).unwrap();
 	let proof = Proof::<Bn254>::deserialize(proof).unwrap();
 	let ver_res = verify_groth16(&vk, &public_inputs, &proof);
@@ -726,6 +681,32 @@ pub fn setup_arbitrary_data(ext_data: Bn254Fr) -> VAnchorArbitraryData<Bn254Fr> 
 	VAnchorArbitraryData::new(ext_data)
 }
 
+pub fn construct_public_inputs(
+	chain_id: Bn254Fr,
+	public_amount: Bn254Fr,
+	roots: Vec<Bn254Fr>,
+	nullifiers: Vec<Bn254Fr>,
+	commitments: Vec<Bn254Fr>,
+	ext_data_hash: Bn254Fr,
+) -> Vec<Bn254Fr> {
+	let mut public_inputs = vec![public_amount, ext_data_hash];
+	public_inputs.extend(nullifiers);
+	public_inputs.extend(commitments);
+	public_inputs.push(chain_id);
+	public_inputs.extend(roots);
+
+	public_inputs
+}
+
+pub fn construct_public_inputs_el(public_inputs: &Vec<Bn254Fr>) -> Vec<Element> {
+	let public_inputs_el = public_inputs
+		.iter()
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.collect();
+
+	public_inputs_el
+}
+
 pub fn deconstruct_public_inputs(
 	public_inputs: &Vec<Bn254Fr>,
 ) -> (
@@ -734,14 +715,14 @@ pub fn deconstruct_public_inputs(
 	Vec<Bn254Fr>, // Roots
 	Vec<Bn254Fr>, // Input tx Nullifiers
 	Vec<Bn254Fr>, // Output tx commitments
-	Bn254Fr,      // External amount
+	Bn254Fr,      // External data hash
 ) {
-	let chain_id = public_inputs[0];
-	let public_amount = public_inputs[1];
-	let root_set = public_inputs[2..4].to_vec();
-	let nullifiers = public_inputs[4..6].to_vec();
-	let commitments = public_inputs[6..8].to_vec();
-	let ext_data_hash = public_inputs[8];
+	let public_amount = public_inputs[0];
+	let ext_data_hash = public_inputs[1];
+	let nullifiers = public_inputs[2..4].to_vec();
+	let commitments = public_inputs[4..6].to_vec();
+	let chain_id = public_inputs[6];
+	let root_set = public_inputs[7..9].to_vec();
 	(
 		chain_id,
 		public_amount,
@@ -753,7 +734,7 @@ pub fn deconstruct_public_inputs(
 }
 
 pub fn deconstruct_public_inputs_el(
-	public_inputs: &Vec<Element>,
+	public_inputs_f: &Vec<Bn254Fr>,
 ) -> (
 	Element,      // Chain Id
 	Element,      // Public amount
@@ -762,19 +743,30 @@ pub fn deconstruct_public_inputs_el(
 	Vec<Element>, // Output tx commitments
 	Element,      // External amount
 ) {
-	let chain_id = public_inputs[0];
-	let public_amount = public_inputs[1];
-	let root_set = public_inputs[2..4].to_vec();
-	let nullifiers = public_inputs[4..6].to_vec();
-	let commitments = public_inputs[6..8].to_vec();
-	let ext_data_hash = public_inputs[8];
+	let (chain_id, public_amount, roots, nullifiers, commitments, ext_data_hash) =
+		deconstruct_public_inputs(public_inputs_f);
+	let chain_id_el = Element::from_bytes(&chain_id.into_repr().to_bytes_le());
+	let public_amount_el = Element::from_bytes(&public_amount.into_repr().to_bytes_le());
+	let root_set_el = roots
+		.iter()
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.collect();
+	let nullifiers_el = nullifiers
+		.iter()
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.collect();
+	let commitments_el = commitments
+		.iter()
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.collect();
+	let ext_data_hash_el = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_le());
 	(
-		chain_id,
-		public_amount,
-		root_set,
-		nullifiers,
-		commitments,
-		ext_data_hash,
+		chain_id_el,
+		public_amount_el,
+		root_set_el,
+		nullifiers_el,
+		commitments_el,
+		ext_data_hash_el,
 	)
 }
 

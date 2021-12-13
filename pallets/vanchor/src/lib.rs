@@ -218,19 +218,6 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		// TODO: Remove this function, use transact instead
-		#[pallet::weight(0)]
-		pub fn deposit(
-			origin: OriginFor<T>,
-			id: T::TreeId,
-			leaf: T::Element,
-			amount: BalanceOf<T, I>,
-		) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
-			<Self as VAnchorInterface<_>>::deposit(sender, id, leaf, amount)?;
-			Ok(().into())
-		}
-
 		#[pallet::weight(0)] // TODO: Fix after benchmarks
 		pub fn transact(
 			origin: OriginFor<T>,
@@ -268,29 +255,6 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		let id = T::LinkableTree::create(creator.clone(), max_edges, depth)?;
 		VAnchors::<T, I>::insert(id, Some(VAnchorMetadata { creator, asset }));
 		Ok(id)
-	}
-
-	// TODO: Remove this function, use transact instead
-	fn deposit(
-		depositor: T::AccountId,
-		id: T::TreeId,
-		leaf: T::Element,
-		amount: BalanceOf<T, I>,
-	) -> Result<(), DispatchError> {
-		// insert the leaf
-		T::LinkableTree::insert_in_order(id, leaf)?;
-
-		let vanchor = Self::get_vanchor(id)?;
-		// transfer tokens to the pallet
-		<T as Config<I>>::Currency::transfer(vanchor.asset, &depositor, &Self::account_id(), amount)?;
-
-		Self::deposit_event(Event::Deposit {
-			depositor: depositor.clone(),
-			tree_id: id,
-			leaf,
-		});
-
-		Ok(())
 	}
 
 	fn transact(
@@ -350,18 +314,18 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 
 		// Construct public inputs
 		let mut bytes = Vec::new();
-		bytes.extend_from_slice(&chain_id.using_encoded(element_encoder));
 		bytes.extend_from_slice(&proof_data.public_amount.to_bytes());
-		for root in proof_data.roots {
-			bytes.extend_from_slice(&root.to_bytes());
-		}
+		bytes.extend_from_slice(&proof_data.ext_data_hash.to_bytes());
 		for null in &proof_data.input_nullifiers {
 			bytes.extend_from_slice(&null.to_bytes());
 		}
 		for comm in &proof_data.output_commitments {
 			bytes.extend_from_slice(&comm.to_bytes());
 		}
-		bytes.extend_from_slice(&proof_data.ext_data_hash.to_bytes());
+		bytes.extend_from_slice(&chain_id.using_encoded(element_encoder));
+		for root in proof_data.roots {
+			bytes.extend_from_slice(&root.to_bytes());
+		}
 
 		let res = match (proof_data.input_nullifiers.len(), proof_data.output_commitments.len()) {
 			(2, 2) => T::Verifier2x2::verify(&bytes, &proof_data.proof)?,
