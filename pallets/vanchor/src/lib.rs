@@ -266,9 +266,9 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		// double check the number of roots
 		T::LinkableTree::ensure_max_edges(id, proof_data.roots.len())?;
 		// Check if local root is known
-		// T::LinkableTree::ensure_known_root(id, proof_data.roots[0])?;
+		T::LinkableTree::ensure_known_root(id, proof_data.roots[0])?;
 		// Check if neighbor roots are known
-		// T::LinkableTree::ensure_known_neighbor_roots(id, &proof_data.roots)?;
+		T::LinkableTree::ensure_known_neighbor_roots(id, &proof_data.roots)?;
 
 		// Check nullifier and add or return `InvalidNullifier`
 		for nullifier in &proof_data.input_nullifiers {

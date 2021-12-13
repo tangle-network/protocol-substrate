@@ -361,6 +361,7 @@ pub fn setup_circuit_with_input_utxos(
 	(circuit, public_inputs, out_utxos)
 }
 
+// This function is used only for first transaction, when the tree is empty
 pub fn setup_circuit_with_data(
 	public_amount: Bn254Fr,
 	recipient: Vec<u8>,
@@ -397,8 +398,9 @@ pub fn setup_circuit_with_data(
 	let in_utxos = Utxos::new(in_chain_ids, in_amounts);
 
 	// Tree + set for proving input txos
-	let (in_paths, in_indices, in_root_set, in_set_private_inputs) =
-		setup_tree_and_set(&in_utxos.commitments, &params3);
+	let (in_paths, in_indices, _, in_set_private_inputs) = setup_tree_and_set(&in_utxos.commitments, &params3);
+	// Since on chain tree is empty we set the roots to zero
+	let in_root_set = [Bn254Fr::from(0u32); M];
 
 	// Output leaves (txos)
 	let out_utxos = Utxos::new(out_chain_ids, out_amounts);
