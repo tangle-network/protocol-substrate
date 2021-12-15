@@ -186,6 +186,10 @@ pub mod pallet {
 		AlreadyRevealedNullifier,
 		// Invalid external amount
 		InvalidExtAmount,
+		// Maximum deposit amount exceeded
+		InvalidDepositAmount,
+		// Maximum withdraw amount exceeded
+		InvalidWithdrawAmount,
 		// Invalid external data
 		InvalidExtData,
 		// Invalid input nullifiers
@@ -211,19 +215,6 @@ pub mod pallet {
 			ensure_root(origin)?;
 			let tree_id = <Self as VAnchorInterface<_>>::create(T::AccountId::default(), depth, max_edges, asset)?;
 			Self::deposit_event(Event::VAnchorCreation { tree_id });
-			Ok(().into())
-		}
-
-		// TODO: Remove this function, use transact instead
-		#[pallet::weight(0)]
-		pub fn deposit(
-			origin: OriginFor<T>,
-			id: T::TreeId,
-			leaf: T::Element,
-			amount: BalanceOf<T, I>,
-		) -> DispatchResultWithPostInfo {
-			let sender = ensure_signed(origin)?;
-			<Self as VAnchorInterface<_>>::deposit(sender, id, leaf, amount)?;
 			Ok(().into())
 		}
 
@@ -266,29 +257,6 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		Ok(id)
 	}
 
-	// TODO: Remove this function, use transact instead
-	fn deposit(
-		depositor: T::AccountId,
-		id: T::TreeId,
-		leaf: T::Element,
-		amount: BalanceOf<T, I>,
-	) -> Result<(), DispatchError> {
-		// insert the leaf
-		T::LinkableTree::insert_in_order(id, leaf)?;
-
-		let vanchor = Self::get_vanchor(id)?;
-		// transfer tokens to the pallet
-		<T as Config<I>>::Currency::transfer(vanchor.asset, &depositor, &Self::account_id(), amount)?;
-
-		Self::deposit_event(Event::Deposit {
-			depositor: depositor.clone(),
-			tree_id: id,
-			leaf,
-		});
-
-		Ok(())
-	}
-
 	fn transact(
 		transactor: T::AccountId,
 		id: T::TreeId,
@@ -325,7 +293,6 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			.abs()
 			.try_into()
 			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
-
 		ensure!(
 			ext_amount_unsigned < T::MaxExtAmount::get(),
 			Error::<T, I>::InvalidExtAmount
@@ -345,8 +312,8 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 
 		let chain_id = <T as pallet_linkable_tree::Config<I>>::GetChainId::get();
 
+		// Construct public inputs
 		let mut bytes = Vec::new();
-		
 		bytes.extend_from_slice(&proof_data.public_amount.to_bytes());
 		bytes.extend_from_slice(&proof_data.ext_data_hash.to_bytes());
 		for null in &proof_data.input_nullifiers {
@@ -359,13 +326,12 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		for root in proof_data.roots {
 			bytes.extend_from_slice(&root.to_bytes());
 		}
-		
-		if proof_data.input_nullifiers.len() == 2 {
-			let res = T::Verifier2x2::verify(&bytes, &proof_data.proof)?;
-			ensure!(res, Error::<T, I>::InvalidTransactionProof);
-		} else {
-			ensure!(false, Error::<T, I>::InvalidInputNullifiers);
-		}
+
+		let res = match (proof_data.input_nullifiers.len(), proof_data.output_commitments.len()) {
+			(2, 2) => T::Verifier2x2::verify(&bytes, &proof_data.proof)?,
+			_ => false,
+		};
+		ensure!(res, Error::<T, I>::InvalidTransactionProof);
 
 		// Flag nullifiers as used
 		for nullifier in &proof_data.input_nullifiers {
@@ -384,14 +350,14 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		if is_deposit {
 			ensure!(
 				abs_amount <= T::MaxDepositAmount::get(),
-				Error::<T, I>::InvalidExtAmount
+				Error::<T, I>::InvalidDepositAmount
 			);
 
 			// deposit tokens to the pallet from the transactor's account
 			<T as Config<I>>::Currency::transfer(vanchor.asset, &transactor, &Self::account_id(), abs_amount)?;
 		} else if is_negative {
 			let min_withdraw = T::MinWithdrawAmount::get();
-			ensure!(abs_amount >= min_withdraw, Error::<T, I>::InvalidExtAmount);
+			ensure!(abs_amount >= min_withdraw, Error::<T, I>::InvalidWithdrawAmount);
 
 			// Withdraw to recipient account
 			<T as Config<I>>::Currency::transfer(vanchor.asset, &Self::account_id(), &ext_data.recipient, abs_amount)?;

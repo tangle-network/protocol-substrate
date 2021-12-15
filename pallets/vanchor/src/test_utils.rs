@@ -1,6 +1,6 @@
 use crate::mock::*;
 use ark_crypto_primitives::snark::SNARK;
-use ark_ff::{to_bytes, BigInteger, PrimeField, ToBytes, UniformRand};
+use ark_ff::{BigInteger, PrimeField, UniformRand};
 use ark_groth16::{Groth16, Proof, ProvingKey, VerifyingKey};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::{rand::thread_rng, rc::Rc, vec::Vec};
@@ -36,18 +36,13 @@ use crate::mock::Element;
 
 type Bn254Fr = ark_bn254::Fr;
 type Bn254 = ark_bn254::Bn254;
-type Bls12_381Fr = ark_bls12_381::Fr;
-
-type ProofBytes = Vec<u8>;
-type RootsElement = Vec<Element>;
-type NullifierHashElement = Element;
-type LeafElement = Element;
 
 const TREE_DEPTH: usize = 30;
 const M: usize = 2;
 const INS: usize = 2;
 const OUTS: usize = 2;
 
+#[derive(Debug)]
 pub struct ExtData {
 	pub recipient_bytes: Vec<u8>,
 	pub relayer_bytes: Vec<u8>,
@@ -96,6 +91,44 @@ impl IntoAbiToken for ExtData {
 	}
 }
 
+#[derive(Clone)]
+pub struct Utxos {
+	pub chain_ids: Vec<Bn254Fr>,
+	pub amounts: Vec<Bn254Fr>,
+	pub keypairs: Vec<Keypair<Bn254Fr, PoseidonCRH_x5_2<Bn254Fr>>>,
+	pub leaf_privates: Vec<LeafPrivateInput<Bn254Fr>>,
+	pub leaf_publics: Vec<LeafPublicInput<Bn254Fr>>,
+	pub nullifiers: Vec<Bn254Fr>,
+	pub commitments: Vec<Bn254Fr>,
+}
+
+impl Utxos {
+	fn new(chain_ids: Vec<Bn254Fr>, amounts: Vec<Bn254Fr>) -> Self {
+		let (params2, _, params4, params5) = get_hash_params::<Bn254Fr>(Curve::Bn254);
+
+		let keypairs = setup_keypairs(amounts.len());
+		let (commitments, nullifiers, leaf_privates, leaf_publics) =
+			setup_leaves(&chain_ids, &amounts, &keypairs, &params2, &params4, &params5);
+
+		Self {
+			chain_ids,
+			amounts,
+			keypairs,
+			leaf_privates,
+			leaf_publics,
+			nullifiers,
+			commitments,
+		}
+	}
+
+	fn new_raw(chain_ids: Vec<ChainId>, out_amounts: Vec<Balance>) -> Self {
+		let chain_ids_f = chain_ids.iter().map(|x| Bn254Fr::from(*x)).collect();
+		let amount_f = out_amounts.iter().map(|x| Bn254Fr::from(*x)).collect();
+
+		Self::new(chain_ids_f, amount_f)
+	}
+}
+
 pub fn get_hash_params<F: PrimeField>(
 	curve: Curve,
 ) -> (
@@ -137,7 +170,7 @@ pub fn setup_random_circuit() -> VACircuit<
 	let out_chain_ids = vec![Bn254Fr::rand(rng); OUTS];
 	let out_amounts = vec![Bn254Fr::rand(rng); OUTS];
 
-	let (circuit, ..) = setup_circuit_with_inputs(
+	let (circuit, ..) = setup_circuit_with_data(
 		public_amount,
 		recipient.into_repr().to_bytes_le(),
 		relayer.into_repr().to_bytes_le(),
@@ -152,7 +185,7 @@ pub fn setup_random_circuit() -> VACircuit<
 	circuit
 }
 
-pub fn setup_circuit_with_raw_inputs(
+pub fn setup_circuit_with_data_raw(
 	// Metadata inputs
 	public_amount: Amount,
 	recipient: AccountId,
@@ -162,6 +195,7 @@ pub fn setup_circuit_with_raw_inputs(
 	// Transaction inputs
 	in_chain_id: ChainId,
 	in_amounts: Vec<Balance>,
+	// Transaction outputs
 	out_chain_ids: Vec<ChainId>,
 	out_amounts: Vec<Balance>,
 ) -> (
@@ -177,14 +211,9 @@ pub fn setup_circuit_with_raw_inputs(
 		OUTS,
 		M,
 	>,
-	Element,
-	Element,
-	Vec<Element>,
-	Vec<Element>,
-	Vec<Element>,
-	Vec<Element>,
-	Element,
 	Vec<Bn254Fr>,
+	Utxos,
+	Utxos,
 ) {
 	let chain_id_bytes = in_chain_id.using_encoded(element_encoder);
 	let in_chain_id_f = Bn254Fr::from_le_bytes_mod_order(&chain_id_bytes);
@@ -195,7 +224,7 @@ pub fn setup_circuit_with_raw_inputs(
 	let out_chain_ids_f = out_chain_ids.iter().map(|x| Bn254Fr::from(*x)).collect();
 	let out_amounts_f = out_amounts.iter().map(|x| Bn254Fr::from(*x)).collect();
 
-	let (circuit, root_set, nullifiers, leaves, commitments, ext_data_hash) = setup_circuit_with_inputs(
+	let (circuit, public_inputs_f, in_utxos, out_utxos) = setup_circuit_with_data(
 		public_amount_f,
 		recipient.encode(),
 		relayer.encode(),
@@ -207,53 +236,133 @@ pub fn setup_circuit_with_raw_inputs(
 		out_amounts_f,
 	);
 
-	let root_elements = root_set
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
-		.collect();
-	let nullifier_elements = nullifiers
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
-		.collect();
-	let leaf_elements = leaves
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
-		.collect();
-	let commitment_elements = commitments
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
-		.collect();
-	let ext_data_hash_element = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_le());
-	let public_amount_element = Element::from_bytes(&public_amount_f.into_repr().to_bytes_le());
-	let chain_id_element = Element::from_bytes(&in_chain_id_f.into_repr().to_bytes_le());
-
-	let mut public_inputs = vec![public_amount_f];
-	public_inputs.push(ext_data_hash);
-	for null in nullifiers {
-		public_inputs.push(null);
-	}
-	for comm in commitments {
-		public_inputs.push(comm);
-	}
-	public_inputs.push(in_chain_id_f);
-	for root_f in root_set {
-		public_inputs.push(root_f);
-	}
-
-	(
-		circuit,
-		chain_id_element,
-		public_amount_element,
-		root_elements,
-		nullifier_elements,
-		leaf_elements,
-		commitment_elements,
-		ext_data_hash_element,
-		public_inputs,
-	)
+	(circuit, public_inputs_f, in_utxos, out_utxos)
 }
 
-pub fn setup_circuit_with_inputs(
+pub fn setup_circuit_with_input_utxos_raw(
+	// Metadata inputs
+	public_amount: Amount,
+	recipient: AccountId,
+	relayer: AccountId,
+	ext_amount: Amount,
+	fee: Balance,
+	// Transaction inputs
+	in_utxos: Utxos,
+	// Transaction outputs
+	out_chain_ids: Vec<ChainId>,
+	out_amounts: Vec<Balance>,
+) -> (
+	VACircuit<
+		Bn254Fr,
+		PoseidonCRH_x5_2<Bn254Fr>,
+		PoseidonCRH_x5_2Gadget<Bn254Fr>,
+		TreeConfig_x5<Bn254Fr>,
+		LeafCRHGadget<Bn254Fr>,
+		PoseidonCRH_x5_3Gadget<Bn254Fr>,
+		TREE_DEPTH,
+		INS,
+		OUTS,
+		M,
+	>,
+	Vec<Bn254Fr>,
+	Utxos,
+) {
+	let public_amount_f = Bn254Fr::from(public_amount);
+
+	let out_chain_ids_f = out_chain_ids.iter().map(|x| Bn254Fr::from(*x)).collect();
+	let out_amounts_f = out_amounts.iter().map(|x| Bn254Fr::from(*x)).collect();
+
+	let (circuit, public_inputs_f, out_utxos) = setup_circuit_with_input_utxos(
+		public_amount_f,
+		recipient.encode(),
+		relayer.encode(),
+		ext_amount.encode(),
+		fee.encode(),
+		in_utxos,
+		out_chain_ids_f,
+		out_amounts_f,
+	);
+
+	(circuit, public_inputs_f, out_utxos)
+}
+
+pub fn setup_circuit_with_input_utxos(
+	public_amount: Bn254Fr,
+	recipient: Vec<u8>,
+	relayer: Vec<u8>,
+	ext_amount: Vec<u8>,
+	fee: Vec<u8>,
+	// Input transactions
+	in_utxos: Utxos,
+	// Output data
+	out_chain_ids: Vec<Bn254Fr>,
+	out_amounts: Vec<Bn254Fr>,
+) -> (
+	VACircuit<
+		Bn254Fr,
+		PoseidonCRH_x5_2<Bn254Fr>,
+		PoseidonCRH_x5_2Gadget<Bn254Fr>,
+		TreeConfig_x5<Bn254Fr>,
+		LeafCRHGadget<Bn254Fr>,
+		PoseidonCRH_x5_3Gadget<Bn254Fr>,
+		TREE_DEPTH,
+		INS,
+		OUTS,
+		M,
+	>,
+	Vec<Bn254Fr>,
+	Utxos,
+) {
+	let (params2, params3, params4, params5) = get_hash_params::<Bn254Fr>(Curve::Bn254);
+
+	// Tree + set for proving input txos
+	let (in_paths, in_indices, in_root_set, in_set_private_inputs) =
+		setup_tree_and_set(&in_utxos.commitments, &params3);
+
+	// Output leaves (txos)
+	let out_utxos = Utxos::new(out_chain_ids, out_amounts);
+
+	let ext_data = ExtData::new(
+		recipient,
+		relayer,
+		ext_amount,
+		fee,
+		out_utxos.commitments[0].into_repr().to_bytes_le(),
+		out_utxos.commitments[1].into_repr().to_bytes_le(),
+	);
+	let ext_data_hash = keccak256(&ext_data.encode_abi());
+	let ext_data_hash_f = Bn254Fr::from_le_bytes_mod_order(&ext_data_hash);
+	// Arbitrary data
+	let arbitrary_data = setup_arbitrary_data(ext_data_hash_f);
+
+	let circuit = setup_circuit(
+		public_amount,
+		arbitrary_data,
+		in_utxos.clone(),
+		in_indices,
+		in_paths,
+		in_set_private_inputs,
+		in_root_set,
+		out_utxos.clone(),
+		params2,
+		params4,
+		params5,
+	);
+
+	let public_inputs = construct_public_inputs(
+		in_utxos.leaf_publics[0].chain_id,
+		public_amount,
+		in_root_set.to_vec(),
+		in_utxos.nullifiers,
+		out_utxos.commitments.clone(),
+		ext_data_hash_f,
+	);
+
+	(circuit, public_inputs, out_utxos)
+}
+
+// This function is used only for first transaction, when the tree is empty
+pub fn setup_circuit_with_data(
 	public_amount: Bn254Fr,
 	recipient: Vec<u8>,
 	relayer: Vec<u8>,
@@ -276,11 +385,9 @@ pub fn setup_circuit_with_inputs(
 		OUTS,
 		M,
 	>,
-	[Bn254Fr; M],
 	Vec<Bn254Fr>,
-	Vec<Bn254Fr>,
-	Vec<Bn254Fr>,
-	Bn254Fr,
+	Utxos,
+	Utxos,
 ) {
 	let (params2, params3, params4, params5) = get_hash_params::<Bn254Fr>(Curve::Bn254);
 
@@ -288,33 +395,25 @@ pub fn setup_circuit_with_inputs(
 	let in_chain_ids = vec![in_chain_id; in_amounts.len()];
 
 	// Input leaves (txos)
-	let in_keypairs = setup_keypairs(in_amounts.len());
-	let (in_leaves, in_nullifiers, in_leaf_privates, in_leaf_publics) =
-		setup_leaves(&in_chain_ids, &in_amounts, &in_keypairs, &params2, &params4, &params5);
+	let in_utxos = Utxos::new(in_chain_ids, in_amounts);
 
 	// Tree + set for proving input txos
-	let (in_paths, in_indices, in_root_set, in_set_private_inputs) = setup_tree_and_set(&in_leaves, &params3);
+	let (in_paths, in_indices, _, in_set_private_inputs) = setup_tree_and_set(&in_utxos.commitments, &params3);
+	// Since on chain tree is empty we set the roots to zero
+	let in_root_set = [Bn254Fr::from(0u32); M];
 
 	// Output leaves (txos)
-	let out_keypairs = setup_keypairs(out_amounts.len());
-	let out_pub_keys: Vec<Bn254Fr> = out_keypairs.iter().map(|x| x.public_key(&params2).unwrap()).collect();
-	let (out_commitments, _out_nullifiers, out_leaf_privates, out_leaf_publics) = setup_leaves(
-		&out_chain_ids,
-		&out_amounts,
-		&out_keypairs,
-		&params2,
-		&params4,
-		&params5,
-	);
+	let out_utxos = Utxos::new(out_chain_ids, out_amounts);
 
 	let ext_data = ExtData::new(
 		recipient,
 		relayer,
 		ext_amount,
 		fee,
-		out_commitments[0].into_repr().to_bytes_le(),
-		out_commitments[1].into_repr().to_bytes_le(),
+		out_utxos.commitments[0].into_repr().to_bytes_le(),
+		out_utxos.commitments[1].into_repr().to_bytes_le(),
 	);
+
 	let ext_data_hash = keccak256(&ext_data.encode_abi());
 	let ext_data_hash_f = Bn254Fr::from_le_bytes_mod_order(&ext_data_hash);
 	// Arbitrary data
@@ -323,50 +422,41 @@ pub fn setup_circuit_with_inputs(
 	let circuit = setup_circuit(
 		public_amount,
 		arbitrary_data,
-		in_keypairs,
-		in_leaf_privates,
-		in_leaf_publics[0].clone(),
-		in_nullifiers.clone(),
+		in_utxos.clone(),
 		in_indices,
 		in_paths,
 		in_set_private_inputs,
 		in_root_set,
-		out_leaf_privates,
-		out_leaf_publics,
-		out_commitments.clone(),
-		out_pub_keys,
+		out_utxos.clone(),
 		params2,
 		params4,
 		params5,
 	);
-	(
-		circuit,
-		in_root_set,
-		in_nullifiers,
-		in_leaves,
-		out_commitments,
+
+	let public_inputs = construct_public_inputs(
+		in_utxos.leaf_publics[0].chain_id,
+		public_amount,
+		in_root_set.to_vec(),
+		in_utxos.nullifiers.clone(),
+		out_utxos.commitments.clone(),
 		ext_data_hash_f,
-	)
+	);
+
+	(circuit, public_inputs, in_utxos, out_utxos)
 }
 
 pub fn setup_circuit(
 	public_amount: Bn254Fr,
 	arbitrary_data: VAnchorArbitraryData<Bn254Fr>,
 	// Input transactions
-	in_keypairs: Vec<Keypair<Bn254Fr, PoseidonCRH_x5_2<Bn254Fr>>>,
-	in_leaf_privates: Vec<LeafPrivateInput<Bn254Fr>>,
-	in_leaf_public: LeafPublicInput<Bn254Fr>,
-	in_nullifiers: Vec<Bn254Fr>,
-	in_indicies: Vec<Bn254Fr>,
+	in_utxos: Utxos,
 	// Data related to tree
+	in_indicies: Vec<Bn254Fr>,
 	in_paths: Vec<Path<TreeConfig_x5<Bn254Fr>, TREE_DEPTH>>,
 	in_set_private_inputs: Vec<SetPrivateInputs<Bn254Fr, M>>,
 	in_root_set: [Bn254Fr; M],
 	// Output transactions
-	out_leaf_privates: Vec<LeafPrivateInput<Bn254Fr>>,
-	out_leaf_publics: Vec<LeafPublicInput<Bn254Fr>>,
-	out_commitments: Vec<Bn254Fr>,
-	out_pub_keys: Vec<Bn254Fr>,
+	out_utxos: Utxos,
 	// Hash function parameters
 	params2: PoseidonParameters<Bn254Fr>,
 	params4: PoseidonParameters<Bn254Fr>,
@@ -383,6 +473,12 @@ pub fn setup_circuit(
 	OUTS,
 	M,
 > {
+	let out_pub_keys = out_utxos
+		.keypairs
+		.iter()
+		.map(|x| x.public_key(&params2).unwrap())
+		.collect();
+
 	let circuit = VACircuit::<
 		Bn254Fr,
 		PoseidonCRH_x5_2<Bn254Fr>,
@@ -397,9 +493,9 @@ pub fn setup_circuit(
 	>::new(
 		public_amount,
 		arbitrary_data,
-		in_leaf_privates,
-		in_keypairs,
-		in_leaf_public,
+		in_utxos.leaf_privates,
+		in_utxos.keypairs,
+		in_utxos.leaf_publics[0].clone(),
 		in_set_private_inputs,
 		in_root_set,
 		params2,
@@ -407,10 +503,10 @@ pub fn setup_circuit(
 		params5,
 		in_paths,
 		in_indicies,
-		in_nullifiers.clone(),
-		out_commitments.clone(),
-		out_leaf_privates,
-		out_leaf_publics,
+		in_utxos.nullifiers.clone(),
+		out_utxos.commitments.clone(),
+		out_utxos.leaf_privates,
+		out_utxos.leaf_publics,
 		out_pub_keys,
 	);
 
@@ -454,10 +550,10 @@ pub fn prove(
 		OUTS,
 		M,
 	>,
-	pk_bytes: Vec<u8>,
+	pk_bytes: &[u8],
 ) -> Vec<u8> {
 	let rng = &mut thread_rng();
-	let pk = ProvingKey::<ark_bn254::Bn254>::deserialize(&*pk_bytes).unwrap();
+	let pk = ProvingKey::<ark_bn254::Bn254>::deserialize(pk_bytes).unwrap();
 
 	let proof = Groth16::prove(&pk, circuit, rng).unwrap();
 	let mut proof_bytes = Vec::new();
@@ -465,7 +561,7 @@ pub fn prove(
 	proof_bytes
 }
 
-pub fn verify(public_inputs: Vec<Bn254Fr>, vk: &[u8], proof: &[u8]) -> bool {
+pub fn verify(public_inputs: &Vec<Bn254Fr>, vk: &[u8], proof: &[u8]) -> bool {
 	let vk = VerifyingKey::<Bn254>::deserialize(vk).unwrap();
 	let proof = Proof::<Bn254>::deserialize(proof).unwrap();
 	let ver_res = verify_groth16(&vk, &public_inputs, &proof);
@@ -585,6 +681,95 @@ pub fn setup_tree_and_set(
 
 pub fn setup_arbitrary_data(ext_data: Bn254Fr) -> VAnchorArbitraryData<Bn254Fr> {
 	VAnchorArbitraryData::new(ext_data)
+}
+
+pub fn construct_public_inputs(
+	chain_id: Bn254Fr,
+	public_amount: Bn254Fr,
+	roots: Vec<Bn254Fr>,
+	nullifiers: Vec<Bn254Fr>,
+	commitments: Vec<Bn254Fr>,
+	ext_data_hash: Bn254Fr,
+) -> Vec<Bn254Fr> {
+	let mut public_inputs = vec![public_amount, ext_data_hash];
+	public_inputs.extend(nullifiers);
+	public_inputs.extend(commitments);
+	public_inputs.push(chain_id);
+	public_inputs.extend(roots);
+
+	public_inputs
+}
+
+pub fn construct_public_inputs_el(public_inputs: &Vec<Bn254Fr>) -> Vec<Element> {
+	let public_inputs_el = public_inputs
+		.iter()
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.collect();
+
+	public_inputs_el
+}
+
+pub fn deconstruct_public_inputs(
+	public_inputs: &Vec<Bn254Fr>,
+) -> (
+	Bn254Fr,      // Chain Id
+	Bn254Fr,      // Public amount
+	Vec<Bn254Fr>, // Roots
+	Vec<Bn254Fr>, // Input tx Nullifiers
+	Vec<Bn254Fr>, // Output tx commitments
+	Bn254Fr,      // External data hash
+) {
+	let public_amount = public_inputs[0];
+	let ext_data_hash = public_inputs[1];
+	let nullifiers = public_inputs[2..4].to_vec();
+	let commitments = public_inputs[4..6].to_vec();
+	let chain_id = public_inputs[6];
+	let root_set = public_inputs[7..9].to_vec();
+	(
+		chain_id,
+		public_amount,
+		root_set,
+		nullifiers,
+		commitments,
+		ext_data_hash,
+	)
+}
+
+pub fn deconstruct_public_inputs_el(
+	public_inputs_f: &Vec<Bn254Fr>,
+) -> (
+	Element,      // Chain Id
+	Element,      // Public amount
+	Vec<Element>, // Roots
+	Vec<Element>, // Input tx Nullifiers
+	Vec<Element>, // Output tx commitments
+	Element,      // External amount
+) {
+	let (chain_id, public_amount, roots, nullifiers, commitments, ext_data_hash) =
+		deconstruct_public_inputs(public_inputs_f);
+	let chain_id_el = Element::from_bytes(&chain_id.into_repr().to_bytes_le());
+	let public_amount_el = Element::from_bytes(&public_amount.into_repr().to_bytes_le());
+	let root_set_el = roots
+		.iter()
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.collect();
+	let nullifiers_el = nullifiers
+		.iter()
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.collect();
+	let commitments_el = commitments
+		.iter()
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.collect();
+	let ext_data_hash_el = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_le());
+	(
+		chain_id_el,
+		public_amount_el,
+		root_set_el,
+		nullifiers_el,
+		commitments_el,
+		ext_data_hash_el,
+	)
 }
 
 /// Truncate and pad 256 bit slice in reverse
