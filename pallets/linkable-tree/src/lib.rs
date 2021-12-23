@@ -87,7 +87,7 @@ pub mod pallet {
 		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 
 		// Getter of id of the current chain
-		type GetChainId: Get<Self::ChainId>;
+		type ChainIdentifier: Get<Self::ChainId>;
 
 		/// The tree
 		type Tree: TreeInterface<Self::AccountId, Self::TreeId, Self::Element>
@@ -298,6 +298,10 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 }
 
 impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T, I>> for Pallet<T, I> {
+	fn get_chain_id() -> T::ChainId {
+		T::ChainIdentifier::get()
+	}
+
 	fn get_root(id: T::TreeId) -> Result<T::Element, DispatchError> {
 		T::Tree::get_root(id)
 	}

@@ -229,7 +229,7 @@ impl pallet_asset_registry::Config for Test {
 parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	pub const HistoryLength: u32 = 30;
-	pub const GetChainId: u32 = 0;
+	pub const ChainIdentifier: u8 = 5;
 }
 
 impl pallet_anchor::Config for Test {
@@ -245,7 +245,7 @@ impl pallet_anchor::Config for Test {
 
 impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
-	type GetChainId = GetChainId;
+	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
@@ -253,7 +253,6 @@ impl pallet_linkable_tree::Config for Test {
 }
 
 parameter_types! {
-	pub const ChainIdentifier: u8 = 5;
 	pub const ProposalLifetime: u64 = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }

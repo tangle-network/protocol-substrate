@@ -226,7 +226,6 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			id: T::TreeId,
 			proof_bytes: Vec<u8>,
-			chain_id: T::ChainId,
 			roots: Vec<T::Element>,
 			nullifier_hash: T::Element,
 			recipient: T::AccountId,
@@ -239,7 +238,6 @@ pub mod pallet {
 			<Self as AnchorInterface<_>>::withdraw(
 				id,
 				proof_bytes.as_slice(),
-				chain_id,
 				roots,
 				nullifier_hash,
 				recipient,
@@ -306,7 +304,6 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 	fn withdraw(
 		id: T::TreeId,
 		proof_bytes: &[u8],
-		chain_id: T::ChainId,
 		roots: Vec<T::Element>,
 		nullifier_hash: T::Element,
 		recipient: T::AccountId,
@@ -350,7 +347,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		let relayer_bytes = truncate_and_pad(&relayer.using_encoded(element_encoder)[..]);
 		let fee_bytes = fee.using_encoded(element_encoder);
 		let refund_bytes = refund.using_encoded(element_encoder);
-		let chain_id_bytes = chain_id.using_encoded(element_encoder);
+		let chain_id_bytes = T::LinkableTree::get_chain_id().using_encoded(element_encoder);
 
 		bytes.extend_from_slice(&chain_id_bytes);
 		bytes.extend_from_slice(&nullifier_hash.encode());

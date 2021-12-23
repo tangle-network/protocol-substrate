@@ -310,7 +310,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			Error::<T, I>::InvalidPublicAmount
 		);
 
-		let chain_id = <T as pallet_linkable_tree::Config<I>>::GetChainId::get();
+		let chain_id = <T as pallet_linkable_tree::Config<I>>::ChainIdentifier::get();
 
 		// Construct public inputs
 		let mut bytes = Vec::new();

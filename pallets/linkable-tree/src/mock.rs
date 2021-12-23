@@ -176,8 +176,8 @@ parameter_types! {
 
 impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
+	type ChainIdentifier = CurrentChainId;
 	type Event = Event;
-	type GetChainId = CurrentChainId;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();
