@@ -187,7 +187,7 @@ impl pallet_mt::Config for Test {
 
 parameter_types! {
 	pub const HistoryLength: u32 = 30;
-	pub const ChainIdentifier: ChainId = 0;
+	pub const ChainIdentifier: ChainId = 1;
 }
 
 impl pallet_linkable_tree::Config for Test {
