@@ -29,7 +29,6 @@ pub trait AnchorInterface<C: AnchorConfig> {
 	fn withdraw(
 		id: C::TreeId,
 		proof_bytes: &[u8],
-		chain_id: C::ChainId,
 		roots: Vec<C::Element>,
 		nullifier_hash: C::Element,
 		recipient: C::AccountId,

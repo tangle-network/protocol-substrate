@@ -190,13 +190,13 @@ impl pallet_mt::Config for Test {
 
 parameter_types! {
 	pub const HistoryLength: u32 = 30;
-	pub const GetChainId: ChainId = 0;
+	pub const ChainIdentifier: ChainId = 0;
 }
 
 impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
+	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
-	type GetChainId = GetChainId;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();

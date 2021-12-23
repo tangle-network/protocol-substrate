@@ -1154,13 +1154,13 @@ impl pallet_mixer::Config<pallet_mixer::Instance2> for Runtime {
 parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	pub const HistoryLength: u32 = 30;
-	pub const GetChainId: ChainId = 1080;
+	pub const ChainIdentifier: ChainId = 1080;
 }
 
 impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance1> for Runtime {
 	type ChainId = ChainId;
+	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
-	type GetChainId = GetChainId;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTreeBn254;
 	type WeightInfo = ();
@@ -1168,8 +1168,8 @@ impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance1> for Runtime {
 
 impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance2> for Runtime {
 	type ChainId = ChainId;
+	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
-	type GetChainId = GetChainId;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTreeBls381;
 	type WeightInfo = ();
@@ -1210,7 +1210,6 @@ impl pallet_anchor_handler::Config<pallet_anchor_handler::Instance2> for Runtime
 }
 
 parameter_types! {
-	pub const ChainIdentifier: u8 = 5;
 	pub const ProposalLifetime: BlockNumber = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
