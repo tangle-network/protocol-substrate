@@ -164,8 +164,8 @@ fn genesis_config_works() {
 			let native: BoundedVec<u8, <Test as crate::Config>::StringLimit> = b"NATIVE".to_vec().try_into().unwrap();
 			assert_eq!(AssetRegistryPallet::asset_ids(native), None);
 
-			let bsx: BoundedVec<u8, <Test as crate::Config>::StringLimit> = b"BSX".to_vec().try_into().unwrap();
-			assert_eq!(AssetRegistryPallet::asset_ids(bsx).unwrap(), 0u32);
+			let webb: BoundedVec<u8, <Test as crate::Config>::StringLimit> = b"WEBB".to_vec().try_into().unwrap();
+			assert_eq!(AssetRegistryPallet::asset_ids(webb).unwrap(), 0u32);
 
 			let one: BoundedVec<u8, <Test as crate::Config>::StringLimit> = b"ONE".to_vec().try_into().unwrap();
 			assert_eq!(AssetRegistryPallet::asset_ids(one.clone()).unwrap(), 1u32);
