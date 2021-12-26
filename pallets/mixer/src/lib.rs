@@ -77,6 +77,7 @@ use frame_support::{
 };
 use orml_traits::MultiCurrency;
 use sp_std::prelude::*;
+use orml_traits::currency::transactional;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
@@ -259,6 +260,7 @@ pub mod pallet {
 			})
 		}
 
+		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
@@ -266,6 +268,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::withdraw())]
 		pub fn withdraw(
 			origin: OriginFor<T>,

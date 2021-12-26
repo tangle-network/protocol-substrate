@@ -71,6 +71,7 @@ use sp_runtime::traits::AccountIdConversion;
 use sp_std::prelude::*;
 use types::*;
 pub use weights::WeightInfo;
+use orml_traits::currency::transactional;
 
 /// Type alias for the orml_traits::MultiCurrency::Balance type
 pub type BalanceOf<T, I> =
@@ -194,6 +195,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
@@ -204,6 +206,7 @@ pub mod pallet {
 		/// Same as [Self::deposit] but with another call to update the linked
 		/// anchors cross-chain (if any).
 		// FIXME: update the weight here
+		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
 		pub fn deposit_and_update_linked_anchors(
 			origin: OriginFor<T>,
@@ -221,6 +224,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::withdraw())]
 		pub fn withdraw(
 			origin: OriginFor<T>,
