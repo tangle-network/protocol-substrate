@@ -173,6 +173,43 @@ pub mod pallet {
 		NoMixerFound,
 	}
 
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+		// (asset_id, deposit_size)
+		pub mixers: Vec<(CurrencyIdOf<T, I>, BalanceOf<T, I>)>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+		fn default() -> Self {
+			GenesisConfig::<T, I> {
+				mixers: vec![],
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+		fn build(&self) {
+			self.mixers.iter().for_each(|(asset_id, deposit_size)| {
+				let _ = <Pallet::<T, I> as MixerInterface<
+					T::AccountId,
+					BalanceOf<T, I>,
+					CurrencyIdOf<T, I>,
+					T::TreeId,
+					T::Element,
+				>>::create(
+					T::AccountId::default(),
+					deposit_size.clone(),
+					30,
+					asset_id.clone(),
+				)
+				.map_err(|_| panic!("Failed to create mixer"));
+			})
+		}
+	}
+
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
 

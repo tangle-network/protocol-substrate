@@ -159,11 +159,12 @@ pub mod pallet {
 		fn default() -> Self {
 			GenesisConfig::<T> {
 				asset_names: vec![],
-				native_asset_name: b"BSX".to_vec(),
+				native_asset_name: b"WEBB".to_vec(),
 				native_existential_deposit: Default::default(),
 			}
 		}
 	}
+
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
 		fn build(&self) {
