@@ -1,3 +1,7 @@
 [submodule "open-runtime-module-library"]
 	path = open-runtime-module-library
 	url = https://github.com/webb-tools/open-runtime-module-library.git
+[submodule "protocol-substrate-fixtures"]
+	path = protocol-substrate-fixtures
+	url = https://github.com/webb-tools/protocol-substrate-fixtures.git
+	branch = main

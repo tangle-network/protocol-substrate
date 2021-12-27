@@ -6,9 +6,9 @@ use arkworks_utils::{
 use common::{AccountId, AuraId, Signature};
 use darkwebb_primitives::Balance;
 use darkwebb_runtime::{
-	wasm_binary_unwrap, AssetRegistryConfig, AuraConfig, BalancesConfig, CouncilConfig, GenesisConfig, HasherBls381Config,
-	HasherBn254Config, MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config, ParachainStakingConfig, SudoConfig, SystemConfig,
-	VerifierBls381Config, VerifierBn254Config, KUNITS, UNITS,
+	wasm_binary_unwrap, AssetRegistryConfig, AuraConfig, BalancesConfig, CouncilConfig, GenesisConfig,
+	HasherBls381Config, HasherBn254Config, MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config,
+	ParachainStakingConfig, SudoConfig, SystemConfig, VerifierBls381Config, VerifierBn254Config, KUNITS, UNITS,
 };
 
 use cumulus_primitives_core::ParaId;
@@ -266,7 +266,7 @@ fn testnet_genesis(
 	let verifier_params = {
 		use std::fs;
 		// let pk_bytes = fs::read("../../fixtures/proving_key.bin").unwrap();
-		let vk_bytes = include_bytes!("../../fixtures/verifying_key.bin");
+		let vk_bytes = include_bytes!("../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
 
 		vk_bytes.to_vec()
 	};
@@ -331,11 +331,7 @@ fn testnet_genesis(
 			default_hashes: None,
 		},
 		mixer_bn_254: MixerBn254Config {
-			mixers: vec![
-				(0, 10 * UNITS),
-				(0, 100 * UNITS),
-				(0, 1000 * UNITS),
-			],
+			mixers: vec![(0, 10 * UNITS), (0, 100 * UNITS), (0, 1000 * UNITS)],
 		},
 		council: CouncilConfig::default(),
 		treasury: Default::default(),
