@@ -72,6 +72,8 @@ use orml_traits::{
 	arithmetic::{Signed, Zero},
 	MultiCurrency, MultiCurrencyExtended,
 };
+use orml_traits::currency::transactional;
+
 use sp_runtime::traits::AccountIdConversion;
 use sp_std::{
 	convert::{TryFrom, TryInto},
@@ -218,6 +220,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[transactional]
 		#[pallet::weight(0)] // TODO: Fix after benchmarks
 		pub fn transact(
 			origin: OriginFor<T>,

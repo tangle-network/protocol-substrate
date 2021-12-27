@@ -1,13 +1,13 @@
 use arkworks_gadgets::prelude::ark_bn254::Bn254;
 use arkworks_utils::{
 	poseidon::PoseidonParameters,
-	utils::common::{setup_params_x3_5, setup_params_x5_3, setup_params_x5_5, Curve},
+	utils::common::{setup_params_x5_3, setup_params_x5_5, Curve},
 };
 use common::{AccountId, AuraId, Signature};
 use darkwebb_primitives::Balance;
 use darkwebb_runtime::{
-	wasm_binary_unwrap, AuraConfig, BalancesConfig, CouncilConfig, GenesisConfig, HasherBls381Config,
-	HasherBn254Config, MerkleTreeBls381Config, MerkleTreeBn254Config, ParachainStakingConfig, SudoConfig, SystemConfig,
+	wasm_binary_unwrap, AssetRegistryConfig, AuraConfig, BalancesConfig, CouncilConfig, GenesisConfig, HasherBls381Config,
+	HasherBn254Config, MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config, ParachainStakingConfig, SudoConfig, SystemConfig,
 	VerifierBls381Config, VerifierBn254Config, KUNITS, UNITS,
 };
 
@@ -277,6 +277,11 @@ fn testnet_genesis(
 			code: wasm_binary_unwrap().to_vec(),
 			changes_trie_config: Default::default(),
 		},
+		asset_registry: AssetRegistryConfig {
+			asset_names: vec![],
+			native_asset_name: b"WEBB".to_vec(),
+			native_existential_deposit: darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT,
+		},
 		balances: darkwebb_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
 		},
@@ -324,6 +329,13 @@ fn testnet_genesis(
 		merkle_tree_bls_381: MerkleTreeBls381Config {
 			phantom: Default::default(),
 			default_hashes: None,
+		},
+		mixer_bn_254: MixerBn254Config {
+			mixers: vec![
+				(0, 10 * UNITS),
+				(0, 100 * UNITS),
+				(0, 1000 * UNITS),
+			],
 		},
 		council: CouncilConfig::default(),
 		treasury: Default::default(),

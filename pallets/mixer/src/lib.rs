@@ -77,6 +77,7 @@ use frame_support::{
 };
 use orml_traits::MultiCurrency;
 use sp_std::prelude::*;
+use orml_traits::currency::transactional;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
@@ -173,6 +174,43 @@ pub mod pallet {
 		NoMixerFound,
 	}
 
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+		// (asset_id, deposit_size)
+		pub mixers: Vec<(CurrencyIdOf<T, I>, BalanceOf<T, I>)>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+		fn default() -> Self {
+			GenesisConfig::<T, I> {
+				mixers: vec![],
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+		fn build(&self) {
+			self.mixers.iter().for_each(|(asset_id, deposit_size)| {
+				let _ = <Pallet::<T, I> as MixerInterface<
+					T::AccountId,
+					BalanceOf<T, I>,
+					CurrencyIdOf<T, I>,
+					T::TreeId,
+					T::Element,
+				>>::create(
+					T::AccountId::default(),
+					deposit_size.clone(),
+					30,
+					asset_id.clone(),
+				)
+				.map_err(|_| panic!("Failed to create mixer"));
+			})
+		}
+	}
+
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
 
@@ -222,6 +260,7 @@ pub mod pallet {
 			})
 		}
 
+		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
 		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
@@ -229,6 +268,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::withdraw())]
 		pub fn withdraw(
 			origin: OriginFor<T>,

@@ -5,7 +5,7 @@ use darkwebb_runtime::{
 	constants::currency::*, wasm_binary_unwrap, AuthorityDiscoveryConfig, BabeConfig, Block, CouncilConfig,
 	DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig, HasherBls381Config, HasherBn254Config,
 	ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config, MerkleTreeBn254Config, SessionConfig, StakerStatus,
-	StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config,
+	StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config, AssetRegistryConfig, MixerBn254Config,
 };
 use itertools::Itertools;
 use sc_chain_spec::ChainSpecExtension;
@@ -231,6 +231,11 @@ fn testnet_genesis(
 			code: wasm_binary_unwrap().to_vec(),
 			changes_trie_config: Default::default(),
 		},
+		asset_registry: AssetRegistryConfig {
+			asset_names: vec![],
+			native_asset_name: b"WEBB".to_vec(),
+			native_existential_deposit: darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT,
+		},
 		balances: darkwebb_runtime::BalancesConfig {
 			balances: unique.iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
 		},
@@ -300,6 +305,13 @@ fn testnet_genesis(
 		merkle_tree_bls_381: MerkleTreeBls381Config {
 			phantom: Default::default(),
 			default_hashes: None,
+		},
+		mixer_bn_254: MixerBn254Config {
+			mixers: vec![
+				(0, 10 * UNITS),
+				(0, 100 * UNITS),
+				(0, 1000 * UNITS),
+			],
 		},
 	}
 }

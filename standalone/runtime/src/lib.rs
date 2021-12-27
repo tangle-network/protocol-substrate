@@ -1287,7 +1287,7 @@ construct_runtime!(
 		HasherBn254: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		HasherBls381: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
-		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
+		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>, Config<T>},
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Storage, Call, Event<T>},
@@ -1305,7 +1305,7 @@ construct_runtime!(
 		LinkableTreeBls381: pallet_linkable_tree::<Instance2>::{Pallet, Call, Storage, Event<T>},
 
 		// Mixer
-		MixerBn254: pallet_mixer::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		MixerBn254: pallet_mixer::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		MixerBls381: pallet_mixer::<Instance2>::{Pallet, Call, Storage, Event<T>},
 
 		// Anchor
