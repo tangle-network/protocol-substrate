@@ -2,10 +2,10 @@ use arkworks_utils::utils::common::{setup_params_x3_5, setup_params_x5_3, setup_
 use common::{AccountId, BabeId, Balance, Signature};
 
 use darkwebb_runtime::{
-	constants::currency::*, wasm_binary_unwrap, AuthorityDiscoveryConfig, BabeConfig, Block, CouncilConfig,
-	DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig, HasherBls381Config, HasherBn254Config,
-	ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config, MerkleTreeBn254Config, SessionConfig, StakerStatus,
-	StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config, AssetRegistryConfig, MixerBn254Config,
+	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig, BabeConfig, Block,
+	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig, HasherBls381Config,
+	HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config,
+	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config,
 };
 use itertools::Itertools;
 use sc_chain_spec::ChainSpecExtension;
@@ -196,7 +196,7 @@ fn testnet_genesis(
 	log::info!("Verifier params");
 	let verifier_params = {
 		use std::fs;
-		fs::read("./fixtures/verifying_key.bin").unwrap()
+		fs::read("./protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin").unwrap()
 	};
 
 	let mut endowed_accounts: Vec<AccountId> = endowed_accounts;
@@ -307,11 +307,7 @@ fn testnet_genesis(
 			default_hashes: None,
 		},
 		mixer_bn_254: MixerBn254Config {
-			mixers: vec![
-				(0, 10 * UNITS),
-				(0, 100 * UNITS),
-				(0, 1000 * UNITS),
-			],
+			mixers: vec![(0, 10 * UNITS), (0, 100 * UNITS), (0, 1000 * UNITS)],
 		},
 	}
 }
