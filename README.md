@@ -1,7 +1,7 @@
 # protocol-substrate
 ### Build
 
-The `cargo run` command will perform an initial build. Use the following command to build the node
+Clone the submodules using `git submodule update --init`. The `cargo run` command will perform an initial build. Use the following command to build the node
 without launching it:
 
 ```sh
