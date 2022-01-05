@@ -1,14 +1,14 @@
-use crate::test_utils::*;
 use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 use codec::Encode;
-use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
-use orml_traits::MultiCurrency;
-use pallet_asset_registry::AssetType;
 use sp_runtime::traits::{One, Zero};
 
-use crate::mock::*;
+use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
+use orml_traits::MultiCurrency;
+use pallet_asset_registry::AssetType;
+
+use crate::{mock::*, test_utils::*};
 
 const SEED: u32 = 0;
 
@@ -91,7 +91,86 @@ fn should_be_able_to_change_the_maintainer() {
 		assert_eq!(current_maintainer_account_id, new_maintainer_account_id);
 	});
 }
+#[test]
+fn should_have_same_root_as_wasm_utils() {
+	new_test_ext().execute_with(|| {
 
+		let curve = Curve::Bn254;
+		let pk_bytes = setup_environment(curve);
+		// now let's create the mixer.
+		let deposit_size = One::one();
+		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
+		// now with mixer created, we should setup the circuit.
+		let tree_id = MerkleTree::next_tree_id() - 1;
+		let sender_account_id = account::<AccountId>("", 1, SEED);
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
+		let fee_value = 0;
+		let refund_value = 0;
+
+
+		// inputs
+		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
+			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
+
+		assert_ok!(Mixer::deposit(
+			Origin::signed(sender_account_id.clone()),
+			tree_id,
+			leaf_element.clone(),
+		));
+
+
+		let note_str = "webb.bridge:v1:3:2:Arkworks:Bn254:Poseidon:EDG:18:0:5:5:7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d0729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";
+		let note = wasm_utils::note::JsNote::deserialize(&note_str).unwrap();
+		let leaf  = leaf_element.to_vec();
+		let mut  leaf_slice:[u8;32] = [0u8;32];
+		leaf_slice.copy_from_slice(&leaf[..32]);
+
+		let mut proof_builder = wasm_utils::proof::mixer::JsProofInputBuilder::new();
+		proof_builder.fee =Some(0);
+		proof_builder.refund  = Some(0);
+		proof_builder.leaf_index = Some(0);
+
+		proof_builder.recipient = Some(recipient_account_id.encode());
+		proof_builder.relayer = Some(relayer_account_id.encode());
+		proof_builder.leaves = Some(vec![leaf_slice]);
+		let proof_input = proof_builder.build().unwrap();
+		let proof  = wasm_utils::proof::mixer::generate_proof_js(note ,proof_input).unwrap();
+
+
+
+		// check the balance before the withdraw.
+		let balance_before = Balances::free_balance(recipient_account_id.clone());
+
+		let mixer_tree_root = MerkleTree::get_root(tree_id).unwrap();
+		assert_eq!(roots_element[0], mixer_tree_root);
+		let root_from_node = roots_element[0].to_vec();
+		let nullifier_hash_from_node = nullifier_hash_element.to_vec();
+
+
+		assert_eq!(root_from_node , proof.root);
+		assert_eq!(nullifier_hash_from_node , proof.nullifier_hash);
+
+		assert_ok!(Mixer::withdraw(
+			Origin::signed(sender_account_id),
+			tree_id,
+			proof_bytes,
+			roots_element[0],
+			nullifier_hash_element,
+			recipient_account_id.clone(),
+			relayer_account_id,
+			fee_value.into(),
+			refund_value.into(),
+		));
+		// now we check the recipient balance again.
+		let balance_after = Balances::free_balance(recipient_account_id);
+		assert_eq!(balance_after, balance_before + deposit_size);
+		// perfect
+	});
+}
 #[test]
 fn mixer_works() {
 	new_test_ext().execute_with(|| {
