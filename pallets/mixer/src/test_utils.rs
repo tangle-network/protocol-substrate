@@ -1,7 +1,7 @@
 use ark_bn254::Bn254;
 use ark_ff::{BigInteger, FromBytes, PrimeField};
 use ark_std::UniformRand;
-use arkworks_circuits::setup::mixer::MixerProverSetup;
+use arkworks_circuits::setup::{common::prove, mixer::MixerProverSetup};
 use arkworks_gadgets::leaf::mixer::Private as LeafPrivate;
 use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_5, Curve};
 use darkwebb_primitives::ElementTrait;
@@ -41,10 +41,17 @@ pub fn setup_zk_circuit(
 			let params5 = setup_params_x5_5::<Bn254Fr>(curve);
 			let prover = MixerProverSetupBn254_30::new(params3, params5);
 
-			let (circuit, leaf, nullifier_hash, root, ..) =
-				prover.setup_circuit(&[Bn254Fr::rand(rng)], 1, recipient, relayer, fee, refund, rng);
+			let (leaf_privates, leaf_hash, ..) = prover.setup_leaf(rng).unwrap();
+			let secret = leaf_privates.secret();
+			let nullifier = leaf_privates.nullifier();
+			let leaves = vec![leaf_hash];
+			let index = 0;
 
-			let proof_bytes = MixerProverSetupBn254_30::prove::<Bn254, _>(circuit, &pk_bytes, rng);
+			let (circuit, leaf, nullifier_hash, root, public_inputs) = prover
+				.setup_circuit_with_privates(secret, nullifier, &leaves, index, recipient, relayer, fee, refund)
+				.unwrap();
+
+			let proof_bytes = prove::<Bn254, _, _>(circuit, &pk_bytes, rng).unwrap();
 
 			let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_le());
 			let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
