@@ -1,6 +1,4 @@
-use ark_bn254::{Bn254, Fr as Bn254Fr};
-use ark_std::test_rng;
-use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_5, Curve};
+use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 use codec::Encode;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
@@ -21,25 +19,28 @@ fn hasher_params() -> Vec<u8> {
 }
 
 fn setup_environment(curve: Curve) -> Vec<u8> {
-	let rng = &mut test_rng();
-	let curve = Curve::Bn254;
-	let params3 = setup_params_x5_3::<Bn254Fr>(curve);
-	let params5 = setup_params_x5_5::<Bn254Fr>(curve);
-	let prover = MixerProverSetupBn254_30::new(params3.clone(), params5);
+	match curve {
+		Curve::Bn254 => {
+			let params3 = hasher_params();
 
-	// 1. Setup The Hasher Pallet.
-	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
-	// 2. Initialize MerkleTree pallet.
-	<MerkleTree as OnInitialize<u64>>::on_initialize(1);
-	// 3. Setup the VerifierPallet
-	//    but to do so, we need to have a VerifyingKey
-	let (circuit, .., public_inputs) = prover.setup_random_circuit(rng);
-	let (pk, vk) = MixerProverSetupBn254_30::setup_keys::<Bn254, _>(circuit.clone(), rng);
+			// 1. Setup The Hasher Pallet.
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3));
+			// 2. Initialize MerkleTree pallet.
+			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
+			// 3. Setup the VerifierPallet
+			//    but to do so, we need to have a VerifyingKey
+			let pk_bytes = include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/proving_key.bin");
+			let vk_bytes = include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
 
-	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk));
+			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
 
-	// finally return the provingkey bytes
-	pk
+			// finally return the provingkey bytes
+			pk_bytes.to_vec()
+		}
+		Curve::Bls381 => {
+			unimplemented!()
+		}
+	}
 }
 
 #[test]

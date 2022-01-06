@@ -1,24 +1,8 @@
 use ark_bn254::Bn254;
 use ark_ff::{BigInteger, FromBytes, PrimeField};
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use ark_std::UniformRand;
 use arkworks_circuits::setup::mixer::MixerProverSetup;
-use arkworks_gadgets::{
-	arbitrary::mixer_data::{constraints::InputVar as ArbitraryInputVar, Input as ArbitraryInput},
-	leaf::mixer::{
-		constraints::{MixerLeafGadget, PrivateVar as LeafPrivateVar},
-		Private as LeafPrivate,
-	},
-	merkle_tree::{
-		constraints::{NodeVar, PathVar},
-		Config as MerkleConfig, Path,
-	},
-	prelude::ark_groth16::ProvingKey,
-};
-use arkworks_utils::{
-	poseidon::PoseidonParameters,
-	utils::common::{setup_params_x5_3, setup_params_x5_5, Curve},
-};
+use arkworks_gadgets::leaf::mixer::Private as LeafPrivate;
+use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_5, Curve};
 use darkwebb_primitives::ElementTrait;
 
 use crate::mock::Element;
