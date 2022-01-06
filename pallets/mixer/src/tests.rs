@@ -1,4 +1,6 @@
-use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
+use ark_bn254::{Fr as Bn254Fr, Bn254};
+use ark_std::test_rng;
+use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_5, Curve};
 use codec::Encode;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
@@ -19,25 +21,25 @@ fn hasher_params() -> Vec<u8> {
 }
 
 fn setup_environment(curve: Curve) -> Vec<u8> {
-	let params = match curve {
-		Curve::Bn254 => get_hash_params::<ark_bn254::Fr>(curve),
-		Curve::Bls381 => get_hash_params::<ark_bls12_381::Fr>(curve),
-	};
+	let rng = &mut test_rng();
+	let curve = Curve::Bn254;
+	let params3 = setup_params_x5_3::<Bn254Fr>(curve);
+	let params5 = setup_params_x5_5::<Bn254Fr>(curve);
+	let prover = MixerProverSetupBn254_30::new(params3.clone(), params5);
+
 	// 1. Setup The Hasher Pallet.
-	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params.0));
+	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
 	// 2. Initialize MerkleTree pallet.
 	<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 	// 3. Setup the VerifierPallet
 	//    but to do so, we need to have a VerifyingKey
-	let mut verifier_key_bytes = Vec::new();
-	let mut proving_key_bytes = Vec::new();
-
-	get_keys(curve, &mut proving_key_bytes, &mut verifier_key_bytes);
-
-	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes));
+	let (circuit, .., public_inputs) = prover.setup_random_circuit(rng);
+	let (pk, vk) = MixerProverSetupBn254_30::setup_keys_unchecked::<Bn254, _>(circuit.clone(), rng);
+	
+	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk));
 
 	// finally return the provingkey bytes
-	proving_key_bytes
+	pk
 }
 
 #[test]
