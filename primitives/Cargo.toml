@@ -30,8 +30,9 @@ blake2 = { version = "0.9", default-features = false }
 digest = { version = "0.9", default-features = false }
 
 ark-crypto-primitives = { version = "^0.3.0", default-features = false }
-arkworks-gadgets = { version = "0.4.6", default-features = false, optional = true }
-arkworks-utils = { version = "0.4.6", default-features = false, optional = true }
+arkworks-gadgets = { version = "0.4.12", default-features = false, optional = true }
+arkworks-utils = { version = "0.4.12", default-features = false, optional = true }
+arkworks-circuits = { version = "0.4.12", optional = true }
 
 codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "2.2.0" }
 
@@ -68,6 +69,7 @@ hashing = [
 verifying = [
 	"arkworks-gadgets",
 	"arkworks-utils",
+	"arkworks-circuits",
 	"ark-bls12-381",
 	"ark-bls12-377",
 	"ark-bn254",
