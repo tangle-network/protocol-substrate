@@ -1,8 +1,8 @@
 use ark_bn254::Bn254;
 use ark_ff::{BigInteger, FromBytes, PrimeField};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use ark_std::UniformRand;
 use arkworks_circuits::setup::mixer::MixerProverSetup;
-use arkworks_gadgets::prelude::ark_groth16::ProvingKey;
 use arkworks_gadgets::{
 	arbitrary::mixer_data::{constraints::InputVar as ArbitraryInputVar, Input as ArbitraryInput},
 	leaf::mixer::{
@@ -13,8 +13,8 @@ use arkworks_gadgets::{
 		constraints::{NodeVar, PathVar},
 		Config as MerkleConfig, Path,
 	},
+	prelude::ark_groth16::ProvingKey,
 };
-use ark_std::UniformRand;
 use arkworks_utils::{
 	poseidon::PoseidonParameters,
 	utils::common::{setup_params_x5_3, setup_params_x5_5, Curve},
@@ -61,23 +61,16 @@ pub fn setup_zk_circuit(
 			let (leaf_private, leaf, nullifier_hash) = prover.setup_leaf(rng);
 
 			// Invalid nullifier
-			let leaf_private = LeafPrivate::new(leaf_private.secret(), Bn254Fr::rand(rng));
-	
-			let arbitrary_input =
-				MixerProverSetupBn254_30::setup_arbitrary_data(recipient, relayer, fee, refund);
+			let leaf_private = LeafPrivate::new(leaf_private.secret(), leaf_private.nullifier());
+
+			let arbitrary_input = MixerProverSetupBn254_30::setup_arbitrary_data(recipient, relayer, fee, refund);
 			let (tree, path) = prover.setup_tree_and_create_path(&[leaf], 0);
 			let root = tree.root().inner();
 			let mut roots = [Bn254Fr::default(); M];
 			roots[0] = root; // local root.
 
-			let circuit = prover.create_circuit(
-				arbitrary_input.clone(),
-				leaf_private,
-				path,
-				root,
-				nullifier_hash,
-			);
-	
+			let circuit = prover.create_circuit(arbitrary_input.clone(), leaf_private, path, root, nullifier_hash);
+
 			let mut public_inputs = Vec::new();
 			public_inputs.push(nullifier_hash);
 			public_inputs.push(root);
@@ -85,13 +78,8 @@ pub fn setup_zk_circuit(
 			public_inputs.push(arbitrary_input.relayer);
 			public_inputs.push(arbitrary_input.fee);
 			public_inputs.push(arbitrary_input.refund);
-	
-			let (pk, vk) = MixerProverSetupBn254_30::setup_keys::<Bn254, _>(circuit.clone(), rng);
-			let proof = MixerProverSetupBn254_30::prove::<Bn254, _>(circuit, &pk, rng);			
 
-			// format the input for the pallet.
-			let mut proof_bytes = Vec::new();
-			proof.serialize(&mut proof_bytes).unwrap();
+			let proof_bytes = MixerProverSetupBn254_30::prove::<Bn254, _>(circuit, &pk_bytes, rng);
 
 			let roots_element = roots
 				.iter()
