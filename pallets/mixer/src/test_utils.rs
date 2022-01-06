@@ -1,5 +1,6 @@
 use ark_bn254::Bn254;
 use ark_ff::{BigInteger, FromBytes, PrimeField};
+use ark_std::UniformRand;
 use arkworks_circuits::setup::mixer::MixerProverSetup;
 use arkworks_gadgets::leaf::mixer::Private as LeafPrivate;
 use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_5, Curve};
@@ -41,7 +42,7 @@ pub fn setup_zk_circuit(
 			let prover = MixerProverSetupBn254_30::new(params3, params5);
 
 			let (circuit, leaf, nullifier_hash, root, ..) =
-				prover.setup_circuit(&[], 0, recipient, relayer, fee, refund, rng);
+				prover.setup_circuit(&[Bn254Fr::rand(rng)], 1, recipient, relayer, fee, refund, rng);
 
 			let proof_bytes = MixerProverSetupBn254_30::prove::<Bn254, _>(circuit, &pk_bytes, rng);
 

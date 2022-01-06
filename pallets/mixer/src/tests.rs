@@ -8,6 +8,13 @@ use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 use orml_traits::MultiCurrency;
 use pallet_asset_registry::AssetType;
 
+use std::convert::TryInto;
+use wasm_utils::{
+	note::JsNote,
+	proof::mixer::{generate_proof_js, JsProofInputBuilder},
+	types::Uint8Array,
+};
+
 use crate::{mock::*, test_utils::*};
 
 const SEED: u32 = 0;
@@ -92,6 +99,72 @@ fn should_be_able_to_change_the_maintainer() {
 		));
 		let current_maintainer_account_id = Mixer::maintainer();
 		assert_eq!(current_maintainer_account_id, new_maintainer_account_id);
+	});
+}
+
+#[test]
+fn should_have_same_root_as_wasm_utils() {
+	new_test_ext().execute_with(|| {
+		let curve = Curve::Bn254;
+		let pk_bytes = setup_environment(curve);
+		// now let's create the mixer.
+		let deposit_size = One::one();
+		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
+		// now with mixer created, we should setup the circuit.
+		let tree_id = MerkleTree::next_tree_id() - 1;
+		let sender_account_id = account::<AccountId>("", 1, SEED);
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
+		let fee = 0u128;
+		let refund = 0u128;
+
+		// inputs
+		let recipient_bytes =
+crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+		let relayer_bytes =
+crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+
+		let note_str =
+"webb.bridge:v1:3:2:Arkworks:Bn254:Poseidon:EDG:18:0:5:5:
+7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d0729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717"
+; 		let note = JsNote::deserialize(&note_str).unwrap();
+		let leaf: Uint8Array = note.get_leaf_commitment().unwrap();
+		let leaf_bytes: [u8; 32] = leaf.to_vec().try_into().unwrap();
+		let leaf_element = Element::from_bytes(&leaf_bytes);
+		let leaves: Vec<[u8; 32]> = vec![leaf_bytes];
+
+		let js_builder = JsProofInputBuilder {
+			recipient: Some(recipient_bytes),
+			relayer: Some(relayer_bytes),
+			leaves: Some(leaves),
+			leaf_index: Some(0),
+			fee: Some(fee),
+			refund: Some(refund),
+			pk: Some(pk_bytes)
+		};
+
+		let proof_input = js_builder.build().unwrap();
+		let proof = generate_proof_js(note, proof_input.clone()).unwrap();
+		let proof_bytes = proof.proof;
+		let root_element = Element::from_bytes(&proof.element);
+
+		assert_ok!(Mixer::deposit(
+			Origin::signed(sender_account_id.clone()),
+			tree_id,
+			leaf_element,
+		));
+
+		assert_ok!(Mixer::withdraw(
+			Origin::signed(sender_account_id),
+			tree_id,
+			proof_bytes,
+			root_element,
+			nullifier_hash_element,
+			recipient_account_id.clone(),
+			relayer_account_id,
+			fee_value.into(),
+			refund_value.into(),
+		));
 	});
 }
 
