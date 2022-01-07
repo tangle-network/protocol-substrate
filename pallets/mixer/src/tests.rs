@@ -8,8 +8,6 @@ use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 use orml_traits::MultiCurrency;
 use pallet_asset_registry::AssetType;
 
-use std::convert::TryInto;
-
 use crate::{mock::*, test_utils::*};
 
 const SEED: u32 = 0;

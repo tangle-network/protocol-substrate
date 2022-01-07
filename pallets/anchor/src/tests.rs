@@ -1,7 +1,9 @@
-use std::convert::TryInto;
+use std::{convert::TryInto, path::Path};
 
+use ark_bn254::{Fr as Bn254Fr, Bn254};
 use ark_ff::{BigInteger, PrimeField};
-use arkworks_utils::utils::common::Curve;
+use arkworks_circuits::setup::common::setup_keys;
+use arkworks_utils::utils::common::{Curve, setup_params_x5_3, setup_params_x5_4};
 use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 
 use codec::Encode;
@@ -18,37 +20,53 @@ const M: usize = 2;
 const DEPOSIT_SIZE: u128 = 10_000;
 
 fn setup_environment(curve: Curve) -> Vec<u8> {
-	let params = match curve {
-		Curve::Bn254 => get_hash_params::<ark_bn254::Fr>(curve),
-		Curve::Bls381 => {
-			todo!("Setup hash params for bls381")
+	match curve {
+		Curve::Bn254 => {
+			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
+			let params4 = setup_params_x5_4::<Bn254Fr>(curve);
+
+			// 1. Setup The Hasher Pallet.
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+			// 2. Initialize MerkleTree pallet.
+			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
+			// 3. Setup the VerifierPallet
+			//    but to do so, we need to have a VerifyingKey
+			let (pk_bytes, vk_bytes) = if Path::new("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5_4_leaf/proving_key.bin").exists() {
+				let (pk, vk) = (
+					std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5_4_leaf/proving_key.bin").expect("Unable to read file").to_vec(),
+					std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5_4_leaf/verifying_key.bin").expect("Unable to read file").to_vec()
+				);
+				(pk.to_vec(), vk.to_vec())
+			} else {
+				let rng = &mut ark_std::test_rng();
+				let anchor_setup = AnchorSetup30_2::new(params3, params4);
+				let (circuit, .., public_inputs) = anchor_setup.setup_random_circuit(rng).unwrap();
+				let (pk, vk) = setup_keys::<Bn254, _, _>(circuit.clone(), rng).unwrap();
+				std::fs::write("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5_4_leaf/proving_key.bin", &pk).expect("Unable to write file");
+				std::fs::write("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5_4_leaf/verifying_key.bin", &vk).expect("Unable to write file");
+				(pk, vk)
+			};
+
+			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
+
+			for account_id in [
+				account::<AccountId>("", 1, SEED),
+				account::<AccountId>("", 2, SEED),
+				account::<AccountId>("", 3, SEED),
+				account::<AccountId>("", 4, SEED),
+				account::<AccountId>("", 5, SEED),
+				account::<AccountId>("", 6, SEED),
+			] {
+				assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
+			}
+
+			// finally return the provingkey bytes
+			pk_bytes.to_vec()
 		}
-	};
-	// 1. Setup The Hasher Pallet.
-	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params.0));
-	// 2. Initialize MerkleTree pallet.
-	<MerkleTree as OnInitialize<u64>>::on_initialize(1);
-	// 3. Setup the VerifierPallet
-	//    but to do so, we need to have a VerifyingKey
-	let mut verifier_key_bytes = Vec::new();
-	let mut proving_key_bytes = Vec::new();
-
-	get_keys(curve, &mut proving_key_bytes, &mut verifier_key_bytes);
-
-	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes));
-	// 4. and top-up some accounts with some balance
-	for account_id in [
-		account::<AccountId>("", 1, SEED),
-		account::<AccountId>("", 2, SEED),
-		account::<AccountId>("", 3, SEED),
-		account::<AccountId>("", 4, SEED),
-		account::<AccountId>("", 5, SEED),
-		account::<AccountId>("", 6, SEED),
-	] {
-		assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
+		Curve::Bls381 => {
+			unimplemented!()
+		}
 	}
-	// finally return the provingkey bytes
-	proving_key_bytes
 }
 
 #[test]
