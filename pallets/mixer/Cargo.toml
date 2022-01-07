@@ -40,9 +40,10 @@ ark-relations = {version = "^0.3.0", default-features = false}
 ark-serialize = {version = "^0.3.0", default-features = false, features = ["derive"]}
 ark-std = {version = "^0.3.0", default-features = false}
 
-arkworks-gadgets  = { version = "0.4.12", default-features = false }
-arkworks-circuits = { version = "0.4.12", features = ["r1cs"], default-features = false }
-arkworks-utils    = { version = "0.4.12", features = ["default_poseidon", "default_mimc"], default-features = false }
+arkworks-gadgets  = { version = "0.4.6", default-features = false }
+arkworks-circuits = { version = "0.4.6", features = ["r1cs"], default-features = false }
+arkworks-utils    = { version = "0.4.6", features = ["default_poseidon", "default_mimc"], default-features = false }
+
 pallet-balances = {git = "https://github.com/paritytech/substrate.git", branch = "master"}
 pallet-asset-registry = { path = "../asset-registry" }
 serde = {version = "1.0.119"}

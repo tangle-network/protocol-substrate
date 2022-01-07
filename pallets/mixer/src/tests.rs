@@ -1,16 +1,14 @@
+use crate::test_utils::*;
 use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 use codec::Encode;
+use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
-use sp_runtime::traits::{One, Zero};
-
-use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 use orml_traits::MultiCurrency;
 use pallet_asset_registry::AssetType;
+use sp_runtime::traits::{One, Zero};
 
-use std::convert::TryInto;
-
-use crate::{mock::*, test_utils::*};
+use crate::mock::*;
 
 const SEED: u32 = 0;
 
@@ -21,28 +19,25 @@ fn hasher_params() -> Vec<u8> {
 }
 
 fn setup_environment(curve: Curve) -> Vec<u8> {
-	match curve {
-		Curve::Bn254 => {
-			let params3 = hasher_params();
+	let params = match curve {
+		Curve::Bn254 => get_hash_params::<ark_bn254::Fr>(curve),
+		Curve::Bls381 => get_hash_params::<ark_bls12_381::Fr>(curve),
+	};
+	// 1. Setup The Hasher Pallet.
+	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params.0));
+	// 2. Initialize MerkleTree pallet.
+	<MerkleTree as OnInitialize<u64>>::on_initialize(1);
+	// 3. Setup the VerifierPallet
+	//    but to do so, we need to have a VerifyingKey
+	let mut verifier_key_bytes = Vec::new();
+	let mut proving_key_bytes = Vec::new();
 
-			// 1. Setup The Hasher Pallet.
-			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3));
-			// 2. Initialize MerkleTree pallet.
-			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
-			// 3. Setup the VerifierPallet
-			//    but to do so, we need to have a VerifyingKey
-			let pk_bytes = include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/proving_key.bin");
-			let vk_bytes = include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
+	get_keys(curve, &mut proving_key_bytes, &mut verifier_key_bytes);
 
-			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
+	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes));
 
-			// finally return the provingkey bytes
-			pk_bytes.to_vec()
-		}
-		Curve::Bls381 => {
-			unimplemented!()
-		}
-	}
+	// finally return the provingkey bytes
+	proving_key_bytes
 }
 
 #[test]
@@ -55,7 +50,6 @@ fn should_create_new_mixer() {
 		assert_ok!(Mixer::create(Origin::root(), One::one(), 3, 0));
 	});
 }
-
 #[test]
 fn should_be_able_to_deposit() {
 	new_test_ext().execute_with(|| {
@@ -118,7 +112,7 @@ fn mixer_works() {
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
 			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
 
 		assert_ok!(Mixer::deposit(
@@ -130,13 +124,13 @@ fn mixer_works() {
 		let balance_before = Balances::free_balance(recipient_account_id.clone());
 
 		let mixer_tree_root = MerkleTree::get_root(tree_id).unwrap();
-		assert_eq!(root_element, mixer_tree_root);
+		assert_eq!(roots_element[0], mixer_tree_root);
 
 		assert_ok!(Mixer::withdraw(
 			Origin::signed(sender_account_id),
 			tree_id,
 			proof_bytes,
-			root_element,
+			roots_element[0],
 			nullifier_hash_element,
 			recipient_account_id.clone(),
 			relayer_account_id,
@@ -170,7 +164,7 @@ fn mixer_should_fail_with_when_proof_when_any_byte_is_changed_in_proof() {
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (mut proof_bytes, root_element, nullifier_hash_element, leaf_element) =
+		let (mut proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
 			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
 
 		assert_ok!(Mixer::deposit(
@@ -179,6 +173,7 @@ fn mixer_should_fail_with_when_proof_when_any_byte_is_changed_in_proof() {
 			leaf_element,
 		));
 
+		let root_element = roots_element[0];
 		let mixer_tree_root = MerkleTree::get_root(tree_id).unwrap();
 		assert_eq!(root_element, mixer_tree_root);
 
@@ -225,7 +220,7 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
 			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
 
 		assert_ok!(Mixer::deposit(
@@ -234,7 +229,7 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 			leaf_element,
 		));
 
-		let mut root_element_bytes = root_element.to_bytes().to_vec();
+		let mut root_element_bytes = roots_element[0].to_bytes().to_vec();
 		let a = root_element_bytes[0];
 		let b = root_element_bytes[1];
 		root_element_bytes[0] = b;
@@ -279,7 +274,7 @@ fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation(
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
 			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
 
 		assert_ok!(Mixer::deposit(
@@ -288,6 +283,7 @@ fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation(
 			leaf_element,
 		));
 
+		let root_element = roots_element[0];
 		let mixer_tree_root = MerkleTree::get_root(tree_id).unwrap();
 		assert_eq!(root_element, mixer_tree_root);
 
@@ -328,7 +324,7 @@ fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
 			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
 
 		assert_ok!(Mixer::deposit(
@@ -337,6 +333,7 @@ fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 			leaf_element,
 		));
 
+		let root_element = roots_element[0];
 		let mixer_tree_root = MerkleTree::get_root(tree_id).unwrap();
 		assert_eq!(root_element, mixer_tree_root);
 
@@ -377,7 +374,7 @@ fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_revers
 		let recipient_bytes = truncate_and_pad_reverse(&recipient_account_id.encode()[..]);
 		let relayer_bytes = truncate_and_pad_reverse(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
 			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
 
 		assert_ok!(Mixer::deposit(
@@ -386,6 +383,7 @@ fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_revers
 			leaf_element,
 		));
 
+		let root_element = roots_element[0];
 		let mixer_tree_root = MerkleTree::get_root(tree_id).unwrap();
 		assert_eq!(root_element, mixer_tree_root);
 
@@ -426,7 +424,7 @@ fn double_spending_should_fail() {
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
+		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
 			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
 
 		assert_ok!(Mixer::deposit(
@@ -435,6 +433,7 @@ fn double_spending_should_fail() {
 			leaf_element,
 		));
 
+		let root_element = roots_element[0];
 		let mixer_tree_root = MerkleTree::get_root(tree_id).unwrap();
 		assert_eq!(root_element, mixer_tree_root);
 

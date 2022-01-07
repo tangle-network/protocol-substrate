@@ -3,8 +3,7 @@ use ark_crypto_primitives::Error;
 use ark_ec::PairingEngine;
 use ark_groth16::{Proof, VerifyingKey};
 use ark_serialize::CanonicalDeserialize;
-use arkworks_circuits::setup::common::verify_groth16;
-use arkworks_utils::utils::to_field_elements;
+use arkworks_utils::utils::{common::verify_groth16, to_field_elements};
 use sp_std::marker::PhantomData;
 
 pub struct ArkworksVerifierGroth16<E: PairingEngine>(PhantomData<E>);
@@ -14,7 +13,7 @@ impl<E: PairingEngine> InstanceVerifier for ArkworksVerifierGroth16<E> {
 		let public_input_field_elts = to_field_elements::<E::Fr>(public_inp_bytes)?;
 		let vk = VerifyingKey::<E>::deserialize(vk_bytes)?;
 		let proof = Proof::<E>::deserialize(proof_bytes)?;
-		let res = verify_groth16::<E>(&vk, &public_input_field_elts, &proof)?;
+		let res = verify_groth16::<E>(&vk, &public_input_field_elts, &proof);
 		Ok(res)
 	}
 }
