@@ -2357,7 +2357,6 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-circuits 0.4.12",
  "arkworks-gadgets 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "arkworks-utils 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "blake2",
