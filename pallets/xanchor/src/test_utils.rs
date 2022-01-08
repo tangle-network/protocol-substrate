@@ -1,56 +1,31 @@
-#![allow(unused, dead_code)]
+use ark_bn254::Bn254;
 use ark_ff::{BigInteger, FromBytes, PrimeField};
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use arkworks_circuits::setup::{
-	bridge::{
-		prove_groth16_circuit_x5, setup_arbitrary_data, setup_groth16_random_circuit_x5, setup_leaf_x5, setup_set,
-		Circuit_x5,
+	anchor::{
+		AnchorProverSetup,
 	},
-	common::setup_tree_and_create_path_tree_x5,
+	common::{prove},
 };
-use arkworks_gadgets::prelude::ark_groth16::ProvingKey;
 
 use arkworks_utils::{
-	poseidon::PoseidonParameters,
-	utils::common::{setup_params_x5_3, setup_params_x5_5, Curve},
+	utils::common::{setup_params_x5_3, Curve, setup_params_x5_4},
 };
 use darkwebb_primitives::ElementTrait;
 
 use crate::mock::parachain::Element;
 
 type Bn254Fr = ark_bn254::Fr;
-type Bls12_381Fr = ark_bls12_381::Fr;
 
 type ProofBytes = Vec<u8>;
 type RootsElement = Vec<Element>;
 type NullifierHashElement = Element;
 type LeafElement = Element;
 
-const TREE_DEPTH: usize = 30;
-const M: usize = 2;
-
-pub fn get_hash_params<T: PrimeField>(curve: Curve) -> (Vec<u8>, Vec<u8>) {
-	(
-		setup_params_x5_3::<T>(curve).to_bytes(),
-		setup_params_x5_5::<T>(curve).to_bytes(),
-	)
-}
-
-pub fn get_keys(curve: Curve, pk_bytes: &mut Vec<u8>, vk_bytes: &mut Vec<u8>) {
-	let rng = &mut ark_std::test_rng();
-	match curve {
-		Curve::Bn254 => {
-			let (pk, vk) = setup_groth16_random_circuit_x5::<_, ark_bn254::Bn254, TREE_DEPTH, M>(rng, curve);
-			vk.serialize(vk_bytes).unwrap();
-			pk.serialize(pk_bytes).unwrap();
-		}
-		Curve::Bls381 => {
-			let (pk, vk) = setup_groth16_random_circuit_x5::<_, ark_bls12_381::Bls12_381, TREE_DEPTH, M>(rng, curve);
-			vk.serialize(vk_bytes).unwrap();
-			pk.serialize(pk_bytes).unwrap();
-		}
-	};
-}
+// merkle proof path legth
+// TreeConfig_x5, x7 HEIGHT is hardcoded to 30
+pub const TREE_DEPTH: usize = 30;
+pub const M: usize = 2;
+pub type AnchorSetup30_2 = AnchorProverSetup<Bn254Fr, M, TREE_DEPTH>;
 
 pub fn setup_zk_circuit(
 	curve: Curve,
@@ -71,108 +46,35 @@ pub fn setup_zk_circuit(
 			let relayer = Bn254Fr::read(&relayer_bytes[..]).unwrap();
 			let fee = Bn254Fr::from(fee_value);
 			let refund = Bn254Fr::from(refund_value);
+			let commitment = Bn254Fr::from(0);
+			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
+			let params4 = setup_params_x5_4::<Bn254Fr>(curve);
+			let anchor_setup = AnchorSetup30_2::new(params3, params4);
 
-			let (params3_bytes, params5_bytes) = get_hash_params::<Bn254Fr>(curve);
-			let params3 = PoseidonParameters::<Bn254Fr>::from_bytes(&*params3_bytes).unwrap();
-			let params5 = PoseidonParameters::<Bn254Fr>::from_bytes(&*params5_bytes).unwrap();
-			let (leaf_private, leaf_public, leaf, nullifier_hash) = setup_leaf_x5(chain_id, &params5, rng);
-
-			// the withdraw process..
-			// we setup the inputs to our proof generator.
-			let (mt, path) = setup_tree_and_create_path_tree_x5::<_, TREE_DEPTH>(&[leaf], 0, &params3);
-			let root = mt.root().inner();
+			let mut neighboring_roots = [Bn254Fr::default(); M - 1];
+			let (leaf_privates, leaf_public, leaf_hash, ..) = anchor_setup.setup_leaf(chain_id, rng).unwrap();
+			let secret = leaf_privates.secret();
+			let nullifier = leaf_privates.nullifier();
+			let leaves = vec![leaf_hash];
+			let index = 0;
+			let (circuit, leaf, nullifier_hash, root, public_inputs) = anchor_setup
+				.setup_circuit_with_privates(chain_id, secret, nullifier, &leaves, index, &neighboring_roots, recipient, relayer, fee, refund, commitment)
+				.unwrap();
 
 			let mut roots = [Bn254Fr::default(); M];
-			roots[0] = root; // local root.
+			roots[1..].copy_from_slice(&neighboring_roots);
+			roots[0] = root;
+	
+			let proof_bytes = prove::<Bn254, _, _>(circuit, &pk_bytes, rng).unwrap();
 
-			let set_private_inputs = setup_set(&root, &roots);
-			let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund, leaf);
-
-			// setup the circuit.
-			let circuit = Circuit_x5::new(
-				arbitrary_input,
-				leaf_private,
-				leaf_public,
-				set_private_inputs,
-				roots,
-				params5,
-				path,
-				root,
-				nullifier_hash,
-			);
-			let pk = ProvingKey::<ark_bn254::Bn254>::deserialize(&*pk_bytes).unwrap();
-
-			// generate the proof.
-			let proof = prove_groth16_circuit_x5(&pk, circuit, rng);
-
-			// format the input for the pallet.
-			let mut proof_bytes = Vec::new();
-			proof.serialize(&mut proof_bytes).unwrap();
-
-			let roots_element = roots
-				.iter()
-				.map(|v| Element::from_bytes(&v.into_repr().to_bytes_le()))
-				.collect::<Vec<Element>>();
-
-			let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
 			let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_le());
+			let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
+			let roots_element = roots.iter().map(|x| Element::from_bytes(&x.into_repr().to_bytes_le())).collect();
 
 			(proof_bytes, roots_element, nullifier_hash_element, leaf_element)
 		}
 		Curve::Bls381 => {
-			// fit inputs to the curve.
-			let chain_id = Bls12_381Fr::from(src_chain_id);
-			let recipient = Bls12_381Fr::read(&recipient_bytes[..]).unwrap();
-			let relayer = Bls12_381Fr::read(&relayer_bytes[..]).unwrap();
-			let fee = Bls12_381Fr::from(fee_value);
-			let refund = Bls12_381Fr::from(refund_value);
-
-			let (params3_bytes, params5_bytes) = get_hash_params::<Bls12_381Fr>(curve);
-			let params3 = PoseidonParameters::<Bls12_381Fr>::from_bytes(&*params3_bytes).unwrap();
-			let params5 = PoseidonParameters::<Bls12_381Fr>::from_bytes(&*params5_bytes).unwrap();
-			let (leaf_private, leaf_public, leaf, nullifier_hash) = setup_leaf_x5(chain_id, &params5, rng);
-
-			// the withdraw process..
-			// we setup the inputs to our proof generator.
-			let (mt, path) = setup_tree_and_create_path_tree_x5::<_, TREE_DEPTH>(&[leaf], 0, &params3);
-			let root = mt.root().inner();
-
-			let mut roots = [Bls12_381Fr::default(); M];
-			roots[0] = root; // local root.
-
-			let set_private_inputs = setup_set(&root, &roots);
-			let arbitrary_input = setup_arbitrary_data(recipient, relayer, fee, refund, leaf);
-
-			// setup the circuit.
-			let circuit = Circuit_x5::new(
-				arbitrary_input,
-				leaf_private,
-				leaf_public,
-				set_private_inputs,
-				roots,
-				params5,
-				path,
-				root,
-				nullifier_hash,
-			);
-			let pk = ProvingKey::<ark_bls12_381::Bls12_381>::deserialize(&*pk_bytes).unwrap();
-			// generate the proof.
-			let proof = prove_groth16_circuit_x5(&pk, circuit, rng);
-
-			// format the input for the pallet.
-			let mut proof_bytes = Vec::new();
-			proof.serialize(&mut proof_bytes).unwrap();
-
-			let roots_element = roots
-				.iter()
-				.map(|v| Element::from_bytes(&v.into_repr().to_bytes_le()))
-				.collect::<Vec<Element>>();
-
-			let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
-
-			let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_le());
-
-			(proof_bytes, roots_element, nullifier_hash_element, leaf_element)
+			unimplemented!()
 		}
 	}
 }

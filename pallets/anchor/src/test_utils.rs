@@ -15,7 +15,6 @@ use darkwebb_primitives::ElementTrait;
 use crate::mock::Element;
 
 type Bn254Fr = ark_bn254::Fr;
-type Bls12_381Fr = ark_bls12_381::Fr;
 
 type ProofBytes = Vec<u8>;
 type RootsElement = Vec<Element>;

@@ -82,6 +82,7 @@ std = [
 	"orml-traits/std",
 	"darkwebb-primitives/std",
 	"pallet-asset-registry/std",
+	"frame-benchmarking/std",
 ]
 
 runtime-benchmarks = [
