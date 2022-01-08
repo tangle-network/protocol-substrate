@@ -2,7 +2,7 @@ use frame_support::dispatch;
 
 pub trait TokenWrapperInterface<AccountId, AssetId, Balance> {
 	fn set_wrapping_fee(
-
+		fee: Balance
 	) -> Result<(), dispatch::DispatchError>;
 	fn wrap(
 		from: AccountId,
