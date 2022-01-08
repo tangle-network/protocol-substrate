@@ -6669,6 +6669,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-token-wrapper-handler"
+version = "1.0.0"
+dependencies = [
+ "darkwebb-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "orml-currencies",
+ "orml-tokens",
+ "orml-traits",
+ "pallet-asset-registry",
+ "pallet-balances",
+ "pallet-bridge",
+ "pallet-token-wrapper",
+ "pallet-treasury",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-transaction-payment"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#6873fc69e2140f554b75242b7e66a5d6a846e772"

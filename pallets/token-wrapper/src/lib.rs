@@ -54,7 +54,7 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
-mod traits;
+pub mod traits;
 pub mod weights;
 
 use codec::{Decode, Encode};
@@ -155,7 +155,7 @@ pub mod pallet {
 		#[pallet::weight(<T as Config>::WeightInfo::set_wrapping_fee())]
 		pub fn set_wrapping_fee(origin: OriginFor<T>, fee: BalanceOf<T>) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-
+			
 			WrappingFeePercent::<T>::put(fee);
 
 			Self::deposit_event(Event::UpdatedWrappingFeePercent {
@@ -237,6 +237,9 @@ impl<T: Config> Pallet<T> {
 }
 
 impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> for Pallet<T> {
+	fn set_wrapping_fee() -> DispatchResultWithPostInfo {
+		
+	}
 	fn wrap(
 		from: T::AccountId,
 		from_asset_id: T::AssetId,
