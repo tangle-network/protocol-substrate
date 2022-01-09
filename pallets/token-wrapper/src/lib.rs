@@ -152,17 +152,17 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		// #[pallet::weight(<T as Config>::WeightInfo::set_wrapping_fee())]
-		// pub fn set_wrapping_fee(origin: OriginFor<T>, fee: BalanceOf<T>) -> DispatchResultWithPostInfo {
-		// 	ensure_root(origin)?;
+		#[pallet::weight(<T as Config>::WeightInfo::set_wrapping_fee())]
+		pub fn set_wrapping_fee(origin: OriginFor<T>, fee: BalanceOf<T>) -> DispatchResultWithPostInfo {
+			ensure_root(origin)?;
 			
-		// 	WrappingFeePercent::<T>::put(fee);
+			WrappingFeePercent::<T>::put(fee);
 
-		// 	Self::deposit_event(Event::UpdatedWrappingFeePercent {
-		// 		wrapping_fee_percent: fee,
-		// 	});
-		// 	Ok(().into())
-		// }
+			Self::deposit_event(Event::UpdatedWrappingFeePercent {
+				wrapping_fee_percent: fee,
+			});
+			Ok(().into())
+		}
 
 		#[pallet::weight(<T as Config>::WeightInfo::wrap())]
 		pub fn wrap(
