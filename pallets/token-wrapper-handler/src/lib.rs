@@ -9,10 +9,8 @@ mod tests;
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;
 
-///TODO: Define BalanceOf CurrencyIdOf
+///TODO: Define BalanceOf 
 use pallet_token_wrapper::BalanceOf;
-
-/// Not sure how to import the TokenWrapperInterface in 
 
 use darkwebb_primitives::{
 	ResourceId

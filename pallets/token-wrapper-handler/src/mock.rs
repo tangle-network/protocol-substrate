@@ -193,3 +193,21 @@ impl Config for Test {
 	type BridgeOrigin = pallet_bridge::EnsureBridge<Test, BridgeInstance>;
     type TokenWrapper = TokenWrapper; //not sure what to fill in;
 }
+
+pub const RELAYER_A: u64 = 0x2;
+pub const RELAYER_B: u64 = 0x3;
+pub const RELAYER_C: u64 = 0x4;
+pub const ENDOWED_BALANCE: u128 = 100_000_000;
+
+pub fn new_test_ext() -> sp_io::TestExternalities {
+	let bridge_id = PalletId(*b"dw/bridg").into_account();
+	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	pallet_balances::GenesisConfig::<Test> {
+		balances: vec![(bridge_id, ENDOWED_BALANCE), (RELAYER_A, ENDOWED_BALANCE)],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.execute_with(|| System::set_block_number(1));
+	ext
+}
