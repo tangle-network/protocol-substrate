@@ -42,7 +42,7 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)] //what does this do?
+	#[pallet::generate_deposit(pub(super) fn deposit_event)] 
 	pub enum Event<T: Config> {
 		UpdatedWrappingFeePercent {
 			wrapping_fee_percent: BalanceOf<T>,
@@ -69,7 +69,7 @@ pub mod pallet {
 			r_id: ResourceId,
 			wrapping_fee_percent: BalanceOf<T>
 		) -> DispatchResultWithPostInfo {
-			//TODO: How to use r_id?
+			// TODO: Define and check validity conditions.
 			T::BridgeOrigin::ensure_origin(origin)?;
 			Self::update_wrapping_fee(r_id, wrapping_fee_percent)?;
 			Ok(().into())
@@ -81,6 +81,5 @@ impl<T: Config> Pallet<T> {
 	fn update_wrapping_fee(r_id: ResourceId, wrapping_fee_percent: BalanceOf<T>) -> Result<(), frame_support::dispatch::DispatchError>
 	{
 		T::TokenWrapper::set_wrapping_fee(wrapping_fee_percent)
-		//TODO: have to move set_wrapping_fee to TokenWrapperInterface in token-wrapper pallet...
 	}
 }
