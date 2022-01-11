@@ -217,7 +217,7 @@ impl<T: Config> Pallet<T> {
 
 	pub fn get_wrapping_fee(amount: BalanceOf<T>) -> BalanceOf<T> {
 		let percent = Self::wrapping_fee_percent();
-		amount.saturating_mul(percent / T::WrappingFeeDivider::get())
+		amount.saturating_mul(percent) / T::WrappingFeeDivider::get()
 	}
 
 	pub fn has_sufficient_balance(currency_id: CurrencyIdOf<T>, sender: &T::AccountId, amount: BalanceOf<T>) -> bool {
