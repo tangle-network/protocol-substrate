@@ -19,6 +19,17 @@ fn hasher_params() -> Vec<u8> {
 }
 
 fn setup_environment(curve: Curve) -> Vec<u8> {
+	for account_id in [
+		account::<AccountId>("", 1, SEED),
+		account::<AccountId>("", 2, SEED),
+		account::<AccountId>("", 3, SEED),
+		account::<AccountId>("", 4, SEED),
+		account::<AccountId>("", 5, SEED),
+		account::<AccountId>("", 6, SEED),
+	] {
+		assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
+	}
+
 	match curve {
 		Curve::Bn254 => {
 			let params3 = hasher_params();
@@ -57,6 +68,7 @@ fn should_create_new_mixer() {
 #[test]
 fn should_be_able_to_deposit() {
 	new_test_ext().execute_with(|| {
+		let _ = setup_environment(Curve::Bn254);
 		// init hasher pallet first.
 		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
 		// then the merkle tree.
