@@ -407,38 +407,6 @@ dependencies = [
 
 [[package]]
 name = "arkworks-circuits"
-version = "0.4.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b603727d648a0a7b0ba498dc828f77a76f1db02dd52ee80eed1209438ceae73b"
-dependencies = [
- "ark-bls12-381",
- "ark-bn254",
- "ark-crypto-primitives",
- "ark-ec",
- "ark-ed-on-bls12-381",
- "ark-ed-on-bn254",
- "ark-ff",
- "ark-groth16",
- "ark-marlin",
- "ark-poly",
- "ark-poly-commit",
- "ark-r1cs-std",
- "ark-relations",
- "ark-serialize",
- "ark-snark",
- "ark-std",
- "arkworks-gadgets 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
- "arkworks-utils 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
- "blake2",
- "digest 0.9.0",
- "ethabi",
- "hex-literal 0.3.4",
- "paste",
- "tiny-keccak",
-]
-
-[[package]]
-name = "arkworks-circuits"
 version = "0.4.14"
 dependencies = [
  "ark-bls12-381",
@@ -459,6 +427,38 @@ dependencies = [
  "ark-std",
  "arkworks-gadgets 0.4.14",
  "arkworks-utils 0.4.14",
+ "blake2",
+ "digest 0.9.0",
+ "ethabi",
+ "hex-literal 0.3.4",
+ "paste",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "arkworks-circuits"
+version = "0.4.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3883c4b06688d3ea81946cf5db8fe2d8e35505440135def7d2eda1c56d89b4d"
+dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ed-on-bls12-381",
+ "ark-ed-on-bn254",
+ "ark-ff",
+ "ark-groth16",
+ "ark-marlin",
+ "ark-poly",
+ "ark-poly-commit",
+ "ark-r1cs-std",
+ "ark-relations",
+ "ark-serialize",
+ "ark-snark",
+ "ark-std",
+ "arkworks-gadgets 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "arkworks-utils 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "blake2",
  "digest 0.9.0",
  "ethabi",
@@ -2275,7 +2275,7 @@ dependencies = [
  "ark-bn254",
  "ark-serialize",
  "ark-std",
- "arkworks-circuits 0.4.13",
+ "arkworks-circuits 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "arkworks-gadgets 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "arkworks-utils 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "async-trait",
@@ -6304,7 +6304,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-circuits 0.4.13",
+ "arkworks-circuits 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "arkworks-gadgets 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "arkworks-utils 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "darkwebb-primitives",
@@ -6846,7 +6846,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-circuits 0.4.13",
+ "arkworks-circuits 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "arkworks-gadgets 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "arkworks-utils 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "darkwebb-primitives",
@@ -6922,7 +6922,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-circuits 0.4.13",
+ "arkworks-circuits 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "arkworks-gadgets 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "arkworks-utils 0.4.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "cumulus-pallet-xcm",

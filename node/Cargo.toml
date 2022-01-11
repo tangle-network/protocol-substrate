@@ -94,7 +94,7 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "m
 polkadot-test-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 
 arkworks-gadgets  = { version = "0.4.14", default-features = false }
-arkworks-circuits = { version = "0.4.13", default-features = false }
+arkworks-circuits = { version = "0.4.14", default-features = false }
 arkworks-utils    = { version = "0.4.14", default-features = false, features = ["default_poseidon"] }
 
 ark-std = { version = "^0.3.0" }
