@@ -16,7 +16,7 @@
 // limitations under the License.
 
 #![cfg(test)]
-use darkwebb_primitives::{AssetId, Balance};
+use webb_primitives::{AssetId, Balance};
 use frame_support::{
 	parameter_types,
 	traits::{Everything, GenesisBuild},

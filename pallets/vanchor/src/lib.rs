@@ -55,7 +55,7 @@ mod test_utils;
 mod tests;
 
 use codec::Encode;
-use darkwebb_primitives::{
+use webb_primitives::{
 	field_ops::IntoPrimeField,
 	hasher::InstanceHasher,
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},

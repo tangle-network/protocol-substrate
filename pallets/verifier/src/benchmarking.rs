@@ -21,7 +21,7 @@
 
 use super::*;
 
-use darkwebb_primitives::types::DepositDetails;
+use webb_primitives::types::DepositDetails;
 use frame_benchmarking::{
 	account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account, whitelisted_caller,
 };

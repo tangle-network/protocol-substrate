@@ -8,7 +8,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
-use darkwebb_primitives::ElementTrait;
+use webb_primitives::ElementTrait;
 use pallet_mt_rpc_runtime_api::MerkleTreeApi;
 
 /// Merkle RPC methods.

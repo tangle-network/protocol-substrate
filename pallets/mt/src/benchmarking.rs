@@ -21,7 +21,7 @@
 
 use super::*;
 
-use darkwebb_primitives::traits::merkle_tree::TreeInterface;
+use webb_primitives::traits::merkle_tree::TreeInterface;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::Currency;
 use frame_system::RawOrigin;

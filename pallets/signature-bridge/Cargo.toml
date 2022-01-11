@@ -4,7 +4,7 @@ description = "FRAME pallet for Webb bridge."
 edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
-name = "pallet-bridge"
+name = "pallet-signature-bridge"
 repository = "https://github.com/substrate-developer-hub/substrate-darkwebb-node/"
 version = "1.0.0"
 
@@ -29,6 +29,7 @@ frame-system-benchmarking = { default-features = false, git = "https://github.co
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
 
 webb-primitives = { path = "../../primitives", default-features = false }
+
 [features]
 default = ["std"]
 std = [

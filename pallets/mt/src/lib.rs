@@ -62,7 +62,7 @@ use types::TreeMetadata;
 
 pub use weights::WeightInfo;
 
-use darkwebb_primitives::{
+use webb_primitives::{
 	hasher::*,
 	traits::merkle_tree::{TreeInspector, TreeInterface},
 	types::{DepositDetails, ElementTrait},

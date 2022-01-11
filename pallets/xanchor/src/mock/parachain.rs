@@ -3,7 +3,7 @@
 use crate as pallet_xanchor;
 
 use codec::{Decode, Encode};
-use darkwebb_primitives::{Amount, BlockNumber, ChainId};
+use webb_primitives::{Amount, BlockNumber, ChainId};
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchResult,
@@ -23,7 +23,7 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryFrom, prelude::*};
 
-pub use darkwebb_primitives::{
+pub use webb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
 	types::ElementTrait,
 	AccountId,
@@ -350,7 +350,7 @@ impl pallet_verifier::Config for Runtime {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksVerifierBn254;
+	type Verifier = webb_primitives::verifying::ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
@@ -358,7 +358,7 @@ impl pallet_hasher::Config for Runtime {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::ArkworksPoseidonHasherBn254;
+	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
@@ -451,7 +451,7 @@ impl orml_currencies::Config for Runtime {
 }
 
 impl pallet_asset_registry::Config for Runtime {
-	type AssetId = darkwebb_primitives::AssetId;
+	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
 	type Event = Event;

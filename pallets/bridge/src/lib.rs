@@ -49,7 +49,7 @@ pub mod types;
 pub mod utils;
 use crate::types::{DepositNonce, ProposalStatus, ProposalVotes};
 use codec::{Decode, Encode, EncodeLike};
-use darkwebb_primitives::ResourceId;
+use webb_primitives::ResourceId;
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
@@ -66,7 +66,7 @@ use sp_std::prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::types::{DepositNonce, ProposalVotes, DARKWEBB_DEFAULT_RELAYER_THRESHOLD};
+	use crate::types::{DepositNonce, ProposalVotes, WEBB_DEFAULT_RELAYER_THRESHOLD};
 	use frame_support::{
 		dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
 		pallet_prelude::*,
@@ -115,7 +115,7 @@ pub mod pallet {
 
 	#[pallet::type_value]
 	pub fn DefaultForRelayerThreshold() -> u32 {
-		DARKWEBB_DEFAULT_RELAYER_THRESHOLD
+		WEBB_DEFAULT_RELAYER_THRESHOLD
 	}
 
 	/// Number of votes required for a proposal to execute
