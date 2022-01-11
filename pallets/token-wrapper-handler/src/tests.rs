@@ -7,8 +7,6 @@ use asset_registry::AssetType;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 
 const TEST_THRESHOLD: u32 = 2;
-const TEST_MAX_EDGES: u32 = 100;
-const TEST_TREE_DEPTH: u8 = 32;
 
 fn make_wrapping_fee_proposal(
 	resource_id: &[u8; 32],
@@ -66,8 +64,8 @@ fn should_update_fee() {
         let src_chain_id = 1;
 		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
 		let prop_id = 1;
-		// create anchor update proposal
+		// create fee update proposal
 		setup_relayers(src_chain_id);
-        relay_fee_update_proposal(src_chain_id, &resource_id, prop_id, 5);
+		relay_fee_update_proposal(src_chain_id, &resource_id, prop_id, 5);
 	})
 }
