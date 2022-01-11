@@ -215,14 +215,20 @@ impl<T: Config> Pallet<T> {
 		CurrencyIdOf::<T>::decode(&mut &bytes[..]).map_err(|_| "Error converting asset_id to currency id")
 	}
 
+	/// If X is amount of pooled share tokens and fee is 5%,
+	/// need to wrap X / 0.95 total, so wrapping fee is
+	/// (X / 0.95) - X
 	pub fn get_wrapping_fee(amount: BalanceOf<T>) -> BalanceOf<T> {
 		let percent = Self::wrapping_fee_percent();
-		amount.saturating_mul(percent) / T::WrappingFeeDivider::get()
+		amount.saturating_mul(percent) / T::WrappingFeeDivider::get().saturating_sub(percent)
+	}
+
+	pub fn get_amount_to_wrap(amount: BalanceOf<T>) -> BalanceOf<T> {
+		amount.saturating_add(Self::get_wrapping_fee(amount))
 	}
 
 	pub fn has_sufficient_balance(currency_id: CurrencyIdOf<T>, sender: &T::AccountId, amount: BalanceOf<T>) -> bool {
-		let wrapping_fee = Self::get_wrapping_fee(amount);
-		let total = wrapping_fee.saturating_add(amount);
+		let total = Self::get_amount_to_wrap(amount);
 		T::Currency::free_balance(currency_id, sender) > total
 	}
 

@@ -59,6 +59,6 @@ fn should_update_fee() {
 		// create fee update proposal
 		setup_relayers(src_chain_id);
 		relay_fee_update_proposal(src_chain_id, &resource_id, prop_id, 5);
-		assert_eq!(TokenWrapper::get_wrapping_fee(100_u128), 5);
+		assert_eq!(TokenWrapper::get_wrapping_fee(1000_u128), 52);
 	})
 }
