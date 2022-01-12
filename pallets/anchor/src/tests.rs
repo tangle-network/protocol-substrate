@@ -1,9 +1,10 @@
 use std::{convert::TryInto, path::Path};
 
-use ark_bn254::{Fr as Bn254Fr, Bn254};
+use ark_bn254::{Bn254, Fr as Bn254Fr};
+use ark_crypto_primitives::commitment;
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_circuits::setup::common::setup_keys;
-use arkworks_utils::utils::common::{Curve, setup_params_x5_3};
+use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 
 use codec::Encode;
@@ -42,8 +43,12 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			// 3. Setup the VerifierPallet
 			//    but to do so, we need to have a VerifyingKey
 			let (pk_bytes, vk_bytes) = (
-				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key.bin").expect("Unable to read file").to_vec(),
-				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin").expect("Unable to read file").to_vec()
+				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key.bin")
+					.expect("Unable to read file")
+					.to_vec(),
+				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin")
+					.expect("Unable to read file")
+					.to_vec(),
 			);
 
 			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes));
@@ -168,11 +173,14 @@ fn anchor_works() {
 
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+		let commitment_bytes = vec![0u8; 32];
+		let commitment_element = Element::from_bytes(&commitment_bytes);
 
 		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
+			commitment_bytes,
 			pk_bytes,
 			src_chain_id,
 			fee_value,
@@ -201,7 +209,7 @@ fn anchor_works() {
 			relayer_account_id,
 			fee_value.into(),
 			refund_value.into(),
-			leaf_element.clone(),
+			commitment_element,
 		));
 		// now we check the recipient balance again.
 		let balance_after = Balances::free_balance(recipient_account_id.clone());
@@ -235,11 +243,14 @@ fn double_spending_should_fail() {
 
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+		let commitment_bytes = vec![0u8; 32];
+		let commitment_element = Element::from_bytes(&commitment_bytes);
 
 		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
+			commitment_bytes,
 			pk_bytes,
 			src_chain_id,
 			fee_value,
@@ -269,7 +280,7 @@ fn double_spending_should_fail() {
 			relayer_account_id.clone(),
 			fee_value.into(),
 			refund_value.into(),
-			leaf_element.clone(),
+			commitment_element,
 		));
 		// now we check the recipient balance again.
 		let balance_after = Balances::free_balance(recipient_account_id.clone());
@@ -312,11 +323,14 @@ fn should_fail_when_invalid_merkle_roots() {
 
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+		let commitment_bytes = vec![0u8; 32];
+		let commitment_element = Element::from_bytes(&commitment_bytes);
 
 		let (proof_bytes, mut roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
+			commitment_bytes,
 			pk_bytes,
 			src_chain_id,
 			fee_value,
@@ -350,7 +364,7 @@ fn should_fail_when_invalid_merkle_roots() {
 				relayer_account_id,
 				fee_value.into(),
 				refund_value.into(),
-				leaf_element.clone(),
+				commitment_element,
 			),
 			pallet_linkable_tree::Error::<Test, _>::InvalidMerkleRoots,
 		);
@@ -374,11 +388,14 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+		let commitment_bytes = vec![0u8; 32];
+		let commitment_element = Element::from_bytes(&commitment_bytes);
 
 		let (mut proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
+			commitment_bytes,
 			pk_bytes,
 			src_chain_id,
 			fee_value,
@@ -413,7 +430,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 				relayer_account_id,
 				fee_value.into(),
 				refund_value.into(),
-				leaf_element
+				commitment_element
 			),
 			crate::Error::<Test, _>::InvalidWithdrawProof
 		);
@@ -437,11 +454,14 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+		let commitment_bytes = vec![0u8; 32];
+		let commitment_element = Element::from_bytes(&commitment_bytes);
 
 		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
+			commitment_bytes,
 			pk_bytes,
 			src_chain_id,
 			fee_value,
@@ -468,7 +488,7 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 				recipient_account_id,
 				fee_value.into(),
 				refund_value.into(),
-				leaf_element,
+				commitment_element,
 			),
 			crate::Error::<Test, _>::InvalidWithdrawProof
 		);
@@ -492,11 +512,14 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+		let commitment_bytes = vec![0u8; 32];
+		let commitment_element = Element::from_bytes(&commitment_bytes);
 
 		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
+			commitment_bytes,
 			pk_bytes,
 			src_chain_id,
 			fee_value,
@@ -524,7 +547,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 				relayer_account_id,
 				100u128,
 				refund_value.into(),
-				leaf_element
+				commitment_element
 			),
 			crate::Error::<Test, _>::InvalidWithdrawProof
 		);
@@ -548,11 +571,14 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 
 		let recipient_bytes = truncate_and_pad_reverse(&recipient_account_id.encode()[..]);
 		let relayer_bytes = truncate_and_pad_reverse(&relayer_account_id.encode()[..]);
+		let commitment_bytes = vec![0u8; 32];
+		let commitment_element = Element::from_bytes(&commitment_bytes);
 
 		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
+			commitment_bytes,
 			pk_bytes,
 			src_chain_id,
 			fee_value,
@@ -580,7 +606,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 				relayer_account_id,
 				fee_value.into(),
 				refund_value.into(),
-				leaf_element,
+				commitment_element,
 			),
 			crate::Error::<Test, _>::InvalidWithdrawProof
 		);
@@ -660,11 +686,14 @@ fn anchor_works_for_pool_tokens() {
 
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+		let commitment_bytes = vec![0u8; 32];
+		let commitment_element = Element::from_bytes(&commitment_bytes);
 
 		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
+			commitment_bytes,
 			pk_bytes,
 			src_chain_id,
 			fee_value,
@@ -692,7 +721,7 @@ fn anchor_works_for_pool_tokens() {
 			relayer_account_id,
 			fee_value.into(),
 			refund_value.into(),
-			leaf_element.clone(),
+			commitment_element,
 		));
 		// now we check the recipient balance again.
 		let balance_after = TokenWrapper::get_balance(pool_share_id, &recipient_account_id);
