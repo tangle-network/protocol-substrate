@@ -123,7 +123,7 @@ pub mod pallet {
 		pub fn execute_add_token_to_pool_share(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
-			name: &Vec<u8>,
+			name: &[u8],
 			asset_id: T::AssetId,
 		) -> DispatchResultWithPostInfo {
 			// TODO: Define and check validity conditions.
@@ -136,7 +136,7 @@ pub mod pallet {
 		pub fn execute_remove_token_from_pool_share(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
-			name: &Vec<u8>,
+			name: &[u8],
 			asset_id: T::AssetId,
 		) -> DispatchResultWithPostInfo {
 			// TODO: Define and check validity conditions.
