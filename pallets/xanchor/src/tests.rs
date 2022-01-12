@@ -1,10 +1,8 @@
 use super::{
 	mock::{parachain::*, *},
-	test_utils::*,
 	*,
 };
 use std::{convert::TryInto, path::Path};
-use ark_bn254::Bn254;
 use frame_benchmarking::account;
 use arkworks_utils::utils::common::{Curve, setup_params_x5_4, setup_params_x5_3};
 use ark_bn254::Fr as Bn254Fr;
@@ -14,7 +12,6 @@ use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use pallet_anchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};
 use xcm_simulator::TestExt;
-use arkworks_circuits::setup::common::setup_keys;
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
@@ -25,7 +22,6 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 	match curve {
 		Curve::Bn254 => {
 			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
-			let params4 = setup_params_x5_4::<Bn254Fr>(curve);
 
 			// 1. Setup The Hasher Pallet.
 			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
@@ -33,21 +29,14 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 			// 3. Setup the VerifierPallet
 			//    but to do so, we need to have a VerifyingKey
-			let (pk_bytes, vk_bytes) = if Path::new("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5_4_leaf/proving_key.bin").exists() {
-				let (pk, vk) = (
-					std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5_4_leaf/proving_key.bin").expect("Unable to read file").to_vec(),
-					std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5_4_leaf/verifying_key.bin").expect("Unable to read file").to_vec()
-				);
-				(pk.to_vec(), vk.to_vec())
-			} else {
-				let rng = &mut ark_std::test_rng();
-				let anchor_setup = AnchorSetup30_2::new(params3, params4);
-				let (circuit, .., public_inputs) = anchor_setup.setup_random_circuit(rng).unwrap();
-				let (pk, vk) = setup_keys::<Bn254, _, _>(circuit.clone(), rng).unwrap();
-				std::fs::write("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5_4_leaf/proving_key.bin", &pk).expect("Unable to write file");
-				std::fs::write("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5_4_leaf/verifying_key.bin", &vk).expect("Unable to write file");
-				(pk, vk)
-			};
+			let (pk_bytes, vk_bytes) = (
+				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key.bin")
+					.expect("Unable to read file")
+					.to_vec(),
+				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin")
+					.expect("Unable to read file")
+					.to_vec(),
+			);
 
 			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
 
