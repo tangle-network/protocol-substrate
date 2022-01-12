@@ -7,7 +7,7 @@ use crate::{
 	Error,
 };
 use arkworks_utils::utils::common::Curve;
-use darkwebb_primitives::{
+use webb_primitives::{
 	types::vanchor::{ExtData, ProofData},
 	AccountId,
 };

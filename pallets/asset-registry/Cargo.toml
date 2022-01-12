@@ -16,7 +16,7 @@ scale-info = { version = "1.0", default-features = false, features = ["derive"] 
 codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "2.2.0" }
 primitive-types = { default-features = false, version = "0.8.0" }
 serde = { features = ["derive"], optional = true, version = "1.0.101" }
-darkwebb-primitives = { path = "../../primitives", default-features = false }
+webb-primitives = { path = "../../primitives", default-features = false }
 
 # ORML dependencies
 orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
@@ -48,7 +48,7 @@ std = [
   "codec/std",
   "frame-support/std",
   "frame-system/std",
-  "darkwebb-primitives/std",
+  "webb-primitives/std",
   "sp-runtime/std",
   "sp-core/std",
   "sp-std/std",

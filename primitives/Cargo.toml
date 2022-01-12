@@ -1,5 +1,5 @@
 [package]
-name = "darkwebb-primitives"
+name = "webb-primitives"
 version = "0.1.0"
 authors = ["Drew Stone <drewstone329@gmail.com>"]
 edition = "2018"
@@ -12,6 +12,7 @@ frame-system = { default-features = false, git = "https://github.com/paritytech/
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
 # Arkworks
@@ -47,6 +48,7 @@ std = [
 	"frame-system/std",
 	"sp-core/std",
 	"sp-std/std",
+	"sp-io/std",
 	"sp-runtime/std",
 	"ark-ff/std",
 	"ark-ec/std",

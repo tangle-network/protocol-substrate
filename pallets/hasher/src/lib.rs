@@ -31,7 +31,7 @@
 //!
 //! To use it in your runtime, you need to implement the hasher [`Config`].
 //! Additionally, you will want to implement the hash traits defined in the
-//! darkwebb_primitives::hasher module.
+//! webb_primitives::hasher module.
 //!
 //! The supported dispatchable functions are documented in the [`Call`] enum.
 //!
@@ -63,7 +63,7 @@ pub mod weights;
 use sp_runtime::traits::{Saturating, Zero};
 use sp_std::{prelude::*, vec};
 
-use darkwebb_primitives::{hasher::*, types::DepositDetails};
+use webb_primitives::{hasher::*, types::DepositDetails};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchError},
 	traits::{Currency, ReservableCurrency},

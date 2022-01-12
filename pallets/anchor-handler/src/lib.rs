@@ -46,7 +46,7 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
-use darkwebb_primitives::{
+use webb_primitives::{
 	anchor::AnchorConfig,
 	traits::anchor::{AnchorInspector, AnchorInterface},
 	ResourceId,

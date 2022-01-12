@@ -55,7 +55,7 @@ mod benchmarking;
 pub mod types;
 pub mod weights;
 use codec::{Decode, Encode};
-use darkwebb_primitives::{
+use webb_primitives::{
 	traits::{linkable_tree::*, merkle_tree::*},
 	ElementTrait,
 };

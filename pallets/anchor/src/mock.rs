@@ -5,7 +5,7 @@ use crate as pallet_anchor;
 use codec::{Decode, Encode};
 use sp_core::H256;
 
-pub use darkwebb_primitives::{
+pub use webb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
 	types::ElementTrait,
 	AccountId,
@@ -117,7 +117,7 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksVerifierBn254;
+	type Verifier = webb_primitives::verifying::ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
@@ -125,7 +125,7 @@ impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::ArkworksPoseidonHasherBn254;
+	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
@@ -226,7 +226,7 @@ impl orml_currencies::Config for Test {
 }
 
 impl pallet_asset_registry::Config for Test {
-	type AssetId = darkwebb_primitives::AssetId;
+	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
 	type Event = Event;

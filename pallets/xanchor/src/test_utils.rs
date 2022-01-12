@@ -10,7 +10,7 @@ use arkworks_circuits::setup::{
 use arkworks_utils::{
 	utils::common::{setup_params_x5_3, Curve, setup_params_x5_4},
 };
-use darkwebb_primitives::ElementTrait;
+use webb_primitives::ElementTrait;
 
 use crate::mock::parachain::Element;
 
