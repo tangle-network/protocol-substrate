@@ -22,7 +22,7 @@ use crate::{
 	ShareTokenRegistry,
 };
 use codec::Encode;
-use darkwebb_primitives::{AssetId, Balance};
+use webb_primitives::{AssetId, Balance};
 use frame_support::{assert_noop, assert_ok, BoundedVec};
 use polkadot_xcm::v0::{Junction::*, MultiLocation::*};
 use sp_runtime::DispatchError;

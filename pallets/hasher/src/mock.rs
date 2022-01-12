@@ -1,7 +1,7 @@
 use super::*;
 use crate::{self as pallet_hasher};
 
-pub use darkwebb_primitives::hasher::{HasherModule, InstanceHasher};
+pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
 use frame_support::parameter_types;
 use frame_system as system;
 use sp_core::H256;
@@ -84,7 +84,7 @@ impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
-	type Hasher = darkwebb_primitives::hashing::ArkworksPoseidonHasherBn254;
+	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;

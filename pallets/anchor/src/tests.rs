@@ -2,7 +2,7 @@ use std::convert::TryInto;
 
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_utils::utils::common::Curve;
-use darkwebb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
+use webb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 
 use codec::Encode;
 

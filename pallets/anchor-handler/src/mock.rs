@@ -2,7 +2,7 @@
 
 use crate as pallet_anchor_handler;
 use codec::{Decode, Encode};
-pub use darkwebb_primitives::{ElementTrait, InstanceHasher};
+pub use webb_primitives::{ElementTrait, InstanceHasher};
 use frame_support::{ord_parameter_types, parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
@@ -115,7 +115,7 @@ impl pallet_verifier::Config for Test {
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;
 	type StringLimit = StringLimit;
-	type Verifier = darkwebb_primitives::verifying::ArkworksVerifierBls381;
+	type Verifier = webb_primitives::verifying::ArkworksVerifierBls381;
 	type WeightInfo = ();
 }
 
@@ -216,7 +216,7 @@ impl orml_currencies::Config for Test {
 }
 
 impl pallet_asset_registry::Config for Test {
-	type AssetId = darkwebb_primitives::AssetId;
+	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
 	type Event = Event;

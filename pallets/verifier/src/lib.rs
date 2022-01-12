@@ -32,7 +32,7 @@
 //!
 //! To use it in your runtime, you need to implement the verifier [`Config`].
 //! Additionally, you will want to implement the verifier traits defined in the
-//! darkwebb_primitives::verifier module.
+//! webb_primitives::verifier module.
 //!
 //! The supported dispatchable functions are documented in the [`Call`] enum.
 //!
@@ -66,7 +66,7 @@ use sp_runtime::traits::{Saturating, Zero};
 use sp_std::prelude::*;
 
 use codec::Encode;
-use darkwebb_primitives::{types::DepositDetails, verifier::*};
+use webb_primitives::{types::DepositDetails, verifier::*};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchError},
 	traits::{Currency, ReservableCurrency},

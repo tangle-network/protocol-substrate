@@ -14,7 +14,7 @@ use arkworks_utils::{
 	poseidon::PoseidonParameters,
 	utils::common::{setup_params_x5_3, setup_params_x5_5, Curve},
 };
-use darkwebb_primitives::ElementTrait;
+use webb_primitives::ElementTrait;
 
 use crate::mock::parachain::Element;
 

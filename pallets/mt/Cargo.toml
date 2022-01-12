@@ -18,7 +18,7 @@ frame-system = { default-features = false, git = "https://github.com/paritytech/
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-hasher = { path = "../hasher", default-features = false }
-darkwebb-primitives = { path = "../../primitives", default-features = false }
+webb-primitives = { path = "../../primitives", default-features = false }
 
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
@@ -46,7 +46,7 @@ std = [
     "sp-runtime/std",
     "sp-std/std",
     "pallet-hasher/std",
-    "darkwebb-primitives/std",
+    "webb-primitives/std",
     "frame-benchmarking/std"
 ]
 runtime-benchmarks = [

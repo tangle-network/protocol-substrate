@@ -22,7 +22,7 @@ serde = {version = "1.0.101", optional = true, features = ["derive"]}
 smallvec = "1.6.1"
 # local dependencies
 common = {path = "../common", default-features = false}
-darkwebb-primitives = {path = "../primitives", default-features = false, features = ["hashing"]}
+webb-primitives = {path = "../primitives", default-features = false, features = ["hashing"]}
 
 pallet-hasher = {path = "../pallets/hasher", default-features = false}
 pallet-mt = {path = "../pallets/mt", default-features = false}
@@ -183,7 +183,7 @@ std = [
   "xcm-executor/std",
   "xcm/std",
   "sp-consensus-aura/std",
-  "darkwebb-primitives/std",
+  "webb-primitives/std",
   "common/std",
   "pallet-hasher/std",
   "pallet-verifier/std",

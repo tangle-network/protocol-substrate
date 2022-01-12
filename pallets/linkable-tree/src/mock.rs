@@ -5,7 +5,7 @@ use crate as pallet_linkable_tree;
 use codec::{Decode, Encode};
 use sp_core::H256;
 
-pub use darkwebb_primitives::{
+pub use webb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
 	types::ElementTrait,
 	AccountId,
@@ -104,7 +104,7 @@ impl pallet_hasher::Config for Test {
 	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = darkwebb_primitives::hashing::ArkworksPoseidonHasherBn254;
+	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
 	type ParameterDeposit = ParameterDeposit;

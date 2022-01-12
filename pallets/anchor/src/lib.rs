@@ -60,7 +60,7 @@ mod benchmarking;
 pub mod types;
 pub mod weights;
 use codec::Encode;
-use darkwebb_primitives::{
+use webb_primitives::{
 	anchor::{AnchorConfig, AnchorInspector, AnchorInterface},
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
 	verifier::*,
