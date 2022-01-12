@@ -45,9 +45,9 @@
 pub mod mock;
 #[cfg(test)]
 mod tests;
-pub mod types;
+
 pub mod utils;
-use crate::types::{ProposalStatus, ProposalVotes};
+
 use codec::{Decode, Encode, EncodeLike};
 use webb_primitives::{ResourceId, signing::SigningSystem};
 use frame_support::{
@@ -91,12 +91,8 @@ pub mod pallet {
 		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 		/// Proposal nonce type
 		type ProposalNonce: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
-		/// Public key type for maintainers
-		type PublicKey: Encode + Decode + Parameter + Default + Copy;
-		/// Signature type for maintainer's public key infrastructure
-		type Signature: Encode + Decode + Parameter + Default + Copy;
 		/// Signature verification utility over public key infrastructure
-		type SignatureVerifier: SigningSystem<Self::PublicKey, Self::Signature>;
+		type SignatureVerifier: SigningSystem;
 		/// The identifier for this chain.
 		/// This must be unique and must not collide with existing IDs within a
 		/// set of bridged chains.
@@ -113,7 +109,7 @@ pub mod pallet {
 	/// The parameter maintainer who can change the parameters
 	#[pallet::storage]
 	#[pallet::getter(fn maintainer)]
-	pub type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::PublicKey, ValueQuery>;
+	pub type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, Vec<u8>, ValueQuery>;
 
 	/// All whitelisted chains and their respective transaction counts
 	#[pallet::storage]
@@ -131,8 +127,8 @@ pub mod pallet {
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// Maintainer is set
 		MaintainerSet {
-			old_maintainer: T::PublicKey,
-			new_maintainer: T::PublicKey,
+			old_maintainer: Vec<u8>,
+			new_maintainer: Vec<u8>,
 		},
 		/// Chain now available for transfers (chain_id)
 		ChainWhitelisted { chain_id: T::ChainId },
@@ -183,14 +179,14 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn set_maintainer(
 			origin: OriginFor<T>,
-			new_maintainer: T::PublicKey,
-			signature: T::Signature,
+			new_maintainer: Vec<u8>,
+			signature: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			let old_maintainer = <Maintainer<T, I>>::get();
 			// ensure parameter setter is the maintainer
 			ensure!(T::SignatureVerifier::verify(
-					&Self::maintainer(),
+					&Self::maintainer().encode()[..],
 					&new_maintainer.encode()[..],
 					&signature
 				).unwrap_or(false),
@@ -209,7 +205,7 @@ pub mod pallet {
 
 		// Forcefully set the maintainer.
 		#[pallet::weight(0)]
-		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::PublicKey) -> DispatchResultWithPostInfo {
+		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: Vec<u8>) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
@@ -275,7 +271,7 @@ pub mod pallet {
 			src_id: T::ChainId,
 			r_id: ResourceId,
 			call: Box<<T as Config<I>>::Proposal>,
-			signature: T::Signature,
+			signature: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let _ = ensure_signed(origin)?;
 			ensure!(

@@ -10,7 +10,7 @@ use sp_runtime::{
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 };
 
-use crate::{self as pallet_bridge, Config};
+use crate::{self as pallet_signature_bridge, Config};
 pub use pallet_balances;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -25,7 +25,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
-		Bridge: pallet_bridge::{Pallet, Call, Storage, Event<T>},
+		Bridge: pallet_signature_bridge::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -94,6 +94,8 @@ impl Config for Test {
 	type Event = Event;
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
+	type ProposalNonce = u32;
+	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 }
 
 // pub const BRIDGE_ID: u64 =
@@ -123,13 +125,6 @@ pub fn new_test_ext_initialized(
 ) -> sp_io::TestExternalities {
 	let mut t = new_test_ext();
 	t.execute_with(|| {
-		// Set and check threshold
-		assert_ok!(Bridge::set_threshold(Origin::root(), TEST_THRESHOLD));
-		assert_eq!(Bridge::relayer_threshold(), TEST_THRESHOLD);
-		// Add relayers
-		assert_ok!(Bridge::add_relayer(Origin::root(), RELAYER_A));
-		assert_ok!(Bridge::add_relayer(Origin::root(), RELAYER_B));
-		assert_ok!(Bridge::add_relayer(Origin::root(), RELAYER_C));
 		// Whitelist chain
 		assert_ok!(Bridge::whitelist_chain(Origin::root(), src_id));
 		// Set and check resource ID mapped to some junk data

@@ -1,5 +1,5 @@
 use sp_std::vec::Vec;
-use sp_io::{hashing::keccak_256, EcdsaVerifyError};
+pub use sp_io::{hashing::keccak_256, EcdsaVerifyError};
 
 pub const SIGNATURE_LENGTH: usize = 65;
 const KEY_LENGTH: usize = 32;
@@ -23,7 +23,6 @@ pub fn recover_ecdsa_pub_key(data: &[u8], signature: &[u8]) -> Result<Vec<u8>, E
 		sig[..SIGNATURE_LENGTH].copy_from_slice(&signature);
 
 		let hash = keccak_256(&data);
-
 		let pub_key = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &hash)?;
 		return Ok(pub_key.to_vec())
 	}
