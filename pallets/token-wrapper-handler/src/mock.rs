@@ -191,7 +191,7 @@ impl pallet_bridge::Config<BridgeInstance> for Test {
 impl Config for Test {
 	type Event = Event;
 	type BridgeOrigin = pallet_bridge::EnsureBridge<Test, BridgeInstance>;
-    type TokenWrapper = TokenWrapper; //not sure what to fill in;
+	type TokenWrapper = TokenWrapper;
 }
 
 pub const RELAYER_A: u64 = 0x2;
