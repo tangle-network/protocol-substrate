@@ -601,6 +601,14 @@ impl<T: Config> ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchErro
 
 		false
 	}
+
+	fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+		Self::add_asset_to_existing_pool(name, asset_id)
+	}
+
+	fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+		Self::delete_asset_from_existing_pool(name, asset_id)
+	}
 }
 
 use orml_traits::GetByKey;

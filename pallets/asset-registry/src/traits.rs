@@ -38,4 +38,6 @@ pub trait ShareTokenRegistry<AssetId, AssetName, Balance, Error>: Registry<Asset
 	}
 
 	fn contains_asset(pool_share_id: AssetId, asset_id: AssetId) -> bool;
+	fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: AssetId) -> Result<AssetId, Error>;
+	fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: AssetId) -> Result<AssetId, Error>;
 }

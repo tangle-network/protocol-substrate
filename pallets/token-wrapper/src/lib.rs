@@ -238,7 +238,7 @@ impl<T: Config> Pallet<T> {
 }
 
 impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> for Pallet<T> {
-	fn set_wrapping_fee(fee: BalanceOf<T>) -> Result<(), frame_support::dispatch::DispatchError> {
+	fn set_wrapping_fee(fee: BalanceOf<T>) -> Result<(), DispatchError> {
 		WrappingFeePercent::<T>::put(fee);
 
 		Self::deposit_event(Event::UpdatedWrappingFeePercent {
@@ -253,7 +253,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 		into_pool_share_id: T::AssetId,
 		amount: BalanceOf<T>,
 		recipient: T::AccountId,
-	) -> Result<(), frame_support::dispatch::DispatchError> {
+	) -> Result<(), DispatchError> {
 		ensure!(amount > <BalanceOf<T>>::default(), Error::<T>::InvalidAmount);
 
 		ensure!(
@@ -303,7 +303,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 		into_asset_id: T::AssetId,
 		amount: BalanceOf<T>,
 		recipient: T::AccountId,
-	) -> Result<(), frame_support::dispatch::DispatchError> {
+	) -> Result<(), DispatchError> {
 		ensure!(amount > <BalanceOf<T>>::default(), Error::<T>::InvalidAmount);
 
 		ensure!(
@@ -333,5 +333,12 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 			recipient,
 		});
 		Ok(())
+	}
+
+	fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+		<T::AssetRegistry as ShareTokenRegistry<_,_,_,_>>::add_asset_to_existing_pool(name, asset_id)
+	}
+	fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+		<T::AssetRegistry as ShareTokenRegistry<_,_,_,_>>::delete_asset_from_existing_pool(name, asset_id)
 	}
 }
