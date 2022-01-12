@@ -82,16 +82,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'darkwebb-primitives'",
+            "name": "Debug unit tests in library 'webb-primitives'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
                     "--lib",
-                    "--package=darkwebb-primitives"
+                    "--package=webb-primitives"
                 ],
                 "filter": {
-                    "name": "darkwebb-primitives",
+                    "name": "webb-primitives",
                     "kind": "lib"
                 }
             },

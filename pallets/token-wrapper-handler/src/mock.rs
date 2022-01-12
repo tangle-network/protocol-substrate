@@ -77,7 +77,7 @@ pub type AssetId = u32;
 pub type Amount = i128;
 
 impl asset_registry::Config for Test {
-	type AssetId = darkwebb_primitives::AssetId;
+	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
 	type Event = Event;
