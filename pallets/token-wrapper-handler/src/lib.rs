@@ -70,7 +70,6 @@ pub use pallet::*;
 pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
-	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_token_wrapper::Config {
@@ -96,17 +95,18 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Access violation.
 		InvalidPermissions,
-		// TokenWrapperHandler already exists for specified resource Id.
+		// Token Wrapper Handler already exists for specified resource Id.
 		ResourceIsAlreadyAnchored,
-		// TokenWrapper handler doesn't exist for specified resoure Id.
+		// Token Wrapper Handler doesn't exist for specified resoure Id.
 		TokenWrapperHandlerNotFound,
 		/// Storage overflowed.
 		StorageOverflow,
 	}
-	/// Execute the wrapping fee proposal by calling the update_wrapping_fee
-	/// method Ensures that only the bridge can call this function
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Execute the wrapping fee proposal by calling the update_wrapping_fee
+		/// method. Ensures that only the bridge can call this function.
 		#[pallet::weight(195_000_000)]
 		pub fn execute_wrapping_fee_proposal(
 			origin: OriginFor<T>,
@@ -115,19 +115,8 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			// TODO: Define and check validity conditions.
 			T::BridgeOrigin::ensure_origin(origin)?;
-			Self::update_wrapping_fee(r_id, wrapping_fee_percent)?;
+			T::TokenWrapper::set_wrapping_fee(wrapping_fee_percent)?;
 			Ok(().into())
 		}
-	}
-}
-
-impl<T: Config> Pallet<T> {
-	/// Updates the wrapping fee by calling the set_wrapping_fee method on the
-	/// TokenWrapper Pallet
-	fn update_wrapping_fee(
-		r_id: ResourceId,
-		wrapping_fee_percent: BalanceOf<T>,
-	) -> Result<(), frame_support::dispatch::DispatchError> {
-		T::TokenWrapper::set_wrapping_fee(wrapping_fee_percent)
 	}
 }
