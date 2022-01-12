@@ -1,4 +1,5 @@
 use frame_support::dispatch;
+use sp_std::vec::Vec;
 
 pub trait TokenWrapperInterface<AccountId, AssetId, Balance> {
 	fn set_wrapping_fee( fee: Balance) -> Result<(), dispatch::DispatchError>;
