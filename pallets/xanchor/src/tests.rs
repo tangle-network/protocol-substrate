@@ -6,7 +6,7 @@ use super::{
 
 use arkworks_utils::utils::common::Curve;
 use codec::Encode;
-use darkwebb_primitives::utils::encode_resource_id;
+use webb_primitives::utils::encode_resource_id;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use pallet_anchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};

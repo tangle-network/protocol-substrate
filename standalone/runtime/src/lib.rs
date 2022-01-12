@@ -74,7 +74,7 @@ use frame_system::{
 	EnsureOneOf, EnsureRoot,
 };
 
-use darkwebb_primitives::{
+use webb_primitives::{
 	hashing::{ArkworksPoseidonHasherBls381, ArkworksPoseidonHasherBn254},
 	types::ElementTrait,
 	verifying::{ArkworksVerifierBls381, ArkworksVerifierBn254},
@@ -1095,7 +1095,7 @@ impl pallet_verifier::Config<pallet_verifier::Instance2> for Runtime {
 }
 
 impl pallet_asset_registry::Config for Runtime {
-	type AssetId = darkwebb_primitives::AssetId;
+	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = Balance;
 	type Event = Event;
@@ -1108,7 +1108,7 @@ impl pallet_asset_registry::Config for Runtime {
 impl orml_tokens::Config for Runtime {
 	type Amount = Amount;
 	type Balance = Balance;
-	type CurrencyId = darkwebb_primitives::AssetId;
+	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
 	type Event = Event;
 	type ExistentialDeposits = AssetRegistry;
@@ -1127,7 +1127,7 @@ impl orml_currencies::Config for Runtime {
 
 parameter_types! {
 	pub const MixerPalletId: PalletId = PalletId(*b"py/mixer");
-	pub const NativeCurrencyId: darkwebb_primitives::AssetId = 0;
+	pub const NativeCurrencyId: webb_primitives::AssetId = 0;
 	pub const RegistryStringLimit: u32 = 10;
 }
 

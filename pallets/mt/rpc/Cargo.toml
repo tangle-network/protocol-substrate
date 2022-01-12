@@ -16,7 +16,7 @@ sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "master
 sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 
-darkwebb-primitives = { path = "../../../primitives", default-features = false }
+webb-primitives = { path = "../../../primitives", default-features = false }
 pallet-mt = { path = "../", default-features = false }
 pallet-mt-rpc-runtime-api = { path = "./runtime-api", default-features = false }
 
@@ -24,7 +24,7 @@ pallet-mt-rpc-runtime-api = { path = "./runtime-api", default-features = false }
 default = ["std"]
 std = [
     "codec/std",
-    "darkwebb-primitives/std",
+    "webb-primitives/std",
     "pallet-mt/std",
     "pallet-mt-rpc-runtime-api/std",
     "sp-core/std",

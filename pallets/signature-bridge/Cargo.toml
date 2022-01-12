@@ -4,7 +4,7 @@ description = "FRAME pallet for Webb bridge."
 edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
-name = "pallet-bridge"
+name = "pallet-signature-bridge"
 repository = "https://github.com/substrate-developer-hub/substrate-darkwebb-node/"
 version = "1.0.0"
 
@@ -28,7 +28,10 @@ pallet-balances = { default-features = false, git = "https://github.com/parityte
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
 
+secp256k1 = { version = "0.21.2", default-features = false }
 webb-primitives = { path = "../../primitives", default-features = false }
+hex-literal = "0.3.4"
+
 [features]
 default = ["std"]
 std = [
@@ -40,6 +43,8 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-balances/std",
+	"webb-primitives/std",
+	"secp256k1/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

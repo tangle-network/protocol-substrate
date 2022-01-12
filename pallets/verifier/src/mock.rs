@@ -1,6 +1,6 @@
 use super::*;
 use crate as pallet_verifier;
-pub use darkwebb_primitives::{
+pub use webb_primitives::{
 	verifier::{InstanceVerifier, VerifierModule},
 	verifying::ArkworksVerifierBn254,
 };

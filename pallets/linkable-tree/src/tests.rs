@@ -1,4 +1,4 @@
-use darkwebb_primitives::{AccountId, ElementTrait};
+use webb_primitives::{AccountId, ElementTrait};
 
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, error::BadOrigin};

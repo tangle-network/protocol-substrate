@@ -4,7 +4,7 @@ use arkworks_utils::{
 	utils::common::{setup_params_x5_3, setup_params_x5_5, Curve},
 };
 use common::{AccountId, AuraId, Signature};
-use darkwebb_primitives::Balance;
+use webb_primitives::Balance;
 use darkwebb_runtime::{
 	wasm_binary_unwrap, AssetRegistryConfig, AuraConfig, BalancesConfig, CouncilConfig, GenesisConfig,
 	HasherBls381Config, HasherBn254Config, MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config,

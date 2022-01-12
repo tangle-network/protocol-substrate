@@ -227,10 +227,10 @@ pub fn run() -> Result<()> {
 			})
 		}
 		Some(Subcommand::ExportBlocks(cmd)) => {
-			construct_async_run!(|components, cli, cmd, config| { Ok(cmd.run(components.client, config.database)) })
+			construct_async_run!(|components, cli, cmd, config| Ok(cmd.run(components.client, config.database)))
 		}
 		Some(Subcommand::ExportState(cmd)) => {
-			construct_async_run!(|components, cli, cmd, config| { Ok(cmd.run(components.client, config.chain_spec)) })
+			construct_async_run!(|components, cli, cmd, config| Ok(cmd.run(components.client, config.chain_spec)))
 		}
 		Some(Subcommand::ImportBlocks(cmd)) => {
 			construct_async_run!(|components, cli, cmd, config| {
@@ -256,7 +256,7 @@ pub fn run() -> Result<()> {
 			})
 		}
 		Some(Subcommand::Revert(cmd)) => {
-			construct_async_run!(|components, cli, cmd, config| { Ok(cmd.run(components.client, components.backend)) })
+			construct_async_run!(|components, cli, cmd, config| Ok(cmd.run(components.client, components.backend)))
 		}
 		Some(Subcommand::ExportGenesisState(params)) => {
 			let mut builder = sc_cli::LoggerBuilder::new("");
