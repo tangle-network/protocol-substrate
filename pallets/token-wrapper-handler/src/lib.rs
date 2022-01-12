@@ -60,7 +60,7 @@ use frame_system::pallet_prelude::OriginFor;
 ///TODO: Define BalanceOf
 use pallet_token_wrapper::BalanceOf;
 
-use darkwebb_primitives::ResourceId;
+use webb_primitives::ResourceId;
 
 use pallet_token_wrapper::traits::TokenWrapperInterface;
 

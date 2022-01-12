@@ -107,7 +107,7 @@ impl pallet_balances::Config for Test {
 impl orml_tokens::Config for Test {
 	type Amount = Amount;
 	type Balance = u128;
-	type CurrencyId = darkwebb_primitives::AssetId;
+	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
 	type Event = Event;
 	type ExistentialDeposits = AssetRegistry;
