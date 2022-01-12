@@ -123,12 +123,12 @@ pub mod pallet {
 		pub fn execute_add_token_to_pool_share(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
-			name: &[u8],
+			name: Vec<u8>,
 			asset_id: T::AssetId,
 		) -> DispatchResultWithPostInfo {
 			// TODO: Define and check validity conditions.
 			T::BridgeOrigin::ensure_origin(origin)?;
-			T::TokenWrapper::add_asset_to_existing_pool(name, asset_id)?;
+			T::TokenWrapper::add_asset_to_existing_pool(&name, asset_id)?;
 			Ok(().into())
 		}
 
@@ -136,12 +136,12 @@ pub mod pallet {
 		pub fn execute_remove_token_from_pool_share(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
-			name: &[u8],
+			name: Vec<u8>,
 			asset_id: T::AssetId,
 		) -> DispatchResultWithPostInfo {
 			// TODO: Define and check validity conditions.
 			T::BridgeOrigin::ensure_origin(origin)?;
-			T::TokenWrapper::delete_asset_from_existing_pool(name, asset_id)?;
+			T::TokenWrapper::delete_asset_from_existing_pool(&name, asset_id)?;
 			Ok(().into())
 		}
 	}
