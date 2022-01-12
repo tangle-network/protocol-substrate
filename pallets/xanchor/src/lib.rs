@@ -64,9 +64,6 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-#[cfg(test)]
-mod test_utils;
-
 pub mod types;
 pub use pallet::*;
 use types::*;

@@ -66,12 +66,11 @@ use webb_primitives::{
 	verifier::*,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
-use orml_traits::MultiCurrency;
+use orml_traits::{currency::transactional, MultiCurrency};
 use sp_runtime::traits::AccountIdConversion;
 use sp_std::prelude::*;
 use types::*;
 pub use weights::WeightInfo;
-use orml_traits::currency::transactional;
 
 /// Type alias for the orml_traits::MultiCurrency::Balance type
 pub type BalanceOf<T, I> =

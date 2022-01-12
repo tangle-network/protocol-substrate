@@ -21,12 +21,13 @@ use arkworks_gadgets::{
 use arkworks_utils::{
 	poseidon::PoseidonParameters,
 	utils::common::{
-		setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, verify_groth16, Curve,
+		setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve,
 	},
 };
 use codec::Encode;
 use webb_primitives::{
 	hashing::ethereum::keccak256,
+	verifying::arkworks::verify_groth16,
 	types::{IntoAbiToken, Token},
 	utils::element_encoder,
 	ElementTrait,
@@ -564,7 +565,7 @@ pub fn prove(
 pub fn verify(public_inputs: &Vec<Bn254Fr>, vk: &[u8], proof: &[u8]) -> bool {
 	let vk = VerifyingKey::<Bn254>::deserialize(vk).unwrap();
 	let proof = Proof::<Bn254>::deserialize(proof).unwrap();
-	let ver_res = verify_groth16(&vk, &public_inputs, &proof);
+	let ver_res = verify_groth16(&vk, &public_inputs, &proof).unwrap();
 	ver_res
 }
 

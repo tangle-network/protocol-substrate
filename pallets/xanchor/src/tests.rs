@@ -1,10 +1,11 @@
 use super::{
 	mock::{parachain::*, *},
-	test_utils::*,
 	*,
 };
-
-use arkworks_utils::utils::common::Curve;
+use std::{convert::TryInto, path::Path};
+use frame_benchmarking::account;
+use arkworks_utils::utils::common::{Curve, setup_params_x5_4, setup_params_x5_3};
+use ark_bn254::Fr as Bn254Fr;
 use codec::Encode;
 use webb_primitives::utils::encode_resource_id;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
@@ -12,32 +13,51 @@ use pallet_anchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};
 use xcm_simulator::TestExt;
 
+const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
 const M: usize = 2;
 const DEPOSIT_SIZE: u128 = 10_000;
 
 fn setup_environment(curve: Curve) -> Vec<u8> {
-	let params = match curve {
-		Curve::Bn254 => get_hash_params::<ark_bn254::Fr>(curve),
-		Curve::Bls381 => {
-			todo!("Setup hash params for bls381")
+	match curve {
+		Curve::Bn254 => {
+			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
+
+			// 1. Setup The Hasher Pallet.
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+			// 2. Initialize MerkleTree pallet.
+			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
+			// 3. Setup the VerifierPallet
+			//    but to do so, we need to have a VerifyingKey
+			let (pk_bytes, vk_bytes) = (
+				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key.bin")
+					.expect("Unable to read file")
+					.to_vec(),
+				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin")
+					.expect("Unable to read file")
+					.to_vec(),
+			);
+
+			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
+
+			for account_id in [
+				account::<AccountId>("", 1, SEED),
+				account::<AccountId>("", 2, SEED),
+				account::<AccountId>("", 3, SEED),
+				account::<AccountId>("", 4, SEED),
+				account::<AccountId>("", 5, SEED),
+				account::<AccountId>("", 6, SEED),
+			] {
+				assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
+			}
+
+			// finally return the provingkey bytes
+			pk_bytes.to_vec()
 		}
-	};
-	// 1. Setup The Hasher Pallet.
-	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params.0));
-	// 2. Initialize MerkleTree pallet.
-	<MerkleTree as OnInitialize<u64>>::on_initialize(1);
-	// 3. Setup the VerifierPallet
-	//    but to do so, we need to have a VerifyingKey
-	let mut verifier_key_bytes = Vec::new();
-	let mut proving_key_bytes = Vec::new();
-
-	get_keys(curve, &mut proving_key_bytes, &mut verifier_key_bytes);
-
-	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes));
-
-	// finally return the provingkey bytes
-	proving_key_bytes
+		Curve::Bls381 => {
+			unimplemented!()
+		}
+	}
 }
 
 // sanity check that XCM is working

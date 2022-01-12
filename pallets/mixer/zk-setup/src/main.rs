@@ -106,7 +106,7 @@ fn main() {
 
 		let dest_path = Path::new(&out_dir).join("zk_config.rs");
 		let (proof_bytes, vk_bytes, hash_params, roots_element_bytes, nullifier_hash_element_bytes, leaf) = generate_proofs();
-        
+
 		fs::write(
             &dest_path,
             format!("pub const HASH_PARAMS: [u8;{}] = {:?};\npub const PROOF_BYTES: [u8;{}] = {:?};\npub const VK_BYTES: [u8;{}] = {:?};\npub const ROOT_ELEMENT_BYTES: [[u8;32];{}] = {:?};\npub const NULLIFIER_HASH_ELEMENTS_BYTES: [u8;{}] = {:?};\npub const LEAF: [u8;{}]= {:?};", 

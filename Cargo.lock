@@ -407,9 +407,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-circuits"
-version = "0.4.6"
+version = "0.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3151556f01f8a570c044eec6e96321c37dbdbbd676230e95517514ae1c1e4025"
+checksum = "c54f27c9498c70c27320378bc658aeebffd2a08086cdb4dbfa003346da82cd5e"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -431,14 +431,17 @@ dependencies = [
  "arkworks-utils",
  "blake2",
  "digest 0.9.0",
+ "ethabi",
+ "hex-literal 0.3.4",
  "paste",
+ "tiny-keccak",
 ]
 
 [[package]]
 name = "arkworks-gadgets"
-version = "0.4.6"
+version = "0.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8caf76ca80046470dc3f4fbaab8f47cfd8f9a5afda13084a00fc9346a6729d9"
+checksum = "2ad9cb6d014a969ed7c7c59ba1b7da43bf8e93da78088a14235af1abb03c0af8"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -464,9 +467,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-utils"
-version = "0.4.6"
+version = "0.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6601e0ee1b2f253c9f7d8418c5592ca00683b204cad8d871dc0d821a8b70c23f"
+checksum = "e61c33c327e790cf20313fa39f84efc678fd531995951bd8f5647faab7fcbe38"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",

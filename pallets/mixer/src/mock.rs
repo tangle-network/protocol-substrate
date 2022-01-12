@@ -233,14 +233,6 @@ impl Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	use sp_runtime::traits::Zero;
 	let mut storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	let _ = pallet_balances::GenesisConfig::<Test> {
-		balances: vec![
-			(account::<AccountId>("", 1, 0), 10u128.pow(18)),
-			(account::<AccountId>("", 2, 0), 20u128.pow(18)),
-			(account::<AccountId>("", 3, 0), 30u128.pow(18)),
-		],
-	}
-	.assimilate_storage(&mut storage);
 	pallet_asset_registry::GenesisConfig::<Test> {
 		asset_names: vec![],
 		native_asset_name: b"UNIT".to_vec(),
