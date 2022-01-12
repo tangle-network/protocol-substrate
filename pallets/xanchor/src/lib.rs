@@ -43,7 +43,7 @@
 use codec::Encode;
 use cumulus_pallet_xcm::{ensure_sibling_para, Origin as CumulusOrigin};
 use cumulus_primitives_core::ParaId;
-use darkwebb_primitives::{
+use webb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
 	utils, ResourceId,
 };
@@ -78,7 +78,7 @@ pub type LinkProposalOf<T, I> = LinkProposal<ChainIdOf<T, I>, TreeIdOf<T, I>>;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use darkwebb_primitives::utils;
+	use webb_primitives::utils;
 	use pallet_anchor::BalanceOf;
 
 	#[pallet::pallet]

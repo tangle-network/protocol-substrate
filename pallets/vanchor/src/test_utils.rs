@@ -25,7 +25,7 @@ use arkworks_utils::{
 	},
 };
 use codec::Encode;
-use darkwebb_primitives::{
+use webb_primitives::{
 	hashing::ethereum::keccak256,
 	verifying::arkworks::verify_groth16,
 	types::{IntoAbiToken, Token},

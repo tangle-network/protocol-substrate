@@ -8,7 +8,8 @@ use arkworks_circuits::setup::{
 use ark_std::UniformRand;
 use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_4, Curve};
 use codec::Encode;
-use darkwebb_primitives::ElementTrait;
+use webb_primitives::ElementTrait;
+
 
 use crate::mock::Element;
 

@@ -65,7 +65,7 @@ pub mod weights;
 use types::MixerMetadata;
 
 use codec::Encode;
-use darkwebb_primitives::{
+use webb_primitives::{
 	traits::{
 		merkle_tree::{TreeInspector, TreeInterface},
 		mixer::{MixerInspector, MixerInterface},

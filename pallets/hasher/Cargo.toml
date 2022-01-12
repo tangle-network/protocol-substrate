@@ -19,7 +19,7 @@ frame-support = { default-features = false, git = "https://github.com/paritytech
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-darkwebb-primitives = { path = "../../primitives", default-features = false }
+webb-primitives = { path = "../../primitives", default-features = false }
 
 #Optional dependencies
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
@@ -44,17 +44,17 @@ arkworks-utils    = { version = "0.4.16", features = ["poseidon_bls381_x5_3", "p
 [features]
 default = ["std"]
 std = [
-    "codec/std",
-    "frame-support/std",
-    "frame-system/std",
-    "sp-runtime/std",
-    "sp-std/std",
-    "darkwebb-primitives/std",
-    "darkwebb-primitives/hashing",
-    "frame-benchmarking/std"
+	"codec/std",
+	"frame-support/std",
+	"frame-system/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"webb-primitives/std",
+	"webb-primitives/hashing",
+	"frame-benchmarking/std"
 ]
 runtime-benchmarks = [
-  "frame-benchmarking",
-  "frame-system/runtime-benchmarks",
-  "frame-support/runtime-benchmarks",
+	"frame-benchmarking",
+	"frame-system/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
 ]

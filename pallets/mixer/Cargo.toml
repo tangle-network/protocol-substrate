@@ -13,7 +13,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = {package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"]}
 scale-info = {version = "1.0", default-features = false, features = ["derive"]}
 
-darkwebb-primitives = {path = "../../primitives", features = ["verifying"], default-features = false}
+webb-primitives = {path = "../../primitives", features = ["verifying"], default-features = false}
 frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"}
 frame-system = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"}
 orml-currencies = {path = "../../open-runtime-module-library/currencies", default-features = false}
@@ -69,7 +69,7 @@ std = [
   "pallet-hasher/std",
   "pallet-mt/std",
   "pallet-verifier/std",
-  "darkwebb-primitives/std",
+  "webb-primitives/std",
   "pallet-asset-registry/std",
   "frame-benchmarking/std",
 ]

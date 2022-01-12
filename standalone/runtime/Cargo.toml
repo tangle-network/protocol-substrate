@@ -24,7 +24,7 @@ static_assertions = "1.1.0"
 
 # local dependencies
 common = {path = "../../common", default-features = false}
-darkwebb-primitives = {path = "../../primitives", default-features = false, features = ["hashing"]}
+webb-primitives = {path = "../../primitives", default-features = false, features = ["hashing"]}
 orml-currencies = {path = "../../open-runtime-module-library/currencies", default-features = false}
 orml-tokens = {path = "../../open-runtime-module-library/tokens", default-features = false}
 orml-traits = {path = "../../open-runtime-module-library/traits", default-features = false}
@@ -183,7 +183,7 @@ std = [
   "pallet-bridge/std",
   "pallet-asset-registry/std",
   "pallet-anchor-handler/std",
-  "darkwebb-primitives/std",
+  "webb-primitives/std",
   "common/std",
   "pallet-mt-rpc-runtime-api/std",
   "pallet-token-wrapper/std",

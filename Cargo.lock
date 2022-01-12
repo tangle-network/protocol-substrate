@@ -2205,7 +2205,6 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
- "darkwebb-primitives",
  "darkwebb-runtime",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -2257,37 +2256,7 @@ dependencies = [
  "substrate-build-script-utils 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
-]
-
-[[package]]
-name = "darkwebb-primitives"
-version = "0.1.0"
-dependencies = [
- "ark-bls12-377",
- "ark-bls12-381",
- "ark-bn254",
- "ark-crypto-primitives",
- "ark-ec",
- "ark-ff",
- "ark-groth16",
- "ark-relations",
- "ark-serialize",
- "ark-std",
- "arkworks-gadgets",
- "arkworks-utils",
- "blake2",
- "digest 0.9.0",
- "ethabi",
- "frame-support",
- "frame-system",
- "hex-literal 0.3.4",
- "parity-scale-codec",
- "scale-info",
- "sp-core",
- "sp-runtime",
- "sp-std",
- "tiny-keccak",
- "tracing",
+ "webb-primitives",
 ]
 
 [[package]]
@@ -2303,7 +2272,6 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -2366,6 +2334,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "webb-primitives",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -2450,7 +2419,6 @@ name = "darkwebb-standalone-runtime"
 version = "0.1.0"
 dependencies = [
  "common",
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-election-provider-support",
  "frame-executive",
@@ -2523,6 +2491,7 @@ dependencies = [
  "sp-version",
  "static_assertions",
  "substrate-wasm-builder",
+ "webb-primitives",
 ]
 
 [[package]]
@@ -5610,7 +5579,6 @@ dependencies = [
  "arkworks-circuits",
  "arkworks-gadgets",
  "arkworks-utils",
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5634,6 +5602,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "webb-primitives",
 ]
 
 [[package]]
@@ -5641,7 +5610,6 @@ name = "pallet-anchor-handler"
 version = "1.0.0"
 dependencies = [
  "ark-crypto-primitives",
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5666,13 +5634,13 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "webb-primitives",
 ]
 
 [[package]]
 name = "pallet-asset-registry"
 version = "0.1.0"
 dependencies = [
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5688,6 +5656,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "webb-primitives",
  "xcm",
 ]
 
@@ -5874,7 +5843,6 @@ dependencies = [
 name = "pallet-bridge"
 version = "1.0.0"
 dependencies = [
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5886,6 +5854,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "webb-primitives",
 ]
 
 [[package]]
@@ -6076,7 +6045,6 @@ dependencies = [
  "ark-serialize",
  "ark-std",
  "arkworks-utils",
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6088,6 +6056,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "webb-primitives",
 ]
 
 [[package]]
@@ -6169,7 +6138,6 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6188,6 +6156,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "webb-primitives",
 ]
 
 [[package]]
@@ -6223,7 +6192,6 @@ dependencies = [
  "arkworks-circuits",
  "arkworks-gadgets",
  "arkworks-utils",
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6243,6 +6211,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "webb-primitives",
 ]
 
 [[package]]
@@ -6306,7 +6275,6 @@ dependencies = [
  "ark-std",
  "arkworks-gadgets",
  "arkworks-utils",
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6320,13 +6288,13 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "webb-primitives",
 ]
 
 [[package]]
 name = "pallet-mt-rpc"
 version = "0.1.0"
 dependencies = [
- "darkwebb-primitives",
  "jsonrpc-core",
  "jsonrpc-core-client",
  "jsonrpc-derive",
@@ -6338,15 +6306,16 @@ dependencies = [
  "sp-blockchain",
  "sp-core",
  "sp-runtime",
+ "webb-primitives",
 ]
 
 [[package]]
 name = "pallet-mt-rpc-runtime-api"
 version = "1.0.0"
 dependencies = [
- "darkwebb-primitives",
  "pallet-mt",
  "sp-api",
+ "webb-primitives",
 ]
 
 [[package]]
@@ -6541,6 +6510,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-signature-bridge"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "hex-literal 0.3.4",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "secp256k1",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "webb-primitives",
+]
+
+[[package]]
 name = "pallet-society"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#6873fc69e2140f554b75242b7e66a5d6a846e772"
@@ -6652,7 +6641,6 @@ dependencies = [
 name = "pallet-token-wrapper"
 version = "1.0.0"
 dependencies = [
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6669,6 +6657,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "webb-primitives",
 ]
 
 [[package]]
@@ -6765,7 +6754,6 @@ dependencies = [
  "arkworks-circuits",
  "arkworks-gadgets",
  "arkworks-utils",
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6789,6 +6777,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "webb-primitives",
 ]
 
 [[package]]
@@ -6796,7 +6785,6 @@ name = "pallet-verifier"
 version = "1.0.0"
 dependencies = [
  "ark-crypto-primitives",
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6809,6 +6797,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "webb-primitives",
 ]
 
 [[package]]
@@ -6843,7 +6832,6 @@ dependencies = [
  "arkworks-utils",
  "cumulus-pallet-xcm",
  "cumulus-primitives-core",
- "darkwebb-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -6871,6 +6859,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "webb-primitives",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -10311,6 +10300,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "secp256k1"
+version = "0.21.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab7883017d5b21f011ef8040ea9c6c7ac90834c0df26a69e4c0b06276151f125"
+dependencies = [
+ "secp256k1-sys",
+]
+
+[[package]]
+name = "secp256k1-sys"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "957da2573cde917463ece3570eab4a0b3f19de6f1646cde62e6fd3868f566036"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "secrecy"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -12607,6 +12614,38 @@ checksum = "38eb105f1c59d9eaa6b5cdc92b859d85b926e82cb2e0945cd0c9259faa6fe9fb"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "webb-primitives"
+version = "0.1.0"
+dependencies = [
+ "ark-bls12-377",
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ff",
+ "ark-groth16",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "arkworks-gadgets",
+ "arkworks-utils",
+ "blake2",
+ "digest 0.9.0",
+ "ethabi",
+ "frame-support",
+ "frame-system",
+ "hex-literal 0.3.4",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "tiny-keccak",
+ "tracing",
 ]
 
 [[package]]
