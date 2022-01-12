@@ -23,7 +23,6 @@ frame_support::construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
-        //How do I know which of these I need?
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 		AssetRegistry: asset_registry::{Pallet, Call, Storage, Event<T>},
@@ -31,8 +30,8 @@ frame_support::construct_runtime!(
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>},
-        TokenWrapperHandler: pallet_token_wrapper_handler::{Pallet, Call, Storage, Event<T>},
-        Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>}
+		TokenWrapperHandler: pallet_token_wrapper_handler::{Pallet, Call, Storage, Event<T>},
+		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>}
 	}
 );
 
@@ -161,7 +160,7 @@ parameter_types! {
 }
 
 impl pallet_token_wrapper::Config for Test {
-    type AssetRegistry = AssetRegistry;
+	type AssetRegistry = AssetRegistry;
 	type Currency = Currencies;
 	type Event = Event;
 	type PalletId = TokenWrapperPalletId;
@@ -174,7 +173,7 @@ pub type ChainId = u32;
 parameter_types! {
 	pub const ProposalLifetime: u64 = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
-    pub const ChainIdentifier: u8 = 5;
+	pub const ChainIdentifier: u8 = 5;
 }
 
 type BridgeInstance = pallet_bridge::Instance1;
@@ -189,9 +188,9 @@ impl pallet_bridge::Config<BridgeInstance> for Test {
 }
 
 impl Config for Test {
-	type Event = Event;
 	type BridgeOrigin = pallet_bridge::EnsureBridge<Test, BridgeInstance>;
-    type TokenWrapper = TokenWrapper; //not sure what to fill in;
+	type Event = Event;
+	type TokenWrapper = TokenWrapper; //not sure what to fill in;
 }
 
 pub const RELAYER_A: u64 = 0x2;

@@ -97,7 +97,7 @@ pub mod pallet {
 		InvalidPermissions,
 		// Token Wrapper Handler already exists for specified resource Id.
 		ResourceIsAlreadyAnchored,
-		// Token Wrapper Handler doesn't exist for specified resoure Id.
+		// Token Wrapper Handler doesn't exist for specified resource Id.
 		TokenWrapperHandlerNotFound,
 		/// Storage overflowed.
 		StorageOverflow,
