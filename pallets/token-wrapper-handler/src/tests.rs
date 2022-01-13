@@ -13,7 +13,7 @@ fn get_add_token_resource() -> Vec<u8> {
 }
 
 fn get_remove_token_resource() -> Vec<u8> {
-	b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec()
+	b"TokenWrapperHandler.execute_remove_token_to_pool_share".to_vec()
 }
 
 fn make_wrapping_fee_proposal(resource_id: &[u8; 32], wrapping_fee_percent: u128) -> Call {
