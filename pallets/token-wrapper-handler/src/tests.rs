@@ -68,13 +68,13 @@ fn relay_fee_update_proposal(src_chain_id: u32, resource_id: &[u8; 32], prop_id:
 
 fn relay_token_update_proposal(
 	src_chain_id: u32,
-	resource: Vec<u8>,
+	resource: &Vec<u8>,
 	update_proposal: Call,
 	resource_id: &[u8; 32],
 	prop_id: u64,
 ) -> DispatchResultWithPostInfo {
 	// set resource id
-	assert_ok!(Bridge::set_resource(Origin::root(), *resource_id, resource));
+	assert_ok!(Bridge::set_resource(Origin::root(), *resource_id, resource.clone()));
 	// make proposals
 	let result1 = Bridge::acknowledge_proposal(
 		Origin::signed(RELAYER_A),
@@ -108,7 +108,7 @@ fn should_update_fee() {
 }
 
 #[test]
-fn should_add_token() {
+fn should_succeed_add_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
 		let src_chain_id = 1;
@@ -137,7 +137,7 @@ fn should_add_token() {
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
-			resource,
+			&resource,
 			update_proposal,
 			&resource_id,
 			prop_id
@@ -149,7 +149,7 @@ fn should_add_token() {
 }
 
 #[test]
-fn should_remove_token() {
+fn should_succeed_remove_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
 		let src_chain_id = 1;
@@ -178,7 +178,7 @@ fn should_remove_token() {
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
-			resource,
+			&resource,
 			update_proposal,
 			&resource_id,
 			prop_id
@@ -192,7 +192,7 @@ fn should_remove_token() {
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
-			resource,
+			&resource,
 			update_proposal,
 			&resource_id,
 			prop_id
@@ -204,7 +204,7 @@ fn should_remove_token() {
 
 /// Removing token from pool without that token test
 #[test]
-fn remove_token_not_in_pool() {
+fn should_fail_to_remove_token_not_in_pool() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
 		let src_chain_id = 1;
@@ -232,7 +232,7 @@ fn remove_token_not_in_pool() {
 		let update_proposal = make_remove_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_err!(
-			relay_token_update_proposal(src_chain_id, resource, update_proposal, &resource_id, prop_id),
+			relay_token_update_proposal(src_chain_id, &resource, update_proposal, &resource_id, prop_id),
 			asset_registry::Error::<Test>::AssetNotFoundInPool
 		);
 	})
@@ -240,7 +240,7 @@ fn remove_token_not_in_pool() {
 
 /// Adding many tokens to a pool and verifying all of them
 #[test]
-fn should_add_many_tokens() {
+fn should_succeed_add_many_tokens() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
 		let src_chain_id = 1;
@@ -283,29 +283,27 @@ fn should_add_many_tokens() {
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
-			resource,
+			&resource,
 			update_proposal,
 			&resource_id,
 			prop_id
 		));
 
-		let resource = b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec();
 		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), second_token_id);
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
-			resource,
+			&resource,
 			update_proposal,
 			&resource_id,
 			prop_id
 		));
 
-		let resource = b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec();
 		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), third_token_id);
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
-			resource,
+			&resource,
 			update_proposal,
 			&resource_id,
 			prop_id
@@ -325,7 +323,7 @@ fn should_add_many_tokens() {
 /// Adding the same token to a pool and ensuring that fails or providing reason
 /// for output
 #[test]
-fn add_same_token() {
+fn should_fail_to_add_same_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
 		let src_chain_id = 1;
@@ -354,7 +352,7 @@ fn add_same_token() {
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
-			resource,
+			&resource,
 			update_proposal,
 			&resource_id,
 			prop_id
@@ -363,11 +361,10 @@ fn add_same_token() {
 		// Check that first_token_id is part of pool
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
 
-		let resource = b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec();
 		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_err!(
-			relay_token_update_proposal(src_chain_id, resource, update_proposal, &resource_id, prop_id),
+			relay_token_update_proposal(src_chain_id, &resource, update_proposal, &resource_id, prop_id),
 			pallet_bridge::Error::<Test, _>::ProposalAlreadyComplete
 		);
 	})
@@ -375,7 +372,7 @@ fn add_same_token() {
 
 ///Add Non-Existent Token
 #[test]
-fn add_non_existent_token() {
+fn should_fail_to_add_non_existent_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
 		let src_chain_id = 1;
@@ -398,7 +395,7 @@ fn add_non_existent_token() {
 		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_err!(
-			relay_token_update_proposal(src_chain_id, resource, update_proposal, &resource_id, prop_id),
+			relay_token_update_proposal(src_chain_id, &resource, update_proposal, &resource_id, prop_id),
 			asset_registry::Error::<Test>::AssetNotRegistered
 		);
 	})
