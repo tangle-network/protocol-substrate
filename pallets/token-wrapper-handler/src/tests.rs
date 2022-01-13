@@ -3,7 +3,7 @@ use std::convert::TryInto;
 use crate::mock::*;
 
 use asset_registry::AssetType;
-use frame_support::{assert_err, assert_ok, error::BadOrigin};
+use frame_support::{assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin};
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 
 const TEST_THRESHOLD: u32 = 2;
@@ -66,50 +66,32 @@ fn relay_fee_update_proposal(src_chain_id: u32, resource_id: &[u8; 32], prop_id:
 	));
 }
 
-fn relay_add_token_proposal(src_chain_id: u32, resource_id: &[u8; 32], prop_id: u64, name: Vec<u8>, asset_id: u32) {
-	// create fee update proposal
-	let resource = b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec();
-	let update_proposal = make_add_token_proposal(resource_id, name, asset_id);
+fn relay_token_update_proposal(
+	src_chain_id: u32,
+	resource: Vec<u8>,
+	update_proposal: Call,
+	resource_id: &[u8; 32],
+	prop_id: u64,
+) -> DispatchResultWithPostInfo {
 	// set resource id
 	assert_ok!(Bridge::set_resource(Origin::root(), *resource_id, resource));
 	// make proposals
-	assert_ok!(Bridge::acknowledge_proposal(
+	let result1 = Bridge::acknowledge_proposal(
 		Origin::signed(RELAYER_A),
 		prop_id,
 		src_chain_id,
 		*resource_id,
-		Box::new(update_proposal.clone())
-	));
-	assert_ok!(Bridge::acknowledge_proposal(
+		Box::new(update_proposal.clone()),
+	);
+	let result2 = Bridge::acknowledge_proposal(
 		Origin::signed(RELAYER_B),
 		prop_id,
 		src_chain_id,
 		*resource_id,
-		Box::new(update_proposal)
-	));
-}
+		Box::new(update_proposal),
+	);
 
-fn relay_remove_token_proposal(src_chain_id: u32, resource_id: &[u8; 32], prop_id: u64, name: Vec<u8>, asset_id: u32) {
-	// create fee update proposal
-	let resource = b"TokenWrapperHandler.execute_remove_token_from_pool_share".to_vec();
-	let update_proposal = make_remove_token_proposal(resource_id, name, asset_id);
-	// set resource id
-	assert_ok!(Bridge::set_resource(Origin::root(), *resource_id, resource));
-	// make proposals
-	assert_ok!(Bridge::acknowledge_proposal(
-		Origin::signed(RELAYER_A),
-		prop_id,
-		src_chain_id,
-		*resource_id,
-		Box::new(update_proposal.clone())
-	));
-	assert_ok!(Bridge::acknowledge_proposal(
-		Origin::signed(RELAYER_B),
-		prop_id,
-		src_chain_id,
-		*resource_id,
-		Box::new(update_proposal)
-	));
+	return result1.and(result2);
 }
 
 #[test]
@@ -128,8 +110,14 @@ fn should_update_fee() {
 #[test]
 fn should_add_token() {
 	new_test_ext().execute_with(|| {
-		// Create tokens
+		// Setup necessary relayers/bridge functionality
+		let src_chain_id = 1;
+		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let prop_id = 1;
+		setup_relayers(src_chain_id);
+
 		let existential_balance: u32 = 1000;
+
 		let first_token_id = AssetRegistry::register_asset(
 			b"btcs".to_vec().try_into().unwrap(),
 			AssetType::Token,
@@ -144,19 +132,16 @@ fn should_add_token() {
 		)
 		.unwrap();
 
-		//Setup necessary relayers/bridge functionality
-		let src_chain_id = 1;
-		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
-		let prop_id = 1;
+		let resource = b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec();
+		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
-		setup_relayers(src_chain_id);
-		relay_add_token_proposal(
+		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
+			resource,
+			update_proposal,
 			&resource_id,
-			prop_id,
-			b"meme".to_vec().try_into().unwrap(),
-			first_token_id,
-		);
+			prop_id
+		));
 
 		// Check that first_token_id is part of pool
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
@@ -166,8 +151,14 @@ fn should_add_token() {
 #[test]
 fn should_remove_token() {
 	new_test_ext().execute_with(|| {
-		// Create tokens
+		// Setup necessary relayers/bridge functionality
+		let src_chain_id = 1;
+		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let prop_id = 1;
+		setup_relayers(src_chain_id);
+
 		let existential_balance: u32 = 1000;
+
 		let first_token_id = AssetRegistry::register_asset(
 			b"btcs".to_vec().try_into().unwrap(),
 			AssetType::Token,
@@ -182,31 +173,233 @@ fn should_remove_token() {
 		)
 		.unwrap();
 
-		//Setup necessary relayers/bridge functionality
-		let src_chain_id = 1;
-		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
-		let prop_id = 1;
+		let resource = b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec();
+		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
-		setup_relayers(src_chain_id);
-		relay_add_token_proposal(
+		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
+			resource,
+			update_proposal,
 			&resource_id,
-			prop_id,
-			b"meme".to_vec().try_into().unwrap(),
-			first_token_id,
-		);
+			prop_id
+		));
 
 		// Check that first_token_id is part of pool
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
 
-		relay_remove_token_proposal(
+		let resource = b"TokenWrapperHandler.execute_remove_token_from_pool_share".to_vec();
+		let update_proposal = make_remove_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+
+		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
+			resource,
+			update_proposal,
 			&resource_id,
-			prop_id,
-			b"meme".to_vec().try_into().unwrap(),
-			first_token_id,
-		);
+			prop_id
+		));
 
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), false);
+	})
+}
+
+/// Removing token from pool without that token test
+#[test]
+fn remove_token_not_in_pool() {
+	new_test_ext().execute_with(|| {
+		// Setup necessary relayers/bridge functionality
+		let src_chain_id = 1;
+		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let prop_id = 1;
+		setup_relayers(src_chain_id);
+
+		let existential_balance: u32 = 1000;
+
+		let first_token_id = AssetRegistry::register_asset(
+			b"btcs".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let pool_share_id = AssetRegistry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![]),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let resource = b"TokenWrapperHandler.execute_remove_token_from_pool_share".to_vec();
+		let update_proposal = make_remove_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+
+		assert_err!(
+			relay_token_update_proposal(src_chain_id, resource, update_proposal, &resource_id, prop_id),
+			asset_registry::Error::<Test>::AssetNotFoundInPool
+		);
+	})
+}
+
+/// Adding many tokens to a pool and verifying all of them
+#[test]
+fn should_add_many_tokens() {
+	new_test_ext().execute_with(|| {
+		// Setup necessary relayers/bridge functionality
+		let src_chain_id = 1;
+		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let prop_id = 1;
+		setup_relayers(src_chain_id);
+
+		let existential_balance: u32 = 1000;
+
+		let first_token_id = AssetRegistry::register_asset(
+			b"btcs".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let second_token_id = AssetRegistry::register_asset(
+			b"doge".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let third_token_id = AssetRegistry::register_asset(
+			b"shib".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let pool_share_id = AssetRegistry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![]),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let resource = b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec();
+		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+
+		assert_ok!(relay_token_update_proposal(
+			src_chain_id,
+			resource,
+			update_proposal,
+			&resource_id,
+			prop_id
+		));
+
+		let resource = b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec();
+		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), second_token_id);
+
+		assert_ok!(relay_token_update_proposal(
+			src_chain_id,
+			resource,
+			update_proposal,
+			&resource_id,
+			prop_id
+		));
+
+		let resource = b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec();
+		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), third_token_id);
+
+		assert_ok!(relay_token_update_proposal(
+			src_chain_id,
+			resource,
+			update_proposal,
+			&resource_id,
+			prop_id
+		));
+
+		// Check that first_token_id is part of pool
+		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
+
+		// Check that second_token_id is part of pool
+		assert_eq!(AssetRegistry::contains_asset(pool_share_id, second_token_id), true);
+
+		// Check that third_token_id is part of pool
+		assert_eq!(AssetRegistry::contains_asset(pool_share_id, third_token_id), true);
+	})
+}
+
+/// Adding the same token to a pool and ensuring that fails or providing reason
+/// for output
+#[test]
+fn add_same_token() {
+	new_test_ext().execute_with(|| {
+		// Setup necessary relayers/bridge functionality
+		let src_chain_id = 1;
+		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let prop_id = 1;
+		setup_relayers(src_chain_id);
+
+		let existential_balance: u32 = 1000;
+
+		let first_token_id = AssetRegistry::register_asset(
+			b"btcs".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let pool_share_id = AssetRegistry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![]),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let resource = b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec();
+		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+
+		assert_ok!(relay_token_update_proposal(
+			src_chain_id,
+			resource,
+			update_proposal,
+			&resource_id,
+			prop_id
+		));
+
+		// Check that first_token_id is part of pool
+		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
+
+		let resource = b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec();
+		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+
+		assert_err!(
+			relay_token_update_proposal(src_chain_id, resource, update_proposal, &resource_id, prop_id),
+			pallet_bridge::Error::<Test, _>::ProposalAlreadyComplete
+		);
+	})
+}
+
+///Add Non-Existent Token
+#[test]
+fn add_non_existent_token() {
+	new_test_ext().execute_with(|| {
+		// Setup necessary relayers/bridge functionality
+		let src_chain_id = 1;
+		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let prop_id = 1;
+		setup_relayers(src_chain_id);
+
+		let existential_balance: u32 = 1000;
+
+		let first_token_id = 100;
+
+		let pool_share_id = AssetRegistry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![]),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let resource = b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec();
+		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+
+		assert_err!(
+			relay_token_update_proposal(src_chain_id, resource, update_proposal, &resource_id, prop_id),
+			asset_registry::Error::<Test>::AssetNotRegistered
+		);
 	})
 }
