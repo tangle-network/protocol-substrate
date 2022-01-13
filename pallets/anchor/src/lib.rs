@@ -367,9 +367,8 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		bytes.extend_from_slice(&commitment.encode());
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
-		// transfer the assets
+		// withdraw or refresh depending on the refresh commitment value
 		let anchor = Self::get_anchor(id)?;
-
 		if commitment.encode() == T::Element::default().encode() {
 			// transfer the deposit to the recipient when the commitment is default / zero (a withdrawal)
 			<T as Config<I>>::Currency::transfer(anchor.asset, &Self::account_id(), &recipient, anchor.deposit_size)?;
@@ -380,9 +379,6 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		} else {
 			// deposit the new commitment when the commitment is not default / zero (a refresh)
 			T::LinkableTree::insert_in_order(id, commitment)?;
-
-			let anchor = Self::get_anchor(id)?;
-
 			Self::deposit_event(Event::Refresh {
 				tree_id: id,
 				leaf: commitment,
