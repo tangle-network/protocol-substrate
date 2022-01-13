@@ -143,6 +143,8 @@ pub mod pallet {
 		AnchorCreation { tree_id: T::TreeId },
 		/// Amount has been withdrawn from the anchor
 		Withdraw { who: T::AccountId, amount: BalanceOf<T, I> },
+		/// A transaction has been refreshed (one spent, another inserted)
+		Refresh { tree_id: T::TreeId, leaf: T::Element },
 		/// Amount has been deposited into the anchor
 		Deposit {
 			depositor: T::AccountId,
@@ -367,11 +369,26 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 		// transfer the assets
 		let anchor = Self::get_anchor(id)?;
-		<T as Config<I>>::Currency::transfer(anchor.asset, &Self::account_id(), &recipient, anchor.deposit_size)?;
-		Self::deposit_event(Event::Withdraw {
-			who: recipient.clone(),
-			amount: anchor.deposit_size,
-		});
+
+		if commitment.encode() == T::Element::default().encode() {
+			// transfer the deposit to the recipient when the commitment is default / zero (a withdrawal)
+			<T as Config<I>>::Currency::transfer(anchor.asset, &Self::account_id(), &recipient, anchor.deposit_size)?;
+			Self::deposit_event(Event::Withdraw {
+				who: recipient.clone(),
+				amount: anchor.deposit_size,
+			});
+		} else {
+			// deposit the new commitment when the commitment is not default / zero (a refresh)
+			T::LinkableTree::insert_in_order(id, commitment)?;
+
+			let anchor = Self::get_anchor(id)?;
+
+			Self::deposit_event(Event::Refresh {
+				tree_id: id,
+				leaf: commitment,
+			});
+		}
+
 		Ok(())
 	}
 
