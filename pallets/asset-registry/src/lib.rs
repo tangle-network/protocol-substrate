@@ -576,7 +576,6 @@ impl<T: Config> Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError> for Pal
 		if let Some(asset_id) = AssetIds::<T>::get(&bounded_name) {
 			Ok(asset_id)
 		} else {
-			println!("no");
 			Err(Error::<T>::AssetNotFound.into())
 		}
 	}
