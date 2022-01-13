@@ -6667,6 +6667,7 @@ dependencies = [
  "orml-currencies",
  "orml-tokens",
  "orml-traits",
+ "pallet-asset-registry",
  "pallet-balances",
  "pallet-bridge",
  "pallet-token-wrapper",

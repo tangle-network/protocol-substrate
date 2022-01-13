@@ -556,6 +556,14 @@ impl<T: Config> Pallet<T> {
 			},
 		)
 	}
+
+	#[allow(clippy::ptr_arg)]
+	pub fn contains_asset(pool_share_id: T::AssetId, asset_id: T::AssetId) -> bool {
+		<Self as ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::contains_asset(
+			pool_share_id,
+			asset_id,
+		)
+	}
 }
 
 impl<T: Config> Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError> for Pallet<T> {
@@ -568,6 +576,7 @@ impl<T: Config> Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError> for Pal
 		if let Some(asset_id) = AssetIds::<T>::get(&bounded_name) {
 			Ok(asset_id)
 		} else {
+			println!("no");
 			Err(Error::<T>::AssetNotFound.into())
 		}
 	}

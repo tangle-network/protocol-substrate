@@ -336,9 +336,10 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 	}
 
 	fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
-		<T::AssetRegistry as ShareTokenRegistry<_,_,_,_>>::add_asset_to_existing_pool(name, asset_id)
+		<T::AssetRegistry as ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::add_asset_to_existing_pool(name, asset_id)
 	}
+
 	fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
-		<T::AssetRegistry as ShareTokenRegistry<_,_,_,_>>::delete_asset_from_existing_pool(name, asset_id)
+		<T::AssetRegistry as ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::delete_asset_from_existing_pool(name, asset_id)
 	}
 }
