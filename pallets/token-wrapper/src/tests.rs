@@ -1,4 +1,4 @@
-use std::convert::TryInto;
+use std::{convert::TryInto, ops::Sub};
 
 use crate::mock::*;
 
@@ -40,6 +40,7 @@ fn should_wrap_token() {
 			first_token_id,
 			balance
 		));
+		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
 
@@ -50,10 +51,16 @@ fn should_wrap_token() {
 			50000_u128,
 			recipient
 		));
-
+		println!("{:?}", Tokens::total_issuance(pool_share_id));
+		println!("{:?}", TokenWrapper::get_balance(first_token_id, &recipient));
+		println!("{:?}", TokenWrapper::get_balance(pool_share_id, &recipient));
 		assert_eq!(Tokens::total_issuance(pool_share_id), 50000);
 
-		assert_eq!(TokenWrapper::get_balance(first_token_id, &recipient), 50000);
+		// Second argument should be balance minus amount_to_wrap
+		assert_eq!(
+			TokenWrapper::get_balance(first_token_id, &recipient),
+			initial_balance_first_token.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
+		);
 
 		assert_eq!(TokenWrapper::get_balance(pool_share_id, &recipient), 50000);
 	})
@@ -93,6 +100,7 @@ fn should_unwrap_token() {
 			first_token_id,
 			balance
 		));
+		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
 
@@ -108,7 +116,10 @@ fn should_unwrap_token() {
 
 		assert_eq!(TokenWrapper::get_balance(pool_share_id, &recipient), 50000);
 
-		assert_eq!(TokenWrapper::get_balance(first_token_id, &recipient), 50000);
+		assert_eq!(
+			TokenWrapper::get_balance(first_token_id, &recipient),
+			initial_balance_first_token.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
+		);
 
 		assert_ok!(TokenWrapper::unwrap(
 			Origin::signed(recipient),
@@ -120,7 +131,10 @@ fn should_unwrap_token() {
 
 		assert_eq!(Tokens::total_issuance(pool_share_id), Default::default());
 
-		assert_eq!(TokenWrapper::get_balance(first_token_id, &recipient), 100000);
+		assert_eq!(
+			TokenWrapper::get_balance(first_token_id, &recipient),
+			initial_balance_first_token.saturating_sub(TokenWrapper::get_wrapping_fee(50000))
+		);
 	})
 }
 
@@ -218,6 +232,8 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 			balance
 		));
 
+		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
+
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
 
 		assert_ok!(TokenWrapper::wrap(
@@ -232,7 +248,10 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 
 		assert_eq!(TokenWrapper::get_balance(pool_share_id, &recipient), 50000);
 
-		assert_eq!(TokenWrapper::get_balance(first_token_id, &recipient), 50000);
+		assert_eq!(
+			TokenWrapper::get_balance(first_token_id, &recipient),
+			initial_balance_first_token.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
+		);
 
 		assert_err!(
 			TokenWrapper::unwrap(
@@ -282,6 +301,8 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 			balance
 		));
 
+		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
+
 		assert_ok!(Currencies::update_balance(
 			Origin::root(),
 			TokenWrapper::account_id(),
@@ -301,7 +322,10 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 
 		assert_eq!(Tokens::total_issuance(pool_share_id), 50000);
 
-		assert_eq!(TokenWrapper::get_balance(first_token_id, &recipient), 50000);
+		assert_eq!(
+			TokenWrapper::get_balance(first_token_id, &recipient),
+			initial_balance_first_token.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
+		);
 
 		assert_eq!(
 			TokenWrapper::get_balance(second_token_id, &recipient),

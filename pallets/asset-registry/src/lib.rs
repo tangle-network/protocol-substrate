@@ -498,9 +498,13 @@ impl<T: Config> Pallet<T> {
 					AssetType::Token => return Err(Error::<T>::AssetNotFound.into()),
 					AssetType::PoolShare(pool) => {
 						if !pool.contains(&asset_id) {
-							let mut pool_clone = pool.clone();
-							pool_clone.push(asset_id);
-							AssetType::PoolShare(pool_clone)
+							if Self::assets(&asset_id).is_some() {
+								let mut pool_clone = pool.clone();
+								pool_clone.push(asset_id);
+								AssetType::PoolShare(pool_clone)
+							} else {
+								return Err(Error::<T>::AssetNotRegistered.into());
+							}
 						} else {
 							return Err(Error::<T>::AssetExistsInPool.into());
 						}
@@ -556,6 +560,13 @@ impl<T: Config> Pallet<T> {
 			},
 		)
 	}
+
+	pub fn contains_asset(pool_share_id: T::AssetId, asset_id: T::AssetId) -> bool {
+		<Self as ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::contains_asset(
+			pool_share_id,
+			asset_id,
+		)
+	}
 }
 
 impl<T: Config> Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError> for Pallet<T> {
@@ -600,6 +611,14 @@ impl<T: Config> ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchErro
 		}
 
 		false
+	}
+
+	fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+		Self::add_asset_to_existing_pool(name, asset_id)
+	}
+
+	fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+		Self::delete_asset_from_existing_pool(name, asset_id)
 	}
 }
 
