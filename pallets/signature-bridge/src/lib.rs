@@ -209,9 +209,10 @@ pub mod pallet {
 			Self::ensure_admin(origin)?;
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
+				let old_maintainer = maintainer.clone();
 				*maintainer = new_maintainer.clone();
 				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer: Default::default(),
+					old_maintainer,
 					new_maintainer,
 				});
 				Ok(().into())
