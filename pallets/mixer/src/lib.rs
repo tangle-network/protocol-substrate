@@ -176,7 +176,7 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
 		fn default() -> Self {
 			GenesisConfig::<T, I> {
-				mixers: vec![],
+				mixers: Vec::new(),
 			}
 		}
 	}
@@ -309,7 +309,7 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 		// FIXME: This is for a specfic gadget so we ought to create a generic handler
 		// FIXME: Such as a unpack/pack public inputs trait
 		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
-		let mut bytes = vec![];
+		let mut bytes = Vec::new();
 		let element_encoder = |v: &[u8]| {
 			let mut output = [0u8; 32];
 			output.iter_mut().zip(v).for_each(|(b1, b2)| *b1 = *b2);

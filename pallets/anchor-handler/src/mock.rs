@@ -6,7 +6,7 @@ pub use webb_primitives::{ElementTrait, InstanceHasher};
 use frame_support::{ord_parameter_types, parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
-
+use webb_primitives::verifying::ArkworksVerifierBn254;
 pub use pallet_balances;
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
