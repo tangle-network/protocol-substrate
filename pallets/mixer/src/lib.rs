@@ -267,7 +267,7 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 		depth: u8,
 		asset: CurrencyIdOf<T, I>,
 	) -> Result<T::TreeId, DispatchError> {
-		let id = T::Tree::create(creator.clone(), depth)?;
+		let id = T::Tree::create(creator, depth)?;
 		Mixers::<T, I>::insert(
 			id,
 			MixerMetadata {

@@ -3,6 +3,7 @@
 use super::*;
 use crate as pallet_anchor;
 use codec::{Decode, Encode};
+use webb_primitives::verifying::ArkworksVerifierBn254;
 use sp_core::H256;
 
 pub use webb_primitives::{
@@ -112,7 +113,7 @@ parameter_types! {
 
 impl pallet_verifier::Config for Test {
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }

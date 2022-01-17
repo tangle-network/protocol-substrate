@@ -110,7 +110,7 @@ parameter_types! {
 
 impl pallet_verifier::Config for Test {
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
@@ -124,7 +124,7 @@ impl InstanceHasher for TestHasher {
 
 impl pallet_hasher::Config for Test {
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = TestHasher;
 	type WeightInfo = ();
 }
@@ -167,7 +167,7 @@ impl pallet_mt::Config for Test {
 	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
 	type LeafIndex = u32;
 	type MaxTreeDepth = MaxTreeDepth;

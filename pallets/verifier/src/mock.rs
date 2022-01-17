@@ -1,5 +1,6 @@
 use super::*;
 use crate as pallet_verifier;
+use webb_primitives::AccountId;
 pub use webb_primitives::{
 	verifier::{InstanceVerifier, VerifierModule},
 	verifying::ArkworksVerifierBn254,
@@ -9,7 +10,7 @@ use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, IdentityLookup}, AccountId32,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -35,7 +36,7 @@ parameter_types! {
 
 impl system::Config for Test {
 	type AccountData = pallet_balances::AccountData<u128>;
-	type AccountId = u64;
+	type AccountId = AccountId;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
@@ -85,7 +86,7 @@ parameter_types! {
 
 impl pallet_verifier::Config for Test {
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
@@ -94,7 +95,11 @@ impl pallet_verifier::Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let _ = pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(1, 10u128.pow(18)), (2, 20u128.pow(18)), (3, 30u128.pow(18))],
+		balances: vec![
+			(AccountId32::new([1u8; 32]), 10u128.pow(18)),
+			(AccountId32::new([2u8; 32]), 20u128.pow(18)),
+			(AccountId32::new([3u8; 32]), 30u128.pow(18))
+		],
 	}
 	.assimilate_storage(&mut storage);
 	storage.into()
