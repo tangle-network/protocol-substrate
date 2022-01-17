@@ -1,13 +1,14 @@
+//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
+
 // std
 use std::{sync::Arc, time::Duration};
 
 // Local Runtime Types
-use darkwebb_runtime::{AccountId, Balance, Index as Nonce, RuntimeApi};
+use darkwebb_runtime::RuntimeApi;
+pub use common::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 
 // Cumulus Imports
-use cumulus_client_consensus_aura::{
-	AuraConsensus, BuildAuraConsensusParams, SlotProportion,
-};
+use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::ParachainConsensus;
 use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
@@ -21,9 +22,7 @@ use cumulus_relay_chain_local::build_relay_chain_interface;
 use sc_client_api::ExecutorProvider;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
-use sc_service::{
-	BasePath, Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager,
-};
+use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
 use sp_consensus::SlotData;
@@ -31,12 +30,7 @@ use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::BlakeTwo256;
 use substrate_prometheus_endpoint::Registry;
 
-// Runtime type overrides
-type BlockNumber = u32;
-type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>;
-pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
-type Hash = sp_core::H256;
-
+/// Native executor instance.
 pub struct RuntimeExecutor;
 
 impl sc_executor::NativeExecutionDispatch for RuntimeExecutor {
@@ -50,12 +44,12 @@ impl sc_executor::NativeExecutionDispatch for RuntimeExecutor {
 		darkwebb_runtime::native_version()
 	}
 }
-pub type DKGRuntimeExecutor = NativeElseWasmExecutor<RuntimeExecutor>;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
+#[allow(clippy::type_complexity)]
 pub fn new_partial<RuntimeApi, Executor, BIQ>(
 	config: &Configuration,
 	build_import_queue: BIQ,
@@ -124,7 +118,7 @@ where
 
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(
-			&config,
+			config,
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 			executor,
 		)?;
@@ -174,7 +168,7 @@ async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	id: ParaId,
-	rpc_ext_builder: RB,
+	_rpc_ext_builder: RB,
 	build_import_queue: BIQ,
 	build_consensus: BIC,
 ) -> sc_service::error::Result<(
@@ -196,16 +190,11 @@ where
 		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
-		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
-		+ darkwebb_runtime_primitives::DKGApi<
-			Block,
-			darkwebb_runtime_primitives::crypto::AuthorityId,
-			darkwebb_runtime::BlockNumber,
-		>,
+		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
 	RB: Fn(
-			Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+			Arc<TFullClient<Block, RuntimeApi, Executor>>,
 		) -> Result<jsonrpc_core::IoHandler<sc_rpc::Metadata>, sc_service::Error>
 		+ Send
 		+ 'static,
@@ -278,43 +267,20 @@ where
 			warp_sync: None,
 		})?;
 
-	let rpc_client = client.clone();
-	let rpc_extensions_builder = Box::new(move |_, _| rpc_ext_builder(rpc_client.clone()));
+	let rpc_extensions_builder = {
+		let client = client.clone();
+		let transaction_pool = transaction_pool.clone();
 
-	let base_path = if parachain_config.base_path.is_some() {
-		match parachain_config.base_path.as_ref() {
-			Some(BasePath::Permanenent(path_buf)) => Some(path_buf.clone()),
-			_ => None,
-		}
-	} else {
-		None
+		Box::new(move |deny_unsafe, _| {
+			let deps = crate::rpc::FullDeps {
+				client: client.clone(),
+				pool: transaction_pool.clone(),
+				deny_unsafe,
+			};
+
+			Ok(crate::rpc::create_full(deps))
+		})
 	};
-
-	if validator {
-		dkg_primitives::utils::insert_controller_account_keys_into_keystore(
-			&parachain_config,
-			Some(params.keystore_container.sync_keystore()),
-		);
-
-		let dkg_params = dkg_gadget::DKGParams {
-			client: client.clone(),
-			backend: backend.clone(),
-			key_store: Some(params.keystore_container.sync_keystore()),
-			network: network.clone(),
-			min_block_delta: 4,
-			prometheus_registry: prometheus_registry.clone(),
-			base_path,
-			local_keystore: params.keystore_container.local_keystore(),
-			_block: std::marker::PhantomData::<Block>,
-		};
-
-		// Start the DKG gadget.
-		task_manager.spawn_essential_handle().spawn_blocking(
-			"dkg-gadget",
-			None,
-			dkg_gadget::start_dkg_gadget::<_, _, _, _>(dkg_params),
-		);
-	}
 
 	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		rpc_extensions_builder,
@@ -381,14 +347,18 @@ where
 	Ok((task_manager, client))
 }
 
-/// Build the import queue for the the parachain runtime.
+/// Build the import queue for the parachain runtime.
+#[allow(clippy::type_complexity)]
 pub fn parachain_build_import_queue(
-	client: Arc<TFullClient<Block, RuntimeApi, DKGRuntimeExecutor>>,
+	client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<RuntimeExecutor>>>,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 ) -> Result<
-	sc_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, DKGRuntimeExecutor>>,
+	sc_consensus::DefaultImportQueue<
+		Block,
+		TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<RuntimeExecutor>>,
+	>,
 	sc_service::Error,
 > {
 	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
@@ -415,7 +385,7 @@ pub fn parachain_build_import_queue(
 
 			Ok((time, slot))
 		},
-		registry: config.prometheus_registry().clone(),
+		registry: config.prometheus_registry(),
 		can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
 		spawner: &task_manager.spawn_essential_handle(),
 		telemetry,
@@ -423,13 +393,15 @@ pub fn parachain_build_import_queue(
 	.map_err(Into::into)
 }
 
-/// Start a normal parachain node.
+/// Start a parachain node.
 pub async fn start_parachain_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	id: ParaId,
-) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, DKGRuntimeExecutor>>)>
-{
+) -> sc_service::error::Result<(
+	TaskManager,
+	Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<RuntimeExecutor>>>,
+)> {
 	start_node_impl::<RuntimeApi, RuntimeExecutor, _, _, _>(
 		parachain_config,
 		polkadot_config,

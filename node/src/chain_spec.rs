@@ -345,6 +345,7 @@ fn testnet_genesis(
 				.cloned()
 				.map(|(account, _, bond)| (account, bond))
 				.collect(),
+			delegations: vec![],
 			inflation_config: darkwebb_test_genesis_inflation_config(endowed_accounts),
 		},
 	}
