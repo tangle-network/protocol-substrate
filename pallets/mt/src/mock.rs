@@ -40,7 +40,7 @@ parameter_types! {
 
 impl system::Config for Test {
 	type AccountData = pallet_balances::AccountData<u128>;
-	type AccountId = AccountId;
+	type AccountId = u64;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
@@ -90,7 +90,7 @@ parameter_types! {
 
 impl pallet_hasher::Config for Test {
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type ForceOrigin = frame_system::EnsureRoot<u64>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
 }

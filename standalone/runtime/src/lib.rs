@@ -199,6 +199,7 @@ impl frame_system::Config for Runtime {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = frame_system::weights::SubstrateWeight<Runtime>;
 	type Version = Version;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -972,26 +973,16 @@ parameter_types! {
 }
 
 impl pallet_hasher::Config<pallet_hasher::Instance1> for Runtime {
-	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = ArkworksPoseidonHasherBn254;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ();
-	type StringLimit = StringLimit;
 	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_hasher::Config<pallet_hasher::Instance2> for Runtime {
-	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = ArkworksPoseidonHasherBls381;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ();
-	type StringLimit = StringLimit;
 	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
@@ -1071,25 +1062,15 @@ impl pallet_mt::Config<pallet_mt::Instance2> for Runtime {
 }
 
 impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
-	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ();
-	type StringLimit = StringLimit;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_verifier::Config<pallet_verifier::Instance2> for Runtime {
-	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ();
-	type StringLimit = StringLimit;
 	type Verifier = ArkworksVerifierBls381;
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }

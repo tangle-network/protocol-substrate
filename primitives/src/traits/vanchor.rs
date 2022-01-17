@@ -18,7 +18,7 @@ pub trait VAnchorConfig {
 pub trait VAnchorInterface<C: VAnchorConfig> {
 	// Creates a new anchor
 	fn create(
-		creator: C::AccountId,
+		creator: Option<C::AccountId>,
 		depth: u8,
 		max_edges: u32,
 		asset: C::CurrencyId,

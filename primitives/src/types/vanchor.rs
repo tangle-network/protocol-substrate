@@ -6,7 +6,7 @@ use sp_std::vec::Vec;
 #[derive(Clone, Encode, Decode, TypeInfo)]
 pub struct VAnchorMetadata<AccountId, AssetId> {
 	/// Creator account
-	pub creator: AccountId,
+	pub creator: Option<AccountId>,
 	/// Option of specifying a fungible asset. When None, the asset is the
 	/// native currency.
 	pub asset: AssetId,

@@ -34,7 +34,10 @@ where
 		let numeric_amount = amount.peek();
 		let treasury = <pallet_treasury::Pallet<R>>::account_id();
 		<pallet_balances::Pallet<R>>::resolve_creating(&treasury, amount);
-		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit(treasury, numeric_amount));
+		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit {
+			who: treasury,
+			amount: numeric_amount
+		});
 	}
 }
 
@@ -119,6 +122,7 @@ mod tests {
 		type SS58Prefix = ();
 		type SystemWeightInfo = ();
 		type Version = ();
+		type MaxConsumers = frame_support::traits::ConstU32<16>;
 	}
 
 	impl pallet_balances::Config for Test {

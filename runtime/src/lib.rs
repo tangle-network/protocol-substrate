@@ -168,6 +168,7 @@ impl frame_system::Config for Runtime {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = Version;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -207,54 +208,62 @@ impl pallet_session::Config for Runtime {
 }
 
 parameter_types! {
-	pub const  BlocksPerRound: u32 = 6 * HOURS;
-	pub const  MinBlocksPerRound: u32 = 10;
-	/// Collator candidate exits are delayed by 2 rounds
-	pub const LeaveCandidatesDelay: u32 = 2;
-	/// Nominator exits are delayed by 2 rounds
-	pub const LeaveNominatorsDelay: u32 = 2;
-	/// Nomination revocations are delayed by 2 rounds
-	pub const RevokeNominationDelay: u32 = 2;
-	/// Reward payments are delayed by 2 rounds
+	/// Minimum round length is 2 minutes (10 * 12 second block times)
+	pub const MinBlocksPerRound: u32 = 10;
+	/// Blocks per round
+	pub const DefaultBlocksPerRound: u32 = 2 * HOURS;
+	/// Rounds before the collator leaving the candidates request can be executed
+	pub const LeaveCandidatesDelay: u32 = 24;
+	/// Rounds before the candidate bond increase/decrease can be executed
+	pub const CandidateBondLessDelay: u32 = 24;
+	/// Rounds before the delegator exit can be executed
+	pub const LeaveDelegatorsDelay: u32 = 24;
+	/// Rounds before the delegator revocation can be executed
+	pub const RevokeDelegationDelay: u32 = 24;
+	/// Rounds before the delegator bond increase/decrease can be executed
+	pub const DelegationBondLessDelay: u32 = 24;
+	/// Rounds before the reward is paid
 	pub const RewardPaymentDelay: u32 = 2;
-	/// Minimum 8 collators selected per round, default at genesis and minimum forever after
-	pub const MinSelectedCandidates: u32 = 2;
-	/// Maximum 100 nominators per collator
-	pub const MaxNominatorsPerCollator: u32 = 100;
-	/// Maximum 100 collators per nominator
-	pub const MaxCollatorsPerNominator: u32 = 100;
-	/// Default fixed percent a collator takes off the top of due rewards is 20%
+	/// Minimum collators selected per round, default at genesis and minimum forever after
+	pub const MinSelectedCandidates: u32 = 8;
+	/// Maximum delegators counted per candidate
+	pub const MaxDelegatorsPerCandidate: u32 = 300;
+	/// Maximum delegations per delegator
+	pub const MaxDelegationsPerDelegator: u32 = 100;
+	/// Default fixed percent a collator takes off the top of due rewards
 	pub const DefaultCollatorCommission: Perbill = Perbill::from_percent(20);
 	/// Default percent of inflation set aside for parachain bond every round
 	pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(30);
 	/// Minimum stake required to become a collator
-	pub const MinCollatorStk: u128 = 100 * KUNITS;
+	pub const MinCollatorStk: u128 = 1000 * currency::MOVR * currency::SUPPLY_FACTOR;
 	/// Minimum stake required to be reserved to be a candidate
-	pub const MinCollatorCandidateStk: u128 = KUNITS * 50;
-	/// Minimum stake required to be reserved to be a nominator is 5
-	pub const MinNominatorStk: u128 = 100 * UNITS;
+	pub const MinCandidateStk: u128 = 500 * currency::MOVR * currency::SUPPLY_FACTOR;
+	/// Minimum stake required to be reserved to be a delegator
+	pub const MinDelegatorStk: u128 = 5 * currency::MOVR * currency::SUPPLY_FACTOR;
 }
-
-impl pallet_parachain_staking::Config for Runtime {
-	type BlocksPerRound = BlocksPerRound;
+impl parachain_staking::Config for Runtime {
+	type Event = Event;
 	type Currency = Balances;
+	type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
+	type MinBlocksPerRound = MinBlocksPerRound;
+	type DefaultBlocksPerRound = DefaultBlocksPerRound;
+	type LeaveCandidatesDelay = LeaveCandidatesDelay;
+	type CandidateBondLessDelay = CandidateBondLessDelay;
+	type LeaveDelegatorsDelay = LeaveDelegatorsDelay;
+	type RevokeDelegationDelay = RevokeDelegationDelay;
+	type DelegationBondLessDelay = DelegationBondLessDelay;
+	type RewardPaymentDelay = RewardPaymentDelay;
+	type MinSelectedCandidates = MinSelectedCandidates;
+	type MaxDelegatorsPerCandidate = MaxDelegatorsPerCandidate;
+	type MaxDelegationsPerDelegator = MaxDelegationsPerDelegator;
 	type DefaultCollatorCommission = DefaultCollatorCommission;
 	type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
-	type Event = Event;
-	type LeaveCandidatesDelay = LeaveCandidatesDelay;
-	type LeaveNominatorsDelay = LeaveNominatorsDelay;
-	type MaxCollatorsPerNominator = MaxCollatorsPerNominator;
-	type MaxNominatorsPerCollator = MaxNominatorsPerCollator;
-	type MinBlocksPerRound = MinBlocksPerRound;
-	type MinCollatorCandidateStk = MinCollatorCandidateStk;
+	type DefaultParachainBondReserveRecipient = TreasuryPalletId;
 	type MinCollatorStk = MinCollatorStk;
-	type MinNomination = MinNominatorStk;
-	type MinNominatorStk = MinNominatorStk;
-	type MinSelectedCandidates = MinSelectedCandidates;
-	type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
-	type RevokeNominationDelay = RevokeNominationDelay;
-	type RewardPaymentDelay = RewardPaymentDelay;
-	type WeightInfo = pallet_parachain_staking::weights::WebbWeight<Runtime>;
+	type MinCandidateStk = MinCandidateStk;
+	type MinDelegation = MinDelegatorStk;
+	type MinDelegatorStk = MinDelegatorStk;
+	type WeightInfo = parachain_staking::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -458,20 +467,22 @@ pub type AssetsForceOrigin =
 	EnsureOneOf<AccountId, EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
 
 impl pallet_assets::Config for Runtime {
-	type ApprovalDeposit = ApprovalDeposit;
-	type AssetDeposit = AssetDeposit;
-	type AssetId = u32;
-	type Balance = Balance;
-	type Currency = Balances;
 	type Event = Event;
-	type Extra = ();
-	type ForceOrigin = AssetsForceOrigin;
-	type Freezer = ();
+	type Balance = u128;
+	type AssetId = u32;
+	type Currency = Balances;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type AssetDeposit = AssetDeposit;
+	type AssetAccountDeposit = ConstU128<DOLLARS>;
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type StringLimit = AssetsStringLimit;
-	type WeightInfo = weights::pallet_assets::WeightInfo<Runtime>;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
+
 
 impl pallet_sudo::Config for Runtime {
 	type Call = Call;
@@ -621,19 +632,19 @@ pub type XcmRouter = (
 );
 
 impl pallet_xcm::Config for Runtime {
-	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
-	type Call = Call;
 	type Event = Event;
-	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type LocationInverter = LocationInverter<Ancestry>;
+	type Call = Call;
 	type Origin = Origin;
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+	type XcmRouter = XcmRouter;
+	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmExecuteFilter = Everything;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type XcmReserveTransferFilter = Everything;
-	type XcmRouter = XcmRouter;
 	type XcmTeleportFilter = Everything;
+	type XcmReserveTransferFilter = Everything;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+	type LocationInverter = LocationInverter<Ancestry>;
+	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 }
@@ -644,16 +655,17 @@ impl cumulus_pallet_xcm::Config for Runtime {
 }
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type ChannelInfo = ParachainSystem;
 	type Event = Event;
-	type VersionWrapper = ();
 	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type ChannelInfo = ParachainSystem;
+	type VersionWrapper = ();
+	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
 	type Event = Event;
-	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
 }
 
 parameter_types! {
@@ -661,26 +673,16 @@ parameter_types! {
 }
 
 impl pallet_hasher::Config<pallet_hasher::Instance1> for Runtime {
-	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = ArkworksPoseidonHasherBn254;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ();
-	type StringLimit = StringLimit;
 	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_hasher::Config<pallet_hasher::Instance2> for Runtime {
-	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = ArkworksPoseidonHasherBls381;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ();
-	type StringLimit = StringLimit;
 	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
@@ -760,25 +762,15 @@ impl pallet_mt::Config<pallet_mt::Instance2> for Runtime {
 }
 
 impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
-	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ();
-	type StringLimit = StringLimit;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_verifier::Config<pallet_verifier::Instance2> for Runtime {
-	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ();
-	type StringLimit = StringLimit;
 	type Verifier = ArkworksVerifierBls381;
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
@@ -984,15 +976,24 @@ impl pallet_treasury::Config for Runtime {
 }
 
 impl pallet_bounties::Config for Runtime {
-	type BountyCuratorDeposit = BountyCuratorDeposit;
+	type Event = Event;
 	type BountyDepositBase = BountyDepositBase;
 	type BountyDepositPayoutDelay = BountyDepositPayoutDelay;
 	type BountyUpdatePeriod = BountyUpdatePeriod;
+	type BountyCuratorDeposit = BountyCuratorDeposit;
 	type BountyValueMinimum = BountyValueMinimum;
 	type DataDepositPerByte = DataDepositPerByte;
-	type Event = Event;
 	type MaximumReasonLength = MaximumReasonLength;
 	type WeightInfo = pallet_bounties::weights::SubstrateWeight<Runtime>;
+	type ChildBountyManager = ChildBounties;
+}
+
+impl pallet_child_bounties::Config for Runtime {
+	type Event = Event;
+	type MaxActiveChildBountyCount = MaxActiveChildBountyCount;
+	type ChildBountyValueMinimum = ChildBountyValueMinimum;
+	type ChildBountyCuratorDepositBase = ChildBountyCuratorDepositBase;
+	type WeightInfo = pallet_child_bounties::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -1019,7 +1020,7 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
 		// System support stuff.
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
+		System: frame_system,
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
@@ -1054,6 +1055,7 @@ construct_runtime!(
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 50,
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Bounties: pallet_bounties::{Pallet, Call, Storage, Event<T>},
+		ChildBounties: pallet_child_bounties::{Pallet, Call, Storage, Event<T>},
 
 		// Hasher pallet
 		HasherBn254: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
@@ -1246,8 +1248,8 @@ impl_runtime_apis! {
 	}
 
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
-		fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
-			ParachainSystem::collect_collation_info()
+		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
+			ParachainSystem::collect_collation_info(header)
 		}
 	}
 
