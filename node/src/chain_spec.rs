@@ -99,6 +99,7 @@ pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
 		None,
 		None,
 		None,
+		None,
 		Extensions {
 			relay_chain: "westend".into(),
 			para_id: id.into(),
@@ -152,6 +153,8 @@ pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
+		None,
+		// Ford ID
 		None,
 		// Properties
 		None,
@@ -208,6 +211,8 @@ pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
+		None,
+		// Fork ID
 		None,
 		// Properties
 		None,
@@ -275,7 +280,6 @@ fn testnet_genesis(
 	GenesisConfig {
 		system: darkwebb_runtime::SystemConfig {
 			code: wasm_binary_unwrap().to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		asset_registry: AssetRegistryConfig {
 			asset_names: vec![],
@@ -304,7 +308,7 @@ fn testnet_genesis(
 		parachain_system: Default::default(),
 		sudo: SudoConfig {
 			// Assign network admin rights.
-			key: get_account_id_from_seed::<sr25519::Public>("Alice"),
+			key: Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
 		},
 		hasher_bn_254: HasherBn254Config {
 			parameters: Some(bn254_x5_3_params.to_bytes()),
@@ -341,7 +345,6 @@ fn testnet_genesis(
 				.cloned()
 				.map(|(account, _, bond)| (account, bond))
 				.collect(),
-			nominations,
 			inflation_config: darkwebb_test_genesis_inflation_config(endowed_accounts),
 		},
 	}
@@ -353,7 +356,6 @@ fn shell_testnet_genesis(parachain_id: ParaId) -> shell_runtime::GenesisConfig {
 			code: shell_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		parachain_info: shell_runtime::ParachainInfoConfig { parachain_id },
 		parachain_system: Default::default(),

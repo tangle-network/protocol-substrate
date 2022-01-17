@@ -126,6 +126,8 @@ pub fn darkwebb_development_config() -> Result<ChainSpec, String> {
 		None,
 		// Protocol ID
 		None,
+		// Fork ID
+		None,
 		// Properties
 		None,
 		Default::default(),
@@ -163,6 +165,8 @@ pub fn darkwebb_local_testnet_config() -> Result<ChainSpec, String> {
 		// Telemetry
 		None,
 		// Protocol ID
+		None,
+		// Fork ID
 		None,
 		// Properties
 		None,
@@ -229,7 +233,6 @@ fn testnet_genesis(
 	GenesisConfig {
 		system: darkwebb_runtime::SystemConfig {
 			code: wasm_binary_unwrap().to_vec(),
-			changes_trie_config: Default::default(),
 		},
 		asset_registry: AssetRegistryConfig {
 			asset_names: vec![],
@@ -273,7 +276,7 @@ fn testnet_genesis(
 				.collect(),
 		},
 		council: CouncilConfig::default(),
-		sudo: SudoConfig { key: root_key },
+		sudo: SudoConfig { key: Some(root_key) },
 		babe: BabeConfig {
 			authorities: vec![],
 			epoch_config: Some(darkwebb_runtime::BABE_GENESIS_EPOCH_CONFIG),

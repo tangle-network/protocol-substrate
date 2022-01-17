@@ -60,12 +60,12 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 	}
 }
 
-fn load_spec(id: &str, para_id: ParaId) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-		"shell" => Box::new(chain_spec::get_shell_chain_spec(para_id)),
-		"darkwebb-dev" => Box::new(chain_spec::darkwebb_development_config(para_id)?),
-		"darkwebb-local" => Box::new(chain_spec::darkwebb_local_testnet_config(para_id)?),
-		"" => Box::new(chain_spec::darkwebb_local_testnet_config(para_id)?),
+		"shell" => Box::new(chain_spec::get_shell_chain_spec(2000.into())),
+		"darkwebb-dev" => Box::new(chain_spec::darkwebb_development_config(2000.into())?),
+		"darkwebb-local" => Box::new(chain_spec::darkwebb_local_testnet_config(2000.into())?),
+		"" => Box::new(chain_spec::darkwebb_local_testnet_config(2000.into())?),
 		path => {
 			let chain_spec = chain_spec::ChainSpec::from_json_file(path.into())?;
 			if chain_spec.is_darkwebb() {
@@ -111,7 +111,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		load_spec(id, self.run.parachain_id.unwrap_or(DEFAULT_PARA_ID).into())
+		load_spec(id)
 	}
 
 	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -245,7 +245,7 @@ pub fn run() -> Result<()> {
 					&config,
 					[RelayChainCli::executable_name().to_string()]
 						.iter()
-						.chain(cli.relaychain_args.iter()),
+						.chain(cli.relay_chain_args.iter()),
 				);
 
 				let polkadot_config =
@@ -263,10 +263,9 @@ pub fn run() -> Result<()> {
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let block: crate::service::Block = generate_genesis_block(&load_spec(
-				&params.chain.clone().unwrap_or_default(),
-				params.parachain_id.unwrap_or(DEFAULT_PARA_ID).into(),
-			)?)?;
+			let spec = load_spec(&params.chain.clone().unwrap_or_default())?;
+			let state_version = Cli::native_runtime_version(&spec).state_version();
+			let block: Block = generate_genesis_block(&spec, state_version)?;
 			let raw_header = block.header().encode();
 			let output_buf = if params.raw {
 				raw_header
@@ -281,13 +280,14 @@ pub fn run() -> Result<()> {
 			}
 
 			Ok(())
-		}
+		},
 		Some(Subcommand::ExportGenesisWasm(params)) => {
 			let mut builder = sc_cli::LoggerBuilder::new("");
 			builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
 			let _ = builder.init();
 
-			let raw_wasm_blob = extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
+			let raw_wasm_blob =
+				extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
 			let output_buf = if params.raw {
 				raw_wasm_blob
 			} else {
@@ -301,7 +301,7 @@ pub fn run() -> Result<()> {
 			}
 
 			Ok(())
-		}
+		},
 		Some(Subcommand::Benchmark(cmd)) => {
 			if cfg!(feature = "runtime-benchmarks") {
 				let runner = cli.create_runner(cmd)?;
@@ -322,38 +322,35 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(&cli.run.normalize())?;
 
 			runner.run_node_until_exit(|config| async move {
-				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec).map(|e| e.para_id);
+				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
+					.map(|e| e.para_id)
+					.ok_or_else(|| "Could not find parachain ID in chain-spec.")?;
 
-				log::info!("Starting node {:?}", para_id);
 				let polkadot_cli = RelayChainCli::new(
 					&config,
-					[RelayChainCli::executable_name().to_string()]
-						.iter()
-						.chain(cli.relaychain_args.iter()),
+					[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
 				);
 
-				let id = ParaId::from(cli.run.parachain_id.or(para_id).unwrap_or(DEFAULT_PARA_ID));
+				let id = ParaId::from(para_id);
 
-				let parachain_account = AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
+				let parachain_account =
+					AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
 
-				log::info!("Parachain account: {:?}", parachain_account);
-				log::info!("Config chain spec: {:?}", config.chain_spec);
-				let block: crate::service::Block =
-					generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
+				let state_version =
+					RelayChainCli::native_runtime_version(&config.chain_spec).state_version();
+				let block: Block = generate_genesis_block(&config.chain_spec, state_version)
+					.map_err(|e| format!("{:?}", e))?;
 				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
-				log::info!("Starting block {:?}", block);
 				let tokio_handle = config.tokio_handle.clone();
-				let polkadot_config = SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
-					.map_err(|err| format!("Relay chain argument error: {}", err))?;
+				let polkadot_config =
+					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
+						.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
 				info!("Parachain id: {:?}", id);
 				info!("Parachain Account: {}", parachain_account);
 				info!("Parachain genesis state: {}", genesis_state);
-				info!(
-					"Is collating: {}",
-					if config.role.is_authority() { "yes" } else { "no" }
-				);
+				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
 				if config.chain_spec.is_darkwebb() {
 					crate::service::start_darkwebb_parachain_node(config, polkadot_config, id)
@@ -430,8 +427,12 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.rpc_ws(default_listen_port)
 	}
 
-	fn prometheus_config(&self, default_listen_port: u16) -> Result<Option<PrometheusConfig>> {
-		self.base.base.prometheus_config(default_listen_port)
+	fn prometheus_config(
+		&self,
+		default_listen_port: u16,
+		chain_spec: &Box<dyn ChainSpec>,
+	) -> Result<Option<PrometheusConfig>> {
+		self.base.base.prometheus_config(default_listen_port, chain_spec)
 	}
 
 	fn init<C: SubstrateCli>(&self) -> Result<()> {

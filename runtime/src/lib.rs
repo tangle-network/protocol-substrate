@@ -18,11 +18,11 @@ use sp_core::{
 };
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, AccountIdConversion},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, Percent, Permill,
 };
-
+use sp_runtime::AccountId32;
 use codec::{Decode, Encode, MaxEncodedLen};
 use common::{
 	impls::DealWithFees, opaque, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
@@ -30,7 +30,7 @@ use common::{
 };
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Contains, Everything, InstanceFilter},
+	traits::{Contains, Everything, InstanceFilter, EnsureOneOf},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
 		DispatchClass, IdentityFee, Weight,
@@ -39,7 +39,7 @@ use frame_support::{
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
-	EnsureOneOf, EnsureRoot,
+	EnsureRoot,
 };
 use sp_runtime::Perbill;
 use sp_std::prelude::*;
@@ -73,6 +73,7 @@ use webb_primitives::{
 	verifying::{ArkworksVerifierBls381, ArkworksVerifierBn254},
 	Amount, ChainId,
 };
+use frame_support::traits::ConstU128;
 
 impl_opaque_keys! {
 	pub struct SessionKeys {
@@ -99,6 +100,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
+	state_version: 1,
 };
 
 /// The version information used to identify this runtime when compiled
@@ -235,13 +237,15 @@ parameter_types! {
 	/// Default percent of inflation set aside for parachain bond every round
 	pub const DefaultParachainBondReservePercent: Percent = Percent::from_percent(30);
 	/// Minimum stake required to become a collator
-	pub const MinCollatorStk: u128 = 1000 * currency::MOVR * currency::SUPPLY_FACTOR;
+	pub const MinCollatorStk: u128 = 1000 * DOLLARS;
 	/// Minimum stake required to be reserved to be a candidate
-	pub const MinCandidateStk: u128 = 500 * currency::MOVR * currency::SUPPLY_FACTOR;
+	pub const MinCandidateStk: u128 = 500 * DOLLARS;
 	/// Minimum stake required to be reserved to be a delegator
-	pub const MinDelegatorStk: u128 = 5 * currency::MOVR * currency::SUPPLY_FACTOR;
+	pub const MinDelegatorStk: u128 = 5 * DOLLARS;
+
+	pub const DefaultParachainBondReserveRecipient: AccountId = AccountId32::new([1u8; 32]);
 }
-impl parachain_staking::Config for Runtime {
+impl pallet_parachain_staking::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
 	type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
@@ -258,12 +262,12 @@ impl parachain_staking::Config for Runtime {
 	type MaxDelegationsPerDelegator = MaxDelegationsPerDelegator;
 	type DefaultCollatorCommission = DefaultCollatorCommission;
 	type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
-	type DefaultParachainBondReserveRecipient = TreasuryPalletId;
+	type DefaultParachainBondReserveRecipient = DefaultParachainBondReserveRecipient;
 	type MinCollatorStk = MinCollatorStk;
 	type MinCandidateStk = MinCandidateStk;
 	type MinDelegation = MinDelegatorStk;
 	type MinDelegatorStk = MinDelegatorStk;
-	type WeightInfo = parachain_staking::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_parachain_staking::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -464,7 +468,7 @@ parameter_types! {
 /// We allow root and the Relay Chain council to execute privileged asset
 /// operations.
 pub type AssetsForceOrigin =
-	EnsureOneOf<AccountId, EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
+	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
@@ -484,6 +488,7 @@ impl pallet_assets::Config for Runtime {
 }
 
 
+
 impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 	type Event = Event;
@@ -495,14 +500,14 @@ parameter_types! {
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
-	type DmpMessageHandler = DmpQueue;
 	type Event = Event;
-	type OnValidationData = ();
-	type OutboundXcmpMessageSource = XcmpQueue;
-	type ReservedDmpWeight = ReservedDmpWeight;
-	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
+	type DmpMessageHandler = DmpQueue;
+	type ReservedDmpWeight = ReservedDmpWeight;
+	type OutboundXcmpMessageSource = XcmpQueue;
 	type XcmpMessageHandler = XcmpQueue;
+	type ReservedXcmpWeight = ReservedXcmpWeight;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -944,15 +949,17 @@ parameter_types! {
 	pub const BountyDepositPayoutDelay: BlockNumber = 1 * DAYS;
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
 	pub const BountyUpdatePeriod: BlockNumber = 14 * DAYS;
-	pub const MaximumReasonLength: u32 = 16384;
+	pub const MaximumReasonLength: u32 = 300;
 	pub const BountyCuratorDeposit: Permill = Permill::from_percent(50);
 	pub const BountyValueMinimum: Balance = 5 * DOLLARS;
 	pub const MaxApprovals: u32 = 100;
+	pub const MaxActiveChildBountyCount: u32 = 5;
+	pub const ChildBountyValueMinimum: Balance = 1 * DOLLARS;
+	pub const ChildBountyCuratorDepositBase: Permill = Permill::from_percent(10);
 }
 
 impl pallet_treasury::Config for Runtime {
 	type ApproveOrigin = EnsureOneOf<
-		AccountId,
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, CouncilCollective>,
 	>;
@@ -966,7 +973,6 @@ impl pallet_treasury::Config for Runtime {
 	type ProposalBond = ProposalBond;
 	type ProposalBondMinimum = ProposalBondMinimum;
 	type RejectOrigin = EnsureOneOf<
-		AccountId,
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>,
 	>;
