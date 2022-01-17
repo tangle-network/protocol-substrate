@@ -5,6 +5,7 @@ use std::{sync::Arc, time::Duration};
 
 // Local Runtime Types
 use darkwebb_runtime::RuntimeApi;
+use darkwebb_runtime::Element;
 pub use common::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
 
 // Cumulus Imports
@@ -190,6 +191,7 @@ where
 		+ sp_block_builder::BlockBuilder<Block>
 		+ cumulus_primitives_core::CollectCollationInfo<Block>
 		+ pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+		+ pallet_mt_rpc_runtime_api::MerkleTreeApi<Block, Element>
 		+ substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
 	Executor: sc_executor::NativeExecutionDispatch + 'static,
