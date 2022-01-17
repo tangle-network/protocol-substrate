@@ -41,39 +41,6 @@ const SEED: u32 = 0;
 const MAX_VERIFIER_LENGTH: u32 = 1024;
 
 benchmarks_instance_pallet! {
-
-	set_parameters {
-		let c in 0..MAX_VERIFIER_LENGTH;
-		let caller: T::AccountId = whitelisted_caller();
-		let depositor: T::AccountId = account("depositor", 0, SEED);
-		whitelist_account!(depositor);
-		let parameters = vec![0u8;c as usize];
-		Maintainer::<T, I>::put::<T::AccountId>(caller.clone());
-
-		<<T as Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller, BalanceOf::<T, I>::max_value());
-
-		Deposit::<T, I>::put::<Option<DepositDetails<T::AccountId, DepositBalanceOf<T, I>>>>(Some(DepositDetails{
-			depositor,
-			deposit:1_000u32.into()
-		}));
-
-	}: _(RawOrigin::Signed(caller.clone()), parameters.clone())
-	verify {
-		assert_last_event::<T, I>(Event::ParametersSet{who: caller, parameters}.into());
-	}
-
-
-
-	set_maintainer {
-		let caller: T::AccountId = whitelisted_caller();
-		let new_maintainer: T::AccountId = account("maintainer", 0, SEED);
-		Maintainer::<T, I>::put::<T::AccountId>(caller.clone());
-	}: _(RawOrigin::Signed(caller.clone()), new_maintainer.clone())
-	verify {
-		assert_last_event::<T, I>(Event::MaintainerSet{old_maintainer: caller, new_maintainer: new_maintainer.into()}.into());
-	}
-
-
 	force_set_parameters {
 		let c in 0..MAX_VERIFIER_LENGTH;
 		let depositor: T::AccountId = account("depositor", 0, SEED);
@@ -89,16 +56,6 @@ benchmarks_instance_pallet! {
 	verify {
 		assert_last_event::<T, I>(Event::ParametersSet{who: Default::default(), parameters}.into());
 	}
-
-
-	force_set_maintainer {
-		let new_maintainer: T::AccountId = account("maintainer", 0, SEED);
-	}: _(RawOrigin::Root, new_maintainer.clone())
-	verify {
-		assert_last_event::<T, I>(Event::MaintainerSet{old_maintainer: Default::default(), new_maintainer: new_maintainer.into()}.into());
-	}
-
-
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
