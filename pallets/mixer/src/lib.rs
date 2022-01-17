@@ -126,11 +126,6 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 	}
 
-	#[pallet::storage]
-	#[pallet::getter(fn maintainer)]
-	/// The parameter maintainer who can change the parameters
-	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
-
 	/// The map of trees to their mixer metadata
 	#[pallet::storage]
 	#[pallet::getter(fn mixers)]
@@ -138,8 +133,8 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		T::TreeId,
-		Option<MixerMetadata<T::AccountId, BalanceOf<T, I>, CurrencyIdOf<T, I>>>,
-		ValueQuery,
+		MixerMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>,
+		OptionQuery,
 	>;
 
 	/// The map of trees to their spent nullifier hashes
@@ -151,10 +146,6 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		MaintainerSet {
-			old_maintainer: T::AccountId,
-			new_maintainer: T::AccountId,
-		},
 		/// New tree created
 		MixerCreation { tree_id: T::TreeId },
 	}
@@ -201,7 +192,7 @@ pub mod pallet {
 					T::TreeId,
 					T::Element,
 				>>::create(
-					T::AccountId::default(),
+					None,
 					deposit_size.clone(),
 					30,
 					asset_id.clone(),
@@ -225,39 +216,9 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			let tree_id =
-				<Self as MixerInterface<_, _, _, _, _>>::create(T::AccountId::default(), deposit_size, depth, asset)?;
+				<Self as MixerInterface<_, _, _, _, _>>::create(None, deposit_size, depth, asset)?;
 			Self::deposit_event(Event::MixerCreation { tree_id });
 			Ok(().into())
-		}
-
-		#[pallet::weight(<T as Config<I>>::WeightInfo::set_maintainer())]
-		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
-			let origin = ensure_signed(origin)?;
-			// ensure parameter setter is the maintainer
-			ensure!(origin == Self::maintainer(), Error::<T, I>::InvalidPermissions);
-			// set the new maintainer
-			Maintainer::<T, I>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer: origin,
-					new_maintainer,
-				});
-				Ok(().into())
-			})
-		}
-
-		#[pallet::weight(<T as Config<I>>::WeightInfo::force_set_maintainer())]
-		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
-			T::ForceOrigin::ensure_origin(origin)?;
-			// set the new maintainer
-			Maintainer::<T, I>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer: Default::default(),
-					new_maintainer,
-				});
-				Ok(().into())
-			})
 		}
 
 		#[transactional]
@@ -301,7 +262,7 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 	for Pallet<T, I>
 {
 	fn create(
-		creator: T::AccountId,
+		creator: Option<T::AccountId>,
 		deposit_size: BalanceOf<T, I>,
 		depth: u8,
 		asset: CurrencyIdOf<T, I>,
@@ -309,11 +270,10 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 		let id = T::Tree::create(creator.clone(), depth)?;
 		Mixers::<T, I>::insert(
 			id,
-			Some(MixerMetadata {
-				creator,
+			MixerMetadata {
 				deposit_size,
 				asset,
-			}),
+			},
 		);
 		Ok(id)
 	}
@@ -420,7 +380,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub fn get_mixer(
 		id: T::TreeId,
-	) -> Result<MixerMetadata<T::AccountId, BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
+	) -> Result<MixerMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
 		let mixer = Self::mixers(id);
 		ensure!(mixer.is_some(), Error::<T, I>::NoMixerFound);
 		Ok(mixer.unwrap())

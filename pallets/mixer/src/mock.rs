@@ -4,6 +4,7 @@ use super::*;
 use crate as pallet_mixer;
 use codec::Decode;
 use frame_support::traits::GenesisBuild;
+use webb_primitives::verifying::ArkworksVerifierBn254;
 use sp_core::H256;
 
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
@@ -158,7 +159,7 @@ impl pallet_mt::Config for Test {
 
 impl pallet_verifier::Config for Test {
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
