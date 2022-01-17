@@ -147,12 +147,7 @@ pub mod pallet {
 	#[pallet::getter(fn existing_deposit)]
 	/// Details of the module's parameters
 	pub(super) type Deposit<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, Option<DepositDetails<T::AccountId, DepositBalanceOf<T, I>>>, ValueQuery>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn maintainer)]
-	/// The parameter maintainer who can change the parameters
-	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
+		StorageValue<_, DepositDetails<T::AccountId, DepositBalanceOf<T, I>>, OptionQuery>;
 
 	/// The next tree identifier up for grabs
 	#[pallet::storage]
@@ -163,7 +158,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn trees)]
 	pub type Trees<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, T::TreeId, TreeMetadata<T::AccountId, T::LeafIndex, T::Element>, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, T::TreeId, TreeMetadata<T::AccountId, T::LeafIndex, T::Element>, OptionQuery>;
 
 	/// The default hashes for this tree pallet
 	#[pallet::storage]
@@ -196,10 +191,6 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		MaintainerSet {
-			old_maintainer: T::AccountId,
-			new_maintainer: T::AccountId,
-		},
 		/// New tree created
 		TreeCreation { tree_id: T::TreeId, who: T::AccountId },
 		/// New leaf inserted
@@ -282,7 +273,7 @@ pub mod pallet {
 
 			T::Currency::reserve(&origin, deposit)?;
 
-			let tree_id = <Self as TreeInterface<_, _, _>>::create(origin.clone(), depth)?;
+			let tree_id = <Self as TreeInterface<_, _, _>>::create(Some(origin.clone()), depth)?;
 
 			Self::deposit_event(Event::TreeCreation { tree_id, who: origin });
 			Ok(().into())
@@ -292,7 +283,7 @@ pub mod pallet {
 		pub fn insert(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
 			let _origin = ensure_signed(origin)?;
 			ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T, I>::TreeDoesntExist);
-			let tree = Trees::<T, I>::get(tree_id);
+			let tree = Self::get_tree(tree_id)?;
 			let next_index = Self::next_leaf_index(tree_id);
 			ensure!(next_index == tree.leaf_count, Error::<T, I>::InvalidLeafIndex);
 			ensure!(
@@ -309,36 +300,6 @@ pub mod pallet {
 			});
 
 			Ok(().into())
-		}
-
-		#[pallet::weight(T::WeightInfo::set_maintainer())]
-		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
-			let origin = ensure_signed(origin)?;
-			// ensure parameter setter is the maintainer
-			ensure!(origin == Self::maintainer(), Error::<T, I>::InvalidPermissions);
-			// set the new maintainer
-			Maintainer::<T, I>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer: origin,
-					new_maintainer,
-				});
-				Ok(().into())
-			})
-		}
-
-		#[pallet::weight(T::WeightInfo::force_set_maintainer())]
-		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
-			T::ForceOrigin::ensure_origin(origin)?;
-			// set the new maintainer
-			Maintainer::<T, I>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer: Default::default(),
-					new_maintainer,
-				});
-				Ok(().into())
-			})
 		}
 
 		#[pallet::weight(T::WeightInfo::force_set_default_hashes(default_hashes.len() as u32))]
@@ -386,10 +347,16 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let default_hashes = Self::default_hashes();
 		default_hashes.is_empty()
 	}
+
+	fn get_tree(tree_id: T::TreeId) -> Result<TreeMetadata<T::AccountId, T::LeafIndex, T::Element>, DispatchError> {
+		let tree = Trees::<T, I>::get(tree_id);
+		ensure!(tree.is_some(), Error::<T, I>::TreeDoesntExist);
+		Ok(tree.unwrap())
+	}
 }
 
 impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element> for Pallet<T, I> {
-	fn create(creator: T::AccountId, depth: u8) -> Result<T::TreeId, DispatchError> {
+	fn create(creator: Option<T::AccountId>, depth: u8) -> Result<T::TreeId, DispatchError> {
 		// Setting the next tree id
 		let tree_id = Self::next_tree_id();
 		NextTreeId::<T, I>::mutate(|id| *id += One::one());
@@ -417,7 +384,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 	}
 
 	fn insert_in_order(id: T::TreeId, leaf: T::Element) -> Result<T::Element, DispatchError> {
-		let tree = Trees::<T, I>::get(id);
+		let tree = Self::get_tree(id)?;
 		let default_hashes = DefaultHashes::<T, I>::get();
 		let mut edge_index = tree.leaf_count;
 		let mut hash = leaf;
@@ -462,7 +429,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 impl<T: Config<I>, I: 'static> TreeInspector<T::AccountId, T::TreeId, T::Element> for Pallet<T, I> {
 	fn get_root(tree_id: T::TreeId) -> Result<T::Element, DispatchError> {
 		ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T, I>::TreeDoesntExist);
-		Ok(Trees::<T, I>::get(tree_id).root)
+		Ok(Self::get_tree(tree_id)?.root)
 	}
 
 	fn is_known_root(tree_id: T::TreeId, target_root: T::Element) -> Result<bool, DispatchError> {
