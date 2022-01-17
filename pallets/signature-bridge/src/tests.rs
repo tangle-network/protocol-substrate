@@ -42,7 +42,7 @@ fn setup_resources() {
 
 		assert_ok!(Bridge::set_resource(Origin::root(), id, method.clone()));
 		assert_eq!(Bridge::resources(id), Some(method));
-
+		
 		assert_ok!(Bridge::set_resource(Origin::root(), id, method2.clone()));
 		assert_eq!(Bridge::resources(id), Some(method2));
 
