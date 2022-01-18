@@ -103,11 +103,6 @@ pub mod pallet {
 		type BridgeAccountId: Get<PalletId>;
 	}
 
-	/// The parameter maintainer who can change the parameters
-	#[pallet::storage]
-	#[pallet::getter(fn maintainer)]
-	pub type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
-
 	/// All whitelisted chains and their respective transaction counts
 	#[pallet::storage]
 	#[pallet::getter(fn chains)]
@@ -127,7 +122,7 @@ pub mod pallet {
 	/// Tracks current relayer set
 	#[pallet::storage]
 	#[pallet::getter(fn relayers)]
-	pub type Relayers<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, T::AccountId, bool, ValueQuery>;
+	pub type Relayers<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, T::AccountId, bool, OptionQuery>;
 
 	/// Number of relayers in set
 	#[pallet::storage]
@@ -157,11 +152,6 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		/// Maintainer is set
-		MaintainerSet {
-			old_maintainer: T::AccountId,
-			new_maintainer: T::AccountId,
-		},
 		/// Vote threshold has changed (new_threshold)
 		RelayerThresholdChanged { new_threshold: u32 },
 		/// Chain now available for transfers (chain_id)
@@ -246,39 +236,6 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		/// Sets the maintainer.
-		#[pallet::weight(0)]
-		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
-			Self::ensure_admin(origin.clone())?;
-			let origin = ensure_signed(origin)?;
-			// ensure parameter setter is the maintainer
-			ensure!(origin == Self::maintainer(), Error::<T, I>::InvalidPermissions);
-			// set the new maintainer
-			Maintainer::<T, I>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer: origin,
-					new_maintainer,
-				});
-				Ok(().into())
-			})
-		}
-
-		// Forcefully set the maintainer.
-		#[pallet::weight(0)]
-		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
-			Self::ensure_admin(origin)?;
-			// set the new maintainer
-			Maintainer::<T, I>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer: Default::default(),
-					new_maintainer,
-				});
-				Ok(().into())
-			})
-		}
-
 		/// Sets the vote threshold for proposals.
 		///
 		/// This threshold is used to determine how many votes are required
@@ -431,7 +388,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	/// Checks if who is a relayer
 	pub fn is_relayer(who: &T::AccountId) -> bool {
-		Self::relayers(who)
+		Self::relayers(who).is_some()
 	}
 
 	/// Provides an AccountId for the pallet.

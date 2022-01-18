@@ -4,7 +4,7 @@ use frame_support::dispatch;
 /// Tree trait definition to be used in other pallets
 pub trait TreeInterface<AccountId, TreeId, Element> {
 	// Creates a new tree
-	fn create(creator: AccountId, depth: u8) -> Result<TreeId, dispatch::DispatchError>;
+	fn create(creator: Option<AccountId>, depth: u8) -> Result<TreeId, dispatch::DispatchError>;
 	/// Adds members/leaves to the tree
 	fn insert_in_order(id: TreeId, leaf: Element) -> Result<Element, dispatch::DispatchError>;
 }

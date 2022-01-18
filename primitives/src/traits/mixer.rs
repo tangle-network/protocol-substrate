@@ -5,7 +5,7 @@ use frame_support::dispatch;
 pub trait MixerInterface<AccountId, Balance, CurrencyId, TreeId, Element> {
 	// Creates a new mixer
 	fn create(
-		creator: AccountId,
+		creator: Option<AccountId>,
 		deposit_size: Balance,
 		depth: u8,
 		asset: CurrencyId,

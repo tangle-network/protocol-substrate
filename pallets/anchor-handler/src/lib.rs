@@ -53,6 +53,7 @@ use webb_primitives::{
 };
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;
+use sp_std::prelude::*;
 use pallet_anchor::{BalanceOf, CurrencyIdOf};
 use pallet_linkable_tree::types::EdgeMetadata;
 pub mod types;
@@ -189,7 +190,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			!AnchorList::<T, I>::contains_key(r_id),
 			Error::<T, I>::ResourceIsAlreadyAnchored
 		);
-		let tree_id = T::Anchor::create(T::AccountId::default(), deposit_size, tree_depth, max_edges, asset)?;
+		let tree_id = T::Anchor::create(None, deposit_size, tree_depth, max_edges, asset)?;
 		AnchorList::<T, I>::insert(r_id, tree_id);
 		Counts::<T, I>::insert(src_chain_id, 0);
 		Self::deposit_event(Event::AnchorCreated);

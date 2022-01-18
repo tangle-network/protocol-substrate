@@ -1,6 +1,7 @@
 use super::*;
 use crate::{self as pallet_hasher};
 
+use webb_primitives::AccountId;
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
 use frame_support::parameter_types;
 use frame_system as system;
@@ -33,7 +34,7 @@ parameter_types! {
 
 impl system::Config for Test {
 	type AccountData = pallet_balances::AccountData<u64>;
-	type AccountId = u64;
+	type AccountId = AccountId;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockHashCount = BlockHashCount;
 	type BlockLength = ();
@@ -55,6 +56,7 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -81,14 +83,9 @@ parameter_types! {
 }
 
 impl pallet_hasher::Config for Test {
-	type Currency = Balances;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ParameterDeposit;
-	type StringLimit = StringLimit;
 	type WeightInfo = ();
 }
 

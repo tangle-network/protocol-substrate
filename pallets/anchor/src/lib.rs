@@ -126,8 +126,8 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		T::TreeId,
-		Option<AnchorMetadata<T::AccountId, BalanceOf<T, I>, CurrencyIdOf<T, I>>>,
-		ValueQuery,
+		AnchorMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>,
+		OptionQuery,
 	>;
 
 	/// The map of trees to their spent nullifier hashes
@@ -191,7 +191,7 @@ pub mod pallet {
 			// Should it only be the root who can create anchors?
 			ensure_root(origin)?;
 			let tree_id =
-				<Self as AnchorInterface<_>>::create(T::AccountId::default(), deposit_size, depth, max_edges, asset)?;
+				<Self as AnchorInterface<_>>::create(None, deposit_size, depth, max_edges, asset)?;
 			Self::deposit_event(Event::AnchorCreation { tree_id });
 			Ok(().into())
 		}
@@ -270,34 +270,33 @@ impl<T: Config<I>, I: 'static> AnchorConfig for AnchorConfigration<T, I> {
 
 impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pallet<T, I> {
 	fn create(
-		creator: T::AccountId,
+		creator: Option<T::AccountId>,
 		deposit_size: BalanceOf<T, I>,
 		depth: u8,
 		max_edges: u32,
 		asset: CurrencyIdOf<T, I>,
 	) -> Result<T::TreeId, DispatchError> {
-		let id = T::LinkableTree::create(creator.clone(), max_edges, depth)?;
+		let id = T::LinkableTree::create(creator, max_edges, depth)?;
 		Anchors::<T, I>::insert(
 			id,
-			Some(AnchorMetadata {
-				creator,
+			AnchorMetadata {
 				deposit_size,
 				asset,
-			}),
+			},
 		);
 		Ok(id)
 	}
 
 	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {
+		// get the anchor if it exists
+		let anchor = Self::get_anchor(id)?;
 		// insert the leaf
 		T::LinkableTree::insert_in_order(id, leaf)?;
-
-		let anchor = Self::get_anchor(id)?;
 		// transfer tokens to the pallet
 		<T as Config<I>>::Currency::transfer(anchor.asset, &depositor, &Self::account_id(), anchor.deposit_size)?;
 
 		Self::deposit_event(Event::Deposit {
-			depositor: depositor.clone(),
+			depositor: depositor,
 			tree_id: id,
 			leaf,
 			amount: anchor.deposit_size,
@@ -437,7 +436,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub fn get_anchor(
 		id: T::TreeId,
-	) -> Result<AnchorMetadata<T::AccountId, BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
+	) -> Result<AnchorMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
 		let anchor = Anchors::<T, I>::get(id);
 		ensure!(anchor.is_some(), Error::<T, I>::NoAnchorFound);
 		Ok(anchor.unwrap())

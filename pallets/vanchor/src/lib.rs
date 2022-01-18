@@ -147,8 +147,8 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		T::TreeId,
-		Option<VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>>,
-		ValueQuery,
+		VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>,
+		OptionQuery,
 	>;
 
 	/// The map of trees to their spent nullifier hashes
@@ -215,7 +215,7 @@ pub mod pallet {
 			asset: CurrencyIdOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id = <Self as VAnchorInterface<_>>::create(T::AccountId::default(), depth, max_edges, asset)?;
+			let tree_id = <Self as VAnchorInterface<_>>::create(None, depth, max_edges, asset)?;
 			Self::deposit_event(Event::VAnchorCreation { tree_id });
 			Ok(().into())
 		}
@@ -250,13 +250,13 @@ impl<T: Config<I>, I: 'static> VAnchorConfig for VAnchorConfigration<T, I> {
 
 impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for Pallet<T, I> {
 	fn create(
-		creator: T::AccountId,
+		creator: Option<T::AccountId>,
 		depth: u8,
 		max_edges: u32,
 		asset: CurrencyIdOf<T, I>,
 	) -> Result<T::TreeId, DispatchError> {
 		let id = T::LinkableTree::create(creator.clone(), max_edges, depth)?;
-		VAnchors::<T, I>::insert(id, Some(VAnchorMetadata { creator, asset }));
+		VAnchors::<T, I>::insert(id, VAnchorMetadata { creator, asset });
 		Ok(id)
 	}
 

@@ -35,47 +35,6 @@ fn should_fail_to_create_new_linkable_tree_if_not_root() {
 }
 
 #[test]
-fn should_be_able_to_change_the_maintainer() {
-	new_test_ext().execute_with(|| {
-		let max_edges = M as _;
-		let depth = TREE_DEPTH as u8;
-		assert_ok!(LinkableTree::create(Origin::root(), max_edges, depth));
-
-		let default_maintainer_account_id = AccountId::default();
-		let current_maintainer_account_id = LinkableTree::maintainer();
-		assert_eq!(current_maintainer_account_id, default_maintainer_account_id);
-
-		let new_maintainer_account_id = account::<AccountId>("", 1, SEED);
-		assert_ok!(LinkableTree::force_set_maintainer(
-			Origin::root(),
-			new_maintainer_account_id.clone()
-		));
-		let current_maintainer_account_id = LinkableTree::maintainer();
-		assert_eq!(current_maintainer_account_id, new_maintainer_account_id);
-	});
-}
-
-#[test]
-fn should_fail_to_change_the_maintainer_if_not_the_current_maintainer() {
-	new_test_ext().execute_with(|| {
-		let max_edges = M as _;
-		let depth = TREE_DEPTH as u8;
-		assert_ok!(LinkableTree::create(Origin::root(), max_edges, depth));
-		let current_maintainer_account_id = LinkableTree::maintainer();
-		let new_maintainer_account_id = account::<AccountId>("", 1, SEED);
-		assert_err!(
-			LinkableTree::set_maintainer(
-				Origin::signed(account::<AccountId>("", 2, SEED)),
-				new_maintainer_account_id
-			),
-			crate::Error::<Test, _>::InvalidPermissions,
-		);
-		// maintainer should never be changed.
-		assert_eq!(current_maintainer_account_id, LinkableTree::maintainer());
-	});
-}
-
-#[test]
 fn should_be_able_to_add_neighbors_and_check_history() {
 	use rand::prelude::*;
 
