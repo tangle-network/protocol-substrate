@@ -79,17 +79,17 @@ fn should_update_fee_with_sig_succeed() {
 		let msg = keccak_256(&proposal.encode());
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 		// should fail to execute proposal as non-maintainer
-		// assert_err!(
-		// 	SignatureBridge::execute_proposal(
-		// 		Origin::signed(RELAYER_A),
-		// 		prop_id,
-		// 		src_id,
-		// 		r_id,
-		// 		Box::new(proposal.clone()),
-		// 		sig.0.to_vec(),
-		// 	),
-		// 	Error::<Test>::InvalidPermissions
-		// );
+		assert_err!(
+			SignatureBridge::execute_proposal(
+				Origin::signed(RELAYER_A),
+				prop_id,
+				src_id,
+				r_id,
+				Box::new(proposal.clone()),
+				sig.0.to_vec(),
+			),
+			pallet_signature_bridge::Error::<Test, _>::InvalidPermissions
+		);
 
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
@@ -106,16 +106,6 @@ fn should_update_fee_with_sig_succeed() {
 			sig.0.to_vec(),
 		));
 		assert_eq!(TokenWrapper::get_wrapping_fee(1000_u128), 52);
-		// assert_events(vec![
-		// 	Event::SignatureBridge(pallet_signature_bridge::Event::
-		// ProposalApproved { 		chain_id: src_id,
-		// 		proposal_nonce: prop_id,
-		// 	}),
-		// 	Event::SignatureBridge(pallet_signature_bridge::Event::
-		// ProposalSucceeded { 		chain_id: src_id,
-		// 		proposal_nonce: prop_id,
-		// 	}),
-		// ]);
 	})
 }
 
@@ -174,7 +164,9 @@ fn should_add_token_with_sig_succeed() {
 #[test]
 fn should_remove_token_with_sig_succeed() {
 	let src_id = 1u32;
-	let r_id = derive_resource_id(src_id, b"execute_add_token_proposal");
+	let r_id = derive_resource_id(src_id, b"remark");
+	let r_id_add_token = derive_resource_id(src_id, b"execute_add_token_proposal");
+	let r_id_remove_token = derive_resource_id(src_id, b"execute_remove_token_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -183,6 +175,17 @@ fn should_remove_token_with_sig_succeed() {
 	.unwrap();
 
 	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
+		assert_ok!(SignatureBridge::set_resource(
+			Origin::root(),
+			r_id_add_token,
+			b"TokenWrapperHandler.execute_add_token_proposal".to_vec()
+		));
+		assert_ok!(SignatureBridge::set_resource(
+			Origin::root(),
+			r_id_remove_token,
+			b"TokenWrapperHandler.execute_remove_token_proposal".to_vec()
+		));
+
 		let existential_balance: u32 = 1000;
 
 		let first_token_id = AssetRegistry::register_asset(
@@ -200,7 +203,7 @@ fn should_remove_token_with_sig_succeed() {
 		.unwrap();
 
 		let prop_id = 1;
-		let proposal = make_add_token_proposal(&r_id, b"meme".to_vec(), first_token_id);
+		let proposal = make_add_token_proposal(&r_id_add_token, b"meme".to_vec(), first_token_id);
 		let msg = keccak_256(&proposal.encode());
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
@@ -214,7 +217,7 @@ fn should_remove_token_with_sig_succeed() {
 			Origin::signed(RELAYER_A),
 			prop_id,
 			src_id,
-			r_id,
+			r_id_add_token,
 			Box::new(proposal.clone()),
 			sig.0.to_vec(),
 		));
@@ -222,7 +225,7 @@ fn should_remove_token_with_sig_succeed() {
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
 
 		let prop_id = 2;
-		let proposal = make_remove_token_proposal(&r_id, b"meme".to_vec(), first_token_id);
+		let proposal = make_remove_token_proposal(&r_id_remove_token, b"meme".to_vec(), first_token_id);
 		let msg = keccak_256(&proposal.encode());
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
@@ -230,7 +233,7 @@ fn should_remove_token_with_sig_succeed() {
 			Origin::signed(RELAYER_A),
 			prop_id,
 			src_id,
-			r_id,
+			r_id_remove_token,
 			Box::new(proposal.clone()),
 			sig.0.to_vec(),
 		));
@@ -242,7 +245,7 @@ fn should_remove_token_with_sig_succeed() {
 #[test]
 fn should_fail_to_remove_token_not_in_pool_with_sig() {
 	let src_id = 1u32;
-	let r_id = derive_resource_id(src_id, b"execute_add_token_proposal");
+	let r_id = derive_resource_id(src_id, b"execute_remove_token_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
