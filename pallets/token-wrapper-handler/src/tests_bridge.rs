@@ -419,14 +419,3 @@ fn should_fail_to_add_non_existent_token() {
 		);
 	})
 }
-
-// ----Signature Bridge Tests----
-
-#[test]
-fn should_update_fee_with_sig() {
-	new_test_ext().execute_with(|| {
-		// Sign the proposal
-
-		// Execute the proposal
-	})
-}
