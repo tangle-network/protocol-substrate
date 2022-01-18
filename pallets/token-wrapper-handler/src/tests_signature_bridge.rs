@@ -6,14 +6,14 @@ use sp_core::{
 };
 
 use super::{
-	mock::{
+	mock_signature_bridge::{
 		assert_events, new_test_ext, Balances, Call, ChainIdentifier, Event, Origin, ProposalLifetime, SignatureBridge,
 		System, Test, ENDOWED_BALANCE, RELAYER_A, RELAYER_B, RELAYER_C,
 	},
 	*,
 };
 
-use crate::mock::new_test_ext_initialized;
+use crate::mock_signature_bridge::new_test_ext_initialized;
 
 use codec::{Decode, Encode, EncodeLike};
 
@@ -21,7 +21,7 @@ use hex_literal::hex;
 use pallet_signature_bridge::utils::derive_resource_id;
 use webb_primitives::{signing::SigningSystem, ResourceId};
 
-use crate::mock::*;
+use crate::mock_signature_bridge::*;
 
 use asset_registry::AssetType;
 use frame_support::{assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin};

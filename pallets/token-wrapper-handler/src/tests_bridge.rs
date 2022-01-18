@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use crate::mock::*;
+use crate::mock_bridge::*;
 
 use asset_registry::AssetType;
 use frame_support::{assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin};
@@ -426,8 +426,7 @@ fn should_fail_to_add_non_existent_token() {
 fn should_update_fee_with_sig() {
 	new_test_ext().execute_with(|| {
 		// Sign the proposal
-		
-		// Execute the proposal
 
+		// Execute the proposal
 	})
 }
