@@ -91,7 +91,7 @@ fn should_update_fee_with_sig_succeed() {
 			pallet_signature_bridge::Error::<Test, _>::InvalidPermissions
 		);
 
-		// set the new maintainer
+		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			Origin::root(),
 			public_uncompressed.to_vec()
