@@ -35,6 +35,7 @@ sp-core = { default-features = false, git = "https://github.com/paritytech/subst
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-democracy = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false }

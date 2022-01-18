@@ -4,9 +4,7 @@ use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
 #[derive(Clone, Encode, Decode, TypeInfo)]
-pub struct AnchorMetadata<AccountId, Balance, AssetId> {
-	/// Creator account
-	pub creator: AccountId,
+pub struct AnchorMetadata<Balance, AssetId> {
 	/// Balance size of deposit
 	pub deposit_size: Balance,
 	/// Option of specifying a fungible asset. When None, the asset is the

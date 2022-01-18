@@ -100,11 +100,6 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 	}
 
-	#[pallet::storage]
-	#[pallet::getter(fn maintainer)]
-	/// The parameter maintainer who can change the parameters
-	pub(super) type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
-
 	/// The map of trees to the maximum number of anchor edges they can have
 	#[pallet::storage]
 	#[pallet::getter(fn max_edges)]
@@ -144,10 +139,6 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		MaintainerSet {
-			old_maintainer: T::AccountId,
-			new_maintainer: T::AccountId,
-		},
 		/// New tree created
 		LinkableTreeCreation { tree_id: T::TreeId },
 	}
@@ -156,8 +147,6 @@ pub mod pallet {
 	pub enum Error<T, I = ()> {
 		// Root is not found in history
 		UnknownRoot,
-		/// Account does not have correct permissions
-		InvalidPermissions,
 		/// Invalid Merkle Roots
 		InvalidMerkleRoots,
 		/// Invalid neighbor root passed in withdrawal
@@ -179,39 +168,9 @@ pub mod pallet {
 		#[pallet::weight(<T as Config<I>>::WeightInfo::create(*depth as u32, *max_edges))]
 		pub fn create(origin: OriginFor<T>, max_edges: u32, depth: u8) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id = <Self as LinkableTreeInterface<_>>::create(T::AccountId::default(), max_edges, depth)?;
+			let tree_id = <Self as LinkableTreeInterface<_>>::create(None, max_edges, depth)?;
 			Self::deposit_event(Event::LinkableTreeCreation { tree_id });
 			Ok(().into())
-		}
-
-		#[pallet::weight(<T as Config<I>>::WeightInfo::set_maintainer())]
-		pub fn set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
-			let origin = ensure_signed(origin)?;
-			// ensure parameter setter is the maintainer
-			ensure!(origin == Self::maintainer(), Error::<T, I>::InvalidPermissions);
-			// set the new maintainer
-			Maintainer::<T, I>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer: origin,
-					new_maintainer,
-				});
-				Ok(().into())
-			})
-		}
-
-		#[pallet::weight(<T as Config<I>>::WeightInfo::force_set_maintainer())]
-		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: T::AccountId) -> DispatchResultWithPostInfo {
-			T::ForceOrigin::ensure_origin(origin)?;
-			// set the new maintainer
-			Maintainer::<T, I>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer: Default::default(),
-					new_maintainer,
-				});
-				Ok(().into())
-			})
 		}
 	}
 }
@@ -230,7 +189,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeConfig for LinkableTreeConfigration<T
 }
 
 impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T, I>> for Pallet<T, I> {
-	fn create(creator: T::AccountId, max_edges: u32, depth: u8) -> Result<T::TreeId, DispatchError> {
+	fn create(creator: Option<T::AccountId>, max_edges: u32, depth: u8) -> Result<T::TreeId, DispatchError> {
 		let id = T::Tree::create(creator, depth)?;
 		MaxEdges::<T, I>::insert(id, max_edges);
 		Ok(id)

@@ -120,7 +120,7 @@ fn should_be_able_to_deposit() {
 		// the balance should be less now with `deposit_size`
 		assert_eq!(balance_after, balance_before - DEPOSIT_SIZE);
 		// now we need also to check if the state got updated.
-		let tree = MerkleTree::trees(tree_id);
+		let tree = MerkleTree::trees(tree_id).unwrap();
 		assert_eq!(tree.leaf_count, 1);
 		crate::mock::assert_last_event::<Test>(
 			crate::Event::<Test>::Deposit {

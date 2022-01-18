@@ -45,7 +45,6 @@ const SEED: u32 = 0;
 const MAX_EDGES: u32 = 256;
 
 benchmarks! {
-
 	create {
 	  let i in 1..MAX_EDGES;
 	  let d in 1..<T as pallet_mt::Config>::MaxTreeDepth::get() as u32;
@@ -70,7 +69,6 @@ benchmarks! {
 	}
 
 	withdraw {
-
 		let hasher_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as pallet_mt::Config>::Hasher>().unwrap();
 		let verifier_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as Config>::Verifier>().unwrap();
 
@@ -119,7 +117,6 @@ benchmarks! {
 
 
 		let nullifier_hash_element = <T as pallet_mt::Config>::Element::from_bytes(&NULLIFIER_HASH_ELEMENTS_BYTES[..]);
-
 	}: _(
 		RawOrigin::Signed(caller),
 		tree_id,

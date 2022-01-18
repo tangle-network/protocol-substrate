@@ -87,24 +87,8 @@ fn should_be_able_to_deposit() {
 		// the balance should be less now with `deposit_size`
 		assert_eq!(balance_after, balance_before - deposit_size);
 		// now we need also to check if the state got updated.
-		let tree = MerkleTree::trees(tree_id);
+		let tree = MerkleTree::trees(tree_id).unwrap();
 		assert_eq!(tree.leaf_count, 1);
-	});
-}
-#[test]
-fn should_be_able_to_change_the_maintainer() {
-	new_test_ext().execute_with(|| {
-		assert_ok!(Mixer::create(Origin::root(), One::one(), 3, 0));
-		let default_maintainer_account_id = AccountId::default();
-		let current_maintainer_account_id = Mixer::maintainer();
-		assert_eq!(current_maintainer_account_id, default_maintainer_account_id);
-		let new_maintainer_account_id = account::<AccountId>("", 1, SEED);
-		assert_ok!(Mixer::force_set_maintainer(
-			Origin::root(),
-			new_maintainer_account_id.clone()
-		));
-		let current_maintainer_account_id = Mixer::maintainer();
-		assert_eq!(current_maintainer_account_id, new_maintainer_account_id);
 	});
 }
 

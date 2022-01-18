@@ -75,6 +75,7 @@ impl frame_system::Config for Runtime {
 	type SS58Prefix = ();
 	type SystemWeightInfo = ();
 	type Version = ();
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -343,26 +344,16 @@ parameter_types! {
 }
 
 impl pallet_verifier::Config for Runtime {
-	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ParameterDeposit;
-	type StringLimit = StringLimit;
 	type Verifier = webb_primitives::verifying::ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
 impl pallet_hasher::Config for Runtime {
-	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ParameterDeposit;
-	type StringLimit = StringLimit;
 	type WeightInfo = ();
 }
 
@@ -498,8 +489,19 @@ impl pallet_xanchor::Config for Runtime {
 	type XcmSender = XcmRouter;
 }
 
+impl pallet_preimage::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = ();
+	type Currency = ();
+	type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxSize = frame_support::traits::ConstU32<1024>;
+	type BaseDeposit = ();
+	type ByteDeposit = ();
+}
+
 parameter_types! {
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) * BlockWeights::get().max_block;
+	pub const NoPreimagePostponement: Option<u64> = Some(2);
 }
 
 impl pallet_scheduler::Config for Runtime {
@@ -511,6 +513,8 @@ impl pallet_scheduler::Config for Runtime {
 	type OriginPrivilegeCmp = frame_support::traits::EqualPrivilegeOnly;
 	type PalletsOrigin = OriginCaller;
 	type ScheduleOrigin = EnsureRoot<AccountId>;
+	type PreimageProvider = Preimage;
+	type NoPreimagePostponement = NoPreimagePostponement;
 	type WeightInfo = ();
 }
 
@@ -603,6 +607,7 @@ construct_runtime!(
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>},
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
 		MsgQueue: mock_msg_queue::{Pallet, Storage, Event<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},

@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
-/* TODO: use orml_utilities::OrderedSet without leaking substrate v2.0
- * dependencies */
+// TODO: use orml_utilities::OrderedSet without leaking substrate v2.0
+// dependencies
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
@@ -25,8 +25,14 @@ use sp_std::prelude::*;
 
 /// An ordered set backed by `Vec`
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(RuntimeDebug, PartialEq, Eq, Encode, Decode, Default, Clone, TypeInfo)]
+#[derive(RuntimeDebug, PartialEq, Eq, Encode, Decode, Clone, TypeInfo)]
 pub struct OrderedSet<T>(pub Vec<T>);
+
+impl<T> Default for OrderedSet<T> {
+	fn default() -> Self {
+		Self(Vec::default())
+	}
+}
 
 impl<T: Ord> OrderedSet<T> {
 	/// Create a new empty set
@@ -56,25 +62,25 @@ impl<T: Ord> OrderedSet<T> {
 			Err(loc) => {
 				self.0.insert(loc, value);
 				true
-			}
+			},
 		}
 	}
 
 	/// Remove an element.
 	/// Return true if removal happened.
 	pub fn remove(&mut self, value: &T) -> bool {
-		match self.0.binary_search(value) {
+		match self.0.binary_search(&value) {
 			Ok(loc) => {
 				self.0.remove(loc);
 				true
-			}
+			},
 			Err(_) => false,
 		}
 	}
 
 	/// Return if the set contains `value`
 	pub fn contains(&self, value: &T) -> bool {
-		self.0.binary_search(value).is_ok()
+		self.0.binary_search(&value).is_ok()
 	}
 
 	/// Clear the set

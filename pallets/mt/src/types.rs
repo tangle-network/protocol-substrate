@@ -6,7 +6,7 @@ use scale_info::TypeInfo;
 #[derive(Default, Clone, Encode, Decode, TypeInfo)]
 pub struct TreeMetadata<AccountId, LeafIndex, Element> {
 	/// Creator account
-	pub creator: AccountId,
+	pub creator: Option<AccountId>,
 	/// Is paused
 	pub paused: bool,
 	/// Current number of leaves in the tree

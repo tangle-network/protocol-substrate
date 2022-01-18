@@ -26,36 +26,13 @@ use frame_system::RawOrigin;
 
 use frame_support::traits::Get;
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
-	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
-}
-
-const SEED: u32 = 0;
 const MAX_EDGES: u32 = 256;
 
 benchmarks! {
-
 	create {
 	  let i in 1..MAX_EDGES;
 	  let d in 1..<T as pallet_mt::Config>::MaxTreeDepth::get() as u32;
 	}: _(RawOrigin::Root, i, d as u8)
-
-	set_maintainer {
-		let caller: T::AccountId = whitelisted_caller();
-		let new_maintainer: T::AccountId = account("maintainer", 0, SEED);
-		Maintainer::<T>::put::<T::AccountId>(caller.clone());
-	}: _(RawOrigin::Signed(caller.clone()), new_maintainer.clone())
-	verify {
-		assert_last_event::<T>(Event::MaintainerSet{old_maintainer: caller, new_maintainer: new_maintainer.into()}.into());
-	}
-
-	force_set_maintainer {
-		let new_maintainer: T::AccountId = account("maintainer", 0, SEED);
-	}: _(RawOrigin::Root, new_maintainer.clone())
-	verify {
-		assert_last_event::<T>(Event::MaintainerSet{old_maintainer: Default::default(), new_maintainer: new_maintainer.into()}.into());
-	}
-
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);

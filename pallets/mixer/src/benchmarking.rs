@@ -67,22 +67,6 @@ benchmarks! {
 	  assert_eq!(<<T as Config>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &Pallet::<T>::account_id()), deposit_size.into())
 	}
 
-	set_maintainer {
-		let caller: T::AccountId = whitelisted_caller();
-		let new_maintainer: T::AccountId = account("maintainer", 0, SEED);
-		Maintainer::<T>::put::<T::AccountId>(caller.clone());
-	}: _(RawOrigin::Signed(caller.clone()), new_maintainer.clone())
-	verify {
-		assert_last_event::<T>(Event::MaintainerSet{old_maintainer: caller, new_maintainer: new_maintainer.into()}.into());
-	}
-
-	force_set_maintainer {
-		let new_maintainer: T::AccountId = account("maintainer", 0, SEED);
-	}: _(RawOrigin::Root, new_maintainer.clone())
-	verify {
-		assert_last_event::<T>(Event::MaintainerSet{old_maintainer: Default::default(), new_maintainer: new_maintainer.into()}.into());
-	}
-
 	withdraw {
 
 		let hasher_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as pallet_mt::Config>::Hasher>().unwrap();
@@ -134,7 +118,6 @@ benchmarks! {
 
 
 		let nullifier_hash_element = <T as pallet_mt::Config>::Element::from_bytes(&NULLIFIER_HASH_ELEMENTS_BYTES[..]);
-
 	}: _(
 		RawOrigin::Signed(caller),
 		tree_id,
