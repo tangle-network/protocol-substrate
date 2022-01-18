@@ -83,7 +83,7 @@ fn dmp() {
 		use parachain::{Event, System};
 		assert!(System::events()
 			.iter()
-			.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
+			.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked { .. }))));
 	});
 }
 
@@ -110,7 +110,7 @@ fn ump() {
 		use relay_chain::{Event, System};
 		assert!(System::events()
 			.iter()
-			.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
+			.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked { .. }))));
 	});
 }
 
@@ -136,7 +136,7 @@ fn xcmp() {
 		use parachain::{Event, System};
 		assert!(System::events()
 			.iter()
-			.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked(_, _)))));
+			.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked { .. }))));
 	});
 }
 
@@ -272,7 +272,7 @@ fn should_bridge_anchors_using_xcm() {
 		// the balance should be less now with `deposit_size`
 		assert_eq!(balance_after, balance_before - DEPOSIT_SIZE);
 		// now we need also to check if the state got updated.
-		let tree = MerkleTree::trees(para_a_tree_id);
+		let tree = MerkleTree::trees(para_a_tree_id).unwrap();
 		assert_eq!(tree.leaf_count, 1);
 		para_a_root = tree.root;
 	});

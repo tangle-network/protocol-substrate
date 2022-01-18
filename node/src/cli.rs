@@ -51,6 +51,9 @@ pub enum Subcommand {
 	/// Revert the chain to a previous state.
 	Revert(sc_cli::RevertCmd),
 
+	/// Try some testing command against a specified runtime state.
+	TryRuntime(try_runtime_cli::TryRuntimeCmd),
+
 	/// The custom benchmark subcommmand benchmarking runtime pallets.
 	#[structopt(name = "benchmark", about = "Benchmark runtime pallets.")]
 	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
@@ -109,7 +112,7 @@ pub struct Cli {
 
 	/// Relaychain arguments
 	#[structopt(raw = true)]
-	pub relaychain_args: Vec<String>,
+	pub relay_chain_args: Vec<String>,
 }
 
 #[derive(Debug)]

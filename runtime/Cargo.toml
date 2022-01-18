@@ -67,6 +67,7 @@ pallet-aura = {git = "https://github.com/paritytech/substrate", default-features
 pallet-authorship = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "master"}
 pallet-balances = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "master"}
 pallet-bounties = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "master"}
+pallet-child-bounties = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "master"}
 pallet-collective = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "master"}
 pallet-multisig = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "master"}
 pallet-proxy = {git = "https://github.com/paritytech/substrate", default-features = false, branch = "master"}
@@ -198,6 +199,7 @@ std = [
   "pallet-hello/std",
   "pallet-treasury/std",
   "pallet-token-wrapper/std",
+  "pallet-child-bounties/std",
   "pallet-bounties/std",
   "pallet-parachain-staking/std"
 ]

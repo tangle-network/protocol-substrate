@@ -531,7 +531,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// usinc XCM.
 	fn sync_anchor(tree_id: T::TreeId) -> DispatchResult {
 		// we get the current anchor tree
-		let tree = pallet_mt::Trees::<T, I>::get(tree_id);
+		let tree = match pallet_mt::Trees::<T, I>::get(tree_id) {
+			Some(t) => t,
+			None => return Err(Error::<T, I>::AnchorNotFound.into()),
+		};
 		// extract the root
 		let root = tree.root;
 		// and the latest leaf index
@@ -592,6 +595,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				}
 			}
 		}
+
 		Ok(())
 	}
 }

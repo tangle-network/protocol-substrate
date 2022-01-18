@@ -13,7 +13,7 @@ pub trait LinkableTreeConfig {
 /// LinkableTree trait definition to be used in other pallets
 pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 	// Creates a new linkable tree
-	fn create(creator: C::AccountId, max_edges: u32, depth: u8) -> Result<C::TreeId, dispatch::DispatchError>;
+	fn create(creator: Option<C::AccountId>, max_edges: u32, depth: u8) -> Result<C::TreeId, dispatch::DispatchError>;
 	// Insert new leaf to the tree
 	fn insert_in_order(id: C::TreeId, leaf: C::Element) -> Result<C::Element, dispatch::DispatchError>;
 	/// Add an edge to this tree

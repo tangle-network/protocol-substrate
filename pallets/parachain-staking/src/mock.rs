@@ -21,9 +21,10 @@ use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{Everything, GenesisBuild, OnFinalize, OnInitialize},
 	weights::Weight,
+	PalletId,
 };
 use sp_core::H256;
-
+use sp_io;
 use sp_runtime::{
 	testing::{Header, UintAuthorityId},
 	traits::{BlakeTwo256, IdentityLookup, OpaqueKeys},
@@ -85,6 +86,7 @@ impl frame_system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 parameter_types! {
 	pub const ExistentialDeposit: u128 = 1;
@@ -145,13 +147,13 @@ impl pallet_session::SessionHandler<u64> for TestSessionHandler {
 	const KEY_TYPE_IDS: &'static [sp_runtime::KeyTypeId] = &[UintAuthorityId::ID];
 
 	fn on_genesis_session<Ks: OpaqueKeys>(keys: &[(u64, Ks)]) {
-		SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
+		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 
 	fn on_new_session<Ks: OpaqueKeys>(_: bool, keys: &[(u64, Ks)], _: &[(u64, Ks)]) {
 		SessionChangeBlock::set(System::block_number());
 		dbg!(keys.len());
-		SessionHandlerCollators::set(keys.iter().map(|(a, _)| *a).collect::<Vec<_>>())
+		SessionHandlerCollators::set(keys.into_iter().map(|(a, _)| *a).collect::<Vec<_>>())
 	}
 
 	fn on_before_session_ending() {}
@@ -187,10 +189,12 @@ parameter_types! {
 	pub const MinCollatorStk: u128 = 10;
 	pub const MinNominatorStk: u128 = 5;
 	pub const MinNomination: u128 = 3;
+	pub const ParachainStakingPalletId: PalletId = PalletId(*b"dw/pcstk");
 }
 
 impl Config for Test {
 	type BlocksPerRound = BlocksPerRound;
+	type PalletId = ParachainStakingPalletId;
 	type Currency = Balances;
 	type DefaultCollatorCommission = DefaultCollatorCommission;
 	type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
@@ -229,11 +233,7 @@ impl Default for ExtBuilder {
 			nominations: vec![],
 			collators: vec![],
 			inflation: InflationInfo {
-				expect: Range {
-					min: 700,
-					ideal: 700,
-					max: 700,
-				},
+				expect: Range { min: 700, ideal: 700, max: 700 },
 				// not used
 				annual: Range {
 					min: Perbill::from_percent(50),
@@ -262,7 +262,10 @@ impl ExtBuilder {
 		self
 	}
 
-	pub(crate) fn with_nominations(mut self, nominations: Vec<(AccountId, AccountId, Balance)>) -> Self {
+	pub(crate) fn with_nominations(
+		mut self,
+		nominations: Vec<(AccountId, AccountId, Balance)>,
+	) -> Self {
 		self.nominations = nominations;
 		self
 	}
@@ -278,11 +281,9 @@ impl ExtBuilder {
 			.build_storage::<Test>()
 			.expect("Frame system builds valid default genesis config");
 
-		pallet_balances::GenesisConfig::<Test> {
-			balances: self.balances,
-		}
-		.assimilate_storage(&mut t)
-		.expect("Pallet balances storage can be assimilated");
+		pallet_balances::GenesisConfig::<Test> { balances: self.balances }
+			.assimilate_storage(&mut t)
+			.expect("Pallet balances storage can be assimilated");
 		stake::GenesisConfig::<Test> {
 			candidates: self.collators,
 			nominations: self.nominations,
@@ -294,11 +295,7 @@ impl ExtBuilder {
 		let validators = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 		let keys = validators
 			.iter()
-			.map(|i| {
-				(*i, *i, MockSessionKeys {
-					aura: UintAuthorityId(*i),
-				})
-			})
+			.map(|i| (*i, *i, MockSessionKeys { aura: UintAuthorityId(*i) }))
 			.collect::<Vec<_>>();
 
 		pallet_session::GenesisConfig::<Test> { keys }

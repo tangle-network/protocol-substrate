@@ -37,6 +37,7 @@ common = { path = "../common" }
 # Parachain runtimes
 darkwebb-runtime = { path = "../runtime", version = "0.1.0" }
 shell-runtime = { git = "https://github.com/paritytech/cumulus", branch = "master" }
+try-runtime-cli = { version = "0.10.0-dev", git = 'https://github.com/paritytech/substrate', branch = "master" }
 
 # Substrate dependencies
 frame-benchmarking = { git = 'https://github.com/paritytech/substrate', branch = "master" }
@@ -71,8 +72,8 @@ substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate
 
 # RPC related dependencies
 jsonrpc-core = "18.0.0"
+substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
-frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # Cumulus dependencies
@@ -85,6 +86,8 @@ cumulus-client-service = { git = "https://github.com/paritytech/cumulus", branch
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "master" }
 cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/cumulus", branch = "master" }
 cumulus-client-consensus-relay-chain = { git = "https://github.com/paritytech/cumulus", branch = "master" }
+cumulus-relay-chain-interface = { git = "https://github.com/paritytech/cumulus", branch = "master" }
+cumulus-relay-chain-local = { git = "https://github.com/paritytech/cumulus", branch = "master" }
 
 # Polkadot dependencies
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master" }

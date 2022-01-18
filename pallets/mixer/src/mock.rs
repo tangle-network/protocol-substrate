@@ -4,6 +4,7 @@ use super::*;
 use crate as pallet_mixer;
 use codec::Decode;
 use frame_support::traits::GenesisBuild;
+use webb_primitives::verifying::ArkworksVerifierBn254;
 use sp_core::H256;
 
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
@@ -71,6 +72,7 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -97,14 +99,9 @@ parameter_types! {
 }
 
 impl pallet_hasher::Config for Test {
-	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ParameterDeposit;
-	type StringLimit = StringLimit;
 	type WeightInfo = ();
 }
 
@@ -161,14 +158,9 @@ impl pallet_mt::Config for Test {
 }
 
 impl pallet_verifier::Config for Test {
-	type Currency = Balances;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ParameterDeposit;
-	type StringLimit = StringLimit;
-	type Verifier = webb_primitives::verifying::ArkworksVerifierBn254;
+	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 

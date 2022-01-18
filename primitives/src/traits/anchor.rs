@@ -16,7 +16,7 @@ pub trait AnchorConfig {
 pub trait AnchorInterface<C: AnchorConfig> {
 	// Creates a new anchor
 	fn create(
-		creator: C::AccountId,
+		creator: Option<C::AccountId>,
 		deposit_size: C::Balance,
 		depth: u8,
 		max_edges: u32,

@@ -6,7 +6,7 @@ pub use webb_primitives::{ElementTrait, InstanceHasher};
 use frame_support::{ord_parameter_types, parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
-
+use webb_primitives::verifying::ArkworksVerifierBn254;
 pub use pallet_balances;
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
@@ -78,6 +78,7 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -108,14 +109,9 @@ parameter_types! {
 }
 
 impl pallet_verifier::Config for Test {
-	type Currency = Balances;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ParameterDeposit;
-	type StringLimit = StringLimit;
-	type Verifier = webb_primitives::verifying::ArkworksVerifierBls381;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
@@ -127,14 +123,9 @@ impl InstanceHasher for TestHasher {
 }
 
 impl pallet_hasher::Config for Test {
-	type Currency = Balances;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = TestHasher;
-	type MetadataDepositBase = MetadataDepositBase;
-	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ParameterDeposit = ParameterDeposit;
-	type StringLimit = StringLimit;
 	type WeightInfo = ();
 }
 
@@ -176,7 +167,7 @@ impl pallet_mt::Config for Test {
 	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
 	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
 	type LeafIndex = u32;
 	type MaxTreeDepth = MaxTreeDepth;
