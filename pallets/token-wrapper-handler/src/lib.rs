@@ -50,9 +50,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
-pub mod mock;
+pub mod mock_bridge;
 #[cfg(test)]
-mod tests;
+mod tests_bridge;
+
+#[cfg(test)]
+pub mod mock_signature_bridge;
+#[cfg(test)]
+mod tests_signature_bridge;
 
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;

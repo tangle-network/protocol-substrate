@@ -1,6 +1,6 @@
 use std::convert::TryInto;
 
-use crate::mock::*;
+use crate::mock_bridge::*;
 
 use asset_registry::AssetType;
 use frame_support::{assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin};
