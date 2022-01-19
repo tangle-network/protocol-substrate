@@ -62,7 +62,6 @@ fn make_remove_token_proposal(resource_id: &[u8; 32], name: Vec<u8>, asset_id: u
 // ----Signature Bridge Tests----
 
 #[test]
-
 fn should_update_fee_with_sig_succeed() {
 	let src_id = 1u32;
 	let r_id = derive_resource_id(src_id, b"execute_wrapping_fee_proposal");
