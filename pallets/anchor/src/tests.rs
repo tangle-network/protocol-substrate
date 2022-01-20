@@ -43,7 +43,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			// 3. Setup the VerifierPallet
 			//    but to do so, we need to have a VerifyingKey
 			let (pk_bytes, vk_bytes) = (
-				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key.bin")
+				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key_uncompressed.bin")
 					.expect("Unable to read file")
 					.to_vec(),
 				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin")
