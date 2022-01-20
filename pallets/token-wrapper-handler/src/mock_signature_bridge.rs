@@ -2,7 +2,7 @@
 
 use super::*;
 use crate as pallet_token_wrapper_handler;
-use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::Nothing, PalletId};
+use frame_support::{assert_ok, pallet_prelude::GenesisBuild, parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
 use sp_core::H256;
@@ -31,7 +31,7 @@ frame_support::construct_runtime!(
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>},
 		TokenWrapperHandler: pallet_token_wrapper_handler::{Pallet, Call, Storage, Event<T>},
-		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>}
+		SignatureBridge: pallet_signature_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>}
 	}
 );
 
@@ -56,6 +56,7 @@ impl system::Config for Test {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -64,7 +65,6 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -170,6 +170,7 @@ impl pallet_token_wrapper::Config for Test {
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
 pub type ChainId = u32;
+pub type ProposalNonce = u32;
 
 parameter_types! {
 	pub const ProposalLifetime: u64 = 50;
@@ -177,8 +178,8 @@ parameter_types! {
 	pub const ChainIdentifier: u8 = 5;
 }
 
-type BridgeInstance = pallet_bridge::Instance1;
-impl pallet_bridge::Config<BridgeInstance> for Test {
+type BridgeInstance = pallet_signature_bridge::Instance1;
+impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
 	type ChainId = ChainId;
@@ -186,10 +187,12 @@ impl pallet_bridge::Config<BridgeInstance> for Test {
 	type Event = Event;
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
+	type ProposalNonce = ProposalNonce;
+	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 }
 
 impl Config for Test {
-	type BridgeOrigin = pallet_bridge::EnsureBridge<Test, BridgeInstance>;
+	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Test, BridgeInstance>;
 	type Event = Event;
 	type TokenWrapper = TokenWrapper;
 }
@@ -210,4 +213,37 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
+}
+
+// Checks events against the latest. A contiguous set of events must be
+// provided. They must include the most recent event, but do not have to include
+// every past event.
+pub fn assert_events(mut expected: Vec<Event>) {
+	let mut actual: Vec<Event> = system::Pallet::<Test>::events()
+		.iter()
+		.map(|e| e.event.clone())
+		.collect();
+
+	expected.reverse();
+
+	for evt in expected {
+		let next = actual.pop().expect("event expected");
+		assert_eq!(next, evt, "Events don't match (actual,expected)");
+	}
+}
+
+pub fn new_test_ext_initialized(
+	src_id: <Test as pallet_signature_bridge::Config<BridgeInstance>>::ChainId,
+	r_id: ResourceId,
+	resource: Vec<u8>,
+) -> sp_io::TestExternalities {
+	let mut t = new_test_ext();
+	t.execute_with(|| {
+		// Whitelist chain
+		assert_ok!(SignatureBridge::whitelist_chain(Origin::root(), src_id));
+		// Set and check resource ID mapped to some junk data
+		assert_ok!(SignatureBridge::set_resource(Origin::root(), r_id, resource));
+		assert!(SignatureBridge::resource_exists(r_id));
+	});
+	t
 }
