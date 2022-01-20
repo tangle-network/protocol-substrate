@@ -358,7 +358,6 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		for root in &roots {
 			bytes.extend_from_slice(&root.encode());
 		}
-		bytes.extend_from_slice(&roots[0].encode());
 		bytes.extend_from_slice(&recipient_bytes);
 		bytes.extend_from_slice(&relayer_bytes);
 		bytes.extend_from_slice(&fee_bytes);

@@ -411,8 +411,6 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
 		assert_eq!(roots_element[0], tree_root);
 
-		// now double spending should fail.
-
 		let a = proof_bytes[0];
 		let b = proof_bytes[1];
 
@@ -432,7 +430,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 				refund_value.into(),
 				commitment_element
 			),
-			crate::Error::<Test, _>::InvalidWithdrawProof
+			pallet_verifier::Error::<Test, _>::VerifyError
 		);
 	});
 }
