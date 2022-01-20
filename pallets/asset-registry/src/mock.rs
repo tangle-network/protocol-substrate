@@ -16,7 +16,6 @@
 // limitations under the License.
 
 #![cfg(test)]
-use webb_primitives::{AssetId, Balance};
 use frame_support::{
 	parameter_types,
 	traits::{Everything, GenesisBuild},
@@ -29,6 +28,7 @@ use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
+use webb_primitives::{AssetId, Balance};
 
 // use polkadot_xcm::v0::MultiLocation;
 
@@ -72,6 +72,7 @@ impl system::Config for Test {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -80,7 +81,6 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 use codec::{Decode, Encode};

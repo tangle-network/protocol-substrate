@@ -65,6 +65,11 @@ pub mod weights;
 use types::MixerMetadata;
 
 use codec::Encode;
+use frame_support::{
+	ensure, pallet_prelude::DispatchError, sp_runtime::traits::AccountIdConversion, traits::Get, PalletId,
+};
+use orml_traits::{currency::transactional, MultiCurrency};
+use sp_std::prelude::*;
 use webb_primitives::{
 	traits::{
 		merkle_tree::{TreeInspector, TreeInterface},
@@ -72,12 +77,6 @@ use webb_primitives::{
 	},
 	verifier::*,
 };
-use frame_support::{
-	ensure, pallet_prelude::DispatchError, sp_runtime::traits::AccountIdConversion, traits::Get, PalletId,
-};
-use orml_traits::MultiCurrency;
-use sp_std::prelude::*;
-use orml_traits::currency::transactional;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
@@ -129,13 +128,8 @@ pub mod pallet {
 	/// The map of trees to their mixer metadata
 	#[pallet::storage]
 	#[pallet::getter(fn mixers)]
-	pub type Mixers<T: Config<I>, I: 'static = ()> = StorageMap<
-		_,
-		Blake2_128Concat,
-		T::TreeId,
-		MixerMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>,
-		OptionQuery,
-	>;
+	pub type Mixers<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::TreeId, MixerMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, OptionQuery>;
 
 	/// The map of trees to their spent nullifier hashes
 	#[pallet::storage]
@@ -165,7 +159,6 @@ pub mod pallet {
 		NoMixerFound,
 	}
 
-
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
 		// (asset_id, deposit_size)
@@ -175,9 +168,7 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
 		fn default() -> Self {
-			GenesisConfig::<T, I> {
-				mixers: Vec::new(),
-			}
+			GenesisConfig::<T, I> { mixers: Vec::new() }
 		}
 	}
 
@@ -185,18 +176,13 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
 		fn build(&self) {
 			self.mixers.iter().for_each(|(asset_id, deposit_size)| {
-				let _ = <Pallet::<T, I> as MixerInterface<
+				let _ = <Pallet<T, I> as MixerInterface<
 					T::AccountId,
 					BalanceOf<T, I>,
 					CurrencyIdOf<T, I>,
 					T::TreeId,
 					T::Element,
-				>>::create(
-					None,
-					deposit_size.clone(),
-					30,
-					asset_id.clone(),
-				)
+				>>::create(None, deposit_size.clone(), 30, asset_id.clone())
 				.map_err(|_| panic!("Failed to create mixer"));
 			})
 		}
@@ -215,8 +201,7 @@ pub mod pallet {
 			asset: CurrencyIdOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id =
-				<Self as MixerInterface<_, _, _, _, _>>::create(None, deposit_size, depth, asset)?;
+			let tree_id = <Self as MixerInterface<_, _, _, _, _>>::create(None, deposit_size, depth, asset)?;
 			Self::deposit_event(Event::MixerCreation { tree_id });
 			Ok(().into())
 		}
@@ -268,13 +253,7 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 		asset: CurrencyIdOf<T, I>,
 	) -> Result<T::TreeId, DispatchError> {
 		let id = T::Tree::create(creator, depth)?;
-		Mixers::<T, I>::insert(
-			id,
-			MixerMetadata {
-				deposit_size,
-				asset,
-			},
-		);
+		Mixers::<T, I>::insert(id, MixerMetadata { deposit_size, asset });
 		Ok(id)
 	}
 
@@ -378,9 +357,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::PalletId::get().into_account()
 	}
 
-	pub fn get_mixer(
-		id: T::TreeId,
-	) -> Result<MixerMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
+	pub fn get_mixer(id: T::TreeId) -> Result<MixerMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
 		let mixer = Self::mixers(id);
 		ensure!(mixer.is_some(), Error::<T, I>::NoMixerFound);
 		Ok(mixer.unwrap())

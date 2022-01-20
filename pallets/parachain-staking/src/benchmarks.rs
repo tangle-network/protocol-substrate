@@ -32,11 +32,7 @@ fn default_balance<T: Config>() -> BalanceOf<T> {
 }
 
 /// Create a funded user.
-fn create_funded_user<T: Config>(
-	string: &'static str,
-	n: u32,
-	extra: BalanceOf<T>,
-) -> T::AccountId {
+fn create_funded_user<T: Config>(string: &'static str, n: u32, extra: BalanceOf<T>) -> T::AccountId {
 	const SEED: u32 = 0;
 	let user = account(string, n, SEED);
 	let default_balance = default_balance::<T>();

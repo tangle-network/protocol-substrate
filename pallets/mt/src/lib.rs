@@ -62,15 +62,15 @@ use types::TreeMetadata;
 
 pub use weights::WeightInfo;
 
+use frame_support::traits::{Currency, Get, ReservableCurrency};
+use frame_system::Config as SystemConfig;
+use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
+use sp_std::prelude::*;
 use webb_primitives::{
 	hasher::*,
 	traits::merkle_tree::{TreeInspector, TreeInterface},
 	types::{DepositDetails, ElementTrait},
 };
-use frame_support::traits::{Currency, Get, ReservableCurrency};
-use frame_system::Config as SystemConfig;
-use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
-use sp_std::prelude::*;
 
 type DepositBalanceOf<T, I = ()> = <<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 

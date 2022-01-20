@@ -50,6 +50,7 @@ impl system::Config for Test {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -58,7 +59,6 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {

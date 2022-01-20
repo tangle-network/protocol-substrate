@@ -55,6 +55,12 @@ mod test_utils;
 mod tests;
 
 use codec::Encode;
+use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
+use orml_traits::{
+	arithmetic::{Signed, Zero},
+	currency::transactional,
+	MultiCurrency, MultiCurrencyExtended,
+};
 use webb_primitives::{
 	field_ops::IntoPrimeField,
 	hasher::InstanceHasher,
@@ -67,12 +73,6 @@ use webb_primitives::{
 	utils::element_encoder,
 	verifier::*,
 };
-use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
-use orml_traits::{
-	arithmetic::{Signed, Zero},
-	MultiCurrency, MultiCurrencyExtended,
-};
-use orml_traits::currency::transactional;
 
 use sp_runtime::traits::AccountIdConversion;
 use sp_std::{
@@ -143,13 +143,8 @@ pub mod pallet {
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
 	#[pallet::getter(fn vanchors)]
-	pub type VAnchors<T: Config<I>, I: 'static = ()> = StorageMap<
-		_,
-		Blake2_128Concat,
-		T::TreeId,
-		VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>,
-		OptionQuery,
-	>;
+	pub type VAnchors<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::TreeId, VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>, OptionQuery>;
 
 	/// The map of trees to their spent nullifier hashes
 	#[pallet::storage]

@@ -7,12 +7,12 @@ use crate::{
 	Error,
 };
 use arkworks_utils::utils::common::Curve;
+use frame_benchmarking::account;
+use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use webb_primitives::{
 	types::vanchor::{ExtData, ProofData},
 	AccountId,
 };
-use frame_benchmarking::account;
-use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;

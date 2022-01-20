@@ -8,8 +8,8 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
-use webb_primitives::ElementTrait;
 use pallet_mt_rpc_runtime_api::MerkleTreeApi;
+use webb_primitives::ElementTrait;
 
 /// Merkle RPC methods.
 #[rpc]

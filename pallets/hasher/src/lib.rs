@@ -63,12 +63,12 @@ pub mod weights;
 use sp_runtime::traits::{Saturating, Zero};
 use sp_std::{prelude::*, vec};
 
-use webb_primitives::{hasher::*, types::DepositDetails};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchError},
 	traits::{Currency, ReservableCurrency},
 };
 use frame_system::Config as SystemConfig;
+use webb_primitives::{hasher::*, types::DepositDetails};
 
 pub use pallet::*;
 pub use weights::WeightInfo;

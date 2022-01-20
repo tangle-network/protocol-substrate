@@ -4,12 +4,12 @@ use arkworks_utils::{
 	utils::common::{setup_params_x5_3, setup_params_x5_5, Curve},
 };
 use common::{AccountId, AuraId, Signature};
-use webb_primitives::Balance;
 use darkwebb_runtime::{
 	wasm_binary_unwrap, AssetRegistryConfig, AuraConfig, BalancesConfig, CouncilConfig, GenesisConfig,
 	HasherBls381Config, HasherBn254Config, MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config,
 	ParachainStakingConfig, SudoConfig, SystemConfig, VerifierBls381Config, VerifierBn254Config, KUNITS, UNITS,
 };
+use webb_primitives::Balance;
 
 use cumulus_primitives_core::ParaId;
 use hex_literal::hex;

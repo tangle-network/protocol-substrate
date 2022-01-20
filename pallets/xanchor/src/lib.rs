@@ -43,10 +43,6 @@
 use codec::Encode;
 use cumulus_pallet_xcm::{ensure_sibling_para, Origin as CumulusOrigin};
 use cumulus_primitives_core::ParaId;
-use webb_primitives::{
-	anchor::{AnchorInspector, AnchorInterface},
-	utils, ResourceId,
-};
 use frame_support::{
 	dispatch::{DispatchResult, DispatchResultWithPostInfo},
 	ensure,
@@ -56,6 +52,10 @@ use frame_system::{pallet_prelude::*, Config as SystemConfig};
 use pallet_anchor::{AnchorConfigration, PostDepositHook};
 use pallet_linkable_tree::types::EdgeMetadata;
 use sp_std::prelude::*;
+use webb_primitives::{
+	anchor::{AnchorInspector, AnchorInterface},
+	utils, ResourceId,
+};
 use xcm::latest::prelude::*;
 
 #[cfg(test)]
@@ -78,8 +78,8 @@ pub type LinkProposalOf<T, I> = LinkProposal<ChainIdOf<T, I>, TreeIdOf<T, I>>;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use webb_primitives::utils;
 	use pallet_anchor::BalanceOf;
+	use webb_primitives::utils;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]

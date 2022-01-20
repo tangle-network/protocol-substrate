@@ -20,16 +20,14 @@ use arkworks_gadgets::{
 };
 use arkworks_utils::{
 	poseidon::PoseidonParameters,
-	utils::common::{
-		setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve,
-	},
+	utils::common::{setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve},
 };
 use codec::Encode;
 use webb_primitives::{
 	hashing::ethereum::keccak256,
-	verifying::arkworks::verify_groth16,
 	types::{IntoAbiToken, Token},
 	utils::element_encoder,
+	verifying::arkworks::verify_groth16,
 	ElementTrait,
 };
 

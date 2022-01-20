@@ -5,14 +5,6 @@ use crate as pallet_vanchor;
 use codec::{Decode, Encode};
 use sp_core::H256;
 
-pub use webb_primitives::{
-	field_ops::arkworks::ArkworksIntoFieldBn254,
-	hasher::{HasherModule, InstanceHasher},
-	hashing::ethereum::Keccak256HasherBn254,
-	types::{ElementTrait, IntoAbiToken},
-	AccountId,
-};
-use webb_primitives::{hashing::ArkworksPoseidonHasherBn254, verifying::ArkworksVerifierBn254};
 use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
@@ -22,6 +14,14 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	Permill,
 };
+pub use webb_primitives::{
+	field_ops::arkworks::ArkworksIntoFieldBn254,
+	hasher::{HasherModule, InstanceHasher},
+	hashing::ethereum::Keccak256HasherBn254,
+	types::{ElementTrait, IntoAbiToken},
+	AccountId,
+};
+use webb_primitives::{hashing::ArkworksPoseidonHasherBn254, verifying::ArkworksVerifierBn254};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -79,6 +79,7 @@ impl system::Config for Test {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -87,7 +88,6 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {

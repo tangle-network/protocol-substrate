@@ -49,7 +49,6 @@ mod tests;
 pub mod utils;
 
 use codec::{Decode, Encode, EncodeLike};
-use webb_primitives::{ResourceId, signing::SigningSystem};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
@@ -62,6 +61,7 @@ use sp_runtime::{
 	RuntimeDebug,
 };
 use sp_std::prelude::*;
+use webb_primitives::{signing::SigningSystem, ResourceId};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -185,11 +185,13 @@ pub mod pallet {
 			let origin = ensure_signed(origin)?;
 			let old_maintainer = <Maintainer<T, I>>::get();
 			// ensure parameter setter is the maintainer
-			ensure!(T::SignatureVerifier::verify(
+			ensure!(
+				T::SignatureVerifier::verify(
 					&Self::maintainer().encode()[..],
 					&new_maintainer.encode()[..],
 					&signature
-				).unwrap_or(false),
+				)
+				.unwrap_or(false),
 				Error::<T, I>::InvalidPermissions
 			);
 			// set the new maintainer
@@ -276,11 +278,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let _ = ensure_signed(origin)?;
 			ensure!(
-				T::SignatureVerifier::verify(
-					&Self::maintainer(),
-					&call.encode()[..],
-					&signature
-				).unwrap_or(false),
+				T::SignatureVerifier::verify(&Self::maintainer(), &call.encode()[..], &signature).unwrap_or(false),
 				Error::<T, I>::InvalidPermissions,
 			);
 			ensure!(Self::chain_whitelisted(src_id), Error::<T, I>::ChainNotWhitelisted);

@@ -55,14 +55,14 @@ mod benchmarking;
 pub mod types;
 pub mod weights;
 use codec::{Decode, Encode};
-use webb_primitives::{
-	traits::{linkable_tree::*, merkle_tree::*},
-	ElementTrait,
-};
 use frame_support::{ensure, pallet_prelude::DispatchError, traits::Get};
 use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
 use sp_std::prelude::*;
 use types::*;
+use webb_primitives::{
+	traits::{linkable_tree::*, merkle_tree::*},
+	ElementTrait,
+};
 pub use weights::WeightInfo;
 
 pub use pallet::*;

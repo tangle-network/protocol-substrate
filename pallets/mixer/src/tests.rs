@@ -1,9 +1,9 @@
 use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 use codec::Encode;
-use webb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use sp_runtime::traits::{One, Zero};
+use webb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 
 use orml_traits::MultiCurrency;
 use pallet_asset_registry::AssetType;

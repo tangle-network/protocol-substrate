@@ -36,7 +36,7 @@ where
 		<pallet_balances::Pallet<R>>::resolve_creating(&treasury, amount);
 		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit {
 			who: treasury,
-			amount: numeric_amount
+			amount: numeric_amount,
 		});
 	}
 }
@@ -114,6 +114,7 @@ mod tests {
 		type Header = Header;
 		type Index = u64;
 		type Lookup = IdentityLookup<Self::AccountId>;
+		type MaxConsumers = frame_support::traits::ConstU32<16>;
 		type OnKilledAccount = ();
 		type OnNewAccount = ();
 		type OnSetCode = ();
@@ -122,7 +123,6 @@ mod tests {
 		type SS58Prefix = ();
 		type SystemWeightInfo = ();
 		type Version = ();
-		type MaxConsumers = frame_support::traits::ConstU32<16>;
 	}
 
 	impl pallet_balances::Config for Test {

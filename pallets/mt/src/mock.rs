@@ -4,8 +4,6 @@ use super::*;
 use crate as pallet_mt;
 use sp_core::H256;
 
-use webb_primitives::AccountId;
-pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
 use frame_support::{parameter_types, traits::GenesisBuild};
 use frame_system as system;
 use serde::{Deserialize, Serialize};
@@ -13,6 +11,8 @@ use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
+pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
+use webb_primitives::AccountId;
 
 use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 
@@ -54,6 +54,7 @@ impl system::Config for Test {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -62,7 +63,6 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {

@@ -10,19 +10,6 @@ pub mod constants;
 pub use constants::{currency::*, fee::WeightToFee, time::*};
 mod weights;
 
-use sp_api::impl_runtime_apis;
-use sp_core::{
-	crypto::KeyTypeId,
-	u32_trait::{_1, _2, _3, _5},
-	OpaqueMetadata,
-};
-use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, AccountIdConversion},
-	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, Percent, Permill,
-};
-use sp_runtime::AccountId32;
 use codec::{Decode, Encode, MaxEncodedLen};
 use common::{
 	impls::DealWithFees, opaque, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
@@ -30,7 +17,7 @@ use common::{
 };
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
-	traits::{Contains, Everything, InstanceFilter, EnsureOneOf},
+	traits::{Contains, EnsureOneOf, Everything, InstanceFilter},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
 		DispatchClass, IdentityFee, Weight,
@@ -41,7 +28,18 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use sp_runtime::Perbill;
+use sp_api::impl_runtime_apis;
+use sp_core::{
+	crypto::KeyTypeId,
+	u32_trait::{_1, _2, _3, _5},
+	OpaqueMetadata,
+};
+use sp_runtime::{
+	create_runtime_str, generic, impl_opaque_keys,
+	traits::{AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT},
+	transaction_validity::{TransactionSource, TransactionValidity},
+	AccountId32, ApplyExtrinsicResult, Perbill, Percent, Permill,
+};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -67,13 +65,13 @@ use xcm_builder::{
 };
 use xcm_executor::{Config, XcmExecutor};
 
+use frame_support::traits::ConstU128;
 use webb_primitives::{
 	hashing::{ArkworksPoseidonHasherBls381, ArkworksPoseidonHasherBn254},
 	types::ElementTrait,
 	verifying::{ArkworksVerifierBls381, ArkworksVerifierBn254},
 	Amount, ChainId,
 };
-use frame_support::traits::ConstU128;
 
 impl_opaque_keys! {
 	pub struct SessionKeys {
@@ -162,6 +160,7 @@ impl frame_system::Config for Runtime {
 	type Header = Header;
 	type Index = Index;
 	type Lookup = AccountIdLookup<AccountId, ()>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
@@ -170,7 +169,6 @@ impl frame_system::Config for Runtime {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = Version;
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -241,7 +239,6 @@ parameter_types! {
 
 impl pallet_parachain_staking::Config for Runtime {
 	type BlocksPerRound = BlocksPerRound;
-	type PalletId = ParachainStakingPalletId;
 	type Currency = Balances;
 	type DefaultCollatorCommission = DefaultCollatorCommission;
 	type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
@@ -257,6 +254,7 @@ impl pallet_parachain_staking::Config for Runtime {
 	type MinNominatorStk = MinNominatorStk;
 	type MinSelectedCandidates = MinSelectedCandidates;
 	type MonetaryGovernanceOrigin = EnsureRoot<AccountId>;
+	type PalletId = ParachainStakingPalletId;
 	type RevokeNominationDelay = RevokeNominationDelay;
 	type RewardPaymentDelay = RewardPaymentDelay;
 	type WeightInfo = pallet_parachain_staking::weights::SubstrateWeight<Runtime>;
@@ -463,23 +461,21 @@ pub type AssetsForceOrigin =
 	EnsureOneOf<EnsureRoot<AccountId>, EnsureXcm<IsMajorityOfBody<KsmLocation, ExecutiveBody>>>;
 
 impl pallet_assets::Config for Runtime {
-	type Event = Event;
-	type Balance = u128;
-	type AssetId = u32;
-	type Currency = Balances;
-	type ForceOrigin = EnsureRoot<AccountId>;
-	type AssetDeposit = AssetDeposit;
+	type ApprovalDeposit = ApprovalDeposit;
 	type AssetAccountDeposit = ConstU128<DOLLARS>;
+	type AssetDeposit = AssetDeposit;
+	type AssetId = u32;
+	type Balance = u128;
+	type Currency = Balances;
+	type Event = Event;
+	type Extra = ();
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type Freezer = ();
 	type MetadataDepositBase = MetadataDepositBase;
 	type MetadataDepositPerByte = MetadataDepositPerByte;
-	type ApprovalDeposit = ApprovalDeposit;
 	type StringLimit = StringLimit;
-	type Freezer = ();
-	type Extra = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
-
-
 
 impl pallet_sudo::Config for Runtime {
 	type Call = Call;
@@ -492,14 +488,14 @@ parameter_types! {
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
+	type DmpMessageHandler = DmpQueue;
 	type Event = Event;
 	type OnSystemEvent = ();
-	type SelfParaId = parachain_info::Pallet<Runtime>;
-	type DmpMessageHandler = DmpQueue;
-	type ReservedDmpWeight = ReservedDmpWeight;
 	type OutboundXcmpMessageSource = XcmpQueue;
-	type XcmpMessageHandler = XcmpQueue;
+	type ReservedDmpWeight = ReservedDmpWeight;
 	type ReservedXcmpWeight = ReservedXcmpWeight;
+	type SelfParaId = parachain_info::Pallet<Runtime>;
+	type XcmpMessageHandler = XcmpQueue;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -629,19 +625,19 @@ pub type XcmRouter = (
 );
 
 impl pallet_xcm::Config for Runtime {
-	type Event = Event;
+	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 	type Call = Call;
+	type Event = Event;
+	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+	type LocationInverter = LocationInverter<Ancestry>;
 	type Origin = Origin;
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type XcmRouter = XcmRouter;
-	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type XcmExecuteFilter = Everything;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Everything;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-	type LocationInverter = LocationInverter<Ancestry>;
-	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+	type XcmRouter = XcmRouter;
+	type XcmTeleportFilter = Everything;
 
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 }
@@ -652,17 +648,17 @@ impl cumulus_pallet_xcm::Config for Runtime {
 }
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
-	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ChannelInfo = ParachainSystem;
-	type VersionWrapper = ();
+	type Event = Event;
 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+	type VersionWrapper = ();
+	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
 	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
 	type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 parameter_types! {
@@ -974,23 +970,23 @@ impl pallet_treasury::Config for Runtime {
 }
 
 impl pallet_bounties::Config for Runtime {
-	type Event = Event;
+	type BountyCuratorDeposit = BountyCuratorDeposit;
 	type BountyDepositBase = BountyDepositBase;
 	type BountyDepositPayoutDelay = BountyDepositPayoutDelay;
 	type BountyUpdatePeriod = BountyUpdatePeriod;
-	type BountyCuratorDeposit = BountyCuratorDeposit;
 	type BountyValueMinimum = BountyValueMinimum;
+	type ChildBountyManager = ChildBounties;
 	type DataDepositPerByte = DataDepositPerByte;
+	type Event = Event;
 	type MaximumReasonLength = MaximumReasonLength;
 	type WeightInfo = pallet_bounties::weights::SubstrateWeight<Runtime>;
-	type ChildBountyManager = ChildBounties;
 }
 
 impl pallet_child_bounties::Config for Runtime {
+	type ChildBountyCuratorDepositBase = ChildBountyCuratorDepositBase;
+	type ChildBountyValueMinimum = ChildBountyValueMinimum;
 	type Event = Event;
 	type MaxActiveChildBountyCount = MaxActiveChildBountyCount;
-	type ChildBountyValueMinimum = ChildBountyValueMinimum;
-	type ChildBountyCuratorDepositBase = ChildBountyCuratorDepositBase;
 	type WeightInfo = pallet_child_bounties::weights::SubstrateWeight<Runtime>;
 }
 

@@ -23,7 +23,7 @@
 use common::Block;
 use darkwebb_runtime::RuntimeApi;
 use futures::prelude::*;
-use sc_client_api::{ExecutorProvider, BlockBackend};
+use sc_client_api::{BlockBackend, ExecutorProvider};
 use sc_consensus_babe::{self, SlotProportion};
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::{Event, NetworkService};
@@ -90,12 +90,12 @@ pub fn new_partial(
 		})
 		.transpose()?;
 
-		let executor = NativeElseWasmExecutor::<ExecutorDispatch>::new(
-			config.wasm_method,
-			config.default_heap_pages,
-			config.max_runtime_instances,
-			config.runtime_cache_size,
-		);
+	let executor = NativeElseWasmExecutor::<ExecutorDispatch>::new(
+		config.wasm_method,
+		config.default_heap_pages,
+		config.max_runtime_instances,
+		config.runtime_cache_size,
+	);
 
 	let (client, backend, keystore_container, task_manager) = sc_service::new_full_parts::<Block, RuntimeApi, _>(
 		config,
@@ -258,7 +258,9 @@ pub fn new_full_base(
 	config
 		.network
 		.extra_sets
-		.push(sc_finality_grandpa::grandpa_peers_set_config(grandpa_protocol_name.clone()));
+		.push(sc_finality_grandpa::grandpa_peers_set_config(
+			grandpa_protocol_name.clone(),
+		));
 	let warp_sync = Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
 		backend.clone(),
 		import_setup.1.shared_authority_set().clone(),
@@ -352,11 +354,9 @@ pub fn new_full_base(
 		};
 
 		let babe = sc_consensus_babe::start_babe(babe_config)?;
-		task_manager.spawn_essential_handle().spawn_blocking(
-			"babe-proposer",
-			Some("block-authoring"),
-			babe,
-		);
+		task_manager
+			.spawn_essential_handle()
+			.spawn_blocking("babe-proposer", Some("block-authoring"), babe);
 	}
 
 	// Spawn authority discovery module.

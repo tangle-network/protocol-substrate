@@ -3,7 +3,6 @@
 use crate as pallet_xanchor;
 
 use codec::{Decode, Encode};
-use webb_primitives::{Amount, BlockNumber, ChainId};
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchResult,
@@ -22,15 +21,16 @@ use sp_runtime::{
 	Perbill,
 };
 use sp_std::{convert::TryFrom, prelude::*};
+use webb_primitives::{Amount, BlockNumber, ChainId};
 
+use pallet_xcm::XcmPassthrough;
+use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
+use polkadot_parachain::primitives::{DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler};
 pub use webb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
 	types::ElementTrait,
 	AccountId,
 };
-use pallet_xcm::XcmPassthrough;
-use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
-use polkadot_parachain::primitives::{DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler};
 use xcm::{latest::prelude::*, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin,
@@ -67,6 +67,7 @@ impl frame_system::Config for Runtime {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -75,7 +76,6 @@ impl frame_system::Config for Runtime {
 	type SS58Prefix = ();
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -460,8 +460,8 @@ parameter_types! {
 
 impl pallet_linkable_tree::Config for Runtime {
 	type ChainId = ChainId;
-	type Event = Event;
 	type ChainIdentifier = ChainIdentifier;
+	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();
@@ -490,13 +490,13 @@ impl pallet_xanchor::Config for Runtime {
 }
 
 impl pallet_preimage::Config for Runtime {
-	type Event = Event;
-	type WeightInfo = ();
-	type Currency = ();
-	type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-	type MaxSize = frame_support::traits::ConstU32<1024>;
 	type BaseDeposit = ();
 	type ByteDeposit = ();
+	type Currency = ();
+	type Event = Event;
+	type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxSize = frame_support::traits::ConstU32<1024>;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -509,12 +509,12 @@ impl pallet_scheduler::Config for Runtime {
 	type Event = Event;
 	type MaxScheduledPerBlock = ();
 	type MaximumWeight = MaximumSchedulerWeight;
+	type NoPreimagePostponement = NoPreimagePostponement;
 	type Origin = Origin;
 	type OriginPrivilegeCmp = frame_support::traits::EqualPrivilegeOnly;
 	type PalletsOrigin = OriginCaller;
-	type ScheduleOrigin = EnsureRoot<AccountId>;
 	type PreimageProvider = Preimage;
-	type NoPreimagePostponement = NoPreimagePostponement;
+	type ScheduleOrigin = EnsureRoot<AccountId>;
 	type WeightInfo = ();
 }
 

@@ -60,16 +60,16 @@ mod benchmarking;
 pub mod types;
 pub mod weights;
 use codec::Encode;
-use webb_primitives::{
-	anchor::{AnchorConfig, AnchorInspector, AnchorInterface},
-	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
-	verifier::*,
-};
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::{currency::transactional, MultiCurrency};
 use sp_runtime::traits::AccountIdConversion;
 use sp_std::prelude::*;
 use types::*;
+use webb_primitives::{
+	anchor::{AnchorConfig, AnchorInspector, AnchorInterface},
+	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
+	verifier::*,
+};
 pub use weights::WeightInfo;
 
 /// Type alias for the orml_traits::MultiCurrency::Balance type
@@ -122,13 +122,8 @@ pub mod pallet {
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
 	#[pallet::getter(fn anchors)]
-	pub type Anchors<T: Config<I>, I: 'static = ()> = StorageMap<
-		_,
-		Blake2_128Concat,
-		T::TreeId,
-		AnchorMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>,
-		OptionQuery,
-	>;
+	pub type Anchors<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::TreeId, AnchorMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, OptionQuery>;
 
 	/// The map of trees to their spent nullifier hashes
 	#[pallet::storage]
@@ -190,8 +185,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			// Should it only be the root who can create anchors?
 			ensure_root(origin)?;
-			let tree_id =
-				<Self as AnchorInterface<_>>::create(None, deposit_size, depth, max_edges, asset)?;
+			let tree_id = <Self as AnchorInterface<_>>::create(None, deposit_size, depth, max_edges, asset)?;
 			Self::deposit_event(Event::AnchorCreation { tree_id });
 			Ok(().into())
 		}
@@ -277,13 +271,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		asset: CurrencyIdOf<T, I>,
 	) -> Result<T::TreeId, DispatchError> {
 		let id = T::LinkableTree::create(creator, max_edges, depth)?;
-		Anchors::<T, I>::insert(
-			id,
-			AnchorMetadata {
-				deposit_size,
-				asset,
-			},
-		);
+		Anchors::<T, I>::insert(id, AnchorMetadata { deposit_size, asset });
 		Ok(id)
 	}
 
@@ -296,7 +284,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		<T as Config<I>>::Currency::transfer(anchor.asset, &depositor, &Self::account_id(), anchor.deposit_size)?;
 
 		Self::deposit_event(Event::Deposit {
-			depositor: depositor,
+			depositor,
 			tree_id: id,
 			leaf,
 			amount: anchor.deposit_size,
@@ -369,14 +357,16 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		// withdraw or refresh depending on the refresh commitment value
 		let anchor = Self::get_anchor(id)?;
 		if commitment.encode() == T::Element::default().encode() {
-			// transfer the deposit to the recipient when the commitment is default / zero (a withdrawal)
+			// transfer the deposit to the recipient when the commitment is default / zero
+			// (a withdrawal)
 			<T as Config<I>>::Currency::transfer(anchor.asset, &Self::account_id(), &recipient, anchor.deposit_size)?;
 			Self::deposit_event(Event::Withdraw {
 				who: recipient.clone(),
 				amount: anchor.deposit_size,
 			});
 		} else {
-			// deposit the new commitment when the commitment is not default / zero (a refresh)
+			// deposit the new commitment when the commitment is not default / zero (a
+			// refresh)
 			T::LinkableTree::insert_in_order(id, commitment)?;
 			Self::deposit_event(Event::Refresh {
 				tree_id: id,
@@ -434,9 +424,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::PalletId::get().into_account()
 	}
 
-	pub fn get_anchor(
-		id: T::TreeId,
-	) -> Result<AnchorMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
+	pub fn get_anchor(id: T::TreeId) -> Result<AnchorMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
 		let anchor = Anchors::<T, I>::get(id);
 		ensure!(anchor.is_some(), Error::<T, I>::NoAnchorFound);
 		Ok(anchor.unwrap())

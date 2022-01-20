@@ -10,7 +10,6 @@ use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_4, Curve}
 use codec::Encode;
 use webb_primitives::ElementTrait;
 
-
 use crate::mock::Element;
 
 type Bn254Fr = ark_bn254::Fr;
@@ -42,9 +41,10 @@ pub fn setup_zk_circuit(
 		Curve::Bn254 => {
 			let random_root = Bn254Fr::from(0u32);
 			let neighboring_roots = vec![random_root.into_repr().to_bytes_le()];
-			let (secret, nullifier, leaf, nullifier_hash) = setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, src_chain_id as u128, rng).unwrap();
+			let (secret, nullifier, leaf, nullifier_hash) =
+				setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, src_chain_id as u128, rng).unwrap();
 			let leaves = vec![leaf.clone()];
-			
+
 			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
 			let params4 = setup_params_x5_4::<Bn254Fr>(curve);
 			let prover = AnchorProverSetupBn254_30::new(params3, params4);
@@ -62,8 +62,9 @@ pub fn setup_zk_circuit(
 					commitment_bytes,
 					fee_value as u128,
 					refund_value as u128,
-				).unwrap();
-			
+				)
+				.unwrap();
+
 			let proof = prove::<Bn254, _, _>(circuit, &pk_bytes, rng).unwrap();
 
 			let roots_element = roots_raw.iter().map(|x| Element::from_bytes(&x)).collect();

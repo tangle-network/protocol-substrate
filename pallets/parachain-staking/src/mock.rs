@@ -78,6 +78,7 @@ impl frame_system::Config for Test {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -86,7 +87,6 @@ impl frame_system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 parameter_types! {
 	pub const ExistentialDeposit: u128 = 1;
@@ -194,7 +194,6 @@ parameter_types! {
 
 impl Config for Test {
 	type BlocksPerRound = BlocksPerRound;
-	type PalletId = ParachainStakingPalletId;
 	type Currency = Balances;
 	type DefaultCollatorCommission = DefaultCollatorCommission;
 	type DefaultParachainBondReservePercent = DefaultParachainBondReservePercent;
@@ -210,6 +209,7 @@ impl Config for Test {
 	type MinNominatorStk = MinNominatorStk;
 	type MinSelectedCandidates = MinSelectedCandidates;
 	type MonetaryGovernanceOrigin = frame_system::EnsureRoot<AccountId>;
+	type PalletId = ParachainStakingPalletId;
 	type RevokeNominationDelay = RevokeNominationDelay;
 	type RewardPaymentDelay = RewardPaymentDelay;
 	type WeightInfo = ();
@@ -233,7 +233,11 @@ impl Default for ExtBuilder {
 			nominations: vec![],
 			collators: vec![],
 			inflation: InflationInfo {
-				expect: Range { min: 700, ideal: 700, max: 700 },
+				expect: Range {
+					min: 700,
+					ideal: 700,
+					max: 700,
+				},
 				// not used
 				annual: Range {
 					min: Perbill::from_percent(50),
@@ -262,10 +266,7 @@ impl ExtBuilder {
 		self
 	}
 
-	pub(crate) fn with_nominations(
-		mut self,
-		nominations: Vec<(AccountId, AccountId, Balance)>,
-	) -> Self {
+	pub(crate) fn with_nominations(mut self, nominations: Vec<(AccountId, AccountId, Balance)>) -> Self {
 		self.nominations = nominations;
 		self
 	}
@@ -281,9 +282,11 @@ impl ExtBuilder {
 			.build_storage::<Test>()
 			.expect("Frame system builds valid default genesis config");
 
-		pallet_balances::GenesisConfig::<Test> { balances: self.balances }
-			.assimilate_storage(&mut t)
-			.expect("Pallet balances storage can be assimilated");
+		pallet_balances::GenesisConfig::<Test> {
+			balances: self.balances,
+		}
+		.assimilate_storage(&mut t)
+		.expect("Pallet balances storage can be assimilated");
 		stake::GenesisConfig::<Test> {
 			candidates: self.collators,
 			nominations: self.nominations,
@@ -295,7 +298,11 @@ impl ExtBuilder {
 		let validators = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 		let keys = validators
 			.iter()
-			.map(|i| (*i, *i, MockSessionKeys { aura: UintAuthorityId(*i) }))
+			.map(|i| {
+				(*i, *i, MockSessionKeys {
+					aura: UintAuthorityId(*i),
+				})
+			})
 			.collect::<Vec<_>>();
 
 		pallet_session::GenesisConfig::<Test> { keys }

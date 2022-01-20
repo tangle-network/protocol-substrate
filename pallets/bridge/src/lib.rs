@@ -49,7 +49,6 @@ pub mod types;
 pub mod utils;
 use crate::types::{DepositNonce, ProposalStatus, ProposalVotes};
 use codec::{Decode, Encode, EncodeLike};
-use webb_primitives::ResourceId;
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
@@ -62,6 +61,7 @@ use sp_runtime::{
 	RuntimeDebug,
 };
 use sp_std::prelude::*;
+use webb_primitives::ResourceId;
 
 #[frame_support::pallet]
 pub mod pallet {

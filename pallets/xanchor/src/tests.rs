@@ -2,15 +2,15 @@ use super::{
 	mock::{parachain::*, *},
 	*,
 };
-use std::{convert::TryInto, path::Path};
-use frame_benchmarking::account;
-use arkworks_utils::utils::common::{Curve, setup_params_x5_4, setup_params_x5_3};
 use ark_bn254::Fr as Bn254Fr;
+use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_4, Curve};
 use codec::Encode;
-use webb_primitives::utils::encode_resource_id;
+use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use pallet_anchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};
+use std::{convert::TryInto, path::Path};
+use webb_primitives::utils::encode_resource_id;
 use xcm_simulator::TestExt;
 
 const SEED: u32 = 0;
