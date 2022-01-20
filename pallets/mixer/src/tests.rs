@@ -40,7 +40,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 			// 3. Setup the VerifierPallet
 			//    but to do so, we need to have a VerifyingKey
-			let pk_bytes = include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/proving_key.bin");
+			let pk_bytes = include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin");
 			let vk_bytes = include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
 
 			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
