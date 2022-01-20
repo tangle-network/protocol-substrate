@@ -42,9 +42,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
-pub mod mock;
+pub mod mock_bridge;
 #[cfg(test)]
-mod tests;
+mod tests_bridge;
+
+#[cfg(test)]
+pub mod mock_signature_bridge;
+#[cfg(test)]
+mod tests_signature_bridge;
 
 use webb_primitives::{
 	anchor::AnchorConfig,
