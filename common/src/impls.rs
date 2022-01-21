@@ -18,8 +18,9 @@
 
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
 
-pub type NegativeImbalance<T> =
-	<pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
+	<T as frame_system::Config>::AccountId,
+>>::NegativeImbalance;
 
 /// Logic for the author to get a portion of fees.
 pub struct ToTreasury<R>(sp_std::marker::PhantomData<R>);

@@ -7,8 +7,8 @@ use ark_std::{rand::thread_rng, rc::Rc, vec::Vec};
 use arkworks_circuits::{
 	circuit::vanchor::VAnchorCircuit as VACircuit,
 	setup::common::{
-		LeafCRHGadget, PoseidonCRH_x5_2, PoseidonCRH_x5_2Gadget, PoseidonCRH_x5_3Gadget, PoseidonCRH_x5_4,
-		TreeConfig_x5, Tree_x5,
+		LeafCRHGadget, PoseidonCRH_x5_2, PoseidonCRH_x5_2Gadget, PoseidonCRH_x5_3Gadget,
+		PoseidonCRH_x5_4, TreeConfig_x5, Tree_x5,
 	},
 };
 use arkworks_gadgets::{
@@ -20,7 +20,9 @@ use arkworks_gadgets::{
 };
 use arkworks_utils::{
 	poseidon::PoseidonParameters,
-	utils::common::{setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve},
+	utils::common::{
+		setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve,
+	},
 };
 use codec::Encode;
 use webb_primitives::{
@@ -109,15 +111,7 @@ impl Utxos {
 		let (commitments, nullifiers, leaf_privates, leaf_publics) =
 			setup_leaves(&chain_ids, &amounts, &keypairs, &params2, &params4, &params5);
 
-		Self {
-			chain_ids,
-			amounts,
-			keypairs,
-			leaf_privates,
-			leaf_publics,
-			nullifiers,
-			commitments,
-		}
+		Self { chain_ids, amounts, keypairs, leaf_privates, leaf_publics, nullifiers, commitments }
 	}
 
 	fn new_raw(chain_ids: Vec<ChainId>, out_amounts: Vec<Balance>) -> Self {
@@ -130,12 +124,7 @@ impl Utxos {
 
 pub fn get_hash_params<F: PrimeField>(
 	curve: Curve,
-) -> (
-	PoseidonParameters<F>,
-	PoseidonParameters<F>,
-	PoseidonParameters<F>,
-	PoseidonParameters<F>,
-) {
+) -> (PoseidonParameters<F>, PoseidonParameters<F>, PoseidonParameters<F>, PoseidonParameters<F>) {
 	(
 		setup_params_x5_2::<F>(curve),
 		setup_params_x5_3::<F>(curve),
@@ -397,7 +386,8 @@ pub fn setup_circuit_with_data(
 	let in_utxos = Utxos::new(in_chain_ids, in_amounts);
 
 	// Tree + set for proving input txos
-	let (in_paths, in_indices, _, in_set_private_inputs) = setup_tree_and_set(&in_utxos.commitments, &params3);
+	let (in_paths, in_indices, _, in_set_private_inputs) =
+		setup_tree_and_set(&in_utxos.commitments, &params3);
 	// Since on chain tree is empty we set the roots to zero
 	let in_root_set = [Bn254Fr::from(0u32); M];
 
@@ -472,11 +462,7 @@ pub fn setup_circuit(
 	OUTS,
 	M,
 > {
-	let out_pub_keys = out_utxos
-		.keypairs
-		.iter()
-		.map(|x| x.public_key(&params2).unwrap())
-		.collect();
+	let out_pub_keys = out_utxos.keypairs.iter().map(|x| x.public_key(&params2).unwrap()).collect();
 
 	let circuit = VACircuit::<
 		Bn254Fr,
@@ -586,12 +572,7 @@ pub fn setup_leaves(
 	params2: &PoseidonParameters<Bn254Fr>,
 	params4: &PoseidonParameters<Bn254Fr>,
 	params5: &PoseidonParameters<Bn254Fr>,
-) -> (
-	Vec<Bn254Fr>,
-	Vec<Bn254Fr>,
-	Vec<LeafPrivateInput<Bn254Fr>>,
-	Vec<LeafPublicInput<Bn254Fr>>,
-) {
+) -> (Vec<Bn254Fr>, Vec<Bn254Fr>, Vec<LeafPrivateInput<Bn254Fr>>, Vec<LeafPublicInput<Bn254Fr>>) {
 	let rng = &mut thread_rng();
 
 	let num_inputs = amounts.len();
@@ -612,14 +593,20 @@ pub fn setup_leaves(
 
 		let pub_key = keypairs[i].public_key(&params2).unwrap();
 
-		let leaf =
-			Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>>::create_leaf(&private_input, &public_input, &pub_key, &params5)
-				.unwrap();
+		let leaf = Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>>::create_leaf(
+			&private_input,
+			&public_input,
+			&pub_key,
+			&params5,
+		)
+		.unwrap();
 
 		let signature = keypairs[i].signature(&leaf, &index, &params4).unwrap();
 
-		let nullfier =
-			Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>>::create_nullifier(&signature, &leaf, &params4, &index).unwrap();
+		let nullfier = Leaf::<Bn254Fr, PoseidonCRH_x5_4<Bn254Fr>>::create_nullifier(
+			&signature, &leaf, &params4, &index,
+		)
+		.unwrap();
 
 		leaves.push(leaf);
 		nullifiers.push(nullfier);
@@ -724,14 +711,7 @@ pub fn deconstruct_public_inputs(
 	let commitments = public_inputs[4..6].to_vec();
 	let chain_id = public_inputs[6];
 	let root_set = public_inputs[7..9].to_vec();
-	(
-		chain_id,
-		public_amount,
-		root_set,
-		nullifiers,
-		commitments,
-		ext_data_hash,
-	)
+	(chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash)
 }
 
 pub fn deconstruct_public_inputs_el(
@@ -761,14 +741,7 @@ pub fn deconstruct_public_inputs_el(
 		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
 		.collect();
 	let ext_data_hash_el = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_le());
-	(
-		chain_id_el,
-		public_amount_el,
-		root_set_el,
-		nullifiers_el,
-		commitments_el,
-		ext_data_hash_el,
-	)
+	(chain_id_el, public_amount_el, root_set_el, nullifiers_el, commitments_el, ext_data_hash_el)
 }
 
 /// Truncate and pad 256 bit slice in reverse

@@ -12,8 +12,8 @@ mod weights;
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use common::{
-	impls::DealWithFees, opaque, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index, Signature,
-	AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO,
+	impls::DealWithFees, opaque, AccountId, AuraId, Balance, BlockNumber, Hash, Header, Index,
+	Signature, AVERAGE_ON_INITIALIZE_RATIO, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO,
 };
 use frame_support::{
 	construct_runtime, match_type, parameter_types,
@@ -58,10 +58,11 @@ use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight, SlowAdjustingFeeUpdate};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
-	FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsDefault,
-	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-	SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, CurrencyAdapter,
+	EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset,
+	ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -105,10 +106,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 /// natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
-	NativeVersion {
-		runtime_version: VERSION,
-		can_author_with: Default::default(),
-	}
+	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
 parameter_types! {
@@ -298,7 +296,8 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
-	type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees<Runtime>>;
+	type OnChargeTransaction =
+		pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees<Runtime>>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = WeightToFee;
@@ -343,7 +342,17 @@ parameter_types! {
 
 /// The type used to represent the kinds of proxying allowed.
 #[derive(
-	Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, RuntimeDebug, MaxEncodedLen, scale_info::TypeInfo,
+	Copy,
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	MaxEncodedLen,
+	scale_info::TypeInfo,
 )]
 pub enum ProxyType {
 	/// Fully permissioned proxy. Can execute any call on behalf of _proxied_.
@@ -380,35 +389,32 @@ impl InstanceFilter<Call> for ProxyType {
 			),
 			ProxyType::CancelProxy => matches!(
 				c,
-				Call::Proxy(pallet_proxy::Call::reject_announcement { .. })
-					| Call::Utility { .. }
-					| Call::Multisig { .. }
+				Call::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
+					Call::Utility { .. } | Call::Multisig { .. }
 			),
 			ProxyType::Staking => matches!(c, Call::ParachainStaking { .. }),
 			ProxyType::Assets => {
 				matches!(c, Call::Assets { .. } | Call::Utility { .. } | Call::Multisig { .. })
-			}
+			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				Call::Assets(pallet_assets::Call::create { .. })
-					| Call::Assets(pallet_assets::Call::destroy { .. })
-					| Call::Assets(pallet_assets::Call::transfer_ownership { .. })
-					| Call::Assets(pallet_assets::Call::set_team { .. })
-					| Call::Assets(pallet_assets::Call::set_metadata { .. })
-					| Call::Assets(pallet_assets::Call::clear_metadata { .. })
-					| Call::Utility { .. }
-					| Call::Multisig { .. }
+				Call::Assets(pallet_assets::Call::create { .. }) |
+					Call::Assets(pallet_assets::Call::destroy { .. }) |
+					Call::Assets(pallet_assets::Call::transfer_ownership { .. }) |
+					Call::Assets(pallet_assets::Call::set_team { .. }) |
+					Call::Assets(pallet_assets::Call::set_metadata { .. }) |
+					Call::Assets(pallet_assets::Call::clear_metadata { .. }) |
+					Call::Utility { .. } | Call::Multisig { .. }
 			),
 			ProxyType::AssetManager => matches!(
 				c,
-				Call::Assets(pallet_assets::Call::mint { .. })
-					| Call::Assets(pallet_assets::Call::burn { .. })
-					| Call::Assets(pallet_assets::Call::freeze { .. })
-					| Call::Assets(pallet_assets::Call::thaw { .. })
-					| Call::Assets(pallet_assets::Call::freeze_asset { .. })
-					| Call::Assets(pallet_assets::Call::thaw_asset { .. })
-					| Call::Utility { .. }
-					| Call::Multisig { .. }
+				Call::Assets(pallet_assets::Call::mint { .. }) |
+					Call::Assets(pallet_assets::Call::burn { .. }) |
+					Call::Assets(pallet_assets::Call::freeze { .. }) |
+					Call::Assets(pallet_assets::Call::thaw { .. }) |
+					Call::Assets(pallet_assets::Call::freeze_asset { .. }) |
+					Call::Assets(pallet_assets::Call::thaw_asset { .. }) |
+					Call::Utility { .. } | Call::Multisig { .. }
 			),
 			ProxyType::Collator => matches!(
 				c,
@@ -1123,9 +1129,9 @@ pub type Executive = frame_executive::Executive<
 pub struct OnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for OnRuntimeUpgrade {
 	fn on_runtime_upgrade() -> u64 {
-		frame_support::migrations::migrate_from_pallet_version_to_storage_version::<AllPalletsWithSystem>(
-			&RocksDbWeight::get(),
-		)
+		frame_support::migrations::migrate_from_pallet_version_to_storage_version::<
+			AllPalletsWithSystem,
+		>(&RocksDbWeight::get())
 	}
 }
 
@@ -1332,12 +1338,13 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 			.read_slot()
 			.expect("Could not read the relay chain slot from the proof");
 
-		let inherent_data = cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
-			relay_chain_slot,
-			sp_std::time::Duration::from_secs(6),
-		)
-		.create_inherent_data()
-		.expect("Could not create the timestamp inherent data");
+		let inherent_data =
+			cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
+				relay_chain_slot,
+				sp_std::time::Duration::from_secs(6),
+			)
+			.create_inherent_data()
+			.expect("Could not create the timestamp inherent data");
 
 		inherent_data.check_extrinsics(block)
 	}

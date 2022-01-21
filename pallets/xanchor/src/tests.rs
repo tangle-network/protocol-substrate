@@ -30,12 +30,16 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			// 3. Setup the VerifierPallet
 			//    but to do so, we need to have a VerifyingKey
 			let (pk_bytes, vk_bytes) = (
-				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key.bin")
-					.expect("Unable to read file")
-					.to_vec(),
-				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin")
-					.expect("Unable to read file")
-					.to_vec(),
+				std::fs::read(
+					"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key.bin",
+				)
+				.expect("Unable to read file")
+				.to_vec(),
+				std::fs::read(
+					"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin",
+				)
+				.expect("Unable to read file")
+				.to_vec(),
 			);
 
 			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
@@ -53,10 +57,10 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 
 			// finally return the provingkey bytes
 			pk_bytes.to_vec()
-		}
+		},
 		Curve::Bls381 => {
 			unimplemented!()
-		}
+		},
 	}
 }
 
@@ -66,7 +70,9 @@ fn dmp() {
 	MockNet::reset();
 
 	let remark =
-		parachain::Call::System(frame_system::Call::<parachain::Runtime>::remark_with_event { remark: vec![1, 2, 3] });
+		parachain::Call::System(frame_system::Call::<parachain::Runtime>::remark_with_event {
+			remark: vec![1, 2, 3],
+		});
 	Relay::execute_with(|| {
 		assert_ok!(RelayChainPalletXcm::send_xcm(
 			Here,
@@ -91,9 +97,10 @@ fn dmp() {
 fn ump() {
 	MockNet::reset();
 
-	let remark = relay_chain::Call::System(frame_system::Call::<relay_chain::Runtime>::remark_with_event {
-		remark: vec![1, 2, 3],
-	});
+	let remark =
+		relay_chain::Call::System(frame_system::Call::<relay_chain::Runtime>::remark_with_event {
+			remark: vec![1, 2, 3],
+		});
 	ParaA::execute_with(|| {
 		assert_ok!(ParachainPalletXcm::send_xcm(
 			Here,
@@ -119,7 +126,9 @@ fn xcmp() {
 	MockNet::reset();
 
 	let remark =
-		parachain::Call::System(frame_system::Call::<parachain::Runtime>::remark_with_event { remark: vec![1, 2, 3] });
+		parachain::Call::System(frame_system::Call::<parachain::Runtime>::remark_with_event {
+			remark: vec![1, 2, 3],
+		});
 	ParaA::execute_with(|| {
 		assert_ok!(ParachainPalletXcm::send_xcm(
 			Here,
@@ -173,11 +182,7 @@ fn should_link_two_anchors() {
 		let r_id = encode_resource_id(para_a_tree_id, PARAID_B);
 		// then, on the call here, we tell it which tree we are going to link to.
 		// (para_b_tree_id).
-		assert_ok!(XAnchor::force_register_resource_id(
-			Origin::root(),
-			r_id,
-			para_b_tree_id
-		));
+		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 	// Here, the same as above, but the only difference is that
 	// the caller is one of the Parachain A operators.
@@ -186,27 +191,29 @@ fn should_link_two_anchors() {
 		let r_id = encode_resource_id(para_b_tree_id, PARAID_A);
 		// then, when we are sending the call we tell it which tree we are going to link
 		// to. (para_a_tree_id).
-		assert_ok!(XAnchor::force_register_resource_id(
-			Origin::root(),
-			r_id,
-			para_a_tree_id
-		));
+		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
 	});
 
 	// now we assume both of them are linked, let's check that.
 	ParaA::execute_with(|| {
-		let exists =
-			crate::LinkedAnchors::<parachain::Runtime, _>::iter().any(|(chain_id, tree_id, target_tree_id)| {
-				chain_id == PARAID_B && tree_id == para_a_tree_id && target_tree_id == para_b_tree_id
-			});
+		let exists = crate::LinkedAnchors::<parachain::Runtime, _>::iter().any(
+			|(chain_id, tree_id, target_tree_id)| {
+				chain_id == PARAID_B &&
+					tree_id == para_a_tree_id &&
+					target_tree_id == para_b_tree_id
+			},
+		);
 		assert!(exists, "ParaA does not have link to ParaB");
 	});
 
 	ParaB::execute_with(|| {
-		let exists =
-			crate::LinkedAnchors::<parachain::Runtime, _>::iter().any(|(chain_id, tree_id, target_tree_id)| {
-				chain_id == PARAID_A && tree_id == para_b_tree_id && target_tree_id == para_a_tree_id
-			});
+		let exists = crate::LinkedAnchors::<parachain::Runtime, _>::iter().any(
+			|(chain_id, tree_id, target_tree_id)| {
+				chain_id == PARAID_A &&
+					tree_id == para_b_tree_id &&
+					target_tree_id == para_a_tree_id
+			},
+		);
 		assert!(exists, "ParaB does not have link to ParaB");
 	});
 }
@@ -237,20 +244,12 @@ fn should_bridge_anchors_using_xcm() {
 
 	ParaA::execute_with(|| {
 		let r_id = encode_resource_id(para_a_tree_id, PARAID_B);
-		assert_ok!(XAnchor::force_register_resource_id(
-			Origin::root(),
-			r_id,
-			para_b_tree_id
-		));
+		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
 		let r_id = encode_resource_id(para_b_tree_id, PARAID_A);
-		assert_ok!(XAnchor::force_register_resource_id(
-			Origin::root(),
-			r_id,
-			para_a_tree_id
-		));
+		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
 	});
 
 	// now we do a deposit on one chain (ParaA) for example
@@ -297,7 +296,11 @@ fn should_fail_to_register_resource_id_if_not_the_democracy() {
 		let r_id = encode_resource_id(tree_id, PARAID_B);
 		let target_tree_id = 1;
 		assert_err!(
-			XAnchor::register_resource_id(Origin::signed(parachain::AccountTwo::get()), r_id, target_tree_id),
+			XAnchor::register_resource_id(
+				Origin::signed(parachain::AccountTwo::get()),
+				r_id,
+				target_tree_id
+			),
 			frame_support::error::BadOrigin,
 		);
 	});
@@ -363,20 +366,14 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 // Governance System Tests
 fn aye(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
 	AccountVote::Standard {
-		vote: Vote {
-			aye: true,
-			conviction: Conviction::None,
-		},
+		vote: Vote { aye: true, conviction: Conviction::None },
 		balance: Balances::free_balance(&who),
 	}
 }
 
 fn nay(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
 	AccountVote::Standard {
-		vote: Vote {
-			aye: false,
-			conviction: Conviction::None,
-		},
+		vote: Vote { aye: false, conviction: Conviction::None },
 		balance: Balances::free_balance(&who),
 	}
 }
@@ -420,10 +417,7 @@ fn governance_system_works() {
 			value
 		));
 		// we should see this anchor link in the pending list
-		assert_eq!(
-			XAnchor::pending_linked_anchors(PARAID_B, para_a_tree_id),
-			Some(para_b_tree_id),
-		);
+		assert_eq!(XAnchor::pending_linked_anchors(PARAID_B, para_a_tree_id), Some(para_b_tree_id),);
 
 		// start of 2 => next referendum scheduled.
 		fast_forward_to(2);
@@ -445,10 +439,7 @@ fn governance_system_works() {
 	// now we do the on-chain proposal checking on chain B.
 	ParaB::execute_with(|| {
 		// we should see the anchor in the pending list.
-		assert_eq!(
-			XAnchor::pending_linked_anchors(PARAID_A, para_b_tree_id),
-			Some(para_a_tree_id),
-		);
+		assert_eq!(XAnchor::pending_linked_anchors(PARAID_A, para_b_tree_id), Some(para_a_tree_id),);
 		// start of 2 => next referendum scheduled.
 		fast_forward_to(2);
 		// now we need to vote on the proposal.
@@ -522,11 +513,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 	// force link them.
 	ParaA::execute_with(|| {
 		let r_id = encode_resource_id(para_a_tree_id, PARAID_B);
-		assert_ok!(XAnchor::force_register_resource_id(
-			Origin::root(),
-			r_id,
-			para_b_tree_id
-		));
+		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
 	// now try create a proposal on chain A, it should fail since it is already
@@ -665,11 +652,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 	// force link them.
 	ParaA::execute_with(|| {
 		let r_id = encode_resource_id(para_a_tree_id, PARAID_B);
-		assert_ok!(XAnchor::force_register_resource_id(
-			Origin::root(),
-			r_id,
-			para_b_tree_id
-		));
+		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
 	// now creating a proposal on chain A should fail since it is already linked.
@@ -710,7 +693,11 @@ fn should_fail_to_call_handle_link_anchor_message_without_anchor_being_pending()
 		};
 		let value = 100;
 		assert_err!(
-			XAnchor::handle_link_anchor_message(Origin::signed(AccountThree::get()), payload, value),
+			XAnchor::handle_link_anchor_message(
+				Origin::signed(AccountThree::get()),
+				payload,
+				value
+			),
 			Error::<Runtime>::AnchorLinkNotFound,
 		);
 	});
@@ -763,7 +750,11 @@ fn should_fail_to_call_register_resource_id_as_signed_account() {
 	ParaA::execute_with(|| {
 		let r_id = encode_resource_id(MerkleTree::next_tree_id(), PARAID_B);
 		assert_err!(
-			XAnchor::register_resource_id(Origin::signed(AccountThree::get()), r_id, MerkleTree::next_tree_id()),
+			XAnchor::register_resource_id(
+				Origin::signed(AccountThree::get()),
+				r_id,
+				MerkleTree::next_tree_id()
+			),
 			frame_support::error::BadOrigin,
 		);
 	});
@@ -777,11 +768,8 @@ fn should_fail_to_call_update_as_signed_account() {
 	// on parachain A.
 	ParaA::execute_with(|| {
 		let r_id = encode_resource_id(MerkleTree::next_tree_id(), PARAID_B);
-		let edge_metadata = EdgeMetadata {
-			src_chain_id: PARAID_B,
-			root: Element::zero(),
-			latest_leaf_index: 0,
-		};
+		let edge_metadata =
+			EdgeMetadata { src_chain_id: PARAID_B, root: Element::zero(), latest_leaf_index: 0 };
 		assert_err!(
 			XAnchor::update(Origin::signed(AccountThree::get()), r_id, edge_metadata),
 			frame_support::error::BadOrigin,

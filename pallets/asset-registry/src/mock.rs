@@ -133,10 +133,7 @@ impl ExtBuilder {
 				native_existential_deposit: 1_000_000u128,
 			}
 		} else {
-			crate::GenesisConfig::<Test> {
-				asset_names: self.assets,
-				..Default::default()
-			}
+			crate::GenesisConfig::<Test> { asset_names: self.assets, ..Default::default() }
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();

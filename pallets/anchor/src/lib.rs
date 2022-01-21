@@ -76,8 +76,9 @@ pub use weights::WeightInfo;
 pub type BalanceOf<T, I> =
 	<<T as Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
 /// Type alias for the orml_traits::MultiCurrency::CurrencyId type
-pub type CurrencyIdOf<T, I> =
-	<<T as pallet::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
+pub type CurrencyIdOf<T, I> = <<T as pallet::Config<I>>::Currency as MultiCurrency<
+	<T as frame_system::Config>::AccountId,
+>>::CurrencyId;
 
 pub use pallet::*;
 #[frame_support::pallet]
@@ -92,7 +93,9 @@ pub mod pallet {
 
 	#[pallet::config]
 	/// The module configuration trait.
-	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_linkable_tree::Config<I> {
+	pub trait Config<I: 'static = ()>:
+		frame_system::Config + pallet_linkable_tree::Config<I>
+	{
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -122,14 +125,26 @@ pub mod pallet {
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
 	#[pallet::getter(fn anchors)]
-	pub type Anchors<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, T::TreeId, AnchorMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, OptionQuery>;
+	pub type Anchors<T: Config<I>, I: 'static = ()> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::TreeId,
+		AnchorMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>,
+		OptionQuery,
+	>;
 
 	/// The map of trees to their spent nullifier hashes
 	#[pallet::storage]
 	#[pallet::getter(fn nullifier_hashes)]
-	pub type NullifierHashes<T: Config<I>, I: 'static = ()> =
-		StorageDoubleMap<_, Blake2_128Concat, T::TreeId, Blake2_128Concat, T::Element, bool, ValueQuery>;
+	pub type NullifierHashes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		T::TreeId,
+		Blake2_128Concat,
+		T::Element,
+		bool,
+		ValueQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -148,11 +163,7 @@ pub mod pallet {
 			amount: BalanceOf<T, I>,
 		},
 		/// Post deposit hook has executed successfully
-		PostDeposit {
-			depositor: T::AccountId,
-			tree_id: T::TreeId,
-			leaf: T::Element,
-		},
+		PostDeposit { depositor: T::AccountId, tree_id: T::TreeId, leaf: T::Element },
 	}
 
 	#[pallet::error]
@@ -185,14 +196,19 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			// Should it only be the root who can create anchors?
 			ensure_root(origin)?;
-			let tree_id = <Self as AnchorInterface<_>>::create(None, deposit_size, depth, max_edges, asset)?;
+			let tree_id =
+				<Self as AnchorInterface<_>>::create(None, deposit_size, depth, max_edges, asset)?;
 			Self::deposit_event(Event::AnchorCreation { tree_id });
 			Ok(().into())
 		}
 
 		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
-		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
+		pub fn deposit(
+			origin: OriginFor<T>,
+			tree_id: T::TreeId,
+			leaf: T::Element,
+		) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			<Self as AnchorInterface<_>>::deposit(origin, tree_id, leaf)?;
 			Ok(().into())
@@ -211,11 +227,7 @@ pub mod pallet {
 			let origin = ensure_signed(origin)?;
 			<Self as AnchorInterface<_>>::deposit(origin.clone(), tree_id, leaf)?;
 			T::PostDepositHook::post_deposit(origin.clone(), tree_id, leaf)?;
-			Self::deposit_event(Event::PostDeposit {
-				depositor: origin,
-				tree_id,
-				leaf,
-			});
+			Self::deposit_event(Event::PostDeposit { depositor: origin, tree_id, leaf });
 			Ok(().into())
 		}
 
@@ -250,7 +262,10 @@ pub mod pallet {
 	}
 }
 
-pub struct AnchorConfigration<T: Config<I>, I: 'static>(core::marker::PhantomData<T>, core::marker::PhantomData<I>);
+pub struct AnchorConfigration<T: Config<I>, I: 'static>(
+	core::marker::PhantomData<T>,
+	core::marker::PhantomData<I>,
+);
 
 impl<T: Config<I>, I: 'static> AnchorConfig for AnchorConfigration<T, I> {
 	type AccountId = T::AccountId;
@@ -275,13 +290,22 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		Ok(id)
 	}
 
-	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {
+	fn deposit(
+		depositor: T::AccountId,
+		id: T::TreeId,
+		leaf: T::Element,
+	) -> Result<(), DispatchError> {
 		// get the anchor if it exists
 		let anchor = Self::get_anchor(id)?;
 		// insert the leaf
 		T::LinkableTree::insert_in_order(id, leaf)?;
 		// transfer tokens to the pallet
-		<T as Config<I>>::Currency::transfer(anchor.asset, &depositor, &Self::account_id(), anchor.deposit_size)?;
+		<T as Config<I>>::Currency::transfer(
+			anchor.asset,
+			&depositor,
+			&Self::account_id(),
+			anchor.deposit_size,
+		)?;
 
 		Self::deposit_event(Event::Deposit {
 			depositor,
@@ -359,7 +383,12 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		if commitment.encode() == T::Element::default().encode() {
 			// transfer the deposit to the recipient when the commitment is default / zero
 			// (a withdrawal)
-			<T as Config<I>>::Currency::transfer(anchor.asset, &Self::account_id(), &recipient, anchor.deposit_size)?;
+			<T as Config<I>>::Currency::transfer(
+				anchor.asset,
+				&Self::account_id(),
+				&recipient,
+				anchor.deposit_size,
+			)?;
 			Self::deposit_event(Event::Withdraw {
 				who: recipient.clone(),
 				amount: anchor.deposit_size,
@@ -368,10 +397,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 			// deposit the new commitment when the commitment is not default / zero (a
 			// refresh)
 			T::LinkableTree::insert_in_order(id, commitment)?;
-			Self::deposit_event(Event::Refresh {
-				tree_id: id,
-				leaf: commitment,
-			});
+			Self::deposit_event(Event::Refresh { tree_id: id, leaf: commitment });
 		}
 
 		Ok(())
@@ -407,10 +433,7 @@ impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pal
 	}
 
 	fn ensure_nullifier_unused(id: T::TreeId, nullifier: T::Element) -> Result<(), DispatchError> {
-		ensure!(
-			!Self::is_nullifier_used(id, nullifier),
-			Error::<T, I>::AlreadyRevealedNullifier
-		);
+		ensure!(!Self::is_nullifier_used(id, nullifier), Error::<T, I>::AlreadyRevealedNullifier);
 		Ok(())
 	}
 
@@ -424,7 +447,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::PalletId::get().into_account()
 	}
 
-	pub fn get_anchor(id: T::TreeId) -> Result<AnchorMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
+	pub fn get_anchor(
+		id: T::TreeId,
+	) -> Result<AnchorMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
 		let anchor = Anchors::<T, I>::get(id);
 		ensure!(anchor.is_some(), Error::<T, I>::NoAnchorFound);
 		Ok(anchor.unwrap())

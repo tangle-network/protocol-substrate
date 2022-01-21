@@ -34,12 +34,7 @@ fn should_wrap_token() {
 
 		let balance: i128 = 100000;
 
-		assert_ok!(Currencies::update_balance(
-			Origin::root(),
-			recipient,
-			first_token_id,
-			balance
-		));
+		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
@@ -59,7 +54,8 @@ fn should_wrap_token() {
 		// Second argument should be balance minus amount_to_wrap
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
-			initial_balance_first_token.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
+			initial_balance_first_token
+				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
 		);
 
 		assert_eq!(TokenWrapper::get_balance(pool_share_id, &recipient), 50000);
@@ -94,12 +90,7 @@ fn should_unwrap_token() {
 
 		let balance: i128 = 100000;
 
-		assert_ok!(Currencies::update_balance(
-			Origin::root(),
-			recipient,
-			first_token_id,
-			balance
-		));
+		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
@@ -118,7 +109,8 @@ fn should_unwrap_token() {
 
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
-			initial_balance_first_token.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
+			initial_balance_first_token
+				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
 		);
 
 		assert_ok!(TokenWrapper::unwrap(
@@ -166,12 +158,7 @@ fn wrapping_should_fail_if_asset_is_not_in_pool() {
 
 		let balance: i128 = 100000;
 
-		assert_ok!(Currencies::update_balance(
-			Origin::root(),
-			recipient,
-			first_token_id,
-			balance
-		));
+		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
 
@@ -225,12 +212,7 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 
 		let balance: i128 = 100000;
 
-		assert_ok!(Currencies::update_balance(
-			Origin::root(),
-			recipient,
-			first_token_id,
-			balance
-		));
+		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
 
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
@@ -250,7 +232,8 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
-			initial_balance_first_token.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
+			initial_balance_first_token
+				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
 		);
 
 		assert_err!(
@@ -294,12 +277,7 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 
 		let balance: i128 = 100000;
 
-		assert_ok!(Currencies::update_balance(
-			Origin::root(),
-			recipient,
-			first_token_id,
-			balance
-		));
+		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
 
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
@@ -324,13 +302,11 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
-			initial_balance_first_token.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
+			initial_balance_first_token
+				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
 		);
 
-		assert_eq!(
-			TokenWrapper::get_balance(second_token_id, &recipient),
-			Default::default()
-		);
+		assert_eq!(TokenWrapper::get_balance(second_token_id, &recipient), Default::default());
 
 		assert_eq!(TokenWrapper::get_balance(pool_share_id, &recipient), 50000);
 
@@ -376,12 +352,7 @@ fn should_not_wrap_invalid_amount() {
 
 		let balance: i128 = 100000;
 
-		assert_ok!(Currencies::update_balance(
-			Origin::root(),
-			recipient,
-			first_token_id,
-			balance
-		));
+		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
 

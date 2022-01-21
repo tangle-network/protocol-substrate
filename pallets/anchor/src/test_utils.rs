@@ -72,10 +72,10 @@ pub fn setup_zk_circuit(
 			let leaf_element = Element::from_bytes(&leaf);
 
 			(proof, roots_element, nullifier_hash_element, leaf_element)
-		}
+		},
 		Curve::Bls381 => {
 			unimplemented!()
-		}
+		},
 	}
 }
 

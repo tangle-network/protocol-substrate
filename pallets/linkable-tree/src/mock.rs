@@ -125,7 +125,19 @@ parameter_types! {
 	pub const MockZeroElement: Element = Element([0; 32]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Serialize, Deserialize)]
+#[derive(
+	Debug,
+	Encode,
+	Decode,
+	Default,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	scale_info::TypeInfo,
+	Serialize,
+	Deserialize,
+)]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {

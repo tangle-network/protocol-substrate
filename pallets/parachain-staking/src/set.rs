@@ -62,7 +62,7 @@ impl<T: Ord> OrderedSet<T> {
 			Err(loc) => {
 				self.0.insert(loc, value);
 				true
-			}
+			},
 		}
 	}
 
@@ -73,7 +73,7 @@ impl<T: Ord> OrderedSet<T> {
 			Ok(loc) => {
 				self.0.remove(loc);
 				true
-			}
+			},
 			Err(_) => false,
 		}
 	}

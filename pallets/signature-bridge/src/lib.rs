@@ -86,7 +86,10 @@ pub mod pallet {
 		/// Origin used to administer the pallet
 		type AdminOrigin: EnsureOrigin<Self::Origin>;
 		/// Proposed dispatchable call
-		type Proposal: Parameter + Dispatchable<Origin = Self::Origin> + EncodeLike + GetDispatchInfo;
+		type Proposal: Parameter
+			+ Dispatchable<Origin = Self::Origin>
+			+ EncodeLike
+			+ GetDispatchInfo;
 		/// ChainID for anchor edges
 		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 		/// Proposal nonce type
@@ -114,39 +117,29 @@ pub mod pallet {
 	/// All whitelisted chains and their respective transaction counts
 	#[pallet::storage]
 	#[pallet::getter(fn chains)]
-	pub type ChainNonces<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, T::ChainId, T::ProposalNonce>;
+	pub type ChainNonces<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_256, T::ChainId, T::ProposalNonce>;
 
 	/// Utilized by the bridge software to map resource IDs to actual methods
 	#[pallet::storage]
 	#[pallet::getter(fn resources)]
-	pub type Resources<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, ResourceId, Vec<u8>>;
+	pub type Resources<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_256, ResourceId, Vec<u8>>;
 
 	// Pallets use events to inform users when important changes are made.
 	#[pallet::event]
 	#[pallet::generate_deposit(pub fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// Maintainer is set
-		MaintainerSet {
-			old_maintainer: Vec<u8>,
-			new_maintainer: Vec<u8>,
-		},
+		MaintainerSet { old_maintainer: Vec<u8>, new_maintainer: Vec<u8> },
 		/// Chain now available for transfers (chain_id)
 		ChainWhitelisted { chain_id: T::ChainId },
 		/// Proposal has been approved
-		ProposalApproved {
-			chain_id: T::ChainId,
-			proposal_nonce: T::ProposalNonce,
-		},
+		ProposalApproved { chain_id: T::ChainId, proposal_nonce: T::ProposalNonce },
 		/// Execution of call succeeded
-		ProposalSucceeded {
-			chain_id: T::ChainId,
-			proposal_nonce: T::ProposalNonce,
-		},
+		ProposalSucceeded { chain_id: T::ChainId, proposal_nonce: T::ProposalNonce },
 		/// Execution of call failed
-		ProposalFailed {
-			chain_id: T::ChainId,
-			proposal_nonce: T::ProposalNonce,
-		},
+		ProposalFailed { chain_id: T::ChainId, proposal_nonce: T::ProposalNonce },
 	}
 
 	// Errors inform users that something went wrong.
@@ -197,26 +190,23 @@ pub mod pallet {
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer,
-					new_maintainer,
-				});
+				Self::deposit_event(Event::MaintainerSet { old_maintainer, new_maintainer });
 				Ok(().into())
 			})
 		}
 
 		// Forcefully set the maintainer.
 		#[pallet::weight(0)]
-		pub fn force_set_maintainer(origin: OriginFor<T>, new_maintainer: Vec<u8>) -> DispatchResultWithPostInfo {
+		pub fn force_set_maintainer(
+			origin: OriginFor<T>,
+			new_maintainer: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				let old_maintainer = maintainer.clone();
 				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet {
-					old_maintainer,
-					new_maintainer,
-				});
+				Self::deposit_event(Event::MaintainerSet { old_maintainer, new_maintainer });
 				Ok(().into())
 			})
 		}
@@ -227,7 +217,11 @@ pub mod pallet {
 		/// - O(1) write
 		/// # </weight>
 		#[pallet::weight(195_000_000)]
-		pub fn set_resource(origin: OriginFor<T>, id: ResourceId, method: Vec<u8>) -> DispatchResultWithPostInfo {
+		pub fn set_resource(
+			origin: OriginFor<T>,
+			id: ResourceId,
+			method: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::register_resource(id, method)
 		}
@@ -264,8 +258,7 @@ pub mod pallet {
 		/// from the caller.
 		///
 		/// # <weight>
-		/// - weight of proposed call, regardless of whether execution is
-		///   performed
+		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
 		#[pallet::weight((call.get_dispatch_info().weight + 195_000_000, call.get_dispatch_info().class, Pays::Yes))]
 		pub fn execute_proposal(
@@ -278,7 +271,8 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let _ = ensure_signed(origin)?;
 			ensure!(
-				T::SignatureVerifier::verify(&Self::maintainer(), &call.encode()[..], &signature).unwrap_or(false),
+				T::SignatureVerifier::verify(&Self::maintainer(), &call.encode()[..], &signature)
+					.unwrap_or(false),
 				Error::<T, I>::InvalidPermissions,
 			);
 			ensure!(Self::chain_whitelisted(src_id), Error::<T, I>::ChainNotWhitelisted);
@@ -347,17 +341,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		nonce: T::ProposalNonce,
 		call: Box<T::Proposal>,
 	) -> DispatchResultWithPostInfo {
-		Self::deposit_event(Event::ProposalApproved {
-			chain_id: src_id,
-			proposal_nonce: nonce,
-		});
+		Self::deposit_event(Event::ProposalApproved { chain_id: src_id, proposal_nonce: nonce });
 		call.dispatch(frame_system::RawOrigin::Signed(Self::account_id()).into())
 			.map(|_| ())
 			.map_err(|e| e.error)?;
-		Self::deposit_event(Event::ProposalSucceeded {
-			chain_id: src_id,
-			proposal_nonce: nonce,
-		});
+		Self::deposit_event(Event::ProposalSucceeded { chain_id: src_id, proposal_nonce: nonce });
 		Ok(().into())
 	}
 }
@@ -381,8 +369,6 @@ impl<T: Config<I>, I: 'static> EnsureOrigin<T::Origin> for EnsureBridge<T, I> {
 	/// ** Should be used for benchmarking only!!! **
 	#[cfg(feature = "runtime-benchmarks")]
 	fn successful_origin() -> T::Origin {
-		T::Origin::from(frame_system::RawOrigin::Signed(
-			T::BridgeAccountId::get().into_account(),
-		))
+		T::Origin::from(frame_system::RawOrigin::Signed(T::BridgeAccountId::get().into_account()))
 	}
 }

@@ -87,7 +87,10 @@ pub mod pallet {
 		/// Origin used to administer the pallet
 		type AdminOrigin: EnsureOrigin<Self::Origin>;
 		/// Proposed dispatchable call
-		type Proposal: Parameter + Dispatchable<Origin = Self::Origin> + EncodeLike + GetDispatchInfo;
+		type Proposal: Parameter
+			+ Dispatchable<Origin = Self::Origin>
+			+ EncodeLike
+			+ GetDispatchInfo;
 		/// ChainID for anchor edges
 		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 		/// The identifier for this chain.
@@ -106,7 +109,8 @@ pub mod pallet {
 	/// All whitelisted chains and their respective transaction counts
 	#[pallet::storage]
 	#[pallet::getter(fn chains)]
-	pub type ChainNonces<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, T::ChainId, DepositNonce>;
+	pub type ChainNonces<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_256, T::ChainId, DepositNonce>;
 
 	#[pallet::type_value]
 	pub fn DefaultForRelayerThreshold() -> u32 {
@@ -122,7 +126,8 @@ pub mod pallet {
 	/// Tracks current relayer set
 	#[pallet::storage]
 	#[pallet::getter(fn relayers)]
-	pub type Relayers<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, T::AccountId, bool, OptionQuery>;
+	pub type Relayers<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_256, T::AccountId, bool, OptionQuery>;
 
 	/// Number of relayers in set
 	#[pallet::storage]
@@ -146,7 +151,8 @@ pub mod pallet {
 	/// Utilized by the bridge software to map resource IDs to actual methods
 	#[pallet::storage]
 	#[pallet::getter(fn resources)]
-	pub type Resources<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, ResourceId, Vec<u8>>;
+	pub type Resources<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_256, ResourceId, Vec<u8>>;
 
 	// Pallets use events to inform users when important changes are made.
 	#[pallet::event]
@@ -161,37 +167,17 @@ pub mod pallet {
 		/// Relayer removed from set
 		RelayerRemoved { relayer_id: T::AccountId },
 		/// Vote submitted in favour of proposal
-		VoteFor {
-			chain_id: T::ChainId,
-			deposit_nonce: DepositNonce,
-			who: T::AccountId,
-		},
+		VoteFor { chain_id: T::ChainId, deposit_nonce: DepositNonce, who: T::AccountId },
 		/// Vot submitted against proposal
-		VoteAgainst {
-			chain_id: T::ChainId,
-			deposit_nonce: DepositNonce,
-			who: T::AccountId,
-		},
+		VoteAgainst { chain_id: T::ChainId, deposit_nonce: DepositNonce, who: T::AccountId },
 		/// Voting successful for a proposal
-		ProposalApproved {
-			chain_id: T::ChainId,
-			deposit_nonce: DepositNonce,
-		},
+		ProposalApproved { chain_id: T::ChainId, deposit_nonce: DepositNonce },
 		/// Voting rejected a proposal
-		ProposalRejected {
-			chain_id: T::ChainId,
-			deposit_nonce: DepositNonce,
-		},
+		ProposalRejected { chain_id: T::ChainId, deposit_nonce: DepositNonce },
 		/// Execution of call succeeded
-		ProposalSucceeded {
-			chain_id: T::ChainId,
-			deposit_nonce: DepositNonce,
-		},
+		ProposalSucceeded { chain_id: T::ChainId, deposit_nonce: DepositNonce },
 		/// Execution of call failed
-		ProposalFailed {
-			chain_id: T::ChainId,
-			deposit_nonce: DepositNonce,
-		},
+		ProposalFailed { chain_id: T::ChainId, deposit_nonce: DepositNonce },
 	}
 
 	// Errors inform users that something went wrong.
@@ -256,7 +242,11 @@ pub mod pallet {
 		/// - O(1) write
 		/// # </weight>
 		#[pallet::weight(195_000_000)]
-		pub fn set_resource(origin: OriginFor<T>, id: ResourceId, method: Vec<u8>) -> DispatchResultWithPostInfo {
+		pub fn set_resource(
+			origin: OriginFor<T>,
+			id: ResourceId,
+			method: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::register_resource(id, method)
 		}
@@ -315,8 +305,7 @@ pub mod pallet {
 		/// from the caller.
 		///
 		/// # <weight>
-		/// - weight of proposed call, regardless of whether execution is
-		///   performed
+		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
 		#[pallet::weight((call.get_dispatch_info().weight + 195_000_000, call.get_dispatch_info().class, Pays::Yes))]
 		pub fn acknowledge_proposal(
@@ -361,8 +350,7 @@ pub mod pallet {
 		/// and the status will be updated accordingly.
 		///
 		/// # <weight>
-		/// - weight of proposed call, regardless of whether execution is
-		///   performed
+		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
 		#[pallet::weight((prop.get_dispatch_info().weight + 195_000_000, prop.get_dispatch_info().class, Pays::Yes))]
 		pub fn eval_vote_state(
@@ -413,9 +401,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn set_relayer_threshold(threshold: u32) -> DispatchResultWithPostInfo {
 		ensure!(threshold > 0, Error::<T, I>::InvalidThreshold);
 		RelayerThreshold::<T, I>::put(threshold);
-		Self::deposit_event(Event::RelayerThresholdChanged {
-			new_threshold: threshold,
-		});
+		Self::deposit_event(Event::RelayerThresholdChanged { new_threshold: threshold });
 		Ok(().into())
 	}
 
@@ -475,10 +461,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let now = <frame_system::Pallet<T>>::block_number();
 		let mut votes = match Votes::<T, I>::get(src_id, (nonce, prop.clone())) {
 			Some(v) => v,
-			None => ProposalVotes {
-				expiry: now + T::ProposalLifetime::get(),
-				..Default::default()
-			},
+			None =>
+				ProposalVotes { expiry: now + T::ProposalLifetime::get(), ..Default::default() },
 		};
 
 		// Ensure the proposal isn't complete and relayer hasn't already voted
@@ -488,18 +472,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 		if in_favour {
 			votes.votes_for.push(who.clone());
-			Self::deposit_event(Event::VoteFor {
-				chain_id: src_id,
-				deposit_nonce: nonce,
-				who,
-			});
+			Self::deposit_event(Event::VoteFor { chain_id: src_id, deposit_nonce: nonce, who });
 		} else {
 			votes.votes_against.push(who.clone());
-			Self::deposit_event(Event::VoteAgainst {
-				chain_id: src_id,
-				deposit_nonce: nonce,
-				who,
-			});
+			Self::deposit_event(Event::VoteAgainst { chain_id: src_id, deposit_nonce: nonce, who });
 		}
 
 		Votes::<T, I>::insert(src_id, (nonce, prop), votes.clone());
@@ -518,7 +494,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			ensure!(!votes.is_complete(), Error::<T, I>::ProposalAlreadyComplete);
 			ensure!(!votes.is_expired(now), Error::<T, I>::ProposalExpired);
 
-			let status = votes.try_to_complete(RelayerThreshold::<T, I>::get(), RelayerCount::<T, I>::get());
+			let status =
+				votes.try_to_complete(RelayerThreshold::<T, I>::get(), RelayerCount::<T, I>::get());
 			Votes::<T, I>::insert(src_id, (nonce, prop.clone()), votes.clone());
 
 			match status {
@@ -562,26 +539,17 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		nonce: DepositNonce,
 		call: Box<T::Proposal>,
 	) -> DispatchResultWithPostInfo {
-		Self::deposit_event(Event::ProposalApproved {
-			chain_id: src_id,
-			deposit_nonce: nonce,
-		});
+		Self::deposit_event(Event::ProposalApproved { chain_id: src_id, deposit_nonce: nonce });
 		call.dispatch(frame_system::RawOrigin::Signed(Self::account_id()).into())
 			.map(|_| ())
 			.map_err(|e| e.error)?;
-		Self::deposit_event(Event::ProposalSucceeded {
-			chain_id: src_id,
-			deposit_nonce: nonce,
-		});
+		Self::deposit_event(Event::ProposalSucceeded { chain_id: src_id, deposit_nonce: nonce });
 		Ok(().into())
 	}
 
 	/// Cancels a proposal.
 	fn cancel_execution(src_id: T::ChainId, nonce: DepositNonce) -> DispatchResultWithPostInfo {
-		Self::deposit_event(Event::ProposalRejected {
-			chain_id: src_id,
-			deposit_nonce: nonce,
-		});
+		Self::deposit_event(Event::ProposalRejected { chain_id: src_id, deposit_nonce: nonce });
 		Ok(().into())
 	}
 }
@@ -605,8 +573,6 @@ impl<T: Config<I>, I: 'static> EnsureOrigin<T::Origin> for EnsureBridge<T, I> {
 	/// ** Should be used for benchmarking only!!! **
 	#[cfg(feature = "runtime-benchmarks")]
 	fn successful_origin() -> T::Origin {
-		T::Origin::from(frame_system::RawOrigin::Signed(
-			T::BridgeAccountId::get().into_account(),
-		))
+		T::Origin::from(frame_system::RawOrigin::Signed(T::BridgeAccountId::get().into_account()))
 	}
 }

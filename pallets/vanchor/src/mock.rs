@@ -144,7 +144,19 @@ parameter_types! {
 	pub const MockZeroElement: Element = Element([0; 32]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Serialize, Deserialize)]
+#[derive(
+	Debug,
+	Encode,
+	Decode,
+	Default,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	scale_info::TypeInfo,
+	Serialize,
+	Deserialize,
+)]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {
@@ -299,7 +311,9 @@ impl pallet_vanchor::Config for Test {
 	type Verifier2x2 = VerifierPallet;
 }
 
-pub fn assert_last_event<T: pallet_vanchor::Config>(generic_event: <T as pallet_vanchor::Config>::Event) {
+pub fn assert_last_event<T: pallet_vanchor::Config>(
+	generic_event: <T as pallet_vanchor::Config>::Event,
+) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 

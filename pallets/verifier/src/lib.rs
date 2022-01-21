@@ -112,10 +112,7 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
 		fn default() -> Self {
-			Self {
-				phantom: Default::default(),
-				parameters: None,
-			}
+			Self { phantom: Default::default(), parameters: None }
 		}
 	}
 
@@ -131,7 +128,8 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn parameters)]
 	/// Details of the module's parameters
-	pub(super) type Parameters<T: Config<I>, I: 'static = ()> = StorageValue<_, Vec<u8>, ValueQuery>;
+	pub(super) type Parameters<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, Vec<u8>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -151,7 +149,10 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(T::WeightInfo::force_set_parameters(parameters.len() as u32))]
-		pub fn force_set_parameters(origin: OriginFor<T>, parameters: Vec<u8>) -> DispatchResultWithPostInfo {
+		pub fn force_set_parameters(
+			origin: OriginFor<T>,
+			parameters: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			Parameters::<T, I>::try_mutate(|params| {
 				*params = parameters.clone();
@@ -171,7 +172,7 @@ impl<T: Config<I>, I: 'static> VerifierModule for Pallet<T, I> {
 				// TODO: Handle properly
 				ensure!(false, Error::<T, I>::VerifyError);
 				Ok(false)
-			}
+			},
 		}
 	}
 }

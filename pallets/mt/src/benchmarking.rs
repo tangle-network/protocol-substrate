@@ -27,7 +27,8 @@ use frame_system::RawOrigin;
 use sp_runtime::traits::Bounded;
 use sp_std::vec;
 use webb_primitives::traits::merkle_tree::TreeInterface;
-type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+type BalanceOf<T> =
+	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());

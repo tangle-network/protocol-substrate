@@ -176,6 +176,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	}
 	.assimilate_storage(&mut storage);
 
-	GenesisBuild::<Test>::assimilate_storage(&pallet_treasury::GenesisConfig, &mut storage).unwrap();
+	GenesisBuild::<Test>::assimilate_storage(&pallet_treasury::GenesisConfig, &mut storage)
+		.unwrap();
 	storage.into()
 }

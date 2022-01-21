@@ -5,9 +5,10 @@ use arkworks_utils::{
 };
 use common::{AccountId, AuraId, Signature};
 use darkwebb_runtime::{
-	wasm_binary_unwrap, AssetRegistryConfig, AuraConfig, BalancesConfig, CouncilConfig, GenesisConfig,
-	HasherBls381Config, HasherBn254Config, MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config,
-	ParachainStakingConfig, SudoConfig, SystemConfig, VerifierBls381Config, VerifierBn254Config, KUNITS, UNITS,
+	wasm_binary_unwrap, AssetRegistryConfig, AuraConfig, BalancesConfig, CouncilConfig,
+	GenesisConfig, HasherBls381Config, HasherBn254Config, MerkleTreeBls381Config,
+	MerkleTreeBn254Config, MixerBn254Config, ParachainStakingConfig, SudoConfig, SystemConfig,
+	VerifierBls381Config, VerifierBn254Config, KUNITS, UNITS,
 };
 use webb_primitives::Balance;
 
@@ -27,7 +28,8 @@ use sp_runtime::{
 pub type ChainSpec = sc_service::GenericChainSpec<darkwebb_runtime::GenesisConfig, Extensions>;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type DarkwebbChainSpec = sc_service::GenericChainSpec<darkwebb_runtime::GenesisConfig, Extensions>;
+pub type DarkwebbChainSpec =
+	sc_service::GenericChainSpec<darkwebb_runtime::GenesisConfig, Extensions>;
 
 /// Specialized `ChainSpec` for the shell parachain runtime.
 pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
@@ -100,10 +102,7 @@ pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
 		None,
 		None,
 		None,
-		Extensions {
-			relay_chain: "westend".into(),
-			para_id: id.into(),
-		},
+		Extensions { relay_chain: "westend".into(), para_id: id.into() },
 	)
 }
 
@@ -158,10 +157,7 @@ pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
 		None,
 		// Properties
 		None,
-		Extensions {
-			relay_chain: "kusama".into(),
-			para_id: id.into(),
-		},
+		Extensions { relay_chain: "kusama".into(), para_id: id.into() },
 	))
 }
 
@@ -217,16 +213,15 @@ pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 		// Properties
 		None,
 		// Extensions
-		Extensions {
-			relay_chain: "rococo".into(),
-			para_id: id.into(),
-		},
+		Extensions { relay_chain: "rococo".into(), para_id: id.into() },
 	))
 }
 
 pub const ENDOWMENT: u128 = UNITS * 4096_000;
 
-pub fn darkwebb_test_genesis_inflation_config(endowed_accounts: Vec<AccountId>) -> InflationInfo<Balance> {
+pub fn darkwebb_test_genesis_inflation_config(
+	endowed_accounts: Vec<AccountId>,
+) -> InflationInfo<Balance> {
 	let total = endowed_accounts.len() as u128;
 	let total_issuance = total * ENDOWMENT;
 	let sixty_percent = Percent::from_percent(60) * total_issuance;
@@ -271,16 +266,15 @@ fn testnet_genesis(
 	let verifier_params = {
 		use std::fs;
 		// let pk_bytes = fs::read("../../fixtures/proving_key.bin").unwrap();
-		let vk_bytes = include_bytes!("../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
+		let vk_bytes =
+			include_bytes!("../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
 
 		vk_bytes.to_vec()
 	};
 
 	log::info!("Genesis Config");
 	GenesisConfig {
-		system: darkwebb_runtime::SystemConfig {
-			code: wasm_binary_unwrap().to_vec(),
-		},
+		system: darkwebb_runtime::SystemConfig { code: wasm_binary_unwrap().to_vec() },
 		asset_registry: AssetRegistryConfig {
 			asset_names: vec![],
 			native_asset_name: b"WEBB".to_vec(),
@@ -322,10 +316,7 @@ fn testnet_genesis(
 			parameters: Some(verifier_params),
 			phantom: Default::default(),
 		},
-		verifier_bls_381: VerifierBls381Config {
-			parameters: None,
-			phantom: Default::default(),
-		},
+		verifier_bls_381: VerifierBls381Config { parameters: None, phantom: Default::default() },
 		merkle_tree_bn_254: MerkleTreeBn254Config {
 			phantom: Default::default(),
 			default_hashes: None,

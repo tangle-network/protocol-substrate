@@ -40,17 +40,21 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 			// 3. Setup the VerifierPallet
 			//    but to do so, we need to have a VerifyingKey
-			let pk_bytes = include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/proving_key.bin");
-			let vk_bytes = include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
+			let pk_bytes = include_bytes!(
+				"../../../protocol-substrate-fixtures/mixer/bn254/x5/proving_key.bin"
+			);
+			let vk_bytes = include_bytes!(
+				"../../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin"
+			);
 
 			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
 
 			// finally return the provingkey bytes
 			pk_bytes.to_vec()
-		}
+		},
 		Curve::Bls381 => {
 			unimplemented!()
-		}
+		},
 	}
 }
 
@@ -112,8 +116,14 @@ fn mixer_works() {
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
-			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
+		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			fee_value,
+			refund_value,
+		);
 
 		assert_ok!(Mixer::deposit(
 			Origin::signed(sender_account_id.clone()),
@@ -165,7 +175,14 @@ fn mixer_should_fail_with_when_proof_when_any_byte_is_changed_in_proof() {
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
 		let (mut proof_bytes, root_element, nullifier_hash_element, leaf_element) =
-			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
+			setup_zk_circuit(
+				curve,
+				recipient_bytes,
+				relayer_bytes,
+				pk_bytes,
+				fee_value,
+				refund_value,
+			);
 
 		assert_ok!(Mixer::deposit(
 			Origin::signed(sender_account_id.clone()),
@@ -219,8 +236,14 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
-			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
+		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			fee_value,
+			refund_value,
+		);
 
 		assert_ok!(Mixer::deposit(
 			Origin::signed(sender_account_id.clone()),
@@ -273,8 +296,14 @@ fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation(
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
-			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
+		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			fee_value,
+			refund_value,
+		);
 
 		assert_ok!(Mixer::deposit(
 			Origin::signed(sender_account_id.clone()),
@@ -322,8 +351,14 @@ fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
-			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
+		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			fee_value,
+			refund_value,
+		);
 
 		assert_ok!(Mixer::deposit(
 			Origin::signed(sender_account_id.clone()),
@@ -371,8 +406,14 @@ fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_revers
 		let recipient_bytes = truncate_and_pad_reverse(&recipient_account_id.encode()[..]);
 		let relayer_bytes = truncate_and_pad_reverse(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
-			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
+		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			fee_value,
+			refund_value,
+		);
 
 		assert_ok!(Mixer::deposit(
 			Origin::signed(sender_account_id.clone()),
@@ -420,8 +461,14 @@ fn double_spending_should_fail() {
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
-			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
+		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			fee_value,
+			refund_value,
+		);
 
 		assert_ok!(Mixer::deposit(
 			Origin::signed(sender_account_id.clone()),
@@ -472,7 +519,11 @@ fn deposit_with_non_native_asset_should_work() {
 	new_test_ext().execute_with(|| {
 		// create an Asset first
 		assert_ok!(
-			AssetRegistry::get_or_create_asset(String::from("ETH").into(), AssetType::Token, Zero::zero()),
+			AssetRegistry::get_or_create_asset(
+				String::from("ETH").into(),
+				AssetType::Token,
+				Zero::zero()
+			),
 			1
 		);
 
@@ -495,8 +546,14 @@ fn deposit_with_non_native_asset_should_work() {
 		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
-		let (_, _, _, leaf_element) =
-			setup_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
+		let (_, _, _, leaf_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			pk_bytes,
+			fee_value,
+			refund_value,
+		);
 		// check my balance first, before sending the deposit
 		assert_eq!(Currencies::free_balance(currency_id, &sender_account_id), Zero::zero());
 		// now we add some balance
@@ -508,10 +565,7 @@ fn deposit_with_non_native_asset_should_work() {
 			new_balance,
 		));
 		// now we do check the balance again, it should be updated
-		assert_eq!(
-			Currencies::free_balance(currency_id, &sender_account_id),
-			new_balance as _
-		);
+		assert_eq!(Currencies::free_balance(currency_id, &sender_account_id), new_balance as _);
 		// and then we do the deposit
 		assert_ok!(Mixer::deposit(
 			Origin::signed(sender_account_id.clone()),

@@ -62,7 +62,9 @@ pub struct Setup {
 	pub backend: Backend,
 }
 
-pub trait ElementTrait: Encode + Decode + Parameter + Default + Copy + TypeInfo + MaybeSerializeDeserialize {
+pub trait ElementTrait:
+	Encode + Decode + Parameter + Default + Copy + TypeInfo + MaybeSerializeDeserialize
+{
 	/// converts type to byte slice
 	fn to_bytes(&self) -> &[u8];
 	/// converts type to Vec

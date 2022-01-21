@@ -22,7 +22,10 @@
 //! 3. Public (Collator, Nominator)
 //! 4. Miscellaneous Property-Based Tests
 use crate::{
-	mock::{events, last_event, roll_to, set_author, Balances, Event as MetaEvent, ExtBuilder, Origin, Stake, Test},
+	mock::{
+		events, last_event, roll_to, set_author, Balances, Event as MetaEvent, ExtBuilder, Origin,
+		Stake, Test,
+	},
 	Bond, CollatorStatus, Error, Event, NominatorAdded, Pallet, Range,
 };
 use frame_support::{assert_noop, assert_ok};
@@ -36,7 +39,7 @@ macro_rules! asserts_eq {
 		match (&$left, &$right) {
 			(left_val, right_val) => {
 				similar_asserts::assert_eq!(*left_val, *right_val);
-			}
+			},
 		}
 	};
 }
@@ -227,27 +230,32 @@ fn round_immediately_jumps_if_current_duration_exceeds_new_blocks_per_round() {
 fn invalid_monetary_origin_fails() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_noop!(
-			Stake::set_staking_expectations(Origin::signed(45), Range {
-				min: 3u32.into(),
-				ideal: 4u32.into(),
-				max: 5u32.into()
-			}),
+			Stake::set_staking_expectations(
+				Origin::signed(45),
+				Range { min: 3u32.into(), ideal: 4u32.into(), max: 5u32.into() }
+			),
 			sp_runtime::DispatchError::BadOrigin
 		);
 		assert_noop!(
-			Stake::set_inflation(Origin::signed(45), Range {
-				min: Perbill::from_percent(3),
-				ideal: Perbill::from_percent(4),
-				max: Perbill::from_percent(5)
-			}),
+			Stake::set_inflation(
+				Origin::signed(45),
+				Range {
+					min: Perbill::from_percent(3),
+					ideal: Perbill::from_percent(4),
+					max: Perbill::from_percent(5)
+				}
+			),
 			sp_runtime::DispatchError::BadOrigin
 		);
 		assert_noop!(
-			Stake::set_inflation(Origin::signed(45), Range {
-				min: Perbill::from_percent(3),
-				ideal: Perbill::from_percent(4),
-				max: Perbill::from_percent(5)
-			}),
+			Stake::set_inflation(
+				Origin::signed(45),
+				Range {
+					min: Perbill::from_percent(3),
+					ideal: Perbill::from_percent(4),
+					max: Perbill::from_percent(5)
+				}
+			),
 			sp_runtime::DispatchError::BadOrigin
 		);
 		assert_noop!(
@@ -267,18 +275,13 @@ fn invalid_monetary_origin_fails() {
 fn set_staking_event_emits_event_correctly() {
 	ExtBuilder::default().build().execute_with(|| {
 		// valid call succeeds
-		assert_ok!(Stake::set_staking_expectations(Origin::root(), Range {
-			min: 3u128,
-			ideal: 4u128,
-			max: 5u128
-		}));
+		assert_ok!(Stake::set_staking_expectations(
+			Origin::root(),
+			Range { min: 3u128, ideal: 4u128, max: 5u128 }
+		));
 		assert_eq!(
 			last_event(),
-			MetaEvent::Stake(Event::StakeExpectationsSet {
-				min: 3u128,
-				ideal: 4u128,
-				max: 5u128
-			})
+			MetaEvent::Stake(Event::StakeExpectationsSet { min: 3u128, ideal: 4u128, max: 5u128 })
 		);
 	});
 }
@@ -286,21 +289,15 @@ fn set_staking_event_emits_event_correctly() {
 #[test]
 fn set_staking_updates_storage_correctly() {
 	ExtBuilder::default().build().execute_with(|| {
-		assert_eq!(Stake::inflation_config().expect, Range {
-			min: 700,
-			ideal: 700,
-			max: 700
-		});
-		assert_ok!(Stake::set_staking_expectations(Origin::root(), Range {
-			min: 3u128,
-			ideal: 4u128,
-			max: 5u128
-		}));
-		assert_eq!(Stake::inflation_config().expect, Range {
-			min: 3u128,
-			ideal: 4u128,
-			max: 5u128
-		});
+		assert_eq!(Stake::inflation_config().expect, Range { min: 700, ideal: 700, max: 700 });
+		assert_ok!(Stake::set_staking_expectations(
+			Origin::root(),
+			Range { min: 3u128, ideal: 4u128, max: 5u128 }
+		));
+		assert_eq!(
+			Stake::inflation_config().expect,
+			Range { min: 3u128, ideal: 4u128, max: 5u128 }
+		);
 	});
 }
 
@@ -309,11 +306,10 @@ fn cannot_set_invalid_staking_expectations() {
 	ExtBuilder::default().build().execute_with(|| {
 		// invalid call fails
 		assert_noop!(
-			Stake::set_staking_expectations(Origin::root(), Range {
-				min: 5u128,
-				ideal: 4u128,
-				max: 3u128
-			}),
+			Stake::set_staking_expectations(
+				Origin::root(),
+				Range { min: 5u128, ideal: 4u128, max: 3u128 }
+			),
 			Error::<Test>::InvalidSchedule
 		);
 	});
@@ -322,17 +318,15 @@ fn cannot_set_invalid_staking_expectations() {
 #[test]
 fn cannot_set_same_staking_expectations() {
 	ExtBuilder::default().build().execute_with(|| {
-		assert_ok!(Stake::set_staking_expectations(Origin::root(), Range {
-			min: 3u128,
-			ideal: 4u128,
-			max: 5u128
-		}));
+		assert_ok!(Stake::set_staking_expectations(
+			Origin::root(),
+			Range { min: 3u128, ideal: 4u128, max: 5u128 }
+		));
 		assert_noop!(
-			Stake::set_staking_expectations(Origin::root(), Range {
-				min: 3u128,
-				ideal: 4u128,
-				max: 5u128
-			}),
+			Stake::set_staking_expectations(
+				Origin::root(),
+				Range { min: 3u128, ideal: 4u128, max: 5u128 }
+			),
 			Error::<Test>::NoWritingSameValue
 		);
 	});
@@ -343,11 +337,8 @@ fn cannot_set_same_staking_expectations() {
 #[test]
 fn set_inflation_event_emits_correctly() {
 	ExtBuilder::default().build().execute_with(|| {
-		let (min, ideal, max): (Perbill, Perbill, Perbill) = (
-			Perbill::from_percent(3),
-			Perbill::from_percent(4),
-			Perbill::from_percent(5),
-		);
+		let (min, ideal, max): (Perbill, Perbill, Perbill) =
+			(Perbill::from_percent(3), Perbill::from_percent(4), Perbill::from_percent(5));
 		assert_ok!(Stake::set_inflation(Origin::root(), Range { min, ideal, max }));
 		assert_eq!(
 			last_event(),
@@ -366,28 +357,34 @@ fn set_inflation_event_emits_correctly() {
 #[test]
 fn set_inflation_storage_updates_correctly() {
 	ExtBuilder::default().build().execute_with(|| {
-		let (min, ideal, max): (Perbill, Perbill, Perbill) = (
-			Perbill::from_percent(3),
-			Perbill::from_percent(4),
-			Perbill::from_percent(5),
+		let (min, ideal, max): (Perbill, Perbill, Perbill) =
+			(Perbill::from_percent(3), Perbill::from_percent(4), Perbill::from_percent(5));
+		assert_eq!(
+			Stake::inflation_config().annual,
+			Range {
+				min: Perbill::from_percent(50),
+				ideal: Perbill::from_percent(50),
+				max: Perbill::from_percent(50)
+			}
 		);
-		assert_eq!(Stake::inflation_config().annual, Range {
-			min: Perbill::from_percent(50),
-			ideal: Perbill::from_percent(50),
-			max: Perbill::from_percent(50)
-		});
-		assert_eq!(Stake::inflation_config().round, Range {
-			min: Perbill::from_percent(5),
-			ideal: Perbill::from_percent(5),
-			max: Perbill::from_percent(5)
-		});
+		assert_eq!(
+			Stake::inflation_config().round,
+			Range {
+				min: Perbill::from_percent(5),
+				ideal: Perbill::from_percent(5),
+				max: Perbill::from_percent(5)
+			}
+		);
 		assert_ok!(Stake::set_inflation(Origin::root(), Range { min, ideal, max }),);
 		assert_eq!(Stake::inflation_config().annual, Range { min, ideal, max });
-		assert_eq!(Stake::inflation_config().round, Range {
-			min: Perbill::from_parts(57),
-			ideal: Perbill::from_parts(75),
-			max: Perbill::from_parts(93)
-		});
+		assert_eq!(
+			Stake::inflation_config().round,
+			Range {
+				min: Perbill::from_parts(57),
+				ideal: Perbill::from_parts(75),
+				max: Perbill::from_parts(93)
+			}
+		);
 	});
 }
 
@@ -395,11 +392,14 @@ fn set_inflation_storage_updates_correctly() {
 fn cannot_set_invalid_inflation() {
 	ExtBuilder::default().build().execute_with(|| {
 		assert_noop!(
-			Stake::set_inflation(Origin::root(), Range {
-				min: Perbill::from_percent(5),
-				ideal: Perbill::from_percent(4),
-				max: Perbill::from_percent(3)
-			}),
+			Stake::set_inflation(
+				Origin::root(),
+				Range {
+					min: Perbill::from_percent(5),
+					ideal: Perbill::from_percent(4),
+					max: Perbill::from_percent(3)
+				}
+			),
 			Error::<Test>::InvalidSchedule
 		);
 	});
@@ -408,11 +408,8 @@ fn cannot_set_invalid_inflation() {
 #[test]
 fn cannot_set_same_inflation() {
 	ExtBuilder::default().build().execute_with(|| {
-		let (min, ideal, max): (Perbill, Perbill, Perbill) = (
-			Perbill::from_percent(3),
-			Perbill::from_percent(4),
-			Perbill::from_percent(5),
-		);
+		let (min, ideal, max): (Perbill, Perbill, Perbill) =
+			(Perbill::from_percent(3), Perbill::from_percent(4), Perbill::from_percent(5));
 		assert_ok!(Stake::set_inflation(Origin::root(), Range { min, ideal, max }),);
 		assert_noop!(
 			Stake::set_inflation(Origin::root(), Range { min, ideal, max }),
@@ -440,10 +437,7 @@ fn set_parachain_bond_account_event_emits_correctly() {
 #[test]
 fn set_parachain_bond_account_storage_updates_correctly() {
 	ExtBuilder::default().build().execute_with(|| {
-		assert_eq!(
-			Stake::parachain_bond_info().unwrap(),
-			Pallet::<Test>::default_bond_config()
-		);
+		assert_eq!(Stake::parachain_bond_info().unwrap(), Pallet::<Test>::default_bond_config());
 		assert_ok!(Stake::set_parachain_bond_account(Origin::root(), 11));
 		assert_eq!(Stake::parachain_bond_info().unwrap().account, 11);
 	});
@@ -496,75 +490,57 @@ fn cannot_set_same_parachain_bond_reserve_percent() {
 
 #[test]
 fn join_candidates_event_emits_correctly() {
-	ExtBuilder::default()
-		.with_balances(vec![(1, 10)])
-		.build()
-		.execute_with(|| {
-			assert_ok!(Stake::join_candidates(Origin::signed(1), 10u128, 0u32));
-			assert_eq!(
-				last_event(),
-				MetaEvent::Stake(Event::JoinedCollatorCandidates {
-					who: 1,
-					amount_locked: 10u128,
-					total_locked: 10u128
-				})
-			);
-		});
+	ExtBuilder::default().with_balances(vec![(1, 10)]).build().execute_with(|| {
+		assert_ok!(Stake::join_candidates(Origin::signed(1), 10u128, 0u32));
+		assert_eq!(
+			last_event(),
+			MetaEvent::Stake(Event::JoinedCollatorCandidates {
+				who: 1,
+				amount_locked: 10u128,
+				total_locked: 10u128
+			})
+		);
+	});
 }
 
 #[test]
 fn join_candidates_reserves_balance() {
-	ExtBuilder::default()
-		.with_balances(vec![(1, 10)])
-		.build()
-		.execute_with(|| {
-			assert_eq!(Balances::reserved_balance(&1), 0);
-			assert_eq!(Balances::free_balance(&1), 10);
-			assert_ok!(Stake::join_candidates(Origin::signed(1), 10u128, 0u32));
-			assert_eq!(Balances::reserved_balance(&1), 10);
-			assert_eq!(Balances::free_balance(&1), 0);
-		});
+	ExtBuilder::default().with_balances(vec![(1, 10)]).build().execute_with(|| {
+		assert_eq!(Balances::reserved_balance(&1), 0);
+		assert_eq!(Balances::free_balance(&1), 10);
+		assert_ok!(Stake::join_candidates(Origin::signed(1), 10u128, 0u32));
+		assert_eq!(Balances::reserved_balance(&1), 10);
+		assert_eq!(Balances::free_balance(&1), 0);
+	});
 }
 
 #[test]
 fn join_candidates_increases_total_staked() {
-	ExtBuilder::default()
-		.with_balances(vec![(1, 10)])
-		.build()
-		.execute_with(|| {
-			assert_eq!(Stake::total(), 0);
-			assert_ok!(Stake::join_candidates(Origin::signed(1), 10u128, 0u32));
-			assert_eq!(Stake::total(), 10);
-		});
+	ExtBuilder::default().with_balances(vec![(1, 10)]).build().execute_with(|| {
+		assert_eq!(Stake::total(), 0);
+		assert_ok!(Stake::join_candidates(Origin::signed(1), 10u128, 0u32));
+		assert_eq!(Stake::total(), 10);
+	});
 }
 
 #[test]
 fn join_candidates_creates_candidate_state() {
-	ExtBuilder::default()
-		.with_balances(vec![(1, 10)])
-		.build()
-		.execute_with(|| {
-			assert!(Stake::collator_state2(1).is_none());
-			assert_ok!(Stake::join_candidates(Origin::signed(1), 10u128, 0u32));
-			let candidate_state = Stake::collator_state2(1).expect("just joined => exists");
-			assert_eq!(candidate_state.bond, 10u128);
-		});
+	ExtBuilder::default().with_balances(vec![(1, 10)]).build().execute_with(|| {
+		assert!(Stake::collator_state2(1).is_none());
+		assert_ok!(Stake::join_candidates(Origin::signed(1), 10u128, 0u32));
+		let candidate_state = Stake::collator_state2(1).expect("just joined => exists");
+		assert_eq!(candidate_state.bond, 10u128);
+	});
 }
 
 #[test]
 fn join_candidates_adds_to_candidate_pool() {
-	ExtBuilder::default()
-		.with_balances(vec![(1, 10)])
-		.build()
-		.execute_with(|| {
-			assert!(Stake::candidate_pool().0.is_empty());
-			assert_ok!(Stake::join_candidates(Origin::signed(1), 10u128, 0u32));
-			let candidate_pool = Stake::candidate_pool();
-			assert_eq!(candidate_pool.0[0], Bond {
-				owner: 1,
-				amount: 10u128
-			});
-		});
+	ExtBuilder::default().with_balances(vec![(1, 10)]).build().execute_with(|| {
+		assert!(Stake::candidate_pool().0.is_empty());
+		assert_ok!(Stake::join_candidates(Origin::signed(1), 10u128, 0u32));
+		let candidate_pool = Stake::candidate_pool();
+		assert_eq!(candidate_pool.0[0], Bond { owner: 1, amount: 10u128 });
+	});
 }
 
 #[test]
@@ -598,28 +574,22 @@ fn cannot_join_candidates_if_nominator() {
 
 #[test]
 fn cannot_join_candidates_without_min_bond() {
-	ExtBuilder::default()
-		.with_balances(vec![(1, 1000)])
-		.build()
-		.execute_with(|| {
-			assert_noop!(
-				Stake::join_candidates(Origin::signed(1), 9u128, 100u32),
-				Error::<Test>::ValBondBelowMin
-			);
-		});
+	ExtBuilder::default().with_balances(vec![(1, 1000)]).build().execute_with(|| {
+		assert_noop!(
+			Stake::join_candidates(Origin::signed(1), 9u128, 100u32),
+			Error::<Test>::ValBondBelowMin
+		);
+	});
 }
 
 #[test]
 fn cannot_join_candidates_with_more_than_available_balance() {
-	ExtBuilder::default()
-		.with_balances(vec![(1, 500)])
-		.build()
-		.execute_with(|| {
-			assert_noop!(
-				Stake::join_candidates(Origin::signed(1), 501u128, 100u32),
-				pallet_balances::Error::<Test>::InsufficientBalance
-			);
-		});
+	ExtBuilder::default().with_balances(vec![(1, 500)]).build().execute_with(|| {
+		assert_noop!(
+			Stake::join_candidates(Origin::signed(1), 501u128, 100u32),
+			pallet_balances::Error::<Test>::InsufficientBalance
+		);
+	});
 }
 
 #[test]
@@ -749,10 +719,7 @@ fn leave_candidates_removes_candidate_state_after_exit() {
 #[test]
 fn cannot_leave_candidates_if_not_candidate() {
 	ExtBuilder::default().build().execute_with(|| {
-		assert_noop!(
-			Stake::leave_candidates(Origin::signed(1), 1u32),
-			Error::<Test>::CandidateDNE
-		);
+		assert_noop!(Stake::leave_candidates(Origin::signed(1), 1u32), Error::<Test>::CandidateDNE);
 	});
 }
 
@@ -1451,10 +1418,7 @@ fn leave_nominators_event_emits_correctly() {
 				})
 			);
 			roll_to(10);
-			assert!(events().contains(&Event::NominatorLeft {
-				nominator: 2,
-				unstaked: 10
-			}));
+			assert!(events().contains(&Event::NominatorLeft { nominator: 2, unstaked: 10 }));
 		});
 }
 
@@ -1518,7 +1482,8 @@ fn leave_nominators_removes_nominations_from_collator_state() {
 		.execute_with(|| {
 			roll_to(1);
 			for i in 2..6 {
-				let candidate_state = Stake::collator_state2(i).expect("initialized in ext builder");
+				let candidate_state =
+					Stake::collator_state2(i).expect("initialized in ext builder");
 				assert_eq!(candidate_state.top_nominators[0], Bond { owner: 1, amount: 10 });
 				assert_eq!(candidate_state.nominators.0[0], 1);
 				assert_eq!(candidate_state.total_backing, 30);
@@ -1527,7 +1492,8 @@ fn leave_nominators_removes_nominations_from_collator_state() {
 			assert_ok!(Stake::leave_nominators(Origin::signed(1), 10));
 			roll_to(10);
 			for i in 2..6 {
-				let candidate_state = Stake::collator_state2(i).expect("initialized in ext builder");
+				let candidate_state =
+					Stake::collator_state2(i).expect("initialized in ext builder");
 				assert!(candidate_state.top_nominators.is_empty());
 				assert!(candidate_state.nominators.0.is_empty());
 				assert_eq!(candidate_state.total_backing, 20);
@@ -1641,10 +1607,7 @@ fn revoke_nomination_event_emits_exit_scheduled_if_no_nominations_left() {
 				unstaked: 10,
 				total_staked: 30
 			}));
-			assert!(events().contains(&Event::NominatorLeft {
-				nominator: 2,
-				unstaked: 10
-			}));
+			assert!(events().contains(&Event::NominatorLeft { nominator: 2, unstaked: 10 }));
 		});
 }
 
@@ -1804,10 +1767,7 @@ fn cannot_revoke_if_leaving() {
 #[test]
 fn cannot_revoke_nomination_if_not_nominator() {
 	ExtBuilder::default().build().execute_with(|| {
-		assert_noop!(
-			Stake::revoke_nomination(Origin::signed(2), 1),
-			Error::<Test>::NominatorDNE
-		);
+		assert_noop!(Stake::revoke_nomination(Origin::signed(2), 1), Error::<Test>::NominatorDNE);
 	});
 }
 
@@ -2017,16 +1977,16 @@ fn nominator_bond_more_updates_nominator_state() {
 		.build()
 		.execute_with(|| {
 			assert_eq!(Stake::nominator_state2(2).expect("exists").total, 10);
-			assert_eq!(Stake::nominator_state2(2).expect("exists").nominations.0[0], Bond {
-				owner: 1,
-				amount: 10
-			});
+			assert_eq!(
+				Stake::nominator_state2(2).expect("exists").nominations.0[0],
+				Bond { owner: 1, amount: 10 }
+			);
 			assert_ok!(Stake::nominator_bond_more(Origin::signed(2), 1, 5));
 			assert_eq!(Stake::nominator_state2(2).expect("exists").total, 15);
-			assert_eq!(Stake::nominator_state2(2).expect("exists").nominations.0[0], Bond {
-				owner: 1,
-				amount: 15
-			});
+			assert_eq!(
+				Stake::nominator_state2(2).expect("exists").nominations.0[0],
+				Bond { owner: 1, amount: 15 }
+			);
 		});
 }
 
@@ -2038,15 +1998,15 @@ fn nominator_bond_more_updates_candidate_state_top_nominators() {
 		.with_nominations(vec![(2, 1, 10)])
 		.build()
 		.execute_with(|| {
-			assert_eq!(Stake::collator_state2(1).expect("exists").top_nominators[0], Bond {
-				owner: 2,
-				amount: 10
-			});
+			assert_eq!(
+				Stake::collator_state2(1).expect("exists").top_nominators[0],
+				Bond { owner: 2, amount: 10 }
+			);
 			assert_ok!(Stake::nominator_bond_more(Origin::signed(2), 1, 5));
-			assert_eq!(Stake::collator_state2(1).expect("exists").top_nominators[0], Bond {
-				owner: 2,
-				amount: 15
-			});
+			assert_eq!(
+				Stake::collator_state2(1).expect("exists").top_nominators[0],
+				Bond { owner: 2, amount: 15 }
+			);
 		});
 }
 
@@ -2058,10 +2018,10 @@ fn nominator_bond_more_updates_candidate_state_bottom_nominators() {
 		.with_nominations(vec![(2, 1, 10), (3, 1, 20), (4, 1, 20), (5, 1, 20), (6, 1, 20)])
 		.build()
 		.execute_with(|| {
-			assert_eq!(Stake::collator_state2(1).expect("exists").bottom_nominators[0], Bond {
-				owner: 2,
-				amount: 10
-			});
+			assert_eq!(
+				Stake::collator_state2(1).expect("exists").bottom_nominators[0],
+				Bond { owner: 2, amount: 10 }
+			);
 			assert_ok!(Stake::nominator_bond_more(Origin::signed(2), 1, 5));
 			assert_eq!(
 				last_event(),
@@ -2072,10 +2032,10 @@ fn nominator_bond_more_updates_candidate_state_bottom_nominators() {
 					in_top: false
 				})
 			);
-			assert_eq!(Stake::collator_state2(1).expect("exists").bottom_nominators[0], Bond {
-				owner: 2,
-				amount: 15
-			});
+			assert_eq!(
+				Stake::collator_state2(1).expect("exists").bottom_nominators[0],
+				Bond { owner: 2, amount: 15 }
+			);
 		});
 }
 
@@ -2242,16 +2202,16 @@ fn nominator_bond_less_updates_nominator_state() {
 		.build()
 		.execute_with(|| {
 			assert_eq!(Stake::nominator_state2(2).expect("exists").total, 10);
-			assert_eq!(Stake::nominator_state2(2).expect("exists").nominations.0[0], Bond {
-				owner: 1,
-				amount: 10
-			});
+			assert_eq!(
+				Stake::nominator_state2(2).expect("exists").nominations.0[0],
+				Bond { owner: 1, amount: 10 }
+			);
 			assert_ok!(Stake::nominator_bond_less(Origin::signed(2), 1, 5));
 			assert_eq!(Stake::nominator_state2(2).expect("exists").total, 5);
-			assert_eq!(Stake::nominator_state2(2).expect("exists").nominations.0[0], Bond {
-				owner: 1,
-				amount: 5
-			});
+			assert_eq!(
+				Stake::nominator_state2(2).expect("exists").nominations.0[0],
+				Bond { owner: 1, amount: 5 }
+			);
 		});
 }
 
@@ -2263,15 +2223,15 @@ fn nominator_bond_less_updates_candidate_state() {
 		.with_nominations(vec![(2, 1, 10)])
 		.build()
 		.execute_with(|| {
-			assert_eq!(Stake::collator_state2(1).expect("exists").top_nominators[0], Bond {
-				owner: 2,
-				amount: 10
-			});
+			assert_eq!(
+				Stake::collator_state2(1).expect("exists").top_nominators[0],
+				Bond { owner: 2, amount: 10 }
+			);
 			assert_ok!(Stake::nominator_bond_less(Origin::signed(2), 1, 5));
-			assert_eq!(Stake::collator_state2(1).expect("exists").top_nominators[0], Bond {
-				owner: 2,
-				amount: 5
-			});
+			assert_eq!(
+				Stake::collator_state2(1).expect("exists").top_nominators[0],
+				Bond { owner: 2, amount: 5 }
+			);
 		});
 }
 
@@ -2414,20 +2374,20 @@ fn nominator_bond_less_updates_just_bottom_nominations() {
 		.with_nominations(vec![(2, 1, 10), (3, 1, 11), (4, 1, 12), (5, 1, 14), (6, 1, 15)])
 		.build()
 		.execute_with(|| {
-			let pre_call_collator_state = Stake::collator_state2(&1).expect("nominated by all so exists");
+			let pre_call_collator_state =
+				Stake::collator_state2(&1).expect("nominated by all so exists");
 			assert_ok!(Stake::nominator_bond_less(Origin::signed(2), 1, 2));
-			let post_call_collator_state = Stake::collator_state2(&1).expect("nominated by all so exists");
+			let post_call_collator_state =
+				Stake::collator_state2(&1).expect("nominated by all so exists");
 			let mut not_equal = false;
 			for Bond { owner, amount } in pre_call_collator_state.bottom_nominators {
-				for Bond {
-					owner: post_owner,
-					amount: post_amount,
-				} in &post_call_collator_state.bottom_nominators
+				for Bond { owner: post_owner, amount: post_amount } in
+					&post_call_collator_state.bottom_nominators
 				{
 					if &owner == post_owner {
 						if &amount != post_amount {
 							not_equal = true;
-							break;
+							break
 						}
 					}
 				}
@@ -2435,15 +2395,13 @@ fn nominator_bond_less_updates_just_bottom_nominations() {
 			assert!(not_equal);
 			let mut equal = true;
 			for Bond { owner, amount } in pre_call_collator_state.top_nominators {
-				for Bond {
-					owner: post_owner,
-					amount: post_amount,
-				} in &post_call_collator_state.top_nominators
+				for Bond { owner: post_owner, amount: post_amount } in
+					&post_call_collator_state.top_nominators
 				{
 					if &owner == post_owner {
 						if &amount != post_amount {
 							equal = false;
-							break;
+							break
 						}
 					}
 				}
@@ -2468,20 +2426,20 @@ fn nominator_bond_less_does_not_delete_bottom_nominations() {
 		.with_nominations(vec![(2, 1, 10), (3, 1, 11), (4, 1, 12), (5, 1, 14), (6, 1, 15)])
 		.build()
 		.execute_with(|| {
-			let pre_call_collator_state = Stake::collator_state2(&1).expect("nominated by all so exists");
+			let pre_call_collator_state =
+				Stake::collator_state2(&1).expect("nominated by all so exists");
 			assert_ok!(Stake::nominator_bond_less(Origin::signed(6), 1, 4));
-			let post_call_collator_state = Stake::collator_state2(&1).expect("nominated by all so exists");
+			let post_call_collator_state =
+				Stake::collator_state2(&1).expect("nominated by all so exists");
 			let mut equal = true;
 			for Bond { owner, amount } in pre_call_collator_state.bottom_nominators {
-				for Bond {
-					owner: post_owner,
-					amount: post_amount,
-				} in &post_call_collator_state.bottom_nominators
+				for Bond { owner: post_owner, amount: post_amount } in
+					&post_call_collator_state.bottom_nominators
 				{
 					if &owner == post_owner {
 						if &amount != post_amount {
 							equal = false;
-							break;
+							break
 						}
 					}
 				}
@@ -2489,15 +2447,13 @@ fn nominator_bond_less_does_not_delete_bottom_nominations() {
 			assert!(equal);
 			let mut not_equal = false;
 			for Bond { owner, amount } in pre_call_collator_state.top_nominators {
-				for Bond {
-					owner: post_owner,
-					amount: post_amount,
-				} in &post_call_collator_state.top_nominators
+				for Bond { owner: post_owner, amount: post_amount } in
+					&post_call_collator_state.top_nominators
 				{
 					if &owner == post_owner {
 						if &amount != post_amount {
 							not_equal = true;
-							break;
+							break
 						}
 					}
 				}
@@ -2526,27 +2482,15 @@ fn nominator_schedule_revocation_total() {
 		.execute_with(|| {
 			roll_to(1);
 			assert_ok!(Stake::revoke_nomination(Origin::signed(2), 1));
-			assert_eq!(
-				Stake::nominator_state2(2).expect("exists").scheduled_revocations_total,
-				10
-			);
+			assert_eq!(Stake::nominator_state2(2).expect("exists").scheduled_revocations_total, 10);
 			roll_to(10);
-			assert_eq!(
-				Stake::nominator_state2(2).expect("exists").scheduled_revocations_total,
-				0
-			);
+			assert_eq!(Stake::nominator_state2(2).expect("exists").scheduled_revocations_total, 0);
 			assert_ok!(Stake::nominate(Origin::signed(2), 5, 10, 0, 2));
 			assert_ok!(Stake::revoke_nomination(Origin::signed(2), 3));
 			assert_ok!(Stake::revoke_nomination(Origin::signed(2), 4));
-			assert_eq!(
-				Stake::nominator_state2(2).expect("exists").scheduled_revocations_total,
-				20
-			);
+			assert_eq!(Stake::nominator_state2(2).expect("exists").scheduled_revocations_total, 20);
 			roll_to(20);
-			assert_eq!(
-				Stake::nominator_state2(2).expect("exists").scheduled_revocations_total,
-				0
-			);
+			assert_eq!(Stake::nominator_state2(2).expect("exists").scheduled_revocations_total, 0);
 		});
 }
 
@@ -2577,41 +2521,13 @@ fn parachain_bond_inflation_reserve_matches_config() {
 			roll_to(8);
 			// chooses top TotalSelectedCandidates (5), in order
 			let mut expected = vec![
-				Event::ParachainBondAccountSet {
-					old: Pallet::<Test>::account_id(),
-					new: 11,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 5,
-					round: 2,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::ParachainBondAccountSet { old: Pallet::<Test>::account_id(), new: 11 },
+				Event::CollatorChosen { round: 2, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 2, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 2, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 2, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 2, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 5, round: 2, collators: 5, total_balance: 140 },
 			];
 			assert_eq!(events(), expected);
 			assert_eq!(Balances::free_balance(&11), 1);
@@ -2620,73 +2536,23 @@ fn parachain_bond_inflation_reserve_matches_config() {
 			roll_to(16);
 			// distribute total issuance to collator 1 and its nominators 6, 7, 19
 			let mut new = vec![
-				Event::CollatorChosen {
-					round: 3,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 10,
-					round: 3,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 3, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 3, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 3, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 3, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 3, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 10, round: 3, collators: 5, total_balance: 140 },
 				Event::ReservedForParachainBond { who: 11, bond: 15 },
 				Event::Rewarded { who: 1, amount: 20 },
 				Event::Rewarded { who: 6, amount: 5 },
 				Event::Rewarded { who: 7, amount: 5 },
 				Event::Rewarded { who: 10, amount: 5 },
-				Event::CollatorChosen {
-					round: 4,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 15,
-					round: 4,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 4, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 4, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 4, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 4, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 4, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 15, round: 4, collators: 5, total_balance: 140 },
 			];
 			expected.append(&mut new);
 			assert_eq!(events(), expected);
@@ -2704,47 +2570,18 @@ fn parachain_bond_inflation_reserve_matches_config() {
 			// fast forward to block in which nominator 6 exit executes
 			roll_to(25);
 			let mut new2 = vec![
-				Event::NominatorExitScheduled {
-					round: 4,
-					nominator: 6,
-					scheduled_exit: 6,
-				},
+				Event::NominatorExitScheduled { round: 4, nominator: 6, scheduled_exit: 6 },
 				Event::ReservedForParachainBond { who: 11, bond: 16 },
 				Event::Rewarded { who: 1, amount: 21 },
 				Event::Rewarded { who: 6, amount: 5 },
 				Event::Rewarded { who: 7, amount: 5 },
 				Event::Rewarded { who: 10, amount: 5 },
-				Event::CollatorChosen {
-					round: 5,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 20,
-					round: 5,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 5, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 5, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 5, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 5, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 5, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 20, round: 5, collators: 5, total_balance: 140 },
 				Event::ReservedForParachainBond { who: 11, bond: 16 },
 				Event::Rewarded { who: 1, amount: 22 },
 				Event::Rewarded { who: 6, amount: 6 },
@@ -2756,41 +2593,13 @@ fn parachain_bond_inflation_reserve_matches_config() {
 					unstaked: 10,
 					total_staked: 40,
 				},
-				Event::NominatorLeft {
-					nominator: 6,
-					unstaked: 10,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 1,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 25,
-					round: 6,
-					collators: 5,
-					total_balance: 130,
-				},
+				Event::NominatorLeft { nominator: 6, unstaked: 10 },
+				Event::CollatorChosen { round: 6, collator: 1, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 6, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 6, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 6, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 6, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 25, round: 6, collators: 5, total_balance: 130 },
 			];
 			expected.append(&mut new2);
 			assert_eq!(events(), expected);
@@ -2813,37 +2622,12 @@ fn parachain_bond_inflation_reserve_matches_config() {
 				Event::Rewarded { who: 6, amount: 3 },
 				Event::Rewarded { who: 7, amount: 3 },
 				Event::Rewarded { who: 10, amount: 3 },
-				Event::CollatorChosen {
-					round: 7,
-					collator: 1,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 30,
-					round: 7,
-					collators: 5,
-					total_balance: 130,
-				},
+				Event::CollatorChosen { round: 7, collator: 1, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 7, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 7, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 7, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 7, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 30, round: 7, collators: 5, total_balance: 130 },
 			];
 			expected.append(&mut new3);
 			assert_eq!(events(), expected);
@@ -2856,37 +2640,12 @@ fn parachain_bond_inflation_reserve_matches_config() {
 				Event::Rewarded { who: 1, amount: 21 },
 				Event::Rewarded { who: 7, amount: 5 },
 				Event::Rewarded { who: 10, amount: 5 },
-				Event::CollatorChosen {
-					round: 8,
-					collator: 1,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 8,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 8,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 8,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 8,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 35,
-					round: 8,
-					collators: 5,
-					total_balance: 130,
-				},
+				Event::CollatorChosen { round: 8, collator: 1, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 8, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 8, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 8, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 8, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 35, round: 8, collators: 5, total_balance: 130 },
 			];
 			expected.append(&mut new4);
 			assert_eq!(events(), expected);
@@ -2906,37 +2665,12 @@ fn parachain_bond_inflation_reserve_matches_config() {
 				Event::Rewarded { who: 1, amount: 22 },
 				Event::Rewarded { who: 7, amount: 5 },
 				Event::Rewarded { who: 10, amount: 5 },
-				Event::CollatorChosen {
-					round: 9,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 9,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 9,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 9,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 9,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 40,
-					round: 9,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 9, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 9, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 9, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 9, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 9, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 40, round: 9, collators: 5, total_balance: 140 },
 			];
 			expected.append(&mut new5);
 			assert_eq!(events(), expected);
@@ -2949,37 +2683,12 @@ fn parachain_bond_inflation_reserve_matches_config() {
 				Event::Rewarded { who: 1, amount: 23 },
 				Event::Rewarded { who: 7, amount: 5 },
 				Event::Rewarded { who: 10, amount: 5 },
-				Event::CollatorChosen {
-					round: 10,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 10,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 10,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 10,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 10,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 45,
-					round: 10,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 10, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 10, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 10, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 10, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 10, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 45, round: 10, collators: 5, total_balance: 140 },
 			];
 			expected.append(&mut new6);
 			assert_eq!(events(), expected);
@@ -2993,37 +2702,12 @@ fn parachain_bond_inflation_reserve_matches_config() {
 				Event::Rewarded { who: 7, amount: 4 },
 				Event::Rewarded { who: 8, amount: 4 },
 				Event::Rewarded { who: 10, amount: 4 },
-				Event::CollatorChosen {
-					round: 11,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 11,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 11,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 11,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 11,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 50,
-					round: 11,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 11, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 11, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 11, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 11, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 11, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 50, round: 11, collators: 5, total_balance: 140 },
 			];
 			expected.append(&mut new7);
 			assert_eq!(events(), expected);
@@ -3042,17 +2726,8 @@ fn paid_collator_commission_matches_config() {
 			roll_to(8);
 			// chooses top TotalSelectedCandidates (5), in order
 			let mut expected = vec![
-				Event::CollatorChosen {
-					round: 2,
-					collator: 1,
-					total_exposed_amount: 40,
-				},
-				Event::NewRound {
-					block: 5,
-					round: 2,
-					collators: 1,
-					total_balance: 40,
-				},
+				Event::CollatorChosen { round: 2, collator: 1, total_exposed_amount: 40 },
+				Event::NewRound { block: 5, round: 2, collators: 1, total_balance: 40 },
 			];
 			assert_eq!(events(), expected);
 			assert_ok!(Stake::join_candidates(Origin::signed(4), 20u128, 100u32));
@@ -3069,11 +2744,7 @@ fn paid_collator_commission_matches_config() {
 			assert_ok!(Stake::nominate(Origin::signed(6), 4, 10, 10, 10));
 			roll_to(11);
 			let mut new = vec![
-				Event::JoinedCollatorCandidates {
-					who: 4,
-					amount_locked: 20,
-					total_locked: 60,
-				},
+				Event::JoinedCollatorCandidates { who: 4, amount_locked: 20, total_locked: 60 },
 				Event::Nomination {
 					nominator: 5,
 					locked: 10,
@@ -3086,22 +2757,9 @@ fn paid_collator_commission_matches_config() {
 					collator: 4,
 					nominator_position: NominatorAdded::AddedToTop { new_total: 40 },
 				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 1,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 4,
-					total_exposed_amount: 40,
-				},
-				Event::NewRound {
-					block: 10,
-					round: 3,
-					collators: 2,
-					total_balance: 80,
-				},
+				Event::CollatorChosen { round: 3, collator: 1, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 3, collator: 4, total_exposed_amount: 40 },
+				Event::NewRound { block: 10, round: 3, collators: 2, total_balance: 80 },
 			];
 			expected.append(&mut new);
 			assert_eq!(events(), expected);
@@ -3111,41 +2769,15 @@ fn paid_collator_commission_matches_config() {
 			// 20% of 10 is commission + due_portion (4) = 2 + 4 = 6
 			// all nominator payouts are 10-2 = 8 * stake_pct
 			let mut new2 = vec![
-				Event::CollatorChosen {
-					round: 4,
-					collator: 1,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 4,
-					total_exposed_amount: 40,
-				},
-				Event::NewRound {
-					block: 15,
-					round: 4,
-					collators: 2,
-					total_balance: 80,
-				},
+				Event::CollatorChosen { round: 4, collator: 1, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 4, collator: 4, total_exposed_amount: 40 },
+				Event::NewRound { block: 15, round: 4, collators: 2, total_balance: 80 },
 				Event::Rewarded { who: 4, amount: 18 },
 				Event::Rewarded { who: 5, amount: 6 },
 				Event::Rewarded { who: 6, amount: 6 },
-				Event::CollatorChosen {
-					round: 5,
-					collator: 1,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 4,
-					total_exposed_amount: 40,
-				},
-				Event::NewRound {
-					block: 20,
-					round: 5,
-					collators: 2,
-					total_balance: 80,
-				},
+				Event::CollatorChosen { round: 5, collator: 1, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 5, collator: 4, total_exposed_amount: 40 },
+				Event::NewRound { block: 20, round: 5, collators: 2, total_balance: 80 },
 			];
 			expected.append(&mut new2);
 			assert_eq!(events(), expected);
@@ -3179,70 +2811,18 @@ fn collator_exit_executes_after_delay() {
 			// holding them retroactively accountable for previous faults
 			// (within the last T::SlashingWindow blocks)
 			let expected = vec![
-				Event::CollatorChosen {
-					round: 2,
-					collator: 1,
-					total_exposed_amount: 700,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 2,
-					total_exposed_amount: 400,
-				},
-				Event::NewRound {
-					block: 5,
-					round: 2,
-					collators: 2,
-					total_balance: 1100,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 1,
-					total_exposed_amount: 700,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 2,
-					total_exposed_amount: 400,
-				},
-				Event::NewRound {
-					block: 10,
-					round: 3,
-					collators: 2,
-					total_balance: 1100,
-				},
-				Event::CollatorScheduledExit {
-					round: 3,
-					collator: 2,
-					scheduled_exit: 5,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 1,
-					total_exposed_amount: 700,
-				},
-				Event::NewRound {
-					block: 15,
-					round: 4,
-					collators: 1,
-					total_balance: 700,
-				},
-				Event::CollatorLeft {
-					collator: 2,
-					amount_unlocked: 400,
-					total_locked: 700,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 1,
-					total_exposed_amount: 700,
-				},
-				Event::NewRound {
-					block: 20,
-					round: 5,
-					collators: 1,
-					total_balance: 700,
-				},
+				Event::CollatorChosen { round: 2, collator: 1, total_exposed_amount: 700 },
+				Event::CollatorChosen { round: 2, collator: 2, total_exposed_amount: 400 },
+				Event::NewRound { block: 5, round: 2, collators: 2, total_balance: 1100 },
+				Event::CollatorChosen { round: 3, collator: 1, total_exposed_amount: 700 },
+				Event::CollatorChosen { round: 3, collator: 2, total_exposed_amount: 400 },
+				Event::NewRound { block: 10, round: 3, collators: 2, total_balance: 1100 },
+				Event::CollatorScheduledExit { round: 3, collator: 2, scheduled_exit: 5 },
+				Event::CollatorChosen { round: 4, collator: 1, total_exposed_amount: 700 },
+				Event::NewRound { block: 15, round: 4, collators: 1, total_balance: 700 },
+				Event::CollatorLeft { collator: 2, amount_unlocked: 400, total_locked: 700 },
+				Event::CollatorChosen { round: 5, collator: 1, total_exposed_amount: 700 },
+				Event::NewRound { block: 20, round: 5, collators: 1, total_balance: 700 },
 			];
 			assert_eq!(events(), expected);
 		});
@@ -3268,37 +2848,12 @@ fn collator_selection_chooses_top_candidates() {
 			roll_to(8);
 			// should choose top TotalSelectedCandidates (5), in order
 			let expected = vec![
-				Event::CollatorChosen {
-					round: 2,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 5,
-					round: 2,
-					collators: 5,
-					total_balance: 400,
-				},
+				Event::CollatorChosen { round: 2, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 2, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 2, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 2, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 2, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 5, round: 2, collators: 5, total_balance: 400 },
 			];
 			assert_eq!(events(), expected);
 			assert_ok!(Stake::leave_candidates(Origin::signed(6), 6));
@@ -3323,176 +2878,39 @@ fn collator_selection_chooses_top_candidates() {
 			roll_to(27);
 			// should choose top TotalSelectedCandidates (5), in order
 			let expected = vec![
-				Event::CollatorChosen {
-					round: 2,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 5,
-					round: 2,
-					collators: 5,
-					total_balance: 400,
-				},
-				Event::CollatorScheduledExit {
-					round: 2,
-					collator: 6,
-					scheduled_exit: 4,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 10,
-					round: 3,
-					collators: 5,
-					total_balance: 400,
-				},
-				Event::CollatorLeft {
-					collator: 6,
-					amount_unlocked: 50,
-					total_locked: 400,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 15,
-					round: 4,
-					collators: 5,
-					total_balance: 400,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 20,
-					round: 5,
-					collators: 5,
-					total_balance: 400,
-				},
-				Event::JoinedCollatorCandidates {
-					who: 6,
-					amount_locked: 69,
-					total_locked: 469,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 6,
-					total_exposed_amount: 69,
-				},
-				Event::NewRound {
-					block: 25,
-					round: 6,
-					collators: 5,
-					total_balance: 409,
-				},
+				Event::CollatorChosen { round: 2, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 2, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 2, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 2, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 2, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 5, round: 2, collators: 5, total_balance: 400 },
+				Event::CollatorScheduledExit { round: 2, collator: 6, scheduled_exit: 4 },
+				Event::CollatorChosen { round: 3, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 3, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 3, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 3, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 3, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 10, round: 3, collators: 5, total_balance: 400 },
+				Event::CollatorLeft { collator: 6, amount_unlocked: 50, total_locked: 400 },
+				Event::CollatorChosen { round: 4, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 4, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 4, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 4, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 4, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 15, round: 4, collators: 5, total_balance: 400 },
+				Event::CollatorChosen { round: 5, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 5, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 5, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 5, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 5, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 20, round: 5, collators: 5, total_balance: 400 },
+				Event::JoinedCollatorCandidates { who: 6, amount_locked: 69, total_locked: 469 },
+				Event::CollatorChosen { round: 6, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 6, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 6, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 6, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 6, collator: 6, total_exposed_amount: 69 },
+				Event::NewRound { block: 25, round: 6, collators: 5, total_balance: 409 },
 			];
 			assert_eq!(events(), expected);
 		});
@@ -3518,37 +2936,12 @@ fn exit_queue_executes_in_order() {
 			roll_to(8);
 			// should choose top TotalSelectedCandidates (5), in order
 			let mut expected = vec![
-				Event::CollatorChosen {
-					round: 2,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 5,
-					round: 2,
-					collators: 5,
-					total_balance: 400,
-				},
+				Event::CollatorChosen { round: 2, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 2, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 2, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 2, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 2, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 5, round: 2, collators: 5, total_balance: 400 },
 			];
 			assert_eq!(events(), expected);
 			assert_ok!(Stake::leave_candidates(Origin::signed(6), 6));
@@ -3582,109 +2975,26 @@ fn exit_queue_executes_in_order() {
 			);
 			roll_to(21);
 			let mut new_events = vec![
-				Event::CollatorScheduledExit {
-					round: 2,
-					collator: 6,
-					scheduled_exit: 4,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 10,
-					round: 3,
-					collators: 5,
-					total_balance: 400,
-				},
-				Event::CollatorScheduledExit {
-					round: 3,
-					collator: 5,
-					scheduled_exit: 5,
-				},
-				Event::CollatorLeft {
-					collator: 6,
-					amount_unlocked: 50,
-					total_locked: 400,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::NewRound {
-					block: 15,
-					round: 4,
-					collators: 4,
-					total_balance: 340,
-				},
-				Event::CollatorScheduledExit {
-					round: 4,
-					collator: 4,
-					scheduled_exit: 6,
-				},
-				Event::CollatorLeft {
-					collator: 5,
-					amount_unlocked: 60,
-					total_locked: 340,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::NewRound {
-					block: 20,
-					round: 5,
-					collators: 3,
-					total_balance: 270,
-				},
+				Event::CollatorScheduledExit { round: 2, collator: 6, scheduled_exit: 4 },
+				Event::CollatorChosen { round: 3, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 3, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 3, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 3, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 3, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 10, round: 3, collators: 5, total_balance: 400 },
+				Event::CollatorScheduledExit { round: 3, collator: 5, scheduled_exit: 5 },
+				Event::CollatorLeft { collator: 6, amount_unlocked: 50, total_locked: 400 },
+				Event::CollatorChosen { round: 4, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 4, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 4, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 4, collator: 4, total_exposed_amount: 70 },
+				Event::NewRound { block: 15, round: 4, collators: 4, total_balance: 340 },
+				Event::CollatorScheduledExit { round: 4, collator: 4, scheduled_exit: 6 },
+				Event::CollatorLeft { collator: 5, amount_unlocked: 60, total_locked: 340 },
+				Event::CollatorChosen { round: 5, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 5, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 5, collator: 3, total_exposed_amount: 80 },
+				Event::NewRound { block: 20, round: 5, collators: 3, total_balance: 270 },
 			];
 			expected.append(&mut new_events);
 			assert_eq!(events(), expected);
@@ -3711,37 +3021,12 @@ fn payout_distribution_to_solo_collators() {
 			roll_to(8);
 			// should choose top TotalCandidatesSelected (5), in order
 			let mut expected = vec![
-				Event::CollatorChosen {
-					round: 2,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 5,
-					round: 2,
-					collators: 5,
-					total_balance: 400,
-				},
+				Event::CollatorChosen { round: 2, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 2, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 2, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 2, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 2, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 5, round: 2, collators: 5, total_balance: 400 },
 			];
 			assert_eq!(events(), expected);
 			// ~ set block author as 1 for all blocks this round
@@ -3749,69 +3034,19 @@ fn payout_distribution_to_solo_collators() {
 			roll_to(16);
 			// pay total issuance to 1
 			let mut new = vec![
-				Event::CollatorChosen {
-					round: 3,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 10,
-					round: 3,
-					collators: 5,
-					total_balance: 400,
-				},
+				Event::CollatorChosen { round: 3, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 3, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 3, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 3, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 3, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 10, round: 3, collators: 5, total_balance: 400 },
 				Event::Rewarded { who: 1, amount: 305 },
-				Event::CollatorChosen {
-					round: 4,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 15,
-					round: 4,
-					collators: 5,
-					total_balance: 400,
-				},
+				Event::CollatorChosen { round: 4, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 4, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 4, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 4, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 4, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 15, round: 4, collators: 5, total_balance: 400 },
 			];
 			expected.append(&mut new);
 			assert_eq!(events(), expected);
@@ -3822,70 +3057,20 @@ fn payout_distribution_to_solo_collators() {
 			roll_to(26);
 			// pay 60% total issuance to 1 and 40% total issuance to 2
 			let mut new1 = vec![
-				Event::CollatorChosen {
-					round: 5,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 20,
-					round: 5,
-					collators: 5,
-					total_balance: 400,
-				},
+				Event::CollatorChosen { round: 5, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 5, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 5, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 5, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 5, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 20, round: 5, collators: 5, total_balance: 400 },
 				Event::Rewarded { who: 1, amount: 192 },
 				Event::Rewarded { who: 2, amount: 128 },
-				Event::CollatorChosen {
-					round: 6,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 25,
-					round: 6,
-					collators: 5,
-					total_balance: 400,
-				},
+				Event::CollatorChosen { round: 6, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 6, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 6, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 6, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 6, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 25, round: 6, collators: 5, total_balance: 400 },
 			];
 			expected.append(&mut new1);
 			assert_eq!(events(), expected);
@@ -3898,73 +3083,23 @@ fn payout_distribution_to_solo_collators() {
 			roll_to(36);
 			// pay 20% issuance for all collators
 			let mut new2 = vec![
-				Event::CollatorChosen {
-					round: 7,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 30,
-					round: 7,
-					collators: 5,
-					total_balance: 400,
-				},
+				Event::CollatorChosen { round: 7, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 7, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 7, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 7, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 7, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 30, round: 7, collators: 5, total_balance: 400 },
 				Event::Rewarded { who: 5, amount: 67 },
 				Event::Rewarded { who: 3, amount: 67 },
 				Event::Rewarded { who: 4, amount: 67 },
 				Event::Rewarded { who: 1, amount: 67 },
 				Event::Rewarded { who: 2, amount: 67 },
-				Event::CollatorChosen {
-					round: 8,
-					collator: 1,
-					total_exposed_amount: 100,
-				},
-				Event::CollatorChosen {
-					round: 8,
-					collator: 2,
-					total_exposed_amount: 90,
-				},
-				Event::CollatorChosen {
-					round: 8,
-					collator: 3,
-					total_exposed_amount: 80,
-				},
-				Event::CollatorChosen {
-					round: 8,
-					collator: 4,
-					total_exposed_amount: 70,
-				},
-				Event::CollatorChosen {
-					round: 8,
-					collator: 5,
-					total_exposed_amount: 60,
-				},
-				Event::NewRound {
-					block: 35,
-					round: 8,
-					collators: 5,
-					total_balance: 400,
-				},
+				Event::CollatorChosen { round: 8, collator: 1, total_exposed_amount: 100 },
+				Event::CollatorChosen { round: 8, collator: 2, total_exposed_amount: 90 },
+				Event::CollatorChosen { round: 8, collator: 3, total_exposed_amount: 80 },
+				Event::CollatorChosen { round: 8, collator: 4, total_exposed_amount: 70 },
+				Event::CollatorChosen { round: 8, collator: 5, total_exposed_amount: 60 },
+				Event::NewRound { block: 35, round: 8, collators: 5, total_balance: 400 },
 			];
 			expected.append(&mut new2);
 			assert_eq!(events(), expected);
@@ -4002,37 +3137,12 @@ fn multiple_nominations() {
 			roll_to(8);
 			// chooses top TotalSelectedCandidates (5), in order
 			let mut expected = vec![
-				Event::CollatorChosen {
-					round: 2,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 5,
-					round: 2,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 2, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 2, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 2, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 2, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 2, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 5, round: 2, collators: 5, total_balance: 140 },
 			];
 			assert_eq!(events(), expected);
 			assert_ok!(Stake::nominate(Origin::signed(6), 2, 10, 10, 10));
@@ -4058,68 +3168,18 @@ fn multiple_nominations() {
 					collator: 4,
 					nominator_position: NominatorAdded::AddedToTop { new_total: 30 },
 				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 2,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 3,
-					total_exposed_amount: 30,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 4,
-					total_exposed_amount: 30,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 10,
-					round: 3,
-					collators: 5,
-					total_balance: 170,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 2,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 3,
-					total_exposed_amount: 30,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 4,
-					total_exposed_amount: 30,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 15,
-					round: 4,
-					collators: 5,
-					total_balance: 170,
-				},
+				Event::CollatorChosen { round: 3, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 3, collator: 2, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 3, collator: 3, total_exposed_amount: 30 },
+				Event::CollatorChosen { round: 3, collator: 4, total_exposed_amount: 30 },
+				Event::CollatorChosen { round: 3, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 10, round: 3, collators: 5, total_balance: 170 },
+				Event::CollatorChosen { round: 4, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 4, collator: 2, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 4, collator: 3, total_exposed_amount: 30 },
+				Event::CollatorChosen { round: 4, collator: 4, total_exposed_amount: 30 },
+				Event::CollatorChosen { round: 4, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 15, round: 4, collators: 5, total_balance: 170 },
 			];
 			expected.append(&mut new);
 			assert_eq!(events(), expected);
@@ -4128,37 +3188,12 @@ fn multiple_nominations() {
 			assert_ok!(Stake::nominate(Origin::signed(10), 2, 10, 10, 10),);
 			roll_to(26);
 			let mut new2 = vec![
-				Event::CollatorChosen {
-					round: 5,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 2,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 3,
-					total_exposed_amount: 30,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 4,
-					total_exposed_amount: 30,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 20,
-					round: 5,
-					collators: 5,
-					total_balance: 170,
-				},
+				Event::CollatorChosen { round: 5, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 5, collator: 2, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 5, collator: 3, total_exposed_amount: 30 },
+				Event::CollatorChosen { round: 5, collator: 4, total_exposed_amount: 30 },
+				Event::CollatorChosen { round: 5, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 20, round: 5, collators: 5, total_balance: 170 },
 				Event::Nomination {
 					nominator: 7,
 					locked: 80,
@@ -4171,37 +3206,12 @@ fn multiple_nominations() {
 					collator: 2,
 					nominator_position: NominatorAdded::AddedToBottom,
 				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 2,
-					total_exposed_amount: 130,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 3,
-					total_exposed_amount: 30,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 4,
-					total_exposed_amount: 30,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 25,
-					round: 6,
-					collators: 5,
-					total_balance: 250,
-				},
+				Event::CollatorChosen { round: 6, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 6, collator: 2, total_exposed_amount: 130 },
+				Event::CollatorChosen { round: 6, collator: 3, total_exposed_amount: 30 },
+				Event::CollatorChosen { round: 6, collator: 4, total_exposed_amount: 30 },
+				Event::CollatorChosen { round: 6, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 25, round: 6, collators: 5, total_balance: 250 },
 			];
 			expected.append(&mut new2);
 			assert_eq!(events(), expected);
@@ -4216,37 +3226,12 @@ fn multiple_nominations() {
 			);
 			roll_to(31);
 			let mut new3 = vec![
-				Event::CollatorScheduledExit {
-					round: 6,
-					collator: 2,
-					scheduled_exit: 8,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 3,
-					total_exposed_amount: 30,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 4,
-					total_exposed_amount: 30,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 30,
-					round: 7,
-					collators: 4,
-					total_balance: 120,
-				},
+				Event::CollatorScheduledExit { round: 6, collator: 2, scheduled_exit: 8 },
+				Event::CollatorChosen { round: 7, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 7, collator: 3, total_exposed_amount: 30 },
+				Event::CollatorChosen { round: 7, collator: 4, total_exposed_amount: 30 },
+				Event::CollatorChosen { round: 7, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 30, round: 7, collators: 4, total_balance: 120 },
 			];
 			expected.append(&mut new3);
 			assert_eq!(events(), expected);
@@ -4293,37 +3278,12 @@ fn payouts_follow_nomination_changes() {
 			roll_to(8);
 			// chooses top TotalSelectedCandidates (5), in order
 			let mut expected = vec![
-				Event::CollatorChosen {
-					round: 2,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 5,
-					round: 2,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 2, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 2, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 2, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 2, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 2, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 5, round: 2, collators: 5, total_balance: 140 },
 			];
 			assert_eq!(events(), expected);
 			// ~ set block author as 1 for all blocks this round
@@ -4331,72 +3291,22 @@ fn payouts_follow_nomination_changes() {
 			roll_to(16);
 			// distribute total issuance to collator 1 and its nominators 6, 7, 19
 			let mut new = vec![
-				Event::CollatorChosen {
-					round: 3,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 10,
-					round: 3,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 3, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 3, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 3, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 3, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 3, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 10, round: 3, collators: 5, total_balance: 140 },
 				Event::Rewarded { who: 1, amount: 26 },
 				Event::Rewarded { who: 6, amount: 8 },
 				Event::Rewarded { who: 7, amount: 8 },
 				Event::Rewarded { who: 10, amount: 8 },
-				Event::CollatorChosen {
-					round: 4,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 15,
-					round: 4,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 4, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 4, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 4, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 4, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 4, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 15, round: 4, collators: 5, total_balance: 140 },
 			];
 			expected.append(&mut new);
 			assert_eq!(events(), expected);
@@ -4415,46 +3325,17 @@ fn payouts_follow_nomination_changes() {
 			// keep paying 6 (note: inflation is in terms of total issuance so that's why 1
 			// is 21)
 			let mut new2 = vec![
-				Event::NominatorExitScheduled {
-					round: 4,
-					nominator: 6,
-					scheduled_exit: 6,
-				},
+				Event::NominatorExitScheduled { round: 4, nominator: 6, scheduled_exit: 6 },
 				Event::Rewarded { who: 1, amount: 27 },
 				Event::Rewarded { who: 6, amount: 8 },
 				Event::Rewarded { who: 7, amount: 8 },
 				Event::Rewarded { who: 10, amount: 8 },
-				Event::CollatorChosen {
-					round: 5,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 5,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 20,
-					round: 5,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 5, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 5, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 5, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 5, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 5, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 20, round: 5, collators: 5, total_balance: 140 },
 				Event::Rewarded { who: 1, amount: 29 },
 				Event::Rewarded { who: 6, amount: 9 },
 				Event::Rewarded { who: 7, amount: 9 },
@@ -4465,41 +3346,13 @@ fn payouts_follow_nomination_changes() {
 					unstaked: 10,
 					total_staked: 40,
 				},
-				Event::NominatorLeft {
-					nominator: 6,
-					unstaked: 10,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 1,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 6,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 25,
-					round: 6,
-					collators: 5,
-					total_balance: 130,
-				},
+				Event::NominatorLeft { nominator: 6, unstaked: 10 },
+				Event::CollatorChosen { round: 6, collator: 1, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 6, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 6, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 6, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 6, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 25, round: 6, collators: 5, total_balance: 130 },
 			];
 			expected.append(&mut new2);
 			assert_eq!(events(), expected);
@@ -4512,37 +3365,12 @@ fn payouts_follow_nomination_changes() {
 				Event::Rewarded { who: 6, amount: 9 },
 				Event::Rewarded { who: 7, amount: 9 },
 				Event::Rewarded { who: 10, amount: 9 },
-				Event::CollatorChosen {
-					round: 7,
-					collator: 1,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 7,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 30,
-					round: 7,
-					collators: 5,
-					total_balance: 130,
-				},
+				Event::CollatorChosen { round: 7, collator: 1, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 7, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 7, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 7, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 7, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 30, round: 7, collators: 5, total_balance: 130 },
 			];
 			expected.append(&mut new3);
 			assert_eq!(events(), expected);
@@ -4553,37 +3381,12 @@ fn payouts_follow_nomination_changes() {
 				Event::Rewarded { who: 1, amount: 36 },
 				Event::Rewarded { who: 7, amount: 12 },
 				Event::Rewarded { who: 10, amount: 12 },
-				Event::CollatorChosen {
-					round: 8,
-					collator: 1,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 8,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 8,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 8,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 8,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 35,
-					round: 8,
-					collators: 5,
-					total_balance: 130,
-				},
+				Event::CollatorChosen { round: 8, collator: 1, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 8, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 8, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 8, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 8, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 35, round: 8, collators: 5, total_balance: 130 },
 			];
 			expected.append(&mut new4);
 			assert_eq!(events(), expected);
@@ -4601,37 +3404,12 @@ fn payouts_follow_nomination_changes() {
 				Event::Rewarded { who: 1, amount: 38 },
 				Event::Rewarded { who: 7, amount: 13 },
 				Event::Rewarded { who: 10, amount: 13 },
-				Event::CollatorChosen {
-					round: 9,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 9,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 9,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 9,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 9,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 40,
-					round: 9,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 9, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 9, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 9, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 9, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 9, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 40, round: 9, collators: 5, total_balance: 140 },
 			];
 			expected.append(&mut new5);
 			assert_eq!(events(), expected);
@@ -4642,37 +3420,12 @@ fn payouts_follow_nomination_changes() {
 				Event::Rewarded { who: 1, amount: 40 },
 				Event::Rewarded { who: 7, amount: 13 },
 				Event::Rewarded { who: 10, amount: 13 },
-				Event::CollatorChosen {
-					round: 10,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 10,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 10,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 10,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 10,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 45,
-					round: 10,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 10, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 10, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 10, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 10, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 10, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 45, round: 10, collators: 5, total_balance: 140 },
 			];
 			expected.append(&mut new6);
 			assert_eq!(events(), expected);
@@ -4684,37 +3437,12 @@ fn payouts_follow_nomination_changes() {
 				Event::Rewarded { who: 7, amount: 11 },
 				Event::Rewarded { who: 8, amount: 11 },
 				Event::Rewarded { who: 10, amount: 11 },
-				Event::CollatorChosen {
-					round: 11,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 11,
-					collator: 2,
-					total_exposed_amount: 40,
-				},
-				Event::CollatorChosen {
-					round: 11,
-					collator: 3,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 11,
-					collator: 4,
-					total_exposed_amount: 20,
-				},
-				Event::CollatorChosen {
-					round: 11,
-					collator: 5,
-					total_exposed_amount: 10,
-				},
-				Event::NewRound {
-					block: 50,
-					round: 11,
-					collators: 5,
-					total_balance: 140,
-				},
+				Event::CollatorChosen { round: 11, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 11, collator: 2, total_exposed_amount: 40 },
+				Event::CollatorChosen { round: 11, collator: 3, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 11, collator: 4, total_exposed_amount: 20 },
+				Event::CollatorChosen { round: 11, collator: 5, total_exposed_amount: 10 },
+				Event::NewRound { block: 50, round: 11, collators: 5, total_balance: 140 },
 			];
 			expected.append(&mut new7);
 			assert_eq!(events(), expected);
@@ -4736,90 +3464,27 @@ fn nominations_merged_before_reward_payout() {
 			set_author(1, 4, 1);
 			roll_to(16);
 			let expected_events = vec![
-				Event::CollatorChosen {
-					round: 2,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 2,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 3,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 2,
-					collator: 4,
-					total_exposed_amount: 50,
-				},
-				Event::NewRound {
-					block: 5,
-					round: 2,
-					collators: 4,
-					total_balance: 200,
-				},
+				Event::CollatorChosen { round: 2, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 2, collator: 2, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 2, collator: 3, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 2, collator: 4, total_exposed_amount: 50 },
+				Event::NewRound { block: 5, round: 2, collators: 4, total_balance: 200 },
 				Event::Rewarded { who: 3, amount: 1 },
 				Event::Rewarded { who: 4, amount: 1 },
 				Event::Rewarded { who: 1, amount: 1 },
 				Event::Rewarded { who: 2, amount: 1 },
 				// ALL REWARDS FOR 5 are merged into one payment + event
 				Event::Rewarded { who: 5, amount: 4 },
-				Event::CollatorChosen {
-					round: 3,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 2,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 3,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 3,
-					collator: 4,
-					total_exposed_amount: 50,
-				},
-				Event::NewRound {
-					block: 10,
-					round: 3,
-					collators: 4,
-					total_balance: 200,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 1,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 2,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 3,
-					total_exposed_amount: 50,
-				},
-				Event::CollatorChosen {
-					round: 4,
-					collator: 4,
-					total_exposed_amount: 50,
-				},
-				Event::NewRound {
-					block: 15,
-					round: 4,
-					collators: 4,
-					total_balance: 200,
-				},
+				Event::CollatorChosen { round: 3, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 3, collator: 2, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 3, collator: 3, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 3, collator: 4, total_exposed_amount: 50 },
+				Event::NewRound { block: 10, round: 3, collators: 4, total_balance: 200 },
+				Event::CollatorChosen { round: 4, collator: 1, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 4, collator: 2, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 4, collator: 3, total_exposed_amount: 50 },
+				Event::CollatorChosen { round: 4, collator: 4, total_exposed_amount: 50 },
+				Event::NewRound { block: 15, round: 4, collators: 4, total_balance: 200 },
 			];
 			assert_eq!(events(), expected_events);
 		});

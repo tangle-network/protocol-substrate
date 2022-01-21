@@ -111,7 +111,19 @@ parameter_types! {
 	]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Deserialize, Serialize)]
+#[derive(
+	Debug,
+	Encode,
+	Decode,
+	Default,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	scale_info::TypeInfo,
+	Deserialize,
+	Serialize,
+)]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {

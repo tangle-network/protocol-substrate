@@ -17,6 +17,12 @@ pub trait TokenWrapperInterface<AccountId, AssetId, Balance> {
 		amount: Balance,
 		recipient: AccountId,
 	) -> Result<(), dispatch::DispatchError>;
-	fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: AssetId) -> Result<AssetId, dispatch::DispatchError>;
-	fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: AssetId) -> Result<AssetId, dispatch::DispatchError>;
+	fn add_asset_to_existing_pool(
+		name: &Vec<u8>,
+		asset_id: AssetId,
+	) -> Result<AssetId, dispatch::DispatchError>;
+	fn delete_asset_from_existing_pool(
+		name: &Vec<u8>,
+		asset_id: AssetId,
+	) -> Result<AssetId, dispatch::DispatchError>;
 }

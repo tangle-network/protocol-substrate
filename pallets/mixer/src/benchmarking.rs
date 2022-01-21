@@ -21,7 +21,9 @@
 
 use super::*;
 
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
+use frame_benchmarking::{
+	account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller,
+};
 use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
 use webb_primitives::{mixer::MixerInterface, traits::merkle_tree::TreeInspector, ElementTrait};

@@ -22,13 +22,15 @@
 use super::*;
 
 use frame_benchmarking::{
-	account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account, whitelisted_caller,
+	account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account,
+	whitelisted_caller,
 };
 use frame_support::traits::Currency;
 use frame_system::RawOrigin;
 use sp_runtime::traits::Bounded;
 use webb_primitives::types::DepositDetails;
-type BalanceOf<T, I> = <<T as Config<I>>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+type BalanceOf<T, I> =
+	<<T as Config<I>>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());

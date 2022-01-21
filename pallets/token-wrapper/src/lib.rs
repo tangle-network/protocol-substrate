@@ -77,7 +77,8 @@ pub use pallet::*;
 /// Type alias for the orml_traits::MultiCurrency::CurrencyId type
 pub type CurrencyIdOf<T> =
 	<<T as Config>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
-pub type BalanceOf<T> = <<T as Config>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
+pub type BalanceOf<T> =
+	<<T as Config>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -153,7 +154,10 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(<T as Config>::WeightInfo::set_wrapping_fee())]
-		pub fn set_wrapping_fee(origin: OriginFor<T>, fee: BalanceOf<T>) -> DispatchResultWithPostInfo {
+		pub fn set_wrapping_fee(
+			origin: OriginFor<T>,
+			fee: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			<Self as TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>>>::set_wrapping_fee(fee)?;
 			Ok(().into())
@@ -212,7 +216,8 @@ impl<T: Config> Pallet<T> {
 
 	pub fn to_currency_id(asset_id: T::AssetId) -> Result<CurrencyIdOf<T>, &'static str> {
 		let bytes = asset_id.encode();
-		CurrencyIdOf::<T>::decode(&mut &bytes[..]).map_err(|_| "Error converting asset_id to currency id")
+		CurrencyIdOf::<T>::decode(&mut &bytes[..])
+			.map_err(|_| "Error converting asset_id to currency id")
 	}
 
 	/// If X is amount of pooled share tokens and fee is 5%,
@@ -227,7 +232,11 @@ impl<T: Config> Pallet<T> {
 		amount.saturating_add(Self::get_wrapping_fee(amount))
 	}
 
-	pub fn has_sufficient_balance(currency_id: CurrencyIdOf<T>, sender: &T::AccountId, amount: BalanceOf<T>) -> bool {
+	pub fn has_sufficient_balance(
+		currency_id: CurrencyIdOf<T>,
+		sender: &T::AccountId,
+		amount: BalanceOf<T>,
+	) -> bool {
 		let total = Self::get_amount_to_wrap(amount);
 		T::Currency::free_balance(currency_id, sender) > total
 	}
@@ -241,9 +250,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 	fn set_wrapping_fee(fee: BalanceOf<T>) -> Result<(), DispatchError> {
 		WrappingFeePercent::<T>::put(fee);
 
-		Self::deposit_event(Event::UpdatedWrappingFeePercent {
-			wrapping_fee_percent: fee,
-		});
+		Self::deposit_event(Event::UpdatedWrappingFeePercent { wrapping_fee_percent: fee });
 		Ok(().into())
 	}
 
@@ -257,15 +264,19 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 		ensure!(amount > <BalanceOf<T>>::default(), Error::<T>::InvalidAmount);
 
 		ensure!(
-			<T::AssetRegistry as Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::exists(from_asset_id),
+			<T::AssetRegistry as Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::exists(
+				from_asset_id
+			),
 			Error::<T>::UnregisteredAssetId
 		);
 
 		ensure!(
-			<T::AssetRegistry as ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::contains_asset(
-				into_pool_share_id,
-				from_asset_id
-			),
+			<T::AssetRegistry as ShareTokenRegistry<
+				T::AssetId,
+				Vec<u8>,
+				T::Balance,
+				DispatchError,
+			>>::contains_asset(into_pool_share_id, from_asset_id),
 			Error::<T>::NotFoundInPool
 		);
 
@@ -307,15 +318,19 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 		ensure!(amount > <BalanceOf<T>>::default(), Error::<T>::InvalidAmount);
 
 		ensure!(
-			<T::AssetRegistry as Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::exists(into_asset_id),
+			<T::AssetRegistry as Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::exists(
+				into_asset_id
+			),
 			Error::<T>::UnregisteredAssetId
 		);
 
 		ensure!(
-			<T::AssetRegistry as ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::contains_asset(
-				from_pool_share_id,
-				into_asset_id
-			),
+			<T::AssetRegistry as ShareTokenRegistry<
+				T::AssetId,
+				Vec<u8>,
+				T::Balance,
+				DispatchError,
+			>>::contains_asset(from_pool_share_id, into_asset_id),
 			Error::<T>::NotFoundInPool
 		);
 
@@ -335,11 +350,17 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 		Ok(())
 	}
 
-	fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+	fn add_asset_to_existing_pool(
+		name: &Vec<u8>,
+		asset_id: T::AssetId,
+	) -> Result<T::AssetId, DispatchError> {
 		<T::AssetRegistry as ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::add_asset_to_existing_pool(name, asset_id)
 	}
 
-	fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+	fn delete_asset_from_existing_pool(
+		name: &Vec<u8>,
+		asset_id: T::AssetId,
+	) -> Result<T::AssetId, DispatchError> {
 		<T::AssetRegistry as ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::delete_asset_from_existing_pool(name, asset_id)
 	}
 }

@@ -84,11 +84,13 @@ use sp_std::{
 pub type BalanceOf<T, I> =
 	<<T as Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
 /// Type alias for the orml_traits::MultiCurrency::Balance type
-pub type AmountOf<T, I> =
-	<<T as Config<I>>::Currency as MultiCurrencyExtended<<T as frame_system::Config>::AccountId>>::Amount;
+pub type AmountOf<T, I> = <<T as Config<I>>::Currency as MultiCurrencyExtended<
+	<T as frame_system::Config>::AccountId,
+>>::Amount;
 /// Type alias for the orml_traits::MultiCurrency::CurrencyId type
-pub type CurrencyIdOf<T, I> =
-	<<T as pallet::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
+pub type CurrencyIdOf<T, I> = <<T as pallet::Config<I>>::Currency as MultiCurrency<
+	<T as frame_system::Config>::AccountId,
+>>::CurrencyId;
 
 pub use pallet::*;
 #[frame_support::pallet]
@@ -103,7 +105,9 @@ pub mod pallet {
 
 	#[pallet::config]
 	/// The module configuration trait.
-	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_linkable_tree::Config<I> {
+	pub trait Config<I: 'static = ()>:
+		frame_system::Config + pallet_linkable_tree::Config<I>
+	{
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -143,14 +147,26 @@ pub mod pallet {
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
 	#[pallet::getter(fn vanchors)]
-	pub type VAnchors<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, T::TreeId, VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>, OptionQuery>;
+	pub type VAnchors<T: Config<I>, I: 'static = ()> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::TreeId,
+		VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>,
+		OptionQuery,
+	>;
 
 	/// The map of trees to their spent nullifier hashes
 	#[pallet::storage]
 	#[pallet::getter(fn nullifier_hashes)]
-	pub type NullifierHashes<T: Config<I>, I: 'static = ()> =
-		StorageDoubleMap<_, Blake2_128Concat, T::TreeId, Blake2_128Concat, T::Element, bool, ValueQuery>;
+	pub type NullifierHashes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		T::TreeId,
+		Blake2_128Concat,
+		T::Element,
+		bool,
+		ValueQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -165,11 +181,7 @@ pub mod pallet {
 			amount: AmountOf<T, I>,
 		},
 		/// Deposit hook has executed successfully
-		Deposit {
-			depositor: T::AccountId,
-			tree_id: T::TreeId,
-			leaf: T::Element,
-		},
+		Deposit { depositor: T::AccountId, tree_id: T::TreeId, leaf: T::Element },
 	}
 
 	#[pallet::error]
@@ -230,7 +242,10 @@ pub mod pallet {
 	}
 }
 
-pub struct VAnchorConfigration<T: Config<I>, I: 'static>(core::marker::PhantomData<T>, core::marker::PhantomData<I>);
+pub struct VAnchorConfigration<T: Config<I>, I: 'static>(
+	core::marker::PhantomData<T>,
+	core::marker::PhantomData<I>,
+);
 
 impl<T: Config<I>, I: 'static> VAnchorConfig for VAnchorConfigration<T, I> {
 	type AccountId = T::AccountId;
@@ -276,8 +291,8 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		let vanchor = Self::get_vanchor(id)?;
 
 		// Compute hash of abi encoded ext_data, reduced into field from config
-		let computed_ext_data_hash =
-			T::EthereumHasher::hash(&ext_data.encode_abi(), &[]).map_err(|_| Error::<T, I>::InvalidExtData)?;
+		let computed_ext_data_hash = T::EthereumHasher::hash(&ext_data.encode_abi(), &[])
+			.map_err(|_| Error::<T, I>::InvalidExtData)?;
 		// Ensure that the passed external data hash matches the computed one
 		ensure!(
 			proof_data.ext_data_hash.to_bytes() == &computed_ext_data_hash,
@@ -291,15 +306,13 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			.abs()
 			.try_into()
 			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
-		ensure!(
-			ext_amount_unsigned < T::MaxExtAmount::get(),
-			Error::<T, I>::InvalidExtAmount
-		);
+		ensure!(ext_amount_unsigned < T::MaxExtAmount::get(), Error::<T, I>::InvalidExtAmount);
 
 		// Public amounnt can also be negative, in which
 		// case it would wrap around the field, so we should check if FIELD_SIZE -
 		// public_amount == proof_data.public_amount, in case of a negative ext_amount
-		let fee_amount = AmountOf::<T, I>::try_from(ext_data.fee).map_err(|_| Error::<T, I>::InvalidFee)?;
+		let fee_amount =
+			AmountOf::<T, I>::try_from(ext_data.fee).map_err(|_| Error::<T, I>::InvalidFee)?;
 		let calc_public_amount = ext_data.ext_amount - fee_amount;
 		let calc_public_amount_bytes = T::IntoField::into_field(calc_public_amount);
 		let calc_public_amount_element = T::Element::from_bytes(&calc_public_amount_bytes);
@@ -346,26 +359,38 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
 
 		if is_deposit {
-			ensure!(
-				abs_amount <= T::MaxDepositAmount::get(),
-				Error::<T, I>::InvalidDepositAmount
-			);
+			ensure!(abs_amount <= T::MaxDepositAmount::get(), Error::<T, I>::InvalidDepositAmount);
 
 			// deposit tokens to the pallet from the transactor's account
-			<T as Config<I>>::Currency::transfer(vanchor.asset, &transactor, &Self::account_id(), abs_amount)?;
+			<T as Config<I>>::Currency::transfer(
+				vanchor.asset,
+				&transactor,
+				&Self::account_id(),
+				abs_amount,
+			)?;
 		} else if is_negative {
 			let min_withdraw = T::MinWithdrawAmount::get();
 			ensure!(abs_amount >= min_withdraw, Error::<T, I>::InvalidWithdrawAmount);
 
 			// Withdraw to recipient account
-			<T as Config<I>>::Currency::transfer(vanchor.asset, &Self::account_id(), &ext_data.recipient, abs_amount)?;
+			<T as Config<I>>::Currency::transfer(
+				vanchor.asset,
+				&Self::account_id(),
+				&ext_data.recipient,
+				abs_amount,
+			)?;
 		}
 
 		let fee_exists = ext_data.fee > BalanceOf::<T, I>::zero();
 
 		if fee_exists {
 			// Send fee to the relayer
-			<T as Config<I>>::Currency::transfer(vanchor.asset, &Self::account_id(), &ext_data.relayer, ext_data.fee)?;
+			<T as Config<I>>::Currency::transfer(
+				vanchor.asset,
+				&Self::account_id(),
+				&ext_data.relayer,
+				ext_data.fee,
+			)?;
 		}
 
 		// Insert output commitments into the tree
@@ -412,10 +437,7 @@ impl<T: Config<I>, I: 'static> VAnchorInspector<VAnchorConfigration<T, I>> for P
 	}
 
 	fn ensure_nullifier_unused(id: T::TreeId, nullifier: T::Element) -> Result<(), DispatchError> {
-		ensure!(
-			!Self::is_nullifier_used(id, nullifier),
-			Error::<T, I>::AlreadyRevealedNullifier
-		);
+		ensure!(!Self::is_nullifier_used(id, nullifier), Error::<T, I>::AlreadyRevealedNullifier);
 		Ok(())
 	}
 
@@ -429,7 +451,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::PalletId::get().into_account()
 	}
 
-	pub fn get_vanchor(id: T::TreeId) -> Result<VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>, DispatchError> {
+	pub fn get_vanchor(
+		id: T::TreeId,
+	) -> Result<VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>, DispatchError> {
 		let vanchor = VAnchors::<T, I>::get(id);
 		ensure!(vanchor.is_some(), Error::<T, I>::NoVAnchorFound);
 		Ok(vanchor.unwrap())

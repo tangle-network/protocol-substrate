@@ -25,8 +25,7 @@
 //! There is a new round every `<Round<T>>::get().length` blocks.
 //!
 //! At the start of every round,
-//! * issuance is distributed to collators (and their nominators) for block
-//!   authoring
+//! * issuance is distributed to collators (and their nominators) for block authoring
 //! `T::RewardPaymentDelay` rounds ago
 //! * queued collator and nominator exits are executed
 //! * a new set of collators is chosen from the candidates
@@ -102,10 +101,7 @@ pub mod pallet {
 
 	impl<A, B: Default> Bond<A, B> {
 		fn from_owner(owner: A) -> Self {
-			Bond {
-				owner,
-				amount: B::default(),
-			}
+			Bond { owner, amount: B::default() }
 		}
 	}
 
@@ -157,11 +153,7 @@ pub mod pallet {
 
 	impl<AccountId, Balance: Default> Default for CollatorSnapshot<AccountId, Balance> {
 		fn default() -> Self {
-			Self {
-				bond: Balance::default(),
-				nominators: Vec::default(),
-				total: Balance::default(),
-			}
+			Self { bond: Balance::default(), nominators: Vec::default(), total: Balance::default() }
 		}
 	}
 
@@ -196,8 +188,10 @@ pub mod pallet {
 		AddedToBottom,
 	}
 
-	impl<A: Ord + Clone, B: AtLeast32BitUnsigned + Ord + Copy + sp_std::ops::AddAssign + sp_std::ops::SubAssign>
-		Collator2<A, B>
+	impl<
+			A: Ord + Clone,
+			B: AtLeast32BitUnsigned + Ord + Copy + sp_std::ops::AddAssign + sp_std::ops::SubAssign,
+		> Collator2<A, B>
 	{
 		pub fn new(id: A, bond: B) -> Self {
 			Collator2 {
@@ -242,10 +236,7 @@ pub mod pallet {
 		/// caller must verify !self.nominators.contains(nominator.owner) before
 		/// call
 		pub fn add_top_nominator(&mut self, nominator: Bond<A, B>) {
-			match self
-				.top_nominators
-				.binary_search_by(|x| nominator.amount.cmp(&x.amount))
-			{
+			match self.top_nominators.binary_search_by(|x| nominator.amount.cmp(&x.amount)) {
 				Ok(i) => self.top_nominators.insert(i, nominator),
 				Err(i) => self.top_nominators.insert(i, nominator),
 			}
@@ -255,10 +246,7 @@ pub mod pallet {
 		/// caller must verify !self.nominators.contains(nominator.owner) before
 		/// call
 		pub fn add_bottom_nominator(&mut self, nominator: Bond<A, B>) {
-			match self
-				.bottom_nominators
-				.binary_search_by(|x| x.amount.cmp(&nominator.amount))
-			{
+			match self.bottom_nominators.binary_search_by(|x| x.amount.cmp(&nominator.amount)) {
 				Ok(i) => self.bottom_nominators.insert(i, nominator),
 				Err(i) => self.bottom_nominators.insert(i, nominator),
 			}
@@ -277,15 +265,17 @@ pub mod pallet {
 		/// Bond a new account as a nominator, and make a first nomination. If
 		/// successful, the return value indicates whether the nomination is top
 		/// for the candidate.
-		pub fn add_nominator<T: Config>(&mut self, acc: A, amount: B) -> Result<NominatorAdded<B>, DispatchError> {
+		pub fn add_nominator<T: Config>(
+			&mut self,
+			acc: A,
+			amount: B,
+		) -> Result<NominatorAdded<B>, DispatchError> {
 			ensure!(self.nominators.insert(acc.clone()), Error::<T>::NominatorExists);
 			self.total_backing += amount;
 			if (self.top_nominators.len() as u32) < T::MaxNominatorsPerCollator::get() {
 				self.add_top_nominator(Bond { owner: acc, amount });
 				self.total_counted += amount;
-				Ok(NominatorAdded::AddedToTop {
-					new_total: self.total_counted,
-				})
+				Ok(NominatorAdded::AddedToTop { new_total: self.total_counted })
 			} else {
 				// >pop requires push to reset in case isn't pushed to bottom
 				let last_nomination_in_top = self
@@ -299,9 +289,7 @@ pub mod pallet {
 					// insert new nominator into top_nominators
 					self.add_top_nominator(Bond { owner: acc, amount });
 					self.add_bottom_nominator(last_nomination_in_top);
-					Ok(NominatorAdded::AddedToTop {
-						new_total: self.total_counted,
-					})
+					Ok(NominatorAdded::AddedToTop { new_total: self.total_counted })
 				} else {
 					// >required push to previously popped last nomination into top_nominators
 					self.top_nominators.push(last_nomination_in_top);
@@ -312,11 +300,11 @@ pub mod pallet {
 		}
 
 		/// Return Ok((if_total_counted_changed, nominator's stake))
-		pub fn rm_nominator<T: Config>(&mut self, nominator: A) -> Result<(bool, B), DispatchError> {
-			ensure!(
-				self.nominators.remove(&nominator),
-				Error::<T>::NominatorDNEInNominatorSet
-			);
+		pub fn rm_nominator<T: Config>(
+			&mut self,
+			nominator: A,
+		) -> Result<(bool, B), DispatchError> {
+			ensure!(self.nominators.remove(&nominator), Error::<T>::NominatorDNEInNominatorSet);
 			let mut nominator_stake: Option<B> = None;
 			self.top_nominators = self
 				.top_nominators
@@ -343,7 +331,7 @@ pub mod pallet {
 					self.total_counted -= s;
 				}
 				self.total_backing -= s;
-				return Ok((true, s));
+				return Ok((true, s))
 			}
 			// else (no item removed from the top)
 			self.bottom_nominators = self
@@ -375,13 +363,13 @@ pub mod pallet {
 					self.total_counted += more;
 					self.total_backing += more;
 					in_top = true;
-					break;
+					break
 				}
 			}
 			// if nominator was increased in top nominators
 			if in_top {
 				self.sort_top_nominators();
-				return true;
+				return true
 			}
 			// else nominator to increase must exist in bottom
 			// >pop requires push later on to reset in case it isn't used
@@ -395,7 +383,7 @@ pub mod pallet {
 					x.amount += more;
 					self.total_backing += more;
 					move_2_top = x.amount > lowest_top.amount;
-					break;
+					break
 				}
 			}
 			if move_2_top {
@@ -432,7 +420,7 @@ pub mod pallet {
 						}
 					}
 					in_top = true;
-					break;
+					break
 				}
 			}
 			if in_top {
@@ -448,19 +436,19 @@ pub mod pallet {
 					self.total_backing -= less;
 					self.add_top_nominator(highest_bottom);
 					self.add_bottom_nominator(lowest_top);
-					return false;
+					return false
 				} else {
 					// no existing bottom nominators so update both counters the same magnitude
 					self.total_counted -= less;
 					self.total_backing -= less;
-					return true;
+					return true
 				}
 			}
 			for x in &mut self.bottom_nominators {
 				if x.owner == nominator {
 					x.amount -= less;
 					self.total_backing -= less;
-					break;
+					break
 				}
 			}
 			self.sort_bottom_nominators();
@@ -527,10 +515,7 @@ pub mod pallet {
 	{
 		pub fn new(collator: AccountId, amount: Balance) -> Self {
 			Nominator2 {
-				nominations: OrderedSet::from(vec![Bond {
-					owner: collator,
-					amount,
-				}]),
+				nominations: OrderedSet::from(vec![Bond { owner: collator, amount }]),
 				revocations: OrderedSet::new(),
 				total: amount,
 				scheduled_revocations_count: 0u32,
@@ -594,7 +579,7 @@ pub mod pallet {
 				if x.owner == collator {
 					x.amount += more;
 					self.total += more;
-					return true;
+					return true
 				}
 			}
 			false
@@ -603,16 +588,20 @@ pub mod pallet {
 		// Return Some(Some(balance)) if successful
 		// Return None if nomination not found
 		// Return Some(None) if less >= nomination_total
-		pub fn dec_nomination(&mut self, collator: AccountId, less: Balance) -> Option<Option<Balance>> {
+		pub fn dec_nomination(
+			&mut self,
+			collator: AccountId,
+			less: Balance,
+		) -> Option<Option<Balance>> {
 			for x in &mut self.nominations.0 {
 				if x.owner == collator {
 					if x.amount > less {
 						x.amount -= less;
 						self.total -= less;
-						return Some(Some(x.amount));
+						return Some(Some(x.amount))
 					} else {
 						// must rm entire nomination if x.amount <= less
-						return Some(None);
+						return Some(None)
 					}
 				}
 			}
@@ -638,7 +627,14 @@ pub mod pallet {
 		/// The length of the current round in number of blocks
 		pub length: u32,
 	}
-	impl<B: Copy + sp_std::ops::Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd> RoundInfo<B> {
+	impl<
+			B: Copy
+				+ sp_std::ops::Add<Output = B>
+				+ sp_std::ops::Sub<Output = B>
+				+ From<u32>
+				+ PartialOrd,
+		> RoundInfo<B>
+	{
 		pub fn new(current: RoundIndex, first: B, length: u32) -> RoundInfo<B> {
 			RoundInfo { current, first, length }
 		}
@@ -654,8 +650,13 @@ pub mod pallet {
 			self.first = now;
 		}
 	}
-	impl<B: Copy + sp_std::ops::Add<Output = B> + sp_std::ops::Sub<Output = B> + From<u32> + PartialOrd> Default
-		for RoundInfo<B>
+	impl<
+			B: Copy
+				+ sp_std::ops::Add<Output = B>
+				+ sp_std::ops::Sub<Output = B>
+				+ From<u32>
+				+ PartialOrd,
+		> Default for RoundInfo<B>
 	{
 		fn default() -> RoundInfo<B> {
 			RoundInfo::new(1u32, 0u32.into(), 20u32)
@@ -700,18 +701,23 @@ pub mod pallet {
 	impl<A: Ord + Clone> ExitQ<A> {
 		/// Schedule to leave the set of candidates and return all ongoing
 		/// nominations
-		pub fn schedule_candidate_exit<T: Config>(&mut self, candidate: A, exit_round: RoundIndex) -> DispatchResult {
-			ensure!(
-				self.candidates.insert(candidate.clone()),
-				Error::<T>::CandidateAlreadyLeaving
-			);
+		pub fn schedule_candidate_exit<T: Config>(
+			&mut self,
+			candidate: A,
+			exit_round: RoundIndex,
+		) -> DispatchResult {
+			ensure!(self.candidates.insert(candidate.clone()), Error::<T>::CandidateAlreadyLeaving);
 			self.candidate_schedule.push((candidate, exit_round));
 			Ok(())
 		}
 
 		/// Schedule to leave the set of nominators and revoke all ongoing
 		/// nominations
-		pub fn schedule_nominator_exit<T: Config>(&mut self, nominator: A, exit_round: RoundIndex) -> DispatchResult {
+		pub fn schedule_nominator_exit<T: Config>(
+			&mut self,
+			nominator: A,
+			exit_round: RoundIndex,
+		) -> DispatchResult {
 			ensure!(
 				self.nominators_leaving.insert(nominator.clone()),
 				Error::<T>::NominatorAlreadyLeaving
@@ -734,7 +740,8 @@ pub mod pallet {
 
 	type RoundIndex = u32;
 	type RewardPoint = u32;
-	pub type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+	pub type BalanceOf<T> =
+		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 	/// Configuration trait of this pallet.
 	#[pallet::config]
@@ -1012,7 +1019,8 @@ pub mod pallet {
 				// execute all delayed nominator exits
 				Self::execute_nominator_exits(round.current);
 				// select top collator candidates for next round
-				let (collator_count, nomination_count, total_staked) = Self::select_top_candidates(round.current);
+				let (collator_count, nomination_count, total_staked) =
+					Self::select_top_candidates(round.current);
 				// start next round
 				<Round<T>>::put(round);
 				// snapshot total stake
@@ -1043,7 +1051,8 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn parachain_bond_info)]
 	/// Parachain bond config info { account, percent_of_inflation }
-	type ParachainBondInfo<T: Config> = StorageValue<_, ParachainBondConfig<T::AccountId>, OptionQuery>;
+	type ParachainBondInfo<T: Config> =
+		StorageValue<_, ParachainBondConfig<T::AccountId>, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn round)]
@@ -1054,15 +1063,25 @@ pub mod pallet {
 	#[pallet::getter(fn nominator_state2)]
 	/// Get nominator state associated with an account if account is nominating
 	/// else None
-	type NominatorState2<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, Nominator2<T::AccountId, BalanceOf<T>>, OptionQuery>;
+	type NominatorState2<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		T::AccountId,
+		Nominator2<T::AccountId, BalanceOf<T>>,
+		OptionQuery,
+	>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn collator_state2)]
 	/// Get collator state associated with an account if account is collating
 	/// else None
-	pub(crate) type CollatorState2<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, Collator2<T::AccountId, BalanceOf<T>>, OptionQuery>;
+	pub(crate) type CollatorState2<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		T::AccountId,
+		Collator2<T::AccountId, BalanceOf<T>>,
+		OptionQuery,
+	>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn selected_candidates)]
@@ -1077,7 +1096,8 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn candidate_pool)]
 	/// The pool of collator candidates, each with their total backing stake
-	type CandidatePool<T: Config> = StorageValue<_, OrderedSet<Bond<T::AccountId, BalanceOf<T>>>, ValueQuery>;
+	type CandidatePool<T: Config> =
+		StorageValue<_, OrderedSet<Bond<T::AccountId, BalanceOf<T>>>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn exit_queue2)]
@@ -1115,8 +1135,15 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn awarded_pts)]
 	/// Points for each collator per round
-	pub type AwardedPts<T: Config> =
-		StorageDoubleMap<_, Twox64Concat, RoundIndex, Twox64Concat, T::AccountId, RewardPoint, ValueQuery>;
+	pub type AwardedPts<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		RoundIndex,
+		Twox64Concat,
+		T::AccountId,
+		RewardPoint,
+		ValueQuery,
+	>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -1128,11 +1155,7 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
-			Self {
-				candidates: vec![],
-				nominations: vec![],
-				inflation_config: Default::default(),
-			}
+			Self { candidates: vec![], nominations: vec![], inflation_config: Default::default() }
 		}
 	}
 
@@ -1166,16 +1189,10 @@ pub mod pallet {
 					T::Currency::free_balance(&nominator) >= balance,
 					"Account does not have enough balance to place nomination."
 				);
-				let cn_count = if let Some(x) = col_nominator_count.get(&target) {
-					*x
-				} else {
-					0u32
-				};
-				let nn_count = if let Some(x) = nom_nominator_count.get(&nominator) {
-					*x
-				} else {
-					0u32
-				};
+				let cn_count =
+					if let Some(x) = col_nominator_count.get(&target) { *x } else { 0u32 };
+				let nn_count =
+					if let Some(x) = nom_nominator_count.get(&nominator) { *x } else { 0u32 };
 				if let Err(error) = <Pallet<T>>::nominate(
 					T::Origin::from(Some(nominator.clone()).into()),
 					target.clone(),
@@ -1210,7 +1227,8 @@ pub mod pallet {
 			// Choose top TotalSelected collator candidates
 			let (v_count, _, total_staked) = <Pallet<T>>::select_top_candidates(1u32);
 			// Start Round 1 at Block 0
-			let round: RoundInfo<T::BlockNumber> = RoundInfo::new(1u32, 0u32.into(), T::BlocksPerRound::get());
+			let round: RoundInfo<T::BlockNumber> =
+				RoundInfo::new(1u32, 0u32.into(), T::BlocksPerRound::get());
 			<Round<T>>::put(round);
 			// Snapshot total stake
 			<Staked<T>>::insert(1u32, <Total<T>>::get());
@@ -1249,7 +1267,10 @@ pub mod pallet {
 
 		/// Set the annual inflation rate to derive per-round inflation
 		#[pallet::weight(<T as Config>::WeightInfo::set_inflation())]
-		pub fn set_inflation(origin: OriginFor<T>, schedule: Range<Perbill>) -> DispatchResultWithPostInfo {
+		pub fn set_inflation(
+			origin: OriginFor<T>,
+			schedule: Range<Perbill>,
+		) -> DispatchResultWithPostInfo {
 			T::MonetaryGovernanceOrigin::ensure_origin(origin)?;
 			ensure!(schedule.is_valid(), Error::<T>::InvalidSchedule);
 			let mut config = <InflationConfig<T>>::get();
@@ -1270,15 +1291,15 @@ pub mod pallet {
 
 		/// Set the account that will hold funds set aside for parachain bond
 		#[pallet::weight(<T as Config>::WeightInfo::set_parachain_bond_account())]
-		pub fn set_parachain_bond_account(origin: OriginFor<T>, new: T::AccountId) -> DispatchResultWithPostInfo {
+		pub fn set_parachain_bond_account(
+			origin: OriginFor<T>,
+			new: T::AccountId,
+		) -> DispatchResultWithPostInfo {
 			T::MonetaryGovernanceOrigin::ensure_origin(origin)?;
 			let ParachainBondConfig { account: old, percent } =
 				<ParachainBondInfo<T>>::get().unwrap_or(Self::default_bond_config());
 			ensure!(old != new, Error::<T>::NoWritingSameValue);
-			<ParachainBondInfo<T>>::put(ParachainBondConfig {
-				account: new.clone(),
-				percent,
-			});
+			<ParachainBondInfo<T>>::put(ParachainBondConfig { account: new.clone(), percent });
 			Self::deposit_event(Event::ParachainBondAccountSet { old, new });
 
 			Ok(().into())
@@ -1286,7 +1307,10 @@ pub mod pallet {
 
 		/// Set the percent of inflation set aside for parachain bond
 		#[pallet::weight(<T as Config>::WeightInfo::set_parachain_bond_reserve_percent())]
-		pub fn set_parachain_bond_reserve_percent(origin: OriginFor<T>, new: Percent) -> DispatchResultWithPostInfo {
+		pub fn set_parachain_bond_reserve_percent(
+			origin: OriginFor<T>,
+			new: Percent,
+		) -> DispatchResultWithPostInfo {
 			T::MonetaryGovernanceOrigin::ensure_origin(origin)?;
 			let ParachainBondConfig { account, percent: old } =
 				<ParachainBondInfo<T>>::get().unwrap_or(Self::default_bond_config());
@@ -1312,8 +1336,7 @@ pub mod pallet {
 
 		#[pallet::weight(<T as Config>::WeightInfo::set_blocks_per_round())]
 		/// Set blocks per round
-		/// - if called with `new` less than length of current round, will
-		///   transition immediately
+		/// - if called with `new` less than length of current round, will transition immediately
 		/// in the next block
 		/// - also updates per-round inflation config
 		pub fn set_blocks_per_round(origin: OriginFor<T>, new: u32) -> DispatchResultWithPostInfo {
@@ -1342,7 +1365,10 @@ pub mod pallet {
 
 		#[pallet::weight(<T as Config>::WeightInfo::set_collator_commission())]
 		/// Set the commission for all collators
-		pub fn set_collator_commission(origin: OriginFor<T>, new: Perbill) -> DispatchResultWithPostInfo {
+		pub fn set_collator_commission(
+			origin: OriginFor<T>,
+			new: Perbill,
+		) -> DispatchResultWithPostInfo {
 			frame_system::ensure_root(origin)?;
 			let old = <CollatorCommission<T>>::get();
 			ensure!(old != new, Error::<T>::NoWritingSameValue);
@@ -1369,10 +1395,7 @@ pub mod pallet {
 				Error::<T>::TooLowCandidateCountWeightHintJoinCandidates
 			);
 			ensure!(
-				candidates.insert(Bond {
-					owner: acc.clone(),
-					amount: bond
-				}),
+				candidates.insert(Bond { owner: acc.clone(), amount: bond }),
 				Error::<T>::CandidateExists
 			);
 			T::Currency::reserve(&acc, bond)?;
@@ -1394,7 +1417,10 @@ pub mod pallet {
 		/// as a collator, but unbonding is executed with a delay of
 		/// `T::LeaveCandidates` rounds.
 		#[pallet::weight(<T as Config>::WeightInfo::leave_candidates(*candidate_count))]
-		pub fn leave_candidates(origin: OriginFor<T>, candidate_count: u32) -> DispatchResultWithPostInfo {
+		pub fn leave_candidates(
+			origin: OriginFor<T>,
+			candidate_count: u32,
+		) -> DispatchResultWithPostInfo {
 			let collator = ensure_signed(origin)?;
 			let mut state = <CollatorState2<T>>::get(&collator).ok_or(Error::<T>::CandidateDNE)?;
 			ensure!(!state.is_leaving(), Error::<T>::CandidateAlreadyLeaving);
@@ -1451,10 +1477,7 @@ pub mod pallet {
 			state.go_online();
 			let mut candidates = <CandidatePool<T>>::get();
 			ensure!(
-				candidates.insert(Bond {
-					owner: collator.clone(),
-					amount: state.total_counted
-				}),
+				candidates.insert(Bond { owner: collator.clone(), amount: state.total_counted }),
 				Error::<T>::AlreadyActive
 			);
 			<CandidatePool<T>>::put(candidates);
@@ -1468,7 +1491,10 @@ pub mod pallet {
 
 		/// Bond more for collator candidates
 		#[pallet::weight(<T as Config>::WeightInfo::candidate_bond_more())]
-		pub fn candidate_bond_more(origin: OriginFor<T>, more: BalanceOf<T>) -> DispatchResultWithPostInfo {
+		pub fn candidate_bond_more(
+			origin: OriginFor<T>,
+			more: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
 			let collator = ensure_signed(origin)?;
 			let mut state = <CollatorState2<T>>::get(&collator).ok_or(Error::<T>::CandidateDNE)?;
 			ensure!(!state.is_leaving(), Error::<T>::CannotActBecauseLeaving);
@@ -1492,7 +1518,10 @@ pub mod pallet {
 
 		/// Bond less for collator candidates
 		#[pallet::weight(<T as Config>::WeightInfo::candidate_bond_less())]
-		pub fn candidate_bond_less(origin: OriginFor<T>, less: BalanceOf<T>) -> DispatchResultWithPostInfo {
+		pub fn candidate_bond_less(
+			origin: OriginFor<T>,
+			less: BalanceOf<T>,
+		) -> DispatchResultWithPostInfo {
 			let collator = ensure_signed(origin)?;
 			let mut state = <CollatorState2<T>>::get(&collator).ok_or(Error::<T>::CandidateDNE)?;
 			ensure!(!state.is_leaving(), Error::<T>::CannotActBecauseLeaving);
@@ -1545,10 +1574,7 @@ pub mod pallet {
 				);
 				// ensure that nominator is not in the exit_queue
 				ensure!(
-					state.add_nomination(Bond {
-						owner: collator.clone(),
-						amount
-					}),
+					state.add_nomination(Bond { owner: collator.clone(), amount }),
 					Error::<T>::AlreadyNominatedCollator
 				);
 				state
@@ -1586,7 +1612,10 @@ pub mod pallet {
 		/// Request to leave the set of nominators. If successful, the nominator
 		/// is scheduled to exit
 		#[pallet::weight(<T as Config>::WeightInfo::leave_nominators(*nomination_count))]
-		pub fn leave_nominators(origin: OriginFor<T>, nomination_count: u32) -> DispatchResultWithPostInfo {
+		pub fn leave_nominators(
+			origin: OriginFor<T>,
+			nomination_count: u32,
+		) -> DispatchResultWithPostInfo {
 			let acc = ensure_signed(origin)?;
 			let mut state = <NominatorState2<T>>::get(&acc).ok_or(Error::<T>::NominatorDNE)?;
 			ensure!(!state.is_leaving(), Error::<T>::NominatorAlreadyLeaving);
@@ -1614,9 +1643,13 @@ pub mod pallet {
 		/// Request to revoke an existing nomination. If successful, the
 		/// nomination is scheduled to exit
 		#[pallet::weight(<T as Config>::WeightInfo::revoke_nomination())]
-		pub fn revoke_nomination(origin: OriginFor<T>, collator: T::AccountId) -> DispatchResultWithPostInfo {
+		pub fn revoke_nomination(
+			origin: OriginFor<T>,
+			collator: T::AccountId,
+		) -> DispatchResultWithPostInfo {
 			let nominator = ensure_signed(origin)?;
-			let mut state = <NominatorState2<T>>::get(&nominator).ok_or(Error::<T>::NominatorDNE)?;
+			let mut state =
+				<NominatorState2<T>>::get(&nominator).ok_or(Error::<T>::NominatorDNE)?;
 			ensure!(state.is_active(), Error::<T>::CannotActBecauseLeaving);
 			ensure!(
 				state.revocations.insert(collator.clone()),
@@ -1626,18 +1659,19 @@ pub mod pallet {
 			for Bond { owner, amount } in state.nominations.0.iter() {
 				if owner == &collator {
 					nomination_amount = Some(*amount);
-					break;
+					break
 				}
 			}
 			// Ensure that the collator exists in the nominations
 			let amount = nomination_amount.ok_or(Error::<T>::NominationDNE)?;
 			let remaining = state.total - state.scheduled_revocations_total - amount;
-			let leaving = if state.nominations.0.len() as u32 - state.scheduled_revocations_count < 2 {
-				true
-			} else {
-				ensure!(remaining >= T::MinNominatorStk::get(), Error::<T>::NomBondBelowMin);
-				false
-			};
+			let leaving =
+				if state.nominations.0.len() as u32 - state.scheduled_revocations_count < 2 {
+					true
+				} else {
+					ensure!(remaining >= T::MinNominatorStk::get(), Error::<T>::NomBondBelowMin);
+					false
+				};
 			let mut exits = <ExitQueue2<T>>::get();
 			let now = <Round<T>>::get().current;
 			let when = now + T::RevokeNominationDelay::get();
@@ -1656,7 +1690,11 @@ pub mod pallet {
 				});
 			} else {
 				// schedule to revoke this nomination
-				exits.schedule_nomination_revocation::<T>(nominator.clone(), collator.clone(), when)?;
+				exits.schedule_nomination_revocation::<T>(
+					nominator.clone(),
+					collator.clone(),
+					when,
+				)?;
 				state.scheduled_revocations_total += amount;
 				state.scheduled_revocations_count += 1u32;
 				<ExitQueue2<T>>::put(exits);
@@ -1680,13 +1718,12 @@ pub mod pallet {
 			more: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let nominator = ensure_signed(origin)?;
-			let mut state = <NominatorState2<T>>::get(&nominator).ok_or(Error::<T>::NominatorDNE)?;
+			let mut state =
+				<NominatorState2<T>>::get(&nominator).ok_or(Error::<T>::NominatorDNE)?;
 			ensure!(state.is_active(), Error::<T>::CannotActBecauseLeaving);
-			ensure!(
-				!state.revocations.contains(&candidate),
-				Error::<T>::CannotActBecauseRevoking
-			);
-			let mut collator = <CollatorState2<T>>::get(&candidate).ok_or(Error::<T>::CandidateDNE)?;
+			ensure!(!state.revocations.contains(&candidate), Error::<T>::CannotActBecauseRevoking);
+			let mut collator =
+				<CollatorState2<T>>::get(&candidate).ok_or(Error::<T>::CandidateDNE)?;
 			ensure!(state.inc_nomination(candidate.clone(), more), Error::<T>::NominationDNE);
 			T::Currency::reserve(&nominator, more)?;
 			let before = collator.total_counted;
@@ -1717,13 +1754,12 @@ pub mod pallet {
 			less: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			let nominator = ensure_signed(origin)?;
-			let mut state = <NominatorState2<T>>::get(&nominator).ok_or(Error::<T>::NominatorDNE)?;
+			let mut state =
+				<NominatorState2<T>>::get(&nominator).ok_or(Error::<T>::NominatorDNE)?;
 			ensure!(state.is_active(), Error::<T>::CannotActBecauseLeaving);
-			ensure!(
-				!state.revocations.contains(&candidate),
-				Error::<T>::CannotActBecauseRevoking
-			);
-			let mut collator = <CollatorState2<T>>::get(&candidate).ok_or(Error::<T>::CandidateDNE)?;
+			ensure!(!state.revocations.contains(&candidate), Error::<T>::CannotActBecauseRevoking);
+			let mut collator =
+				<CollatorState2<T>>::get(&candidate).ok_or(Error::<T>::CandidateDNE)?;
 			let remaining = state
 				.dec_nomination(candidate.clone(), less)
 				.ok_or(Error::<T>::NominationDNE)?
@@ -1779,10 +1815,7 @@ pub mod pallet {
 		fn update_active(candidate: T::AccountId, total: BalanceOf<T>) {
 			let mut candidates = <CandidatePool<T>>::get();
 			candidates.remove(&Bond::from_owner(candidate.clone()));
-			candidates.insert(Bond {
-				owner: candidate,
-				amount: total,
-			});
+			candidates.insert(Bond { owner: candidate, amount: total });
 			<CandidatePool<T>>::put(candidates);
 		}
 
@@ -1827,12 +1860,12 @@ pub mod pallet {
 			// payout is next - duration rounds ago => next - duration > 0 else return early
 			let duration = T::RewardPaymentDelay::get();
 			if next <= duration {
-				return;
+				return
 			}
 			let round_to_payout = next - duration;
 			let total = <Points<T>>::get(round_to_payout);
 			if total.is_zero() {
-				return;
+				return
 			}
 			let total_staked = <Staked<T>>::get(round_to_payout);
 			let total_issuance = Self::compute_issuance(total_staked);
@@ -1840,7 +1873,9 @@ pub mod pallet {
 			// reserve portion of issuance for parachain bond account
 			let bond_config = <ParachainBondInfo<T>>::get().unwrap_or(Self::default_bond_config());
 			let parachain_bond_reserve = bond_config.percent * total_issuance;
-			if let Ok(imb) = T::Currency::deposit_into_existing(&bond_config.account, parachain_bond_reserve) {
+			if let Ok(imb) =
+				T::Currency::deposit_into_existing(&bond_config.account, parachain_bond_reserve)
+			{
 				// update round issuance iff transfer succeeds
 				left_issuance -= imb.peek();
 				Self::deposit_event(Event::ReservedForParachainBond {
@@ -1850,10 +1885,7 @@ pub mod pallet {
 			}
 			let mint = |amt: BalanceOf<T>, to: T::AccountId| {
 				if let Ok(imb) = T::Currency::deposit_into_existing(&to, amt) {
-					Self::deposit_event(Event::Rewarded {
-						who: to.clone(),
-						amount: imb.peek(),
-					});
+					Self::deposit_event(Event::Rewarded { who: to.clone(), amount: imb.peek() });
 				}
 			};
 			// only pay out rewards at the end to transfer only total amount due
@@ -1908,7 +1940,9 @@ pub mod pallet {
 						Some((who, when))
 					} else {
 						if !exit_queue.candidates.remove(&who) {
-							log::warn!("Candidates set removal failed, CollatorState had inconsistency!",);
+							log::warn!(
+								"Candidates set removal failed, CollatorState had inconsistency!",
+							);
 						}
 						if let Some(state) = <CollatorState2<T>>::get(&who) {
 							// return stake to nominator
@@ -1939,7 +1973,8 @@ pub mod pallet {
 							// return stake to collator
 							T::Currency::unreserve(&state.id, state.bond);
 							<CollatorState2<T>>::remove(&who);
-							let new_total_staked = <Total<T>>::get().saturating_sub(state.total_backing);
+							let new_total_staked =
+								<Total<T>>::get().saturating_sub(state.total_backing);
 							<Total<T>>::put(new_total_staked);
 							Self::deposit_event(Event::CollatorLeft {
 								collator: who,
@@ -1975,7 +2010,10 @@ pub mod pallet {
 									state.scheduled_revocations_total -= amount;
 									state.scheduled_revocations_count -= 1u32;
 									state.revocations.remove(&collator);
-									let _ = Self::nominator_leaves_collator(nominator.clone(), collator);
+									let _ = Self::nominator_leaves_collator(
+										nominator.clone(),
+										collator,
+									);
 									<NominatorState2<T>>::insert(&nominator, state);
 								}
 							} else {
@@ -1995,10 +2033,14 @@ pub mod pallet {
 							}
 							if let Some(state) = <NominatorState2<T>>::get(&nominator) {
 								for bond in state.nominations.0 {
-									if let Err(error) =
-										Self::nominator_leaves_collator(nominator.clone(), bond.owner.clone())
-									{
-										log::warn!("Nominator leaves collator failed with error: {:?}", error);
+									if let Err(error) = Self::nominator_leaves_collator(
+										nominator.clone(),
+										bond.owner.clone(),
+									) {
+										log::warn!(
+											"Nominator leaves collator failed with error: {:?}",
+											error
+										);
 									}
 								}
 								<NominatorState2<T>>::remove(&nominator);
@@ -2007,7 +2049,10 @@ pub mod pallet {
 									unstaked: state.total,
 								});
 							} else {
-								log::warn!("Nominator State Not Found During Exit for Nominator {:?}", nominator);
+								log::warn!(
+									"Nominator State Not Found During Exit for Nominator {:?}",
+									nominator
+								);
 							}
 						}
 						None
@@ -2040,12 +2085,14 @@ pub mod pallet {
 		/// Best as in most cumulatively supported in terms of stake
 		/// Returns [collators, collator_count, nomination_count, total staked]
 		fn select_top_candidates(next: RoundIndex) -> (u32, u32, BalanceOf<T>) {
-			let (mut collator_count, mut nomination_count, mut total) = (0u32, 0u32, BalanceOf::<T>::zero());
+			let (mut collator_count, mut nomination_count, mut total) =
+				(0u32, 0u32, BalanceOf::<T>::zero());
 			// choose the top TotalSelected qualified candidates, ordered by stake
 			let collators = Self::compute_top_candidates();
 			// snapshot exposure for round for weighting amount distribution
 			for account in collators.iter() {
-				let state = <CollatorState2<T>>::get(&account).expect("all members of CandidateQ must be candidates");
+				let state = <CollatorState2<T>>::get(&account)
+					.expect("all members of CandidateQ must be candidates");
 				collator_count += 1u32;
 				nomination_count += state.nominators.0.len() as u32;
 				let amount = state.total_counted;
@@ -2083,11 +2130,7 @@ pub mod pallet {
 		fn new_session(index: SessionIndex) -> Option<Vec<T::AccountId>> {
 			let block_number = <frame_system::Pallet<T>>::block_number();
 
-			log::info!(
-				"assembling new collators for new session {} at #{:?}",
-				index,
-				block_number,
-			);
+			log::info!("assembling new collators for new session {} at #{:?}", index, block_number,);
 
 			Some(Self::selected_candidates())
 
@@ -2098,7 +2141,7 @@ pub mod pallet {
 			let collators = Self::selected_candidates();
 
 			if collators.is_empty() {
-				return None;
+				return None
 			}
 
 			Some(collators)
@@ -2125,7 +2168,7 @@ pub mod pallet {
 		fn should_end_session(now: T::BlockNumber) -> bool {
 			let round = <Round<T>>::get();
 			if (round.first == 0u32.into()) & (now == 0u32.into()) {
-				return false;
+				return false
 			}
 			round.first == now
 		}

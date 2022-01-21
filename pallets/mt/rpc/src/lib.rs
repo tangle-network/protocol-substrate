@@ -23,7 +23,13 @@ pub trait MerkleApi<BlockHash, Element> {
 	///
 	/// Returns the (full) a Vec<[u8; 32]> of the leaves.
 	#[rpc(name = "mt_getLeaves")]
-	fn get_leaves(&self, tree_id: u32, from: usize, to: usize, at: Option<BlockHash>) -> Result<Vec<Element>>;
+	fn get_leaves(
+		&self,
+		tree_id: u32,
+		from: usize,
+		to: usize,
+		at: Option<BlockHash>,
+	) -> Result<Vec<Element>>;
 }
 
 /// A struct that implements the `MerkleApi`.
@@ -35,10 +41,7 @@ pub struct MerkleClient<C, M> {
 impl<C, M> MerkleClient<C, M> {
 	/// Create new `Merkle` instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
-		Self {
-			client,
-			_marker: Default::default(),
-		}
+		Self { client, _marker: Default::default() }
 	}
 }
 
@@ -63,7 +66,7 @@ where
 				code: ErrorCode::ServerError(1512), // Too many leaves
 				message: "TooManyLeaves".into(),
 				data: Some("MaxRange512".into()),
-			});
+			})
 		}
 		let leaves = (from..to)
 			.into_iter()

@@ -66,7 +66,8 @@ use types::MixerMetadata;
 
 use codec::Encode;
 use frame_support::{
-	ensure, pallet_prelude::DispatchError, sp_runtime::traits::AccountIdConversion, traits::Get, PalletId,
+	ensure, pallet_prelude::DispatchError, sp_runtime::traits::AccountIdConversion, traits::Get,
+	PalletId,
 };
 use orml_traits::{currency::transactional, MultiCurrency};
 use sp_std::prelude::*;
@@ -85,8 +86,9 @@ pub use weights::WeightInfo;
 pub type BalanceOf<T, I> =
 	<<T as Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
 /// Type alias for the orml_traits::MultiCurrency::CurrencyId type
-pub type CurrencyIdOf<T, I> =
-	<<T as pallet::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
+pub type CurrencyIdOf<T, I> = <<T as pallet::Config<I>>::Currency as MultiCurrency<
+	<T as frame_system::Config>::AccountId,
+>>::CurrencyId;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -128,14 +130,26 @@ pub mod pallet {
 	/// The map of trees to their mixer metadata
 	#[pallet::storage]
 	#[pallet::getter(fn mixers)]
-	pub type Mixers<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, T::TreeId, MixerMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, OptionQuery>;
+	pub type Mixers<T: Config<I>, I: 'static = ()> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::TreeId,
+		MixerMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>,
+		OptionQuery,
+	>;
 
 	/// The map of trees to their spent nullifier hashes
 	#[pallet::storage]
 	#[pallet::getter(fn nullifier_hashes)]
-	pub type NullifierHashes<T: Config<I>, I: 'static = ()> =
-		StorageDoubleMap<_, Blake2_128Concat, T::TreeId, Blake2_128Concat, T::Element, bool, ValueQuery>;
+	pub type NullifierHashes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		T::TreeId,
+		Blake2_128Concat,
+		T::Element,
+		bool,
+		ValueQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -201,14 +215,19 @@ pub mod pallet {
 			asset: CurrencyIdOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id = <Self as MixerInterface<_, _, _, _, _>>::create(None, deposit_size, depth, asset)?;
+			let tree_id =
+				<Self as MixerInterface<_, _, _, _, _>>::create(None, deposit_size, depth, asset)?;
 			Self::deposit_event(Event::MixerCreation { tree_id });
 			Ok(().into())
 		}
 
 		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
-		pub fn deposit(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
+		pub fn deposit(
+			origin: OriginFor<T>,
+			tree_id: T::TreeId,
+			leaf: T::Element,
+		) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			<Self as MixerInterface<_, _, _, _, _>>::deposit(origin, tree_id, leaf)?;
 			Ok(().into())
@@ -243,7 +262,8 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, CurrencyIdOf<T, I>, T::TreeId, T::Element>
+impl<T: Config<I>, I: 'static>
+	MixerInterface<T::AccountId, BalanceOf<T, I>, CurrencyIdOf<T, I>, T::TreeId, T::Element>
 	for Pallet<T, I>
 {
 	fn create(
@@ -257,13 +277,22 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 		Ok(id)
 	}
 
-	fn deposit(depositor: T::AccountId, id: T::TreeId, leaf: T::Element) -> Result<(), DispatchError> {
+	fn deposit(
+		depositor: T::AccountId,
+		id: T::TreeId,
+		leaf: T::Element,
+	) -> Result<(), DispatchError> {
 		// insert the leaf
 		T::Tree::insert_in_order(id, leaf)?;
 
 		let mixer = Self::get_mixer(id)?;
 		// transfer tokens to the pallet
-		<T as pallet::Config<I>>::Currency::transfer(mixer.asset, &depositor, &Self::account_id(), mixer.deposit_size)?;
+		<T as pallet::Config<I>>::Currency::transfer(
+			mixer.asset,
+			&depositor,
+			&Self::account_id(),
+			mixer.deposit_size,
+		)?;
 
 		Ok(())
 	}
@@ -311,7 +340,12 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 		let result = T::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 
-		<T as pallet::Config<I>>::Currency::transfer(mixer.asset, &Self::account_id(), &recipient, mixer.deposit_size)?;
+		<T as pallet::Config<I>>::Currency::transfer(
+			mixer.asset,
+			&Self::account_id(),
+			&recipient,
+			mixer.deposit_size,
+		)?;
 
 		Ok(())
 	}
@@ -322,8 +356,8 @@ impl<T: Config<I>, I: 'static> MixerInterface<T::AccountId, BalanceOf<T, I>, Cur
 	}
 }
 
-impl<T: Config<I>, I: 'static> MixerInspector<T::AccountId, CurrencyIdOf<T, I>, T::TreeId, T::Element>
-	for Pallet<T, I>
+impl<T: Config<I>, I: 'static>
+	MixerInspector<T::AccountId, CurrencyIdOf<T, I>, T::TreeId, T::Element> for Pallet<T, I>
 {
 	fn get_root(tree_id: T::TreeId) -> Result<T::Element, DispatchError> {
 		T::Tree::get_root(tree_id)
@@ -344,10 +378,7 @@ impl<T: Config<I>, I: 'static> MixerInspector<T::AccountId, CurrencyIdOf<T, I>, 
 	}
 
 	fn ensure_nullifier_unused(id: T::TreeId, nullifier: T::Element) -> Result<(), DispatchError> {
-		ensure!(
-			!Self::is_nullifier_used(id, nullifier),
-			Error::<T, I>::AlreadyRevealedNullifier
-		);
+		ensure!(!Self::is_nullifier_used(id, nullifier), Error::<T, I>::AlreadyRevealedNullifier);
 		Ok(())
 	}
 }
@@ -357,7 +388,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::PalletId::get().into_account()
 	}
 
-	pub fn get_mixer(id: T::TreeId) -> Result<MixerMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
+	pub fn get_mixer(
+		id: T::TreeId,
+	) -> Result<MixerMetadata<BalanceOf<T, I>, CurrencyIdOf<T, I>>, DispatchError> {
 		let mixer = Self::mixers(id);
 		ensure!(mixer.is_some(), Error::<T, I>::NoMixerFound);
 		Ok(mixer.unwrap())
