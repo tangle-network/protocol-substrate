@@ -3,7 +3,6 @@
 use crate as pallet_xanchor;
 
 use codec::{Decode, Encode};
-use webb_primitives::{Amount, BlockNumber, ChainId};
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchResult,
@@ -22,21 +21,25 @@ use sp_runtime::{
 	Perbill,
 };
 use sp_std::{convert::TryFrom, prelude::*};
+use webb_primitives::{Amount, BlockNumber, ChainId};
 
+use pallet_xcm::XcmPassthrough;
+use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
+use polkadot_parachain::primitives::{
+	DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
+};
 pub use webb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
 	types::ElementTrait,
 	AccountId,
 };
-use pallet_xcm::XcmPassthrough;
-use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
-use polkadot_parachain::primitives::{DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler};
 use xcm::{latest::prelude::*, VersionedXcm};
 use xcm_builder::{
-	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter, EnsureXcmOrigin,
-	FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser,
-	ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation,
+	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter,
+	EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter,
+	NativeAsset, ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
+	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
+	SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -67,6 +70,7 @@ impl frame_system::Config for Runtime {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -75,7 +79,6 @@ impl frame_system::Config for Runtime {
 	type SS58Prefix = ();
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -256,7 +259,7 @@ pub mod mock_msg_queue {
 						// we just report the weight used.
 						Outcome::Incomplete(w, e) => (Ok(w), Event::Fail(Some(hash), e)),
 					}
-				}
+				},
 				Err(()) => (Err(XcmError::UnhandledXcmVersion), Event::BadVersion(Some(hash))),
 			};
 			Self::deposit_event(event);
@@ -271,8 +274,8 @@ pub mod mock_msg_queue {
 		) -> Weight {
 			for (sender, sent_at, data) in iter {
 				let mut data_ref = data;
-				let _ =
-					XcmpMessageFormat::decode(&mut data_ref).expect("Simulator encodes with versioned xcm format; qed");
+				let _ = XcmpMessageFormat::decode(&mut data_ref)
+					.expect("Simulator encodes with versioned xcm format; qed");
 
 				let mut remaining_fragments = data_ref;
 				while !remaining_fragments.is_empty() {
@@ -288,22 +291,26 @@ pub mod mock_msg_queue {
 	}
 
 	impl<T: Config> DmpMessageHandler for Pallet<T> {
-		fn handle_dmp_messages(iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>, limit: Weight) -> Weight {
+		fn handle_dmp_messages(
+			iter: impl Iterator<Item = (RelayBlockNumber, Vec<u8>)>,
+			limit: Weight,
+		) -> Weight {
 			for (_i, (_sent_at, data)) in iter.enumerate() {
 				let id = sp_io::hashing::blake2_256(&data[..]);
-				let maybe_msg = VersionedXcm::<T::Call>::decode(&mut &data[..]).map(Xcm::<T::Call>::try_from);
+				let maybe_msg =
+					VersionedXcm::<T::Call>::decode(&mut &data[..]).map(Xcm::<T::Call>::try_from);
 				match maybe_msg {
 					Err(_) => {
 						Self::deposit_event(Event::InvalidFormat(id));
-					}
+					},
 					Ok(Err(())) => {
 						Self::deposit_event(Event::UnsupportedVersion(id));
-					}
+					},
 					Ok(Ok(x)) => {
 						let outcome = T::XcmExecutor::execute_xcm(Parent, x.clone(), limit);
 						<ReceivedDmp<T>>::append(x);
 						Self::deposit_event(Event::ExecutedDownward(id, outcome));
-					}
+					},
 				}
 			}
 			limit
@@ -374,7 +381,19 @@ parameter_types! {
 	pub const MockZeroElement: Element = Element([0; 32]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Serialize, Deserialize)]
+#[derive(
+	Debug,
+	Encode,
+	Decode,
+	Default,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	scale_info::TypeInfo,
+	Serialize,
+	Deserialize,
+)]
 pub struct Element([u8; 32]);
 
 impl Element {
@@ -460,8 +479,8 @@ parameter_types! {
 
 impl pallet_linkable_tree::Config for Runtime {
 	type ChainId = ChainId;
-	type Event = Event;
 	type ChainIdentifier = ChainIdentifier;
+	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();
@@ -490,13 +509,13 @@ impl pallet_xanchor::Config for Runtime {
 }
 
 impl pallet_preimage::Config for Runtime {
-	type Event = Event;
-	type WeightInfo = ();
-	type Currency = ();
-	type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-	type MaxSize = frame_support::traits::ConstU32<1024>;
 	type BaseDeposit = ();
 	type ByteDeposit = ();
+	type Currency = ();
+	type Event = Event;
+	type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxSize = frame_support::traits::ConstU32<1024>;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -509,12 +528,12 @@ impl pallet_scheduler::Config for Runtime {
 	type Event = Event;
 	type MaxScheduledPerBlock = ();
 	type MaximumWeight = MaximumSchedulerWeight;
+	type NoPreimagePostponement = NoPreimagePostponement;
 	type Origin = Origin;
 	type OriginPrivilegeCmp = frame_support::traits::EqualPrivilegeOnly;
 	type PalletsOrigin = OriginCaller;
-	type ScheduleOrigin = EnsureRoot<AccountId>;
 	type PreimageProvider = Preimage;
-	type NoPreimagePostponement = NoPreimagePostponement;
+	type ScheduleOrigin = EnsureRoot<AccountId>;
 	type WeightInfo = ();
 }
 
@@ -544,10 +563,7 @@ ord_parameter_types! {
 pub struct OneToFive;
 impl SortedMembers<AccountId> for OneToFive {
 	fn sorted_members() -> Vec<AccountId> {
-		(1..=5)
-			.into_iter()
-			.map(|x| sp_runtime::AccountId32::new([x; 32]))
-			.collect()
+		(1..=5).into_iter().map(|x| sp_runtime::AccountId32::new([x; 32])).collect()
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
@@ -585,8 +601,14 @@ impl pallet_democracy::Config for Runtime {
 	type WeightInfo = ();
 }
 
-impl crate::types::DemocracyGovernanceDelegate<Runtime, Call, BalanceOf<Runtime, ()>> for Democracy {
-	fn propose(origin: OriginFor<Runtime>, proposal: Call, value: BalanceOf<Runtime, ()>) -> DispatchResult {
+impl crate::types::DemocracyGovernanceDelegate<Runtime, Call, BalanceOf<Runtime, ()>>
+	for Democracy
+{
+	fn propose(
+		origin: OriginFor<Runtime>,
+		proposal: Call,
+		value: BalanceOf<Runtime, ()>,
+	) -> DispatchResult {
 		let encoded_proposal = proposal.encode();
 		let proposal_hash = BlakeTwo256::hash(&encoded_proposal[..]);
 		Democracy::note_preimage(origin.clone(), encoded_proposal)?;

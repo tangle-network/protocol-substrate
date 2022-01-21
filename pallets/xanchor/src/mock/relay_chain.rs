@@ -12,9 +12,10 @@ use polkadot_parachain::primitives::Id as ParaId;
 use polkadot_runtime_parachains::{configuration, origin, shared, ump};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	AccountId32Aliases, AllowUnpaidExecutionFrom, ChildParachainAsNative, ChildParachainConvertsVia,
-	ChildSystemParachainAsSuperuser, CurrencyAdapter as XcmCurrencyAdapter, FixedRateOfFungible, FixedWeightBounds,
-	IsConcrete, LocationInverter, SiblingParachainAsNative, SignedAccountId32AsNative, SignedToAccountId32,
+	AccountId32Aliases, AllowUnpaidExecutionFrom, ChildParachainAsNative,
+	ChildParachainConvertsVia, ChildSystemParachainAsSuperuser,
+	CurrencyAdapter as XcmCurrencyAdapter, FixedRateOfFungible, FixedWeightBounds, IsConcrete,
+	LocationInverter, SiblingParachainAsNative, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
@@ -42,6 +43,7 @@ impl frame_system::Config for Runtime {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -50,7 +52,6 @@ impl frame_system::Config for Runtime {
 	type SS58Prefix = ();
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -85,10 +86,8 @@ parameter_types! {
 	pub UnitWeightCost: Weight = 1_000;
 }
 
-pub type SovereignAccountOf = (
-	ChildParachainConvertsVia<ParaId, AccountId>,
-	AccountId32Aliases<KusamaNetwork, AccountId>,
-);
+pub type SovereignAccountOf =
+	(ChildParachainConvertsVia<ParaId, AccountId>, AccountId32Aliases<KusamaNetwork, AccountId>);
 
 pub type LocalAssetTransactor =
 	XcmCurrencyAdapter<Balances, IsConcrete<KsmLocation>, SovereignAccountOf, AccountId, ()>;

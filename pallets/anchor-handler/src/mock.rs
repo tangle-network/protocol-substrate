@@ -2,11 +2,9 @@
 
 use crate as pallet_anchor_handler;
 use codec::{Decode, Encode};
-pub use webb_primitives::{ElementTrait, InstanceHasher};
 use frame_support::{ord_parameter_types, parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
-use webb_primitives::verifying::ArkworksVerifierBn254;
 pub use pallet_balances;
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
@@ -14,6 +12,8 @@ use sp_runtime::{
 	testing::Header,
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 };
+use webb_primitives::verifying::ArkworksVerifierBn254;
+pub use webb_primitives::{ElementTrait, InstanceHasher};
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -70,6 +70,7 @@ impl system::Config for Test {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -78,7 +79,6 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -145,7 +145,19 @@ parameter_types! {
 	]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Serialize, Deserialize)]
+#[derive(
+	Debug,
+	Encode,
+	Decode,
+	Default,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	scale_info::TypeInfo,
+	Serialize,
+	Deserialize,
+)]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {
@@ -284,10 +296,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 }
 
 fn last_event() -> Event {
-	system::Pallet::<Test>::events()
-		.pop()
-		.map(|e| e.event)
-		.expect("Event expected")
+	system::Pallet::<Test>::events().pop().map(|e| e.event).expect("Event expected")
 }
 
 pub fn expect_event<E: Into<Event>>(e: E) {
@@ -296,16 +305,14 @@ pub fn expect_event<E: Into<Event>>(e: E) {
 
 // Asserts that the event was emitted at some point.
 pub fn event_exists<E: Into<Event>>(e: E) {
-	let actual: Vec<Event> = system::Pallet::<Test>::events()
-		.iter()
-		.map(|e| e.event.clone())
-		.collect();
+	let actual: Vec<Event> =
+		system::Pallet::<Test>::events().iter().map(|e| e.event.clone()).collect();
 	let e: Event = e.into();
 	let mut exists = false;
 	for evt in actual {
 		if evt == e {
 			exists = true;
-			break;
+			break
 		}
 	}
 	assert!(exists);
@@ -315,10 +322,8 @@ pub fn event_exists<E: Into<Event>>(e: E) {
 // provided. They must include the most recent event, but do not have to include
 // every past event.
 pub fn assert_events(mut expected: Vec<Event>) {
-	let mut actual: Vec<Event> = system::Pallet::<Test>::events()
-		.iter()
-		.map(|e| e.event.clone())
-		.collect();
+	let mut actual: Vec<Event> =
+		system::Pallet::<Test>::events().iter().map(|e| e.event.clone()).collect();
 
 	expected.reverse();
 

@@ -22,11 +22,11 @@ use crate::{
 	ShareTokenRegistry,
 };
 use codec::Encode;
-use webb_primitives::{AssetId, Balance};
 use frame_support::{assert_noop, assert_ok, BoundedVec};
 use polkadot_xcm::v0::{Junction::*, MultiLocation::*};
 use sp_runtime::DispatchError;
 use sp_std::convert::TryInto;
+use webb_primitives::{AssetId, Balance};
 
 #[test]
 fn register_asset_works() {
@@ -52,12 +52,15 @@ fn register_asset_works() {
 		let bn = AssetRegistryPallet::to_bounded_name(name.clone()).unwrap();
 
 		assert_eq!(AssetRegistryPallet::asset_ids(&bn).unwrap(), 1u32);
-		assert_eq!(AssetRegistryPallet::assets(1u32).unwrap(), AssetDetails {
-			name: bn,
-			asset_type: AssetType::Token,
-			existential_deposit: ed,
-			locked: false
-		});
+		assert_eq!(
+			AssetRegistryPallet::assets(1u32).unwrap(),
+			AssetDetails {
+				name: bn,
+				asset_type: AssetType::Token,
+				existential_deposit: ed,
+				locked: false
+			}
+		);
 
 		assert_noop!(
 			AssetRegistryPallet::register(Origin::root(), name, AssetType::Token, ed),
@@ -71,21 +74,14 @@ fn create_asset() {
 	new_test_ext().execute_with(|| {
 		let ed = 1_000_000u128;
 
-		assert_ok!(AssetRegistryPallet::get_or_create_asset(
-			b"HDX".to_vec(),
-			AssetType::Token,
-			ed
-		));
+		assert_ok!(AssetRegistryPallet::get_or_create_asset(b"HDX".to_vec(), AssetType::Token, ed));
 
-		let dot_asset = AssetRegistryPallet::get_or_create_asset(b"DOT".to_vec(), AssetType::Token, ed);
+		let dot_asset =
+			AssetRegistryPallet::get_or_create_asset(b"DOT".to_vec(), AssetType::Token, ed);
 		assert_ok!(dot_asset);
 		let dot_asset_id = dot_asset.ok().unwrap();
 
-		assert_ok!(AssetRegistryPallet::get_or_create_asset(
-			b"BTC".to_vec(),
-			AssetType::Token,
-			ed
-		));
+		assert_ok!(AssetRegistryPallet::get_or_create_asset(b"BTC".to_vec(), AssetType::Token, ed));
 
 		let current_asset_id = AssetRegistryPallet::next_asset_id();
 
@@ -98,8 +94,10 @@ fn create_asset() {
 		// Retrieving existing asset should not increased the next asset id counter.
 		assert_eq!(AssetRegistryPallet::next_asset_id(), current_asset_id);
 
-		let dot: BoundedVec<u8, <Test as crate::Config>::StringLimit> = b"DOT".to_vec().try_into().unwrap();
-		let aaa: BoundedVec<u8, <Test as crate::Config>::StringLimit> = b"AAA".to_vec().try_into().unwrap();
+		let dot: BoundedVec<u8, <Test as crate::Config>::StringLimit> =
+			b"DOT".to_vec().try_into().unwrap();
+		let aaa: BoundedVec<u8, <Test as crate::Config>::StringLimit> =
+			b"AAA".to_vec().try_into().unwrap();
 
 		assert_eq!(AssetRegistryPallet::asset_ids(dot).unwrap(), 2u32);
 		assert!(AssetRegistryPallet::asset_ids(aaa).is_none());
@@ -113,26 +111,23 @@ fn location_mapping_works() {
 
 		let ed = 1_000_000u128;
 
-		assert_ok!(AssetRegistryPallet::get_or_create_asset(
-			b"HDX".to_vec(),
-			AssetType::Token,
-			ed
-		));
+		assert_ok!(AssetRegistryPallet::get_or_create_asset(b"HDX".to_vec(), AssetType::Token, ed));
 		let asset_id: AssetId =
-			AssetRegistryPallet::get_or_create_asset(b"HDX".to_vec(), AssetType::Token, ed).unwrap();
+			AssetRegistryPallet::get_or_create_asset(b"HDX".to_vec(), AssetType::Token, ed)
+				.unwrap();
 
-		crate::Assets::<Test>::insert(asset_id, AssetDetails::<
-			AssetId,
-			Balance,
-			BoundedVec<u8, RegistryStringLimit>,
-		> {
-			name: bn,
-			asset_type: AssetType::Token,
-			existential_deposit: ed,
-			locked: false,
-		});
+		crate::Assets::<Test>::insert(
+			asset_id,
+			AssetDetails::<AssetId, Balance, BoundedVec<u8, RegistryStringLimit>> {
+				name: bn,
+				asset_type: AssetType::Token,
+				existential_deposit: ed,
+				locked: false,
+			},
+		);
 
-		let asset_location = AssetLocation(X3(Parent, Parachain(200), GeneralKey(asset_id.encode())));
+		let asset_location =
+			AssetLocation(X3(Parent, Parachain(200), GeneralKey(asset_id.encode())));
 
 		assert_ok!(AssetRegistryPallet::set_location(
 			Origin::root(),
@@ -140,10 +135,7 @@ fn location_mapping_works() {
 			asset_location.clone()
 		));
 
-		assert_eq!(
-			AssetRegistryPallet::location_to_asset(asset_location.clone()),
-			Some(asset_id)
-		);
+		assert_eq!(AssetRegistryPallet::location_to_asset(asset_location.clone()), Some(asset_id));
 		assert_eq!(AssetRegistryPallet::asset_to_location(asset_id), Some(asset_location));
 	});
 }
@@ -154,27 +146,34 @@ fn genesis_config_works() {
 		.with_native_asset_name(b"NATIVE".to_vec())
 		.build()
 		.execute_with(|| {
-			let native: BoundedVec<u8, <Test as crate::Config>::StringLimit> = b"NATIVE".to_vec().try_into().unwrap();
+			let native: BoundedVec<u8, <Test as crate::Config>::StringLimit> =
+				b"NATIVE".to_vec().try_into().unwrap();
 			assert_eq!(AssetRegistryPallet::asset_ids(native).unwrap(), 0u32);
 		});
 	ExtBuilder::default()
 		.with_assets(vec![(b"ONE".to_vec(), 1_000u128)])
 		.build()
 		.execute_with(|| {
-			let native: BoundedVec<u8, <Test as crate::Config>::StringLimit> = b"NATIVE".to_vec().try_into().unwrap();
+			let native: BoundedVec<u8, <Test as crate::Config>::StringLimit> =
+				b"NATIVE".to_vec().try_into().unwrap();
 			assert_eq!(AssetRegistryPallet::asset_ids(native), None);
 
-			let webb: BoundedVec<u8, <Test as crate::Config>::StringLimit> = b"WEBB".to_vec().try_into().unwrap();
+			let webb: BoundedVec<u8, <Test as crate::Config>::StringLimit> =
+				b"WEBB".to_vec().try_into().unwrap();
 			assert_eq!(AssetRegistryPallet::asset_ids(webb).unwrap(), 0u32);
 
-			let one: BoundedVec<u8, <Test as crate::Config>::StringLimit> = b"ONE".to_vec().try_into().unwrap();
+			let one: BoundedVec<u8, <Test as crate::Config>::StringLimit> =
+				b"ONE".to_vec().try_into().unwrap();
 			assert_eq!(AssetRegistryPallet::asset_ids(one.clone()).unwrap(), 1u32);
-			assert_eq!(AssetRegistryPallet::assets(1u32).unwrap(), AssetDetails {
-				name: one,
-				asset_type: AssetType::Token,
-				existential_deposit: 1_000u128,
-				locked: false
-			});
+			assert_eq!(
+				AssetRegistryPallet::assets(1u32).unwrap(),
+				AssetDetails {
+					name: one,
+					asset_type: AssetType::Token,
+					existential_deposit: 1_000u128,
+					locked: false
+				}
+			);
 		});
 }
 
@@ -184,9 +183,11 @@ fn set_metadata_works() {
 		.with_assets(vec![(b"DOT".to_vec(), 1_000u128)])
 		.build()
 		.execute_with(|| {
-			let dot: BoundedVec<u8, <Test as crate::Config>::StringLimit> = b"DOT".to_vec().try_into().unwrap();
+			let dot: BoundedVec<u8, <Test as crate::Config>::StringLimit> =
+				b"DOT".to_vec().try_into().unwrap();
 			let dot_id = AssetRegistryPallet::asset_ids(dot).unwrap();
-			let b_symbol: BoundedVec<u8, <Test as crate::Config>::StringLimit> = b"xDOT".to_vec().try_into().unwrap();
+			let b_symbol: BoundedVec<u8, <Test as crate::Config>::StringLimit> =
+				b"xDOT".to_vec().try_into().unwrap();
 
 			assert_ok!(AssetRegistryPallet::set_metadata(
 				Origin::root(),
@@ -195,10 +196,10 @@ fn set_metadata_works() {
 				12u8
 			));
 
-			assert_eq!(AssetRegistryPallet::asset_metadata(dot_id).unwrap(), AssetMetadata {
-				decimals: 12u8,
-				symbol: b_symbol.clone(),
-			});
+			assert_eq!(
+				AssetRegistryPallet::asset_metadata(dot_id).unwrap(),
+				AssetMetadata { decimals: 12u8, symbol: b_symbol.clone() }
+			);
 
 			assert_ok!(AssetRegistryPallet::set_metadata(
 				Origin::root(),
@@ -207,13 +208,18 @@ fn set_metadata_works() {
 				30u8
 			));
 
-			assert_eq!(AssetRegistryPallet::asset_metadata(dot_id).unwrap(), AssetMetadata {
-				decimals: 30u8,
-				symbol: b_symbol
-			});
+			assert_eq!(
+				AssetRegistryPallet::asset_metadata(dot_id).unwrap(),
+				AssetMetadata { decimals: 30u8, symbol: b_symbol }
+			);
 
 			assert_noop!(
-				AssetRegistryPallet::set_metadata(Origin::root(), dot_id, b"JUST_TOO_LONG".to_vec(), 30u8),
+				AssetRegistryPallet::set_metadata(
+					Origin::root(),
+					dot_id,
+					b"JUST_TOO_LONG".to_vec(),
+					30u8
+				),
 				Error::<Test>::TooLong
 			);
 
@@ -230,9 +236,11 @@ fn update_asset() {
 		let ed = 1_000_000u128;
 
 		let btc_asset_id: AssetId =
-			AssetRegistryPallet::get_or_create_asset(b"BTC".to_vec(), AssetType::Token, ed).unwrap();
+			AssetRegistryPallet::get_or_create_asset(b"BTC".to_vec(), AssetType::Token, ed)
+				.unwrap();
 		let usd_asset_id: AssetId =
-			AssetRegistryPallet::get_or_create_asset(b"USD".to_vec(), AssetType::Token, ed).unwrap();
+			AssetRegistryPallet::get_or_create_asset(b"USD".to_vec(), AssetType::Token, ed)
+				.unwrap();
 
 		let next_asset_id = AssetRegistryPallet::next_asset_id();
 
@@ -246,12 +254,15 @@ fn update_asset() {
 		));
 		let bn = AssetRegistryPallet::to_bounded_name(b"superBTC".to_vec()).unwrap();
 
-		assert_eq!(AssetRegistryPallet::assets(btc_asset_id).unwrap(), AssetDetails {
-			name: bn,
-			asset_type: AssetType::Token,
-			existential_deposit: ed,
-			locked: false
-		});
+		assert_eq!(
+			AssetRegistryPallet::assets(btc_asset_id).unwrap(),
+			AssetDetails {
+				name: bn,
+				asset_type: AssetType::Token,
+				existential_deposit: ed,
+				locked: false
+			}
+		);
 
 		let new_btc_name: BoundedVec<u8, <Test as crate::Config>::StringLimit> =
 			b"superBTC".to_vec().try_into().unwrap();
@@ -271,7 +282,13 @@ fn update_asset() {
 
 		// cannot set a new name for a non-existent asset
 		assert_noop!(
-			(AssetRegistryPallet::update(Origin::root(), next_asset_id, b"VOID".to_vec(), AssetType::Token, None)),
+			(AssetRegistryPallet::update(
+				Origin::root(),
+				next_asset_id,
+				b"VOID".to_vec(),
+				AssetType::Token,
+				None
+			)),
 			Error::<Test>::AssetNotFound
 		);
 
@@ -296,12 +313,15 @@ fn update_asset() {
 
 		let btcusd = AssetRegistryPallet::to_bounded_name(b"BTCUSD".to_vec()).unwrap();
 
-		assert_eq!(AssetRegistryPallet::assets(btc_asset_id).unwrap(), AssetDetails {
-			name: btcusd,
-			asset_type: AssetType::PoolShare(vec![btc_asset_id, usd_asset_id]),
-			existential_deposit: 1_234_567u128,
-			locked: false
-		});
+		assert_eq!(
+			AssetRegistryPallet::assets(btc_asset_id).unwrap(),
+			AssetDetails {
+				name: btcusd,
+				asset_type: AssetType::PoolShare(vec![btc_asset_id, usd_asset_id]),
+				existential_deposit: 1_234_567u128,
+				locked: false
+			}
+		);
 
 		// corner case: change the name and also the type for an existing asset (pool
 		// share -> token)
@@ -316,12 +336,15 @@ fn update_asset() {
 		let superbtc_name: BoundedVec<u8, <Test as crate::Config>::StringLimit> =
 			b"superBTC".to_vec().try_into().unwrap();
 
-		assert_eq!(AssetRegistryPallet::assets(1u32).unwrap(), AssetDetails {
-			name: superbtc_name,
-			asset_type: AssetType::Token,
-			locked: false,
-			existential_deposit: 1_234_567u128
-		});
+		assert_eq!(
+			AssetRegistryPallet::assets(1u32).unwrap(),
+			AssetDetails {
+				name: superbtc_name,
+				asset_type: AssetType::Token,
+				locked: false,
+				existential_deposit: 1_234_567u128
+			}
+		);
 	});
 }
 
@@ -349,11 +372,7 @@ fn add_asset_to_pool() {
 		)
 		.unwrap();
 
-		assert_ok!(Registry::add_asset_to_pool(
-			Origin::root(),
-			b"meme".to_vec(),
-			second_token_id
-		));
+		assert_ok!(Registry::add_asset_to_pool(Origin::root(), b"meme".to_vec(), second_token_id));
 
 		assert!(<Registry as ShareTokenRegistry<
 			<Test as crate::Config>::AssetId,
