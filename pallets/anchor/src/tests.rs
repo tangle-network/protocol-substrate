@@ -411,11 +411,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
 		assert_eq!(roots_element[0], tree_root);
 
-		let a = proof_bytes[0];
-		let b = proof_bytes[1];
-
-		proof_bytes[0] = b;
-		proof_bytes[1] = a;
+		proof_bytes[1] = proof_bytes[1] % 128 + 1;
 
 		assert_err!(
 			Anchor::withdraw(
@@ -430,7 +426,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 				refund_value.into(),
 				commitment_element
 			),
-			pallet_verifier::Error::<Test, _>::VerifyError
+			crate::Error::<Test, _>::InvalidWithdrawProof
 		);
 	});
 }
