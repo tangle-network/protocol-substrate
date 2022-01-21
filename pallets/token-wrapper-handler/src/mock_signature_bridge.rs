@@ -2,7 +2,9 @@
 
 use super::*;
 use crate as pallet_token_wrapper_handler;
-use frame_support::{assert_ok, pallet_prelude::GenesisBuild, parameter_types, traits::Nothing, PalletId};
+use frame_support::{
+	assert_ok, pallet_prelude::GenesisBuild, parameter_types, traits::Nothing, PalletId,
+};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
 use sp_core::H256;
@@ -219,10 +221,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 // provided. They must include the most recent event, but do not have to include
 // every past event.
 pub fn assert_events(mut expected: Vec<Event>) {
-	let mut actual: Vec<Event> = system::Pallet::<Test>::events()
-		.iter()
-		.map(|e| e.event.clone())
-		.collect();
+	let mut actual: Vec<Event> =
+		system::Pallet::<Test>::events().iter().map(|e| e.event.clone()).collect();
 
 	expected.reverse();
 

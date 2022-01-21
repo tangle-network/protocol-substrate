@@ -32,10 +32,13 @@ fn should_fail_in_case_when_max_default_hashes_is_exceeded() {
 	new_test_ext().execute_with(|| {
 		let max_default_hashes = <Test as Config>::MaxTreeDepth::get();
 		assert_err!(
-			MerkleTree::force_set_default_hashes(Origin::root(), vec![
-				<Test as Config>::DefaultZeroElement::get();
-				(max_default_hashes + 1) as usize
-			]),
+			MerkleTree::force_set_default_hashes(
+				Origin::root(),
+				vec![
+					<Test as Config>::DefaultZeroElement::get();
+					(max_default_hashes + 1) as usize
+				]
+			),
 			crate::Error::<Test, _>::ExceedsMaxDefaultHashes
 		);
 	});

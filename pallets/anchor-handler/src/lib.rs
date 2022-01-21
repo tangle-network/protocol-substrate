@@ -46,16 +46,16 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
+use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
+use frame_system::pallet_prelude::OriginFor;
+use pallet_anchor::{BalanceOf, CurrencyIdOf};
+use pallet_linkable_tree::types::EdgeMetadata;
+use sp_std::prelude::*;
 use webb_primitives::{
 	anchor::AnchorConfig,
 	traits::anchor::{AnchorInspector, AnchorInterface},
 	ResourceId,
 };
-use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
-use frame_system::pallet_prelude::OriginFor;
-use sp_std::prelude::*;
-use pallet_anchor::{BalanceOf, CurrencyIdOf};
-use pallet_linkable_tree::types::EdgeMetadata;
 pub mod types;
 use types::*;
 
@@ -82,7 +82,8 @@ pub mod pallet {
 		type BridgeOrigin: EnsureOrigin<Self::Origin, Success = Self::AccountId>;
 
 		/// Anchor Interface
-		type Anchor: AnchorInterface<AnchorConfigration<Self, I>> + AnchorInspector<AnchorConfigration<Self, I>>;
+		type Anchor: AnchorInterface<AnchorConfigration<Self, I>>
+			+ AnchorInspector<AnchorConfigration<Self, I>>;
 	}
 
 	/// The map of trees to their anchor metadata
@@ -186,10 +187,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		tree_depth: u8,
 		asset: CurrencyIdOf<T, I>,
 	) -> DispatchResultWithPostInfo {
-		ensure!(
-			!AnchorList::<T, I>::contains_key(r_id),
-			Error::<T, I>::ResourceIsAlreadyAnchored
-		);
+		ensure!(!AnchorList::<T, I>::contains_key(r_id), Error::<T, I>::ResourceIsAlreadyAnchored);
 		let tree_id = T::Anchor::create(None, deposit_size, tree_depth, max_edges, asset)?;
 		AnchorList::<T, I>::insert(r_id, tree_id);
 		Counts::<T, I>::insert(src_chain_id, 0);
@@ -201,12 +199,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		r_id: ResourceId,
 		anchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
 	) -> DispatchResultWithPostInfo {
-		let tree_id = AnchorList::<T, I>::try_get(r_id).map_err(|_| Error::<T, I>::AnchorHandlerNotFound)?;
-		let (src_chain_id, merkle_root, block_height) = (
-			anchor_metadata.src_chain_id,
-			anchor_metadata.root,
-			anchor_metadata.latest_leaf_index,
-		);
+		let tree_id =
+			AnchorList::<T, I>::try_get(r_id).map_err(|_| Error::<T, I>::AnchorHandlerNotFound)?;
+		let (src_chain_id, merkle_root, block_height) =
+			(anchor_metadata.src_chain_id, anchor_metadata.root, anchor_metadata.latest_leaf_index);
 
 		if T::Anchor::has_edge(tree_id, src_chain_id) {
 			T::Anchor::update_edge(tree_id, src_chain_id, merkle_root, block_height)?;
@@ -215,12 +211,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			T::Anchor::add_edge(tree_id, src_chain_id, merkle_root, block_height)?;
 			Self::deposit_event(Event::AnchorEdgeAdded);
 		}
-		let nonce = Counts::<T, I>::try_get(src_chain_id).map_err(|_| Error::<T, I>::SourceChainIdNotFound)?;
-		let record = UpdateRecord {
-			tree_id,
-			resource_id: r_id,
-			edge_metadata: anchor_metadata,
-		};
+		let nonce = Counts::<T, I>::try_get(src_chain_id)
+			.map_err(|_| Error::<T, I>::SourceChainIdNotFound)?;
+		let record = UpdateRecord { tree_id, resource_id: r_id, edge_metadata: anchor_metadata };
 		UpdateRecords::<T, I>::insert(src_chain_id, nonce, record);
 		Counts::<T, I>::mutate(src_chain_id, |val| -> DispatchResultWithPostInfo {
 			*val = val.checked_add(1).ok_or(Error::<T, I>::StorageOverflow)?;

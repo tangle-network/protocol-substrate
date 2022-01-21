@@ -5,7 +5,7 @@ fn main() {
 	// it takes too long, and we don't need it anyway while checking.
 	match std::env::var("RUSTC_WRAPPER") {
 		Ok(val) if val == "rust-analyzer" => return,
-		_ => {}
+		_ => {},
 	}
 	WasmBuilder::new()
 		.with_current_project()

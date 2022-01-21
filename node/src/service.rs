@@ -1,12 +1,12 @@
-//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
+//! Service and ServiceFactory implementation. Specialized wrapper over
+//! substrate service.
 
 // std
 use std::{sync::Arc, time::Duration};
 
 // Local Runtime Types
-use darkwebb_runtime::RuntimeApi;
-use darkwebb_runtime::Element;
 pub use common::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
+use darkwebb_runtime::{Element, RuntimeApi};
 
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
@@ -48,8 +48,8 @@ impl sc_executor::NativeExecutionDispatch for RuntimeExecutor {
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
-/// Use this macro if you don't actually need the full service, but just the builder in order to
-/// be able to perform chain operations.
+/// Use this macro if you don't actually need the full service, but just the
+/// builder in order to be able to perform chain operations.
 #[allow(clippy::type_complexity)]
 pub fn new_partial<RuntimeApi, Executor, BIQ>(
 	config: &Configuration,
@@ -161,9 +161,11 @@ where
 	Ok(params)
 }
 
-/// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
+/// Start a node with the given parachain `Configuration` and relay chain
+/// `Configuration`.
 ///
-/// This is the actual implementation that is abstract over the executor and the runtime api.
+/// This is the actual implementation that is abstract over the executor and the
+/// runtime api.
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
 	parachain_config: Configuration,
@@ -443,8 +445,7 @@ pub async fn start_parachain_node(
 						async move {
 							let time = sp_timestamp::InherentDataProvider::from_system_time();
 
-							let slot =
-						sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+							let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
 							*time,
 							slot_duration.slot_duration(),
 						);

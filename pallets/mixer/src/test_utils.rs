@@ -46,20 +46,23 @@ pub fn setup_zk_circuit(
 			let index = 0;
 
 			let (circuit, leaf, nullifier_hash, root, public_inputs) = prover
-				.setup_circuit_with_privates(secret, nullifier, &leaves, index, recipient, relayer, fee, refund)
+				.setup_circuit_with_privates(
+					secret, nullifier, &leaves, index, recipient, relayer, fee, refund,
+				)
 				.unwrap();
 
 			let proof_bytes = prove::<Bn254, _, _>(circuit, &pk_bytes, rng).unwrap();
 
 			let leaf_element = Element::from_bytes(&leaf.into_repr().to_bytes_le());
-			let nullifier_hash_element = Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
+			let nullifier_hash_element =
+				Element::from_bytes(&nullifier_hash.into_repr().to_bytes_le());
 			let root_element = Element::from_bytes(&root.into_repr().to_bytes_le());
 
 			(proof_bytes, root_element, nullifier_hash_element, leaf_element)
-		}
+		},
 		Curve::Bls381 => {
 			unimplemented!()
-		}
+		},
 	}
 }
 

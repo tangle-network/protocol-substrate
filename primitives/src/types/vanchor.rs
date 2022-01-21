@@ -31,14 +31,7 @@ impl<E: ElementTrait> ProofData<E> {
 		output_commitments: Vec<E>,
 		ext_data_hash: E,
 	) -> Self {
-		Self {
-			proof,
-			public_amount,
-			roots,
-			input_nullifiers,
-			output_commitments,
-			ext_data_hash,
-		}
+		Self { proof, public_amount, roots, input_nullifiers, output_commitments, ext_data_hash }
 	}
 }
 
@@ -53,15 +46,15 @@ pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode, Element: 
 }
 
 impl<I: Encode, A: Encode, B: Encode, E: Encode> ExtData<I, A, B, E> {
-	pub fn new(recipient: I, relayer: I, ext_amount: A, fee: B, encrypted_output1: E, encrypted_output2: E) -> Self {
-		Self {
-			recipient,
-			relayer,
-			ext_amount,
-			fee,
-			encrypted_output1,
-			encrypted_output2,
-		}
+	pub fn new(
+		recipient: I,
+		relayer: I,
+		ext_amount: A,
+		fee: B,
+		encrypted_output1: E,
+		encrypted_output2: E,
+	) -> Self {
+		Self { recipient, relayer, ext_amount, fee, encrypted_output1, encrypted_output2 }
 	}
 }
 

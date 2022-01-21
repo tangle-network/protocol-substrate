@@ -2,11 +2,11 @@
 
 pub mod hasher;
 pub mod runtime;
+pub mod signing;
 pub mod traits;
 pub mod types;
 pub mod utils;
 pub mod verifier;
-pub mod signing;
 
 #[cfg(feature = "hashing")]
 pub mod hashing;

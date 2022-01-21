@@ -7,8 +7,9 @@ use sp_core::{
 
 use super::{
 	mock_signature_bridge::{
-		assert_events, new_test_ext, Balances, Call, ChainIdentifier, Event, Origin, ProposalLifetime, SignatureBridge,
-		System, Test, ENDOWED_BALANCE, RELAYER_A, RELAYER_B, RELAYER_C,
+		assert_events, new_test_ext, Balances, Call, ChainIdentifier, Event, Origin,
+		ProposalLifetime, SignatureBridge, System, Test, ENDOWED_BALANCE, RELAYER_A, RELAYER_B,
+		RELAYER_C,
 	},
 	*,
 };
@@ -24,7 +25,9 @@ use webb_primitives::{signing::SigningSystem, ResourceId};
 use crate::mock_signature_bridge::*;
 
 use asset_registry::AssetType;
-use frame_support::{assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin};
+use frame_support::{
+	assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin,
+};
 
 const TEST_THRESHOLD: u32 = 2;
 
@@ -234,7 +237,8 @@ fn should_remove_token_with_sig_succeed() {
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
 
 		let prop_id = 2;
-		let proposal = make_remove_token_proposal(&r_id_remove_token, b"meme".to_vec(), first_token_id);
+		let proposal =
+			make_remove_token_proposal(&r_id_remove_token, b"meme".to_vec(), first_token_id);
 		let msg = keccak_256(&proposal.encode());
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 

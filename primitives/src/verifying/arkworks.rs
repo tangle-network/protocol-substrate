@@ -1,12 +1,10 @@
 use crate::*;
-use ark_crypto_primitives::Error;
+use ark_crypto_primitives::{Error, SNARK};
 use ark_ec::PairingEngine;
-use ark_groth16::{Proof, VerifyingKey};
+use ark_groth16::{Groth16, Proof, VerifyingKey};
 use ark_serialize::CanonicalDeserialize;
 use arkworks_utils::utils::to_field_elements;
 use sp_std::marker::PhantomData;
-use ark_crypto_primitives::SNARK;
-use ark_groth16::Groth16;
 pub struct ArkworksVerifierGroth16<E: PairingEngine>(PhantomData<E>);
 
 pub fn verify_groth16<E: PairingEngine>(
