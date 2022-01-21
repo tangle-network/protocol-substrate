@@ -296,7 +296,7 @@ fn should_update_anchor_edge_with_sig_succeed() {
 }
 
 #[test]
-fn should_fail_with_chain_already_whitelisted() {
+fn should_fail_to_whitelist_chain_already_whitelisted() {
 	let src_id = 1u32;
 	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
@@ -316,7 +316,7 @@ fn should_fail_with_chain_already_whitelisted() {
 }
 
 #[test]
-fn should_fail_with_invalid_chain_id() {
+fn should_fail_to_whitelist_this_chain() {
 	let src_id = 1u32;
 	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
@@ -336,7 +336,7 @@ fn should_fail_with_invalid_chain_id() {
 }
 
 #[test]
-fn should_fail_with_chain_not_whitelisted() {
+fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 	let src_id = 1u32;
 	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
@@ -375,7 +375,7 @@ fn should_fail_with_chain_not_whitelisted() {
 }
 
 #[test]
-fn should_fail_with_resource_does_not_exist() {
+fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 	let src_id = 1u32;
 	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
@@ -414,7 +414,7 @@ fn should_fail_with_resource_does_not_exist() {
 }
 
 #[test]
-fn should_fail_with_tampered_signature() {
+fn should_fail_to_verify_proposal_with_tampered_signature() {
 	let src_id = 1u32;
 	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
