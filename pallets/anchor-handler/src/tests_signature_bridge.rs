@@ -26,13 +26,7 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: u32, resource_id: &[u8; 
 	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
 
 	let deposit_size = 100;
-	assert_ok!(Anchor::create(
-		Origin::root(),
-		deposit_size,
-		TEST_MAX_EDGES,
-		TEST_TREE_DEPTH,
-		0
-	));
+	assert_ok!(Anchor::create(Origin::root(), deposit_size, TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 	// hack: insert an entry in AnchorsList with tree-id=0
 	AnchorList::<Test>::insert(resource_id, 0);
 	Counts::<Test>::insert(src_chain_id, 0);
@@ -42,7 +36,11 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: u32, resource_id: &[u8; 
 	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test>>::get(0));
 }
 
-fn make_anchor_create_proposal(deposit_size: Balance, src_chain_id: u32, resource_id: &[u8; 32]) -> Call {
+fn make_anchor_create_proposal(
+	deposit_size: Balance,
+	src_chain_id: u32,
+	resource_id: &[u8; 32],
+) -> Call {
 	Call::AnchorHandler(crate::Call::execute_anchor_create_proposal {
 		deposit_size,
 		src_chain_id,
@@ -80,8 +78,8 @@ fn should_create_anchor_with_sig_succeed() {
 	)
 	.unwrap();
 
-	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec()).execute_with(
-		|| {
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
+		.execute_with(|| {
 			let prop_id = 1;
 			let deposit_size = 100;
 			let proposal = make_anchor_create_proposal(deposit_size, src_id, &r_id);
@@ -118,8 +116,7 @@ fn should_create_anchor_with_sig_succeed() {
 
 			assert!(<pallet_mt::Trees<Test>>::contains_key(0));
 			event_exists(crate::Event::AnchorCreated);
-		},
-	)
+		})
 }
 
 // Test
@@ -137,18 +134,14 @@ fn should_add_anchor_edge_with_sig_succeed() {
 	)
 	.unwrap();
 
-	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec()).execute_with(
-		|| {
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec())
+		.execute_with(|| {
 			let prop_id = 1;
 			mock_anchor_creation_using_pallet_call(src_id, &r_id);
 
 			let root = Element::from_bytes(&[1; 32]);
 			let latest_leaf_index = 5;
-			let edge_metadata = EdgeMetadata {
-				src_chain_id: src_id,
-				root,
-				latest_leaf_index,
-			};
+			let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index };
 			assert_eq!(0, Counts::<Test>::get(src_id));
 
 			let proposal = make_anchor_update_proposal(&r_id, edge_metadata.clone());
@@ -188,14 +181,10 @@ fn should_add_anchor_edge_with_sig_succeed() {
 				<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_id)
 			);
 
-			let expected_update_record = UpdateRecord {
-				tree_id: expected_tree_id,
-				resource_id: r_id,
-				edge_metadata,
-			};
+			let expected_update_record =
+				UpdateRecord { tree_id: expected_tree_id, resource_id: r_id, edge_metadata };
 			assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_id, 0));
-		},
-	)
+		})
 }
 
 // Test
@@ -215,18 +204,14 @@ fn should_update_anchor_edge_with_sig_succeed() {
 	)
 	.unwrap();
 
-	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec()).execute_with(
-		|| {
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec())
+		.execute_with(|| {
 			let prop_id = 1;
 			mock_anchor_creation_using_pallet_call(src_id, &r_id);
 
 			let root = Element::from_bytes(&[1; 32]);
 			let latest_leaf_index = 5;
-			let edge_metadata = EdgeMetadata {
-				src_chain_id: src_id,
-				root,
-				latest_leaf_index,
-			};
+			let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index };
 			assert_eq!(0, Counts::<Test>::get(src_id));
 
 			let proposal = make_anchor_update_proposal(&r_id, edge_metadata.clone());
@@ -266,21 +251,14 @@ fn should_update_anchor_edge_with_sig_succeed() {
 				<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_id)
 			);
 
-			let expected_update_record = UpdateRecord {
-				tree_id: expected_tree_id,
-				resource_id: r_id,
-				edge_metadata,
-			};
+			let expected_update_record =
+				UpdateRecord { tree_id: expected_tree_id, resource_id: r_id, edge_metadata };
 			assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_id, 0));
 
 			// Update Edge
 			let root = Element::from_bytes(&[2; 32]);
 			let latest_leaf_index = 10;
-			let edge_metadata = EdgeMetadata {
-				src_chain_id: src_id,
-				root,
-				latest_leaf_index,
-			};
+			let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index };
 
 			let proposal = make_anchor_update_proposal(&r_id, edge_metadata.clone());
 			let msg = keccak_256(&proposal.encode());
@@ -311,14 +289,10 @@ fn should_update_anchor_edge_with_sig_succeed() {
 				edge_metadata,
 				<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_id)
 			);
-			let expected_update_record = UpdateRecord {
-				tree_id: expected_tree_id,
-				resource_id: r_id,
-				edge_metadata,
-			};
+			let expected_update_record =
+				UpdateRecord { tree_id: expected_tree_id, resource_id: r_id, edge_metadata };
 			assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_id, 1));
-		},
-	)
+		})
 }
 
 #[test]
@@ -332,14 +306,13 @@ fn should_fail_with_chain_already_whitelisted() {
 	)
 	.unwrap();
 
-	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec()).execute_with(
-		|| {
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
+		.execute_with(|| {
 			assert_err!(
 				SignatureBridge::whitelist_chain(Origin::root(), src_id),
 				pallet_signature_bridge::Error::<Test, _>::ChainAlreadyWhitelisted
 			);
-		},
-	)
+		})
 }
 
 #[test]
@@ -353,14 +326,13 @@ fn should_fail_with_invalid_chain_id() {
 	)
 	.unwrap();
 
-	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec()).execute_with(
-		|| {
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
+		.execute_with(|| {
 			assert_err!(
 				SignatureBridge::whitelist_chain(Origin::root(), ChainIdentifier::get()),
 				pallet_signature_bridge::Error::<Test, _>::InvalidChainId
 			);
-		},
-	)
+		})
 }
 
 #[test]
@@ -374,8 +346,8 @@ fn should_fail_with_chain_not_whitelisted() {
 	)
 	.unwrap();
 
-	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec()).execute_with(
-		|| {
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
+		.execute_with(|| {
 			let prop_id = 1;
 			let deposit_size = 100;
 			let proposal = make_anchor_create_proposal(deposit_size, src_id, &r_id);
@@ -399,8 +371,7 @@ fn should_fail_with_chain_not_whitelisted() {
 				),
 				pallet_signature_bridge::Error::<Test, _>::ChainNotWhitelisted
 			);
-		},
-	)
+		})
 }
 
 #[test]
@@ -414,8 +385,8 @@ fn should_fail_with_resource_does_not_exist() {
 	)
 	.unwrap();
 
-	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec()).execute_with(
-		|| {
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
+		.execute_with(|| {
 			let prop_id = 1;
 			let deposit_size = 100;
 			let proposal = make_anchor_create_proposal(deposit_size, src_id, &r_id);
@@ -439,8 +410,7 @@ fn should_fail_with_resource_does_not_exist() {
 				),
 				pallet_signature_bridge::Error::<Test, _>::ResourceDoesNotExist
 			);
-		},
-	)
+		})
 }
 
 #[test]
@@ -454,8 +424,8 @@ fn should_fail_with_tampered_signature() {
 	)
 	.unwrap();
 
-	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec()).execute_with(
-		|| {
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
+		.execute_with(|| {
 			let prop_id = 1;
 			let deposit_size = 100;
 			let proposal = make_anchor_create_proposal(deposit_size, src_id, &r_id);
@@ -483,6 +453,5 @@ fn should_fail_with_tampered_signature() {
 				),
 				pallet_signature_bridge::Error::<Test, _>::InvalidPermissions
 			);
-		},
-	)
+		})
 }
