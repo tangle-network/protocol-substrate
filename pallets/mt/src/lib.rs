@@ -62,17 +62,18 @@ use types::TreeMetadata;
 
 pub use weights::WeightInfo;
 
+use frame_support::traits::{Currency, Get, ReservableCurrency};
+use frame_system::Config as SystemConfig;
+use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
+use sp_std::prelude::*;
 use webb_primitives::{
 	hasher::*,
 	traits::merkle_tree::{TreeInspector, TreeInterface},
 	types::{DepositDetails, ElementTrait},
 };
-use frame_support::traits::{Currency, Get, ReservableCurrency};
-use frame_system::Config as SystemConfig;
-use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
-use sp_std::prelude::*;
 
-type DepositBalanceOf<T, I = ()> = <<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
+type DepositBalanceOf<T, I = ()> =
+	<<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
 pub use pallet::*;
 
@@ -152,29 +153,44 @@ pub mod pallet {
 	/// The next tree identifier up for grabs
 	#[pallet::storage]
 	#[pallet::getter(fn next_tree_id)]
-	pub(super) type NextTreeId<T: Config<I>, I: 'static = ()> = StorageValue<_, T::TreeId, ValueQuery>;
+	pub(super) type NextTreeId<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::TreeId, ValueQuery>;
 
 	/// The map of trees to their metadata
 	#[pallet::storage]
 	#[pallet::getter(fn trees)]
-	pub type Trees<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, T::TreeId, TreeMetadata<T::AccountId, T::LeafIndex, T::Element>, OptionQuery>;
+	pub type Trees<T: Config<I>, I: 'static = ()> = StorageMap<
+		_,
+		Blake2_128Concat,
+		T::TreeId,
+		TreeMetadata<T::AccountId, T::LeafIndex, T::Element>,
+		OptionQuery,
+	>;
 
 	/// The default hashes for this tree pallet
 	#[pallet::storage]
 	#[pallet::getter(fn default_hashes)]
-	pub(super) type DefaultHashes<T: Config<I>, I: 'static = ()> = StorageValue<_, Vec<T::Element>, ValueQuery>;
+	pub(super) type DefaultHashes<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, Vec<T::Element>, ValueQuery>;
 
 	/// The map of (tree_id, index) to the leaf commitment
 	#[pallet::storage]
 	#[pallet::getter(fn leaves)]
-	pub(super) type Leaves<T: Config<I>, I: 'static = ()> =
-		StorageDoubleMap<_, Blake2_128Concat, T::TreeId, Blake2_128Concat, T::LeafIndex, T::Element, ValueQuery>;
+	pub(super) type Leaves<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		T::TreeId,
+		Blake2_128Concat,
+		T::LeafIndex,
+		T::Element,
+		ValueQuery,
+	>;
 
 	/// The next tree identifier up for grabs
 	#[pallet::storage]
 	#[pallet::getter(fn next_root_index)]
-	pub(super) type NextRootIndex<T: Config<I>, I: 'static = ()> = StorageValue<_, T::RootIndex, ValueQuery>;
+	pub(super) type NextRootIndex<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::RootIndex, ValueQuery>;
 
 	/// The next tree identifier up for grabs
 	#[pallet::storage]
@@ -185,8 +201,15 @@ pub mod pallet {
 	/// Map of root history from tree id to root index to root values
 	#[pallet::storage]
 	#[pallet::getter(fn cached_roots)]
-	pub(super) type CachedRoots<T: Config<I>, I: 'static = ()> =
-		StorageDoubleMap<_, Blake2_128Concat, T::TreeId, Blake2_128Concat, T::RootIndex, T::Element, ValueQuery>;
+	pub(super) type CachedRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		T::TreeId,
+		Blake2_128Concat,
+		T::RootIndex,
+		T::Element,
+		ValueQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -194,11 +217,7 @@ pub mod pallet {
 		/// New tree created
 		TreeCreation { tree_id: T::TreeId, who: T::AccountId },
 		/// New leaf inserted
-		LeafInsertion {
-			tree_id: T::TreeId,
-			leaf_index: T::LeafIndex,
-			leaf: T::Element,
-		},
+		LeafInsertion { tree_id: T::TreeId, leaf_index: T::LeafIndex, leaf: T::Element },
 	}
 
 	#[pallet::error]
@@ -237,10 +256,7 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
 		fn default() -> Self {
-			Self {
-				phantom: Default::default(),
-				default_hashes: None,
-			}
+			Self { phantom: Default::default(), default_hashes: None }
 		}
 	}
 
@@ -249,7 +265,7 @@ pub mod pallet {
 		fn build(&self) {
 			if let Some(default_hashes) = &self.default_hashes {
 				DefaultHashes::<T, I>::put(default_hashes);
-				return;
+				return
 			}
 
 			let default_hashes = generate_default_hashes::<T, I>();
@@ -262,10 +278,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::create(*depth as u32))]
 		pub fn create(origin: OriginFor<T>, depth: u8) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
-			ensure!(
-				depth <= T::MaxTreeDepth::get() && depth > 0,
-				Error::<T, I>::InvalidTreeDepth
-			);
+			ensure!(depth <= T::MaxTreeDepth::get() && depth > 0, Error::<T, I>::InvalidTreeDepth);
 			// calculate the deposit, we charge the user based on # of leaves
 			let deposit = T::DataDepositPerByte::get()
 				.saturating_mul(T::Two::get().saturating_pow(depth.into()))
@@ -280,7 +293,11 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(T::WeightInfo::insert())]
-		pub fn insert(origin: OriginFor<T>, tree_id: T::TreeId, leaf: T::Element) -> DispatchResultWithPostInfo {
+		pub fn insert(
+			origin: OriginFor<T>,
+			tree_id: T::TreeId,
+			leaf: T::Element,
+		) -> DispatchResultWithPostInfo {
 			let _origin = ensure_signed(origin)?;
 			ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T, I>::TreeDoesntExist);
 			let tree = Self::get_tree(tree_id)?;
@@ -293,11 +310,7 @@ pub mod pallet {
 			// insert the leaf
 			<Self as TreeInterface<_, _, _>>::insert_in_order(tree_id, leaf)?;
 
-			Self::deposit_event(Event::LeafInsertion {
-				tree_id,
-				leaf_index: next_index,
-				leaf,
-			});
+			Self::deposit_event(Event::LeafInsertion { tree_id, leaf_index: next_index, leaf });
 
 			Ok(().into())
 		}
@@ -348,7 +361,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		default_hashes.is_empty()
 	}
 
-	fn get_tree(tree_id: T::TreeId) -> Result<TreeMetadata<T::AccountId, T::LeafIndex, T::Element>, DispatchError> {
+	fn get_tree(
+		tree_id: T::TreeId,
+	) -> Result<TreeMetadata<T::AccountId, T::LeafIndex, T::Element>, DispatchError> {
 		let tree = Trees::<T, I>::get(tree_id);
 		ensure!(tree.is_some(), Error::<T, I>::TreeDoesntExist);
 		Ok(tree.unwrap())
@@ -364,10 +379,8 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 		let two: T::LeafIndex = Self::two();
 		// get default edge nodes
 		let num_of_zero_nodes = depth;
-		let default_edge_nodes = Self::default_hashes()
-			.into_iter()
-			.take(num_of_zero_nodes as _)
-			.collect();
+		let default_edge_nodes =
+			Self::default_hashes().into_iter().take(num_of_zero_nodes as _).collect();
 		// Setting up the tree
 		let tree_metadata = TreeMetadata {
 			creator,
@@ -405,19 +418,24 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 		}
 
 		Leaves::<T, I>::insert(id, tree.leaf_count, leaf);
-		Trees::<T, I>::insert(id, TreeMetadata {
-			creator: tree.creator,
-			depth: tree.depth,
-			paused: tree.paused,
-			max_leaves: tree.max_leaves,
-			leaf_count: tree.leaf_count + One::one(),
-			root: hash,
-			edge_nodes,
-		});
+		Trees::<T, I>::insert(
+			id,
+			TreeMetadata {
+				creator: tree.creator,
+				depth: tree.depth,
+				paused: tree.paused,
+				max_leaves: tree.max_leaves,
+				leaf_count: tree.leaf_count + One::one(),
+				root: hash,
+				edge_nodes,
+			},
+		);
 
 		// Setting the next root index
 		let root_index = Self::next_root_index();
-		NextRootIndex::<T, I>::mutate(|i| *i = i.saturating_add(One::one()) % T::RootHistorySize::get());
+		NextRootIndex::<T, I>::mutate(|i| {
+			*i = i.saturating_add(One::one()) % T::RootHistorySize::get()
+		});
 		CachedRoots::<T, I>::insert(id, root_index, hash);
 		NextLeafIndex::<T, I>::mutate(id, |i| *i += One::one());
 
@@ -438,7 +456,7 @@ impl<T: Config<I>, I: 'static> TreeInspector<T::AccountId, T::TreeId, T::Element
 		while temp < T::RootHistorySize::get() {
 			let cached_root = CachedRoots::<T, I>::get(tree_id, temp);
 			if cached_root == target_root {
-				return Ok(true);
+				return Ok(true)
 			}
 
 			temp += One::one();

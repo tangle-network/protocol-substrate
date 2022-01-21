@@ -45,7 +45,8 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-		type Origin: From<<Self as SystemConfig>::Origin> + Into<Result<CumulusOrigin, <Self as Config>::Origin>>;
+		type Origin: From<<Self as SystemConfig>::Origin>
+			+ Into<Result<CumulusOrigin, <Self as Config>::Origin>>;
 
 		/// The overarching call type; we assume sibling chains use the same
 		/// type.
@@ -92,10 +93,13 @@ pub mod pallet {
 				match result {
 					Ok(()) => {
 						Self::deposit_event(Event::BlockNumberUpdateSent { to: para, value: n });
-					}
+					},
 					Err(e) => {
-						Self::deposit_event(Event::ErrorSendingUpdateBlockNumber { error: e, to: para });
-					}
+						Self::deposit_event(Event::ErrorSendingUpdateBlockNumber {
+							error: e,
+							to: para,
+						});
+					},
 				}
 			}
 		}

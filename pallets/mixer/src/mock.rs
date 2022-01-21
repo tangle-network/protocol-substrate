@@ -4,11 +4,9 @@ use super::*;
 use crate as pallet_mixer;
 use codec::Decode;
 use frame_support::traits::GenesisBuild;
-use webb_primitives::verifying::ArkworksVerifierBn254;
 use sp_core::H256;
+use webb_primitives::verifying::ArkworksVerifierBn254;
 
-pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
-use webb_primitives::{types::ElementTrait, AccountId};
 use frame_support::{parameter_types, traits::Nothing};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
@@ -17,6 +15,8 @@ use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
+pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
+use webb_primitives::{types::ElementTrait, AccountId};
 
 use frame_benchmarking::account;
 
@@ -64,6 +64,7 @@ impl system::Config for Test {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -72,7 +73,6 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -122,7 +122,19 @@ parameter_types! {
 	pub const NewDefaultZeroElement: Element = Element([0u8; 32]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Deserialize, Serialize)]
+#[derive(
+	Debug,
+	Encode,
+	Decode,
+	Default,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	scale_info::TypeInfo,
+	Deserialize,
+	Serialize,
+)]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {

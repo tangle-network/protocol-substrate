@@ -43,22 +43,26 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			// 3. Setup the VerifierPallet
 			//    but to do so, we need to have a VerifyingKey
 			let (pk_bytes, vk_bytes) = (
-				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key.bin")
-					.expect("Unable to read file")
-					.to_vec(),
-				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin")
-					.expect("Unable to read file")
-					.to_vec(),
+				std::fs::read(
+					"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key.bin",
+				)
+				.expect("Unable to read file")
+				.to_vec(),
+				std::fs::read(
+					"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin",
+				)
+				.expect("Unable to read file")
+				.to_vec(),
 			);
 
 			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes));
 
 			// finally return the provingkey bytes
 			pk_bytes.to_vec()
-		}
+		},
 		Curve::Bls381 => {
 			unimplemented!()
-		}
+		},
 	}
 }
 
@@ -73,7 +77,9 @@ fn should_create_new_anchor() {
 		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 
 		let tree_id = MerkleTree::next_tree_id() - 1;
-		crate::mock::assert_last_event::<Test>(crate::Event::<Test>::AnchorCreation { tree_id }.into());
+		crate::mock::assert_last_event::<Test>(
+			crate::Event::<Test>::AnchorCreation { tree_id }.into(),
+		);
 	});
 }
 
@@ -217,11 +223,8 @@ fn anchor_works() {
 		// perfect
 
 		crate::mock::assert_last_event::<Test>(
-			crate::Event::<Test>::Withdraw {
-				who: recipient_account_id,
-				amount: DEPOSIT_SIZE,
-			}
-			.into(),
+			crate::Event::<Test>::Withdraw { who: recipient_account_id, amount: DEPOSIT_SIZE }
+				.into(),
 		);
 	});
 }
@@ -326,16 +329,17 @@ fn should_fail_when_invalid_merkle_roots() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
-		let (proof_bytes, mut roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			commitment_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
+		let (proof_bytes, mut roots_element, nullifier_hash_element, leaf_element) =
+			setup_zk_circuit(
+				curve,
+				recipient_bytes,
+				relayer_bytes,
+				commitment_bytes,
+				pk_bytes,
+				src_chain_id,
+				fee_value,
+				refund_value,
+			);
 
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
@@ -347,9 +351,8 @@ fn should_fail_when_invalid_merkle_roots() {
 		assert_eq!(roots_element[0], tree_root);
 
 		// invalid root length
-		roots_element.push(Element::from_bytes(
-			&ark_bn254::Fr::default().into_repr().to_bytes_le()[..],
-		));
+		roots_element
+			.push(Element::from_bytes(&ark_bn254::Fr::default().into_repr().to_bytes_le()[..]));
 		// all ready, call withdraw.
 
 		// fire the call.
@@ -391,16 +394,17 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
-		let (mut proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			commitment_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
+		let (mut proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
+			setup_zk_circuit(
+				curve,
+				recipient_bytes,
+				relayer_bytes,
+				commitment_bytes,
+				pk_bytes,
+				src_chain_id,
+				fee_value,
+				refund_value,
+			);
 
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
@@ -770,12 +774,7 @@ fn should_run_post_deposit_hook_sucessfully() {
 		// now we need also to check if the state got updated.
 		let tree = MerkleTree::trees(tree_id);
 		crate::mock::assert_last_event::<Test>(
-			crate::Event::<Test>::PostDeposit {
-				depositor: account_id,
-				tree_id,
-				leaf,
-			}
-			.into(),
+			crate::Event::<Test>::PostDeposit { depositor: account_id, tree_id, leaf }.into(),
 		);
 	});
 }

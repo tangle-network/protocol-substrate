@@ -21,10 +21,12 @@
 
 use super::*;
 
-use webb_primitives::{anchor::AnchorInterface, traits::merkle_tree::TreeInspector, ElementTrait};
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
+use frame_benchmarking::{
+	account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller,
+};
 use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
+use webb_primitives::{anchor::AnchorInterface, traits::merkle_tree::TreeInspector, ElementTrait};
 // Run the zk-setup binary before compiling the with runtime-benchmarks to
 // generate the zk_config.rs file if it doesn't exist The accounts used in
 // generating the proofs have to be the same accounts used in the withdraw

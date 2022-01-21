@@ -7,12 +7,12 @@ use crate::{
 	Error,
 };
 use arkworks_utils::utils::common::Curve;
+use frame_benchmarking::account;
+use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use webb_primitives::{
 	types::vanchor::{ExtData, ProofData},
 	AccountId,
 };
-use frame_benchmarking::account;
-use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
@@ -43,10 +43,7 @@ fn setup_environment(_curve: Curve) -> (Vec<u8>, Vec<u8>) {
 	let circuit = setup_random_circuit();
 	let (proving_key_bytes, verifier_key_bytes) = setup_keys(circuit);
 
-	assert_ok!(VerifierPallet::force_set_parameters(
-		Origin::root(),
-		verifier_key_bytes.clone()
-	));
+	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes.clone()));
 
 	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
 	let big_transactor = account::<AccountId>("", BIG_TRANSACTOR_ACCOUNT_ID, SEED);
@@ -56,19 +53,9 @@ fn setup_environment(_curve: Curve) -> (Vec<u8>, Vec<u8>) {
 	assert_ok!(Balances::set_balance(Origin::root(), transactor, DEFAULT_BALANCE, 0));
 
 	// Big transactor should have even more amount
-	assert_ok!(Balances::set_balance(
-		Origin::root(),
-		big_transactor,
-		BIG_DEFAULT_BALANCE,
-		0
-	));
+	assert_ok!(Balances::set_balance(Origin::root(), big_transactor, BIG_DEFAULT_BALANCE, 0));
 
-	assert_ok!(Balances::set_balance(
-		Origin::root(),
-		bigger_transactor,
-		BIGGER_DEFAULT_BALANCE,
-		0
-	));
+	assert_ok!(Balances::set_balance(Origin::root(), bigger_transactor, BIGGER_DEFAULT_BALANCE, 0));
 
 	// finally return the provingkey bytes
 	(proving_key_bytes, verifier_key_bytes)
@@ -127,14 +114,10 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
 	);
 
 	// Constructing proof data
-	let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+	let proof_data =
+		ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
-	assert_ok!(VAnchor::transact(
-		Origin::signed(transactor),
-		tree_id,
-		proof_data,
-		ext_data
-	));
+	assert_ok!(VAnchor::transact(Origin::signed(transactor), tree_id, proof_data, ext_data));
 
 	(tree_id, out_utxos)
 }
@@ -193,7 +176,8 @@ fn should_complete_2x2_transaction_with_deposit() {
 		);
 
 		// Constructing proof data
-		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_ok!(VAnchor::transact(
 			Origin::signed(transactor.clone()),
@@ -264,7 +248,8 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		);
 
 		// Constructing proof data
-		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_ok!(VAnchor::transact(
 			Origin::signed(transactor.clone()),
@@ -339,7 +324,8 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		);
 
 		// Constructing proof data
-		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_err!(
 			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
@@ -409,7 +395,8 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 		);
 
 		// Constructing proof data
-		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		// Should fail with invalid external data error
 		assert_err!(
@@ -480,7 +467,8 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 		);
 
 		// Constructing proof data
-		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		// Should fail with invalid external data error
 		assert_err!(
@@ -554,7 +542,8 @@ fn should_not_be_able_to_double_spend() {
 		);
 
 		// Constructing proof data
-		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_ok!(VAnchor::transact(
 			Origin::signed(transactor.clone()),
@@ -635,7 +624,8 @@ fn should_not_be_able_to_exceed_max_fee() {
 		);
 
 		// Constructing proof data
-		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_err!(
 			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
@@ -706,7 +696,8 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		);
 
 		// Constructing proof data
-		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_err!(
 			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
@@ -778,7 +769,8 @@ fn should_not_be_able_to_exceed_external_amount() {
 		);
 
 		// Constructing proof data
-		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_err!(
 			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
@@ -846,7 +838,8 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 		);
 
 		// Constructing proof data
-		let proof_data = ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_err!(
 			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),

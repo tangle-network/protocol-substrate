@@ -1,11 +1,14 @@
-use arkworks_utils::utils::common::{setup_params_x3_5, setup_params_x5_3, setup_params_x5_5, Curve};
+use arkworks_utils::utils::common::{
+	setup_params_x3_5, setup_params_x5_3, setup_params_x5_5, Curve,
+};
 use common::{AccountId, BabeId, Balance, Signature};
 
 use darkwebb_runtime::{
-	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig, BabeConfig, Block,
-	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig, HasherBls381Config,
-	HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config,
-	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config,
+	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
+	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
+	GrandpaConfig, HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig,
+	MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config, SessionConfig, StakerStatus,
+	StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config,
 };
 use itertools::Itertools;
 use sc_chain_spec::ChainSpecExtension;
@@ -58,14 +61,7 @@ where
 /// Helper function to generate stash, controller and session key from seed
 pub fn authority_keys_from_seed(
 	seed: &str,
-) -> (
-	AccountId,
-	AccountId,
-	GrandpaId,
-	BabeId,
-	ImOnlineId,
-	AuthorityDiscoveryId,
-) {
+) -> (AccountId, AccountId, GrandpaId, BabeId, ImOnlineId, AuthorityDiscoveryId) {
 	(
 		get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
 		get_account_id_from_seed::<sr25519::Public>(seed),
@@ -86,12 +82,7 @@ fn darkwebb_session_keys(
 	im_online: ImOnlineId,
 	authority_discovery: AuthorityDiscoveryId,
 ) -> darkwebb_runtime::SessionKeys {
-	darkwebb_runtime::SessionKeys {
-		grandpa,
-		babe,
-		im_online,
-		authority_discovery,
-	}
+	darkwebb_runtime::SessionKeys { grandpa, babe, im_online, authority_discovery }
 }
 
 pub fn darkwebb_development_config() -> Result<ChainSpec, String> {
@@ -231,9 +222,7 @@ fn testnet_genesis(
 
 	log::info!("Genesis Config");
 	GenesisConfig {
-		system: darkwebb_runtime::SystemConfig {
-			code: wasm_binary_unwrap().to_vec(),
-		},
+		system: darkwebb_runtime::SystemConfig { code: wasm_binary_unwrap().to_vec() },
 		asset_registry: AssetRegistryConfig {
 			asset_names: vec![],
 			native_asset_name: b"WEBB".to_vec(),
@@ -297,10 +286,7 @@ fn testnet_genesis(
 			parameters: Some(verifier_params),
 			phantom: Default::default(),
 		},
-		verifier_bls_381: VerifierBls381Config {
-			parameters: None,
-			phantom: Default::default(),
-		},
+		verifier_bls_381: VerifierBls381Config { parameters: None, phantom: Default::default() },
 		merkle_tree_bn_254: MerkleTreeBn254Config {
 			phantom: Default::default(),
 			default_hashes: None,
