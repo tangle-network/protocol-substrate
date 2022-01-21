@@ -16,7 +16,6 @@ use sp_core::{
 use pallet_signature_bridge::utils::derive_resource_id;
 use webb_primitives::{signing::SigningSystem, ResourceId};
 
-const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 100;
 const TEST_TREE_DEPTH: u8 = 32;
 
@@ -128,7 +127,7 @@ fn should_create_anchor_with_sig_succeed() {
 // 2. Add an edge to the anchor using `pallet-anchor-handler` proposal through
 // `pallet-signature-bridge`
 #[test]
-fn should_add_anchor_edge_succeed() {
+fn should_add_anchor_edge_with_sig_succeed() {
 	let src_id = 1u32;
 	let r_id = derive_resource_id(src_id, b"execute_anchor_update_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
@@ -172,7 +171,6 @@ fn should_add_anchor_edge_succeed() {
 			));
 			assert_eq!(1, Counts::<Test>::get(src_id));
 
-			// proposal should have been voted successfully
 			// the anchor-handler callback must have been called by bridge
 			// event must be emitted in callback should exist
 			event_exists(crate::Event::AnchorEdgeAdded);
@@ -207,7 +205,7 @@ fn should_add_anchor_edge_succeed() {
 // 3. Update the edge of the anchor using
 // `pallet-anchor-handler` proposal through `pallet-signature-bridge`
 #[test]
-fn should_update_anchor_edge_succeed() {
+fn should_update_anchor_edge_with_sig_succeed() {
 	let src_id = 1u32;
 	let r_id = derive_resource_id(src_id, b"execute_anchor_update_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
@@ -251,7 +249,6 @@ fn should_update_anchor_edge_succeed() {
 			));
 			assert_eq!(1, Counts::<Test>::get(src_id));
 
-			// proposal should have been voted successfully
 			// the anchor-handler callback must have been called by bridge
 			// event must be emitted in callback should exist
 			event_exists(crate::Event::AnchorEdgeAdded);
@@ -299,7 +296,7 @@ fn should_update_anchor_edge_succeed() {
 			));
 
 			assert_eq!(2, Counts::<Test>::get(src_id));
-			// proposal should have been voted successfully
+
 			// the anchor-handler callback must have been called by bridge
 			// event must be emitted in callback should exist
 			event_exists(crate::Event::AnchorEdgeUpdated);
