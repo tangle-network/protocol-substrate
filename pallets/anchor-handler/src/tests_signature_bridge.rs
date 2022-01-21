@@ -320,3 +320,169 @@ fn should_update_anchor_edge_with_sig_succeed() {
 		},
 	)
 }
+
+#[test]
+fn should_fail_with_chain_already_whitelisted() {
+	let src_id = 1u32;
+	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let pair = ecdsa::Pair::from_string(
+		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+		None,
+	)
+	.unwrap();
+
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec()).execute_with(
+		|| {
+			assert_err!(
+				SignatureBridge::whitelist_chain(Origin::root(), src_id),
+				pallet_signature_bridge::Error::<Test, _>::ChainAlreadyWhitelisted
+			);
+		},
+	)
+}
+
+#[test]
+fn should_fail_with_invalid_chain_id() {
+	let src_id = 1u32;
+	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let pair = ecdsa::Pair::from_string(
+		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+		None,
+	)
+	.unwrap();
+
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec()).execute_with(
+		|| {
+			assert_err!(
+				SignatureBridge::whitelist_chain(Origin::root(), ChainIdentifier::get()),
+				pallet_signature_bridge::Error::<Test, _>::InvalidChainId
+			);
+		},
+	)
+}
+
+#[test]
+fn should_fail_with_chain_not_whitelisted() {
+	let src_id = 1u32;
+	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let pair = ecdsa::Pair::from_string(
+		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+		None,
+	)
+	.unwrap();
+
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec()).execute_with(
+		|| {
+			let prop_id = 1;
+			let deposit_size = 100;
+			let proposal = make_anchor_create_proposal(deposit_size, src_id, &r_id);
+			let msg = keccak_256(&proposal.encode());
+			let sig: Signature = pair.sign_prehashed(&msg).into();
+			// set the maintainer
+			assert_ok!(SignatureBridge::force_set_maintainer(
+				Origin::root(),
+				public_uncompressed.to_vec()
+			));
+			assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
+
+			assert_err!(
+				SignatureBridge::execute_proposal(
+					Origin::signed(RELAYER_A),
+					prop_id,
+					src_id + 1,
+					r_id,
+					Box::new(proposal.clone()),
+					sig.0.to_vec(),
+				),
+				pallet_signature_bridge::Error::<Test, _>::ChainNotWhitelisted
+			);
+		},
+	)
+}
+
+#[test]
+fn should_fail_with_resource_does_not_exist() {
+	let src_id = 1u32;
+	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let pair = ecdsa::Pair::from_string(
+		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+		None,
+	)
+	.unwrap();
+
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec()).execute_with(
+		|| {
+			let prop_id = 1;
+			let deposit_size = 100;
+			let proposal = make_anchor_create_proposal(deposit_size, src_id, &r_id);
+			let msg = keccak_256(&proposal.encode());
+			let sig: Signature = pair.sign_prehashed(&msg).into();
+			// set the maintainer
+			assert_ok!(SignatureBridge::force_set_maintainer(
+				Origin::root(),
+				public_uncompressed.to_vec()
+			));
+			assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
+
+			assert_err!(
+				SignatureBridge::execute_proposal(
+					Origin::signed(RELAYER_A),
+					prop_id,
+					src_id,
+					derive_resource_id(src_id, b"execute_anchor_crate_proposal"),
+					Box::new(proposal.clone()),
+					sig.0.to_vec(),
+				),
+				pallet_signature_bridge::Error::<Test, _>::ResourceDoesNotExist
+			);
+		},
+	)
+}
+
+#[test]
+fn should_fail_with_tampered_signature() {
+	let src_id = 1u32;
+	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let pair = ecdsa::Pair::from_string(
+		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+		None,
+	)
+	.unwrap();
+
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec()).execute_with(
+		|| {
+			let prop_id = 1;
+			let deposit_size = 100;
+			let proposal = make_anchor_create_proposal(deposit_size, src_id, &r_id);
+			let msg = keccak_256(&proposal.encode());
+			let sig: Signature = pair.sign_prehashed(&msg).into();
+			// set the maintainer
+			assert_ok!(SignatureBridge::force_set_maintainer(
+				Origin::root(),
+				public_uncompressed.to_vec()
+			));
+			assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
+			let mut tampered_sig = sig.0.to_vec().clone();
+			for x in &mut tampered_sig {
+				*x += 1;
+			}
+
+			assert_err!(
+				SignatureBridge::execute_proposal(
+					Origin::signed(RELAYER_A),
+					prop_id,
+					src_id,
+					r_id,
+					Box::new(proposal.clone()),
+					tampered_sig.clone(),
+				),
+				pallet_signature_bridge::Error::<Test, _>::InvalidPermissions
+			);
+		},
+	)
+}

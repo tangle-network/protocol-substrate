@@ -220,7 +220,7 @@ impl pallet_asset_registry::Config for Test {
 parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	pub const HistoryLength: u32 = 30;
-	pub const ChainIdentifier: u8 = 5;
+	pub const ChainIdentifier: u32 = 5;
 }
 
 impl pallet_anchor::Config for Test {
