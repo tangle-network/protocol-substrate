@@ -1,4 +1,4 @@
-use crate::{mock::*, types::UpdateRecord, AnchorList, Counts, UpdateRecords};
+use crate::{mock_bridge::*, types::UpdateRecord, AnchorList, Counts, UpdateRecords};
 use frame_support::assert_ok;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 use pallet_linkable_tree::types::EdgeMetadata;
