@@ -43,9 +43,12 @@ ark-std = {version = "^0.3.0", default-features = false}
 arkworks-gadgets  = { version = "0.4.18", default-features = false }
 arkworks-circuits = { version = "0.4.18", default-features = false }
 arkworks-utils    = { version = "0.4.18", features = ["default_poseidon", "default_mimc"], default-features = false }
+
+wasm-utils = { version = "0.1.0" }
 pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
 serde = {version = "1.0.119"}
+hex = "0.4"
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }

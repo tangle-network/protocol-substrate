@@ -1482,6 +1482,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "console_error_panic_hook"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
+dependencies = [
+ "cfg-if 1.0.0",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "constant_time_eq"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3406,8 +3416,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "418d37c8b1d42553c93648be529cb70f920d3baf8ef469b74b9638df426e0b4c"
 dependencies = [
  "cfg-if 1.0.0",
+ "js-sys",
  "libc",
  "wasi 0.10.0+wasi-snapshot-preview1",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -6285,6 +6297,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-benchmarking",
+ "hex",
  "orml-currencies",
  "orml-tokens",
  "orml-traits",
@@ -6300,6 +6313,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "wasm-utils",
  "webb-primitives",
 ]
 
@@ -12493,6 +12507,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "632f73e236b219150ea279196e54e610f5dbafa5d61786303d4da54f84e47fce"
 dependencies = [
  "cfg-if 1.0.0",
+ "serde",
+ "serde_json",
  "wasm-bindgen-macro",
 ]
 
@@ -12576,6 +12592,32 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+]
+
+[[package]]
+name = "wasm-utils"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b61ed8eebe8835b2f3497ee0f003c780ede3e614b73d04a492b27ea5e5ffc982"
+dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-crypto-primitives",
+ "ark-ed-on-bn254",
+ "ark-ff",
+ "ark-serialize",
+ "ark-std",
+ "arkworks-circuits",
+ "arkworks-gadgets",
+ "arkworks-utils",
+ "console_error_panic_hook",
+ "getrandom 0.2.4",
+ "hex",
+ "js-sys",
+ "rand 0.8.4",
+ "wasm-bindgen",
+ "web-sys",
+ "webb-pedersen-hash",
 ]
 
 [[package]]
@@ -12773,6 +12815,18 @@ checksum = "38eb105f1c59d9eaa6b5cdc92b859d85b926e82cb2e0945cd0c9259faa6fe9fb"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "webb-pedersen-hash"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e20bb5d3cf671d5ee15f7590197a9778c01da5a54db8aef00e4584fc3585ef3e"
+dependencies = [
+ "ark-crypto-primitives",
+ "ark-ed-on-bn254",
+ "ark-ff",
+ "rand_chacha 0.3.1",
 ]
 
 [[package]]
