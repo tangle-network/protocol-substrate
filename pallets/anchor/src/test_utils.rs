@@ -1,8 +1,6 @@
 use ark_bn254::Bn254;
 use ark_ff::{BigInteger, PrimeField};
-use arkworks_circuits::setup::{
-	anchor::{setup_leaf_x5_4, setup_proof_x5_4, AnchorProverSetup},
-};
+use arkworks_circuits::setup::anchor::{setup_leaf_x5_4, setup_proof_x5_4, AnchorProverSetup};
 
 use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_4, Curve};
 use webb_primitives::ElementTrait;
@@ -36,7 +34,8 @@ pub fn setup_zk_circuit(
 
 	match curve {
 		Curve::Bn254 => {
-			let (secret, nullifier, leaf, nullifier_hash) = setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, src_chain_id, rng).unwrap();
+			let (secret, nullifier, leaf, nullifier_hash) =
+				setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, src_chain_id, rng).unwrap();
 			let leaves = vec![leaf.clone()];
 			let leaves_f = vec![Bn254Fr::from_le_bytes_mod_order(&leaf)];
 			let index = 0;
@@ -48,7 +47,23 @@ pub fn setup_zk_circuit(
 			let roots_f = [tree.root().inner(); M];
 			let roots_raw = roots_f.map(|x| x.into_repr().to_bytes_le());
 
-			let (proof, ..) = setup_proof_x5_4::<Bn254, _>(curve, src_chain_id, secret, nullifier, leaves, index, roots_raw.clone(), recipient_bytes, relayer_bytes, commitment_bytes, fee_value, refund_value, pk_bytes, rng).unwrap();
+			let (proof, ..) = setup_proof_x5_4::<Bn254, _>(
+				curve,
+				src_chain_id,
+				secret,
+				nullifier,
+				leaves,
+				index,
+				roots_raw.clone(),
+				recipient_bytes,
+				relayer_bytes,
+				commitment_bytes,
+				fee_value,
+				refund_value,
+				pk_bytes,
+				rng,
+			)
+			.unwrap();
 
 			let roots_element = roots_raw.map(|x| Element::from_bytes(&x)).to_vec();
 			let nullifier_hash_element = Element::from_bytes(&nullifier_hash);

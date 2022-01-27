@@ -40,8 +40,12 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 			// 3. Setup the VerifierPallet
 			//    but to do so, we need to have a VerifyingKey
-			let pk_bytes = include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin");
-			let vk_bytes = include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
+			let pk_bytes = include_bytes!(
+				"../../../protocol-substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin"
+			);
+			let vk_bytes = include_bytes!(
+				"../../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin"
+			);
 
 			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
 
@@ -113,7 +117,14 @@ fn mixer_works_with_wasm_utils() {
 		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
 
 		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
-			setup_wasm_utils_zk_circuit(curve, recipient_bytes, relayer_bytes, pk_bytes, fee_value, refund_value);
+			setup_wasm_utils_zk_circuit(
+				curve,
+				recipient_bytes,
+				relayer_bytes,
+				pk_bytes,
+				fee_value,
+				refund_value,
+			);
 
 		assert_ok!(Mixer::deposit(
 			Origin::signed(sender_account_id.clone()),
