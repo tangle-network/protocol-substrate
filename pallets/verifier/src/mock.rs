@@ -1,16 +1,17 @@
 use super::*;
 use crate as pallet_verifier;
-use webb_primitives::AccountId;
-pub use webb_primitives::{
-	verifier::{InstanceVerifier, VerifierModule},
-	verifying::ArkworksVerifierBn254,
-};
 use frame_support::parameter_types;
 use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup}, AccountId32,
+	traits::{BlakeTwo256, IdentityLookup},
+	AccountId32,
+};
+use webb_primitives::AccountId;
+pub use webb_primitives::{
+	verifier::{InstanceVerifier, VerifierModule},
+	verifying::ArkworksVerifierBn254,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -50,6 +51,7 @@ impl system::Config for Test {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -58,7 +60,6 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -98,7 +99,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		balances: vec![
 			(AccountId32::new([1u8; 32]), 10u128.pow(18)),
 			(AccountId32::new([2u8; 32]), 20u128.pow(18)),
-			(AccountId32::new([3u8; 32]), 30u128.pow(18))
+			(AccountId32::new([3u8; 32]), 30u128.pow(18)),
 		],
 	}
 	.assimilate_storage(&mut storage);

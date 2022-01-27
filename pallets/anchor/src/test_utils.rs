@@ -7,7 +7,6 @@ use arkworks_circuits::setup::{
 use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_4, Curve};
 use webb_primitives::ElementTrait;
 
-
 use crate::mock::Element;
 
 type Bn254Fr = ark_bn254::Fr;
@@ -56,10 +55,10 @@ pub fn setup_zk_circuit(
 			let leaf_element = Element::from_bytes(&leaf);
 
 			(proof, roots_element, nullifier_hash_element, leaf_element)
-		}
+		},
 		Curve::Bls381 => {
 			unimplemented!()
-		}
+		},
 	}
 }
 

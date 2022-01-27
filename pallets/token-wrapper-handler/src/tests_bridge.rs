@@ -1,9 +1,11 @@
 use std::convert::TryInto;
 
-use crate::mock::*;
+use crate::mock_bridge::*;
 
 use asset_registry::AssetType;
-use frame_support::{assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin};
+use frame_support::{
+	assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin,
+};
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 
 const TEST_THRESHOLD: u32 = 2;
@@ -51,7 +53,12 @@ fn setup_relayers(src_id: u32) {
 	assert_ok!(Bridge::whitelist_chain(Origin::root(), src_id));
 }
 
-fn relay_fee_update_proposal(src_chain_id: u32, resource_id: &[u8; 32], prop_id: u64, wrapping_fee_percent: u128) {
+fn relay_fee_update_proposal(
+	src_chain_id: u32,
+	resource_id: &[u8; 32],
+	prop_id: u64,
+	wrapping_fee_percent: u128,
+) {
 	// create fee update proposal
 	let resource = b"TokenWrapperHandler.execute_wrapping_fee_proposal".to_vec();
 	let update_proposal = make_wrapping_fee_proposal(resource_id, wrapping_fee_percent);
@@ -99,7 +106,7 @@ fn relay_token_update_proposal(
 		Box::new(update_proposal),
 	);
 
-	return result1.and(result2);
+	return result1.and(result2)
 }
 
 #[test]
@@ -140,7 +147,8 @@ fn should_succeed_add_token() {
 		)
 		.unwrap();
 
-		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+		let update_proposal =
+			make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
@@ -180,7 +188,8 @@ fn should_succeed_remove_token() {
 		)
 		.unwrap();
 
-		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+		let update_proposal =
+			make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
@@ -193,7 +202,8 @@ fn should_succeed_remove_token() {
 		// Check that first_token_id is part of pool
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
 
-		let update_proposal = make_remove_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+		let update_proposal =
+			make_remove_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
@@ -233,7 +243,8 @@ fn should_fail_to_remove_token_not_in_pool() {
 		)
 		.unwrap();
 
-		let update_proposal = make_remove_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+		let update_proposal =
+			make_remove_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_err!(
 			relay_token_update_proposal(
@@ -288,7 +299,8 @@ fn should_succeed_add_many_tokens() {
 		)
 		.unwrap();
 
-		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+		let update_proposal =
+			make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
@@ -298,7 +310,8 @@ fn should_succeed_add_many_tokens() {
 			prop_id
 		));
 
-		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), second_token_id);
+		let update_proposal =
+			make_add_token_proposal(&resource_id, b"meme".to_vec(), second_token_id);
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
@@ -308,7 +321,8 @@ fn should_succeed_add_many_tokens() {
 			prop_id
 		));
 
-		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), third_token_id);
+		let update_proposal =
+			make_add_token_proposal(&resource_id, b"meme".to_vec(), third_token_id);
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
@@ -356,7 +370,8 @@ fn should_fail_to_add_same_token() {
 		)
 		.unwrap();
 
-		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+		let update_proposal =
+			make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_ok!(relay_token_update_proposal(
 			src_chain_id,
@@ -369,7 +384,8 @@ fn should_fail_to_add_same_token() {
 		// Check that first_token_id is part of pool
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
 
-		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+		let update_proposal =
+			make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_err!(
 			relay_token_update_proposal(
@@ -405,7 +421,8 @@ fn should_fail_to_add_non_existent_token() {
 		)
 		.unwrap();
 
-		let update_proposal = make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
+		let update_proposal =
+			make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_err!(
 			relay_token_update_proposal(

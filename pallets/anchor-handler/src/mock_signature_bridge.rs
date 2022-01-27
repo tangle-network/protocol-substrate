@@ -2,11 +2,9 @@
 
 use crate as pallet_anchor_handler;
 use codec::{Decode, Encode};
-pub use webb_primitives::{ElementTrait, InstanceHasher};
-use frame_support::{ord_parameter_types, parameter_types, traits::Nothing, PalletId};
+use frame_support::{assert_ok, ord_parameter_types, parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
-use webb_primitives::verifying::ArkworksVerifierBn254;
 pub use pallet_balances;
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
@@ -14,6 +12,8 @@ use sp_runtime::{
 	testing::Header,
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 };
+use webb_primitives::{verifying::ArkworksVerifierBn254, ResourceId};
+pub use webb_primitives::{ElementTrait, InstanceHasher};
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -45,7 +45,7 @@ frame_support::construct_runtime!(
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
 		AnchorHandler: pallet_anchor_handler::{Pallet, Call, Storage, Event<T>},
-		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		SignatureBridge: pallet_signature_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -70,6 +70,7 @@ impl system::Config for Test {
 	type Header = Header;
 	type Index = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
@@ -78,7 +79,6 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
 	type Version = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 parameter_types! {
@@ -145,7 +145,19 @@ parameter_types! {
 	]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo, Serialize, Deserialize)]
+#[derive(
+	Debug,
+	Encode,
+	Decode,
+	Default,
+	Copy,
+	Clone,
+	PartialEq,
+	Eq,
+	scale_info::TypeInfo,
+	Serialize,
+	Deserialize,
+)]
 pub struct Element([u8; 32]);
 
 impl ElementTrait for Element {
@@ -220,7 +232,7 @@ impl pallet_asset_registry::Config for Test {
 parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	pub const HistoryLength: u32 = 30;
-	pub const ChainIdentifier: u8 = 5;
+	pub const ChainIdentifier: u32 = 5;
 }
 
 impl pallet_anchor::Config for Test {
@@ -248,8 +260,10 @@ parameter_types! {
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
 
-type BridgeInstance = pallet_bridge::Instance1;
-impl pallet_bridge::Config<BridgeInstance> for Test {
+pub type ProposalNonce = u32;
+
+type BridgeInstance = pallet_signature_bridge::Instance1;
+impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
 	type ChainId = ChainId;
@@ -257,11 +271,13 @@ impl pallet_bridge::Config<BridgeInstance> for Test {
 	type Event = Event;
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
+	type ProposalNonce = ProposalNonce;
+	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 }
 
 impl pallet_anchor_handler::Config for Test {
 	type Anchor = Anchor;
-	type BridgeOrigin = pallet_bridge::EnsureBridge<Test, BridgeInstance>;
+	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Test, BridgeInstance>;
 	type Event = Event;
 }
 
@@ -284,10 +300,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 }
 
 fn last_event() -> Event {
-	system::Pallet::<Test>::events()
-		.pop()
-		.map(|e| e.event)
-		.expect("Event expected")
+	system::Pallet::<Test>::events().pop().map(|e| e.event).expect("Event expected")
 }
 
 pub fn expect_event<E: Into<Event>>(e: E) {
@@ -296,16 +309,14 @@ pub fn expect_event<E: Into<Event>>(e: E) {
 
 // Asserts that the event was emitted at some point.
 pub fn event_exists<E: Into<Event>>(e: E) {
-	let actual: Vec<Event> = system::Pallet::<Test>::events()
-		.iter()
-		.map(|e| e.event.clone())
-		.collect();
+	let actual: Vec<Event> =
+		system::Pallet::<Test>::events().iter().map(|e| e.event.clone()).collect();
 	let e: Event = e.into();
 	let mut exists = false;
 	for evt in actual {
 		if evt == e {
 			exists = true;
-			break;
+			break
 		}
 	}
 	assert!(exists);
@@ -315,10 +326,8 @@ pub fn event_exists<E: Into<Event>>(e: E) {
 // provided. They must include the most recent event, but do not have to include
 // every past event.
 pub fn assert_events(mut expected: Vec<Event>) {
-	let mut actual: Vec<Event> = system::Pallet::<Test>::events()
-		.iter()
-		.map(|e| e.event.clone())
-		.collect();
+	let mut actual: Vec<Event> =
+		system::Pallet::<Test>::events().iter().map(|e| e.event.clone()).collect();
 
 	expected.reverse();
 
@@ -326,4 +335,20 @@ pub fn assert_events(mut expected: Vec<Event>) {
 		let next = actual.pop().expect("event expected");
 		assert_eq!(next, evt, "Events don't match");
 	}
+}
+
+pub fn new_test_ext_initialized(
+	src_id: <Test as pallet_signature_bridge::Config<BridgeInstance>>::ChainId,
+	r_id: ResourceId,
+	resource: Vec<u8>,
+) -> sp_io::TestExternalities {
+	let mut t = new_test_ext();
+	t.execute_with(|| {
+		// Whitelist chain
+		assert_ok!(SignatureBridge::whitelist_chain(Origin::root(), src_id));
+		// Set and check resource ID mapped to some junk data
+		assert_ok!(SignatureBridge::set_resource(Origin::root(), r_id, resource));
+		assert!(SignatureBridge::resource_exists(r_id));
+	});
+	t
 }

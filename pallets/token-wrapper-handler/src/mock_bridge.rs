@@ -1,14 +1,14 @@
 #![allow(clippy::zero_prefixed_literal)]
 
 use super::*;
-use crate as pallet_token_wrapper;
+use crate as pallet_token_wrapper_handler;
 use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 	Permill,
 };
 
@@ -29,7 +29,9 @@ frame_support::construct_runtime!(
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
-		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>}
+		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>},
+		TokenWrapperHandler: pallet_token_wrapper_handler::{Pallet, Call, Storage, Event<T>},
+		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>}
 	}
 );
 
@@ -158,7 +160,7 @@ parameter_types! {
 	pub const WrappingFeeDivider: u128 = 100;
 }
 
-impl Config for Test {
+impl pallet_token_wrapper::Config for Test {
 	type AssetRegistry = AssetRegistry;
 	type Currency = Currencies;
 	type Event = Event;
@@ -167,16 +169,60 @@ impl Config for Test {
 	type WeightInfo = ();
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
+pub type ChainId = u32;
 
-// Build genesis storage according to the mock runtime.
+parameter_types! {
+	pub const ProposalLifetime: u64 = 50;
+	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
+	pub const ChainIdentifier: u8 = 5;
+}
+
+type BridgeInstance = pallet_bridge::Instance1;
+impl pallet_bridge::Config<BridgeInstance> for Test {
+	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type BridgeAccountId = BridgeAccountId;
+	type ChainId = ChainId;
+	type ChainIdentifier = ChainIdentifier;
+	type Event = Event;
+	type Proposal = Call;
+	type ProposalLifetime = ProposalLifetime;
+}
+
+impl Config for Test {
+	type BridgeOrigin = pallet_bridge::EnsureBridge<Test, BridgeInstance>;
+	type Event = Event;
+	type TokenWrapper = TokenWrapper;
+}
+
+pub const RELAYER_A: u64 = 0x2;
+pub const RELAYER_B: u64 = 0x3;
+pub const RELAYER_C: u64 = 0x4;
+pub const ENDOWED_BALANCE: u128 = 100_000_000;
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	let _ = pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(1, 10u128.pow(18)), (2, 20u128.pow(18)), (3, 30u128.pow(18))],
+	let bridge_id = PalletId(*b"dw/bridg").into_account();
+	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	pallet_balances::GenesisConfig::<Test> {
+		balances: vec![(bridge_id, ENDOWED_BALANCE), (RELAYER_A, ENDOWED_BALANCE)],
 	}
-	.assimilate_storage(&mut storage);
+	.assimilate_storage(&mut t)
+	.unwrap();
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.execute_with(|| System::set_block_number(1));
+	ext
+}
 
-	GenesisBuild::<Test>::assimilate_storage(&pallet_treasury::GenesisConfig, &mut storage)
-		.unwrap();
-	storage.into()
+// Checks events against the latest. A contiguous set of events must be
+// provided. They must include the most recent event, but do not have to include
+// every past event.
+pub fn assert_events(mut expected: Vec<Event>) {
+	let mut actual: Vec<Event> =
+		system::Pallet::<Test>::events().iter().map(|e| e.event.clone()).collect();
+
+	expected.reverse();
+
+	for evt in expected {
+		let next = actual.pop().expect("event expected");
+		assert_eq!(next, evt, "Events don't match (actual,expected)");
+	}
 }

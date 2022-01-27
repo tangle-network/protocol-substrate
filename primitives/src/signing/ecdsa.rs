@@ -1,5 +1,5 @@
-use sp_std::vec::Vec;
 pub use sp_io::{hashing::keccak_256, EcdsaVerifyError};
+use sp_std::vec::Vec;
 
 pub const SIGNATURE_LENGTH: usize = 65;
 const KEY_LENGTH: usize = 32;

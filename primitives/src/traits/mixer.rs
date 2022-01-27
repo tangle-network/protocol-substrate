@@ -11,7 +11,11 @@ pub trait MixerInterface<AccountId, Balance, CurrencyId, TreeId, Element> {
 		asset: CurrencyId,
 	) -> Result<TreeId, dispatch::DispatchError>;
 	/// Deposit into the mixer
-	fn deposit(account: AccountId, id: TreeId, leaf: Element) -> Result<(), dispatch::DispatchError>;
+	fn deposit(
+		account: AccountId,
+		id: TreeId,
+		leaf: Element,
+	) -> Result<(), dispatch::DispatchError>;
 	/// Withdraw from the mixer
 	#[allow(clippy::too_many_arguments)]
 	fn withdraw(
@@ -25,7 +29,10 @@ pub trait MixerInterface<AccountId, Balance, CurrencyId, TreeId, Element> {
 		refund: Balance,
 	) -> Result<(), dispatch::DispatchError>;
 	// Stores nullifier hash from a spend tx
-	fn add_nullifier_hash(id: TreeId, nullifier_hash: Element) -> Result<(), dispatch::DispatchError>;
+	fn add_nullifier_hash(
+		id: TreeId,
+		nullifier_hash: Element,
+	) -> Result<(), dispatch::DispatchError>;
 }
 
 /// Mixer trait for inspecting mixer state
@@ -41,5 +48,8 @@ pub trait MixerInspector<AccountId, CurrencyId, TreeId, Element> {
 	/// `InvalidNullifier`
 	fn is_nullifier_used(id: TreeId, nullifier: Element) -> bool;
 
-	fn ensure_nullifier_unused(id: TreeId, nullifier: Element) -> Result<(), dispatch::DispatchError>;
+	fn ensure_nullifier_unused(
+		id: TreeId,
+		nullifier: Element,
+	) -> Result<(), dispatch::DispatchError>;
 }

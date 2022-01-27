@@ -17,7 +17,9 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{dispatch::DispatchError, pallet_prelude::*, sp_runtime::traits::CheckedAdd, transactional};
+use frame_support::{
+	dispatch::DispatchError, pallet_prelude::*, sp_runtime::traits::CheckedAdd, transactional,
+};
 use frame_system::pallet_prelude::*;
 use sp_arithmetic::traits::BaseArithmetic;
 use sp_std::{convert::TryInto, vec::Vec};
@@ -49,8 +51,11 @@ pub mod pallet {
 	use super::*;
 	use frame_support::sp_runtime::traits::AtLeast32BitUnsigned;
 
-	pub type AssetDetailsT<T> =
-		AssetDetails<<T as Config>::AssetId, <T as Config>::Balance, BoundedVec<u8, <T as Config>::StringLimit>>;
+	pub type AssetDetailsT<T> = AssetDetails<
+		<T as Config>::AssetId,
+		<T as Config>::Balance,
+		BoundedVec<u8, <T as Config>::StringLimit>,
+	>;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -60,10 +65,21 @@ pub mod pallet {
 		type RegistryOrigin: EnsureOrigin<Self::Origin>;
 
 		/// Asset type
-		type AssetId: Parameter + Member + Default + Copy + BaseArithmetic + MaybeSerializeDeserialize + MaxEncodedLen;
+		type AssetId: Parameter
+			+ Member
+			+ Default
+			+ Copy
+			+ BaseArithmetic
+			+ MaybeSerializeDeserialize
+			+ MaxEncodedLen;
 
 		/// Balance type
-		type Balance: Parameter + Member + AtLeast32BitUnsigned + Default + Copy + MaybeSerializeDeserialize;
+		type Balance: Parameter
+			+ Member
+			+ AtLeast32BitUnsigned
+			+ Default
+			+ Copy
+			+ MaybeSerializeDeserialize;
 
 		/// Asset location type
 		type AssetNativeLocation: Parameter + Member + Default;
@@ -116,7 +132,8 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn assets)]
 	/// Details of an asset.
-	pub type Assets<T: Config> = StorageMap<_, Twox64Concat, T::AssetId, AssetDetailsT<T>, OptionQuery>;
+	pub type Assets<T: Config> =
+		StorageMap<_, Twox64Concat, T::AssetId, AssetDetailsT<T>, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn next_asset_id)]
@@ -133,7 +150,8 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn locations)]
 	/// Native location of an asset.
-	pub type AssetLocations<T: Config> = StorageMap<_, Twox64Concat, T::AssetId, T::AssetNativeLocation, OptionQuery>;
+	pub type AssetLocations<T: Config> =
+		StorageMap<_, Twox64Concat, T::AssetId, T::AssetNativeLocation, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn location_assets)]
@@ -144,8 +162,13 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn asset_metadata)]
 	/// Metadata of an asset.
-	pub type AssetMetadataMap<T: Config> =
-		StorageMap<_, Twox64Concat, T::AssetId, AssetMetadata<BoundedVec<u8, T::StringLimit>>, OptionQuery>;
+	pub type AssetMetadataMap<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		T::AssetId,
+		AssetMetadata<BoundedVec<u8, T::StringLimit>>,
+		OptionQuery,
+	>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
@@ -212,17 +235,10 @@ pub mod pallet {
 		},
 
 		/// Metadata set for an asset.
-		MetadataSet {
-			asset_id: T::AssetId,
-			symbol: BoundedVec<u8, T::StringLimit>,
-			decimals: u8,
-		},
+		MetadataSet { asset_id: T::AssetId, symbol: BoundedVec<u8, T::StringLimit>, decimals: u8 },
 
 		/// Native location set for an asset.
-		LocationSet {
-			asset_id: T::AssetId,
-			location: T::AssetNativeLocation,
-		},
+		LocationSet { asset_id: T::AssetId, location: T::AssetNativeLocation },
 	}
 
 	#[pallet::call]
@@ -251,10 +267,7 @@ pub mod pallet {
 
 			let bounded_name = Self::to_bounded_name(name)?;
 
-			ensure!(
-				Self::asset_ids(&bounded_name).is_none(),
-				Error::<T>::AssetAlreadyRegistered
-			);
+			ensure!(Self::asset_ids(&bounded_name).is_none(), Error::<T>::AssetAlreadyRegistered);
 
 			Self::register_asset(bounded_name, asset_type, existential_deposit)?;
 
@@ -299,13 +312,10 @@ pub mod pallet {
 
 				detail.name = bounded_name.clone();
 				detail.asset_type = asset_type.clone();
-				detail.existential_deposit = existential_deposit.unwrap_or(detail.existential_deposit);
+				detail.existential_deposit =
+					existential_deposit.unwrap_or(detail.existential_deposit);
 
-				Self::deposit_event(Event::Updated {
-					asset_id,
-					name: bounded_name,
-					asset_type,
-				});
+				Self::deposit_event(Event::Updated { asset_id, name: bounded_name, asset_type });
 
 				Ok(())
 			})
@@ -314,10 +324,8 @@ pub mod pallet {
 		/// Set metadata for an asset.
 		///
 		/// - `asset_id`: Asset identifier.
-		/// - `symbol`: The exchange symbol for this asset. Limited in length by
-		///   `StringLimit`.
-		/// - `decimals`: The number of decimals this asset uses to represent
-		///   one unit.
+		/// - `symbol`: The exchange symbol for this asset. Limited in length by `StringLimit`.
+		/// - `decimals`: The number of decimals this asset uses to represent one unit.
 		///
 		/// Emits `MetadataSet` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::set_metadata())]
@@ -341,11 +349,7 @@ pub mod pallet {
 
 			AssetMetadataMap::<T>::insert(asset_id, metadata);
 
-			Self::deposit_event(Event::MetadataSet {
-				asset_id,
-				symbol: b_symbol,
-				decimals,
-			});
+			Self::deposit_event(Event::MetadataSet { asset_id, symbol: b_symbol, decimals });
 
 			Ok(())
 		}
@@ -379,7 +383,11 @@ pub mod pallet {
 
 		/// Add an asset to an existing pool.
 		#[pallet::weight(0)]
-		pub fn add_asset_to_pool(origin: OriginFor<T>, pool: Vec<u8>, asset_id: T::AssetId) -> DispatchResult {
+		pub fn add_asset_to_pool(
+			origin: OriginFor<T>,
+			pool: Vec<u8>,
+			asset_id: T::AssetId,
+		) -> DispatchResult {
 			ensure_root(origin)?;
 
 			ensure!(Self::assets(asset_id).is_some(), Error::<T>::AssetNotRegistered);
@@ -391,7 +399,11 @@ pub mod pallet {
 
 		/// Remove an asset from an existing pool.
 		#[pallet::weight(0)]
-		pub fn delete_asset_from_pool(origin: OriginFor<T>, pool: Vec<u8>, asset_id: T::AssetId) -> DispatchResult {
+		pub fn delete_asset_from_pool(
+			origin: OriginFor<T>,
+			pool: Vec<u8>,
+			asset_id: T::AssetId,
+		) -> DispatchResult {
 			ensure_root(origin)?;
 
 			ensure!(Self::assets(asset_id).is_some(), Error::<T>::AssetNotRegistered);
@@ -425,9 +437,7 @@ impl<T: Config> Pallet<T> {
 			// Note: this way we prevent accidental clashes with native asset id, so no need
 			// to set next asset id to be > next asset id
 			let asset_id = if *value == T::NativeAssetId::get() {
-				value
-					.checked_add(&T::AssetId::from(1))
-					.ok_or(Error::<T>::NoIdAvailable)?
+				value.checked_add(&T::AssetId::from(1)).ok_or(Error::<T>::NoIdAvailable)?
 			} else {
 				*value
 			};
@@ -446,15 +456,9 @@ impl<T: Config> Pallet<T> {
 			Assets::<T>::insert(asset_id, details);
 
 			// Increase asset id to be assigned for following asset.
-			*value = asset_id
-				.checked_add(&T::AssetId::from(1))
-				.ok_or(Error::<T>::NoIdAvailable)?;
+			*value = asset_id.checked_add(&T::AssetId::from(1)).ok_or(Error::<T>::NoIdAvailable)?;
 
-			Self::deposit_event(Event::Registered {
-				asset_id,
-				name,
-				asset_type,
-			});
+			Self::deposit_event(Event::Registered { asset_id, name, asset_type });
 
 			Ok(asset_id)
 		})
@@ -487,7 +491,10 @@ impl<T: Config> Pallet<T> {
 	}
 
 	#[allow(clippy::ptr_arg)]
-	pub fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+	pub fn add_asset_to_existing_pool(
+		name: &Vec<u8>,
+		asset_id: T::AssetId,
+	) -> Result<T::AssetId, DispatchError> {
 		let pool_asset_id = Self::retrieve_asset(name)?;
 		Assets::<T>::try_mutate(
 			pool_asset_id,
@@ -496,19 +503,18 @@ impl<T: Config> Pallet<T> {
 
 				let asset_type = match &detail.asset_type {
 					AssetType::Token => return Err(Error::<T>::AssetNotFound.into()),
-					AssetType::PoolShare(pool) => {
+					AssetType::PoolShare(pool) =>
 						if !pool.contains(&asset_id) {
 							if Self::assets(&asset_id).is_some() {
 								let mut pool_clone = pool.clone();
 								pool_clone.push(asset_id);
 								AssetType::PoolShare(pool_clone)
 							} else {
-								return Err(Error::<T>::AssetNotRegistered.into());
+								return Err(Error::<T>::AssetNotRegistered.into())
 							}
 						} else {
-							return Err(Error::<T>::AssetExistsInPool.into());
-						}
-					}
+							return Err(Error::<T>::AssetExistsInPool.into())
+						},
 				};
 
 				detail.asset_type = asset_type.clone();
@@ -525,7 +531,10 @@ impl<T: Config> Pallet<T> {
 	}
 
 	#[allow(clippy::ptr_arg)]
-	pub fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+	pub fn delete_asset_from_existing_pool(
+		name: &Vec<u8>,
+		asset_id: T::AssetId,
+	) -> Result<T::AssetId, DispatchError> {
 		let pool_asset_id = Self::retrieve_asset(name)?;
 		Assets::<T>::try_mutate(
 			pool_asset_id,
@@ -534,7 +543,7 @@ impl<T: Config> Pallet<T> {
 
 				let asset_type = match &detail.asset_type {
 					AssetType::Token => return Err(Error::<T>::AssetNotFound.into()),
-					AssetType::PoolShare(pool) => {
+					AssetType::PoolShare(pool) =>
 						if pool.contains(&asset_id) {
 							let filtered_pool = pool
 								.iter()
@@ -543,9 +552,8 @@ impl<T: Config> Pallet<T> {
 								.collect::<Vec<T::AssetId>>();
 							AssetType::PoolShare(filtered_pool)
 						} else {
-							return Err(Error::<T>::AssetNotFoundInPool.into());
-						}
-					}
+							return Err(Error::<T>::AssetNotFoundInPool.into())
+						},
 				};
 
 				detail.asset_type = asset_type.clone();
@@ -583,13 +591,19 @@ impl<T: Config> Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError> for Pal
 		}
 	}
 
-	fn create_asset(name: &Vec<u8>, existential_deposit: T::Balance) -> Result<T::AssetId, DispatchError> {
+	fn create_asset(
+		name: &Vec<u8>,
+		existential_deposit: T::Balance,
+	) -> Result<T::AssetId, DispatchError> {
 		Self::get_or_create_asset(name.clone(), AssetType::Token, existential_deposit)
 	}
 }
 
 impl<T: Config> ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError> for Pallet<T> {
-	fn retrieve_shared_asset(name: &Vec<u8>, _assets: &[T::AssetId]) -> Result<T::AssetId, DispatchError> {
+	fn retrieve_shared_asset(
+		name: &Vec<u8>,
+		_assets: &[T::AssetId],
+	) -> Result<T::AssetId, DispatchError> {
 		Self::retrieve_asset(name)
 	}
 
@@ -598,7 +612,11 @@ impl<T: Config> ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchErro
 		assets: &[T::AssetId],
 		existential_deposit: T::Balance,
 	) -> Result<T::AssetId, DispatchError> {
-		Self::get_or_create_asset(name.clone(), AssetType::PoolShare(assets.to_vec()), existential_deposit)
+		Self::get_or_create_asset(
+			name.clone(),
+			AssetType::PoolShare(assets.to_vec()),
+			existential_deposit,
+		)
 	}
 
 	fn contains_asset(pool_share_id: T::AssetId, asset_id: T::AssetId) -> bool {
@@ -613,11 +631,17 @@ impl<T: Config> ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchErro
 		false
 	}
 
-	fn add_asset_to_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+	fn add_asset_to_existing_pool(
+		name: &Vec<u8>,
+		asset_id: T::AssetId,
+	) -> Result<T::AssetId, DispatchError> {
 		Self::add_asset_to_existing_pool(name, asset_id)
 	}
 
-	fn delete_asset_from_existing_pool(name: &Vec<u8>, asset_id: T::AssetId) -> Result<T::AssetId, DispatchError> {
+	fn delete_asset_from_existing_pool(
+		name: &Vec<u8>,
+		asset_id: T::AssetId,
+	) -> Result<T::AssetId, DispatchError> {
 		Self::delete_asset_from_existing_pool(name, asset_id)
 	}
 }

@@ -13,9 +13,16 @@ pub trait LinkableTreeConfig {
 /// LinkableTree trait definition to be used in other pallets
 pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 	// Creates a new linkable tree
-	fn create(creator: Option<C::AccountId>, max_edges: u32, depth: u8) -> Result<C::TreeId, dispatch::DispatchError>;
+	fn create(
+		creator: Option<C::AccountId>,
+		max_edges: u32,
+		depth: u8,
+	) -> Result<C::TreeId, dispatch::DispatchError>;
 	// Insert new leaf to the tree
-	fn insert_in_order(id: C::TreeId, leaf: C::Element) -> Result<C::Element, dispatch::DispatchError>;
+	fn insert_in_order(
+		id: C::TreeId,
+		leaf: C::Element,
+	) -> Result<C::Element, dispatch::DispatchError>;
 	/// Add an edge to this tree
 	fn add_edge(
 		id: C::TreeId,
@@ -53,7 +60,10 @@ pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 	/// Checks if each root from passed root array is in tree's cached history
 	/// or returns `InvalidNeighborWithdrawRoot`
 	#[allow(clippy::ptr_arg)]
-	fn ensure_known_neighbor_roots(id: C::TreeId, roots: &Vec<C::Element>) -> Result<(), dispatch::DispatchError>;
+	fn ensure_known_neighbor_roots(
+		id: C::TreeId,
+		roots: &Vec<C::Element>,
+	) -> Result<(), dispatch::DispatchError>;
 	/// Checks if a merkle root is in a tree's cached history or returns
 	/// `InvalidNeighborWithdrawRoot`
 	fn ensure_known_neighbor_root(

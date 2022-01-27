@@ -20,10 +20,13 @@ frame-support = {default-features = false, git = "https://github.com/paritytech/
 frame-system = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"}
 orml-traits = {path = "../../open-runtime-module-library/traits", default-features = false}
 pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
+pallet-signature-bridge = { path = "../signature-bridge", default-features = false }
 pallet-bridge = { path = "../bridge", default-features = false }
 sp-arithmetic = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"}
 sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"}
 sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"}
+
+hex-literal = "0.3.4"
 
 #Optional dependencies
 frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true}
@@ -56,6 +59,7 @@ std = [
   "frame-benchmarking/std",
   "sp-arithmetic/std",
   "pallet-token-wrapper/std",
-  "pallet-bridge/std"
+  "pallet-bridge/std",
+  "pallet-signature-bridge/std"
 ]
 

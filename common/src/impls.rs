@@ -18,8 +18,9 @@
 
 use frame_support::traits::{Currency, Imbalance, OnUnbalanced};
 
-pub type NegativeImbalance<T> =
-	<pallet_balances::Pallet<T> as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
+	<T as frame_system::Config>::AccountId,
+>>::NegativeImbalance;
 
 /// Logic for the author to get a portion of fees.
 pub struct ToTreasury<R>(sp_std::marker::PhantomData<R>);
@@ -36,7 +37,7 @@ where
 		<pallet_balances::Pallet<R>>::resolve_creating(&treasury, amount);
 		<frame_system::Pallet<R>>::deposit_event(pallet_balances::Event::Deposit {
 			who: treasury,
-			amount: numeric_amount
+			amount: numeric_amount,
 		});
 	}
 }
@@ -114,6 +115,7 @@ mod tests {
 		type Header = Header;
 		type Index = u64;
 		type Lookup = IdentityLookup<Self::AccountId>;
+		type MaxConsumers = frame_support::traits::ConstU32<16>;
 		type OnKilledAccount = ();
 		type OnNewAccount = ();
 		type OnSetCode = ();
@@ -122,7 +124,6 @@ mod tests {
 		type SS58Prefix = ();
 		type SystemWeightInfo = ();
 		type Version = ();
-		type MaxConsumers = frame_support::traits::ConstU32<16>;
 	}
 
 	impl pallet_balances::Config for Test {

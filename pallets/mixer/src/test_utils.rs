@@ -103,7 +103,7 @@ pub fn setup_wasm_utils_zk_circuit(
 		}
 		Curve::Bls381 => {
 			unimplemented!()
-		}
+		},
 	}
 }
 

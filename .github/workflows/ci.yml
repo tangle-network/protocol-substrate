@@ -43,6 +43,9 @@ jobs:
       - name: Check Build
         run: |
           git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo check --release
+      - name: Check Format
+        run: |
+          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo fmt --all -- --check
       - name: Test
         run: |
           git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo test --release
