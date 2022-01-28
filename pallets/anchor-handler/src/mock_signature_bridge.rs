@@ -232,6 +232,8 @@ impl pallet_asset_registry::Config for Test {
 parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	pub const HistoryLength: u32 = 30;
+	// Substrate standalone chain ID type
+	pub const CurrentChainIdType: [u8; 2] = [2, 0];
 	pub const ChainIdentifier: u32 = 5;
 }
 
@@ -248,6 +250,7 @@ impl pallet_anchor::Config for Test {
 
 impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
+	type ChainIdType = CurrentChainIdType;
 	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
 	type HistoryLength = HistoryLength;

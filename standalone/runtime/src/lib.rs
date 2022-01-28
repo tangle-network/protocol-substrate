@@ -1197,11 +1197,14 @@ impl pallet_mixer::Config<pallet_mixer::Instance2> for Runtime {
 parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	pub const HistoryLength: u32 = 30;
+	// Substrate standalone chain ID type
+	pub const CurrentChainIdType: [u8; 2] = [2, 0];
 	pub const ChainIdentifier: ChainId = 1080;
 }
 
 impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance1> for Runtime {
 	type ChainId = ChainId;
+	type ChainIdType = CurrentChainIdType;
 	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
@@ -1211,6 +1214,7 @@ impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance1> for Runtime {
 
 impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance2> for Runtime {
 	type ChainId = ChainId;
+	type ChainIdType = CurrentChainIdType;
 	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
