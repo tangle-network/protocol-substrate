@@ -8,7 +8,8 @@ RUN apt-get update && \
 COPY . .
 
 # Build Standalone Node.
-RUN cargo build --release -p darkwebb-standalone-node
+RUN git submodule update --init && \
+  cargo build --release -p darkwebb-standalone-node
 
 # This is the 2nd stage: a very small image where we copy the Node binary."
 
