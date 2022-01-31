@@ -49,6 +49,8 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
+
+	fn set_max_deposit_amount(max_deposit_amount: C::Balance) ->  Result<(), dispatch::DispatchError>;
 }
 
 /// Anchor trait for inspecting tree state

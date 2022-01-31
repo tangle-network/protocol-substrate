@@ -116,7 +116,7 @@ pub mod pallet {
 
 		/// The tree type
 		type LinkableTree: LinkableTreeInterface<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>
-			+ LinkableTreeInspector<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>;
+		+ LinkableTreeInspector<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>;
 
 		/// The verifier
 		type Verifier2x2: VerifierModule;
@@ -135,7 +135,7 @@ pub mod pallet {
 		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
 
 		// Max deposit amount
-		type MaxDepositAmount: Get<BalanceOf<Self, I>>;
+		//type MaxDepositAmount: Get<BalanceOf<Self, I>>;
 		// Max withdraw amount
 		type MinWithdrawAmount: Get<BalanceOf<Self, I>>;
 		// Max external amount
@@ -143,6 +143,11 @@ pub mod pallet {
 		// Max fee for relayer
 		type MaxFee: Get<BalanceOf<Self, I>>;
 	}
+
+	#[pallet::storage]
+	#[pallet::getter(fn max_deposit_amount)]
+	pub type MaxDepositAmount<T: Config<I>, I: 'static = ()> =
+	StorageValue<_, BalanceOf<T, I>, ValueQuery>;
 
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
@@ -182,6 +187,8 @@ pub mod pallet {
 		},
 		/// Deposit hook has executed successfully
 		Deposit { depositor: T::AccountId, tree_id: T::TreeId, leaf: T::Element },
+
+		MaxDepositAmountChanged { max_deposit_amount: BalanceOf<T, I> },
 	}
 
 	#[pallet::error]
@@ -207,6 +214,8 @@ pub mod pallet {
 		InvalidFee,
 		// Invalid public amount
 		InvalidPublicAmount,
+
+		InvalidMaxDepositAmount,
 	}
 
 	#[pallet::hooks]
@@ -237,6 +246,13 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			<Self as VAnchorInterface<_>>::transact(sender, id, proof_data, ext_data)?;
+			Ok(().into())
+		}
+
+		#[pallet::weight(0)]
+		pub fn set_max_deposit_amount(origin: OriginFor<T>, max_deposit_amount: BalanceOf<T, I>) -> DispatchResultWithPostInfo {
+			ensure_root(origin)?;
+			<Self as VAnchorInterface<_>>::set_max_deposit_amount(max_deposit_amount);
 			Ok(().into())
 		}
 	}
@@ -359,7 +375,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
 
 		if is_deposit {
-			ensure!(abs_amount <= T::MaxDepositAmount::get(), Error::<T, I>::InvalidDepositAmount);
+			ensure!(abs_amount <= MaxDepositAmount::<T,I>::get(), Error::<T, I>::InvalidDepositAmount);
 
 			// deposit tokens to the pallet from the transactor's account
 			<T as Config<I>>::Currency::transfer(
@@ -428,6 +444,13 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
 		T::LinkableTree::update_edge(id, src_chain_id, root, latest_leaf_index)
+	}
+
+	fn set_max_deposit_amount(max_deposit_amount: BalanceOf<T, I>) ->  Result<(), DispatchError> {
+		//ensure!(max_deposit_amount > 0, Error::<T, I>::InvalidMaxDepositAmount);
+		MaxDepositAmount::<T, I>::put(max_deposit_amount);
+		Self::deposit_event(Event::MaxDepositAmountChanged { max_deposit_amount: max_deposit_amount });
+		Ok(())
 	}
 }
 

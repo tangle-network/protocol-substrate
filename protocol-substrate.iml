@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="RUST_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/common/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/node/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/open-runtime-module-library/currencies/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/open-runtime-module-library/tokens/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/open-runtime-module-library/traits/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/open-runtime-module-library/utilities/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/anchor-handler/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/anchor/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/asset-registry/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/bridge/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/hasher/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/hello/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/linkable-tree/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/mixer/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/mt/rpc/runtime-api/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/mt/rpc/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/mt/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/parachain-staking/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/signature-bridge/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/token-wrapper-handler/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/token-wrapper/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/vanchor/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/verifier/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/pallets/xanchor/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/primitives/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/runtime/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/standalone/node/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/standalone/runtime/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
