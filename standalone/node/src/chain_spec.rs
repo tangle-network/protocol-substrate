@@ -190,8 +190,9 @@ fn testnet_genesis(
 
 	log::info!("Verifier params");
 	let verifier_params = {
-		use std::fs;
-		fs::read("./protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin").unwrap()
+		let vk_bytes =
+			include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
+		vk_bytes.to_vec()
 	};
 
 	let mut endowed_accounts: Vec<AccountId> = endowed_accounts;
