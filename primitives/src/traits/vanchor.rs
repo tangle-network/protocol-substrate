@@ -50,13 +50,17 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		latest_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
 
-	fn set_max_deposit_amount(max_deposit_amount: C::Balance) ->  Result<(), dispatch::DispatchError>;
+	fn set_max_deposit_amount(
+		max_deposit_amount: C::Balance,
+	) -> Result<(), dispatch::DispatchError>;
 
-	fn set_min_withdraw_amount(min_withdraw_amount: C::Balance) ->  Result<(), dispatch::DispatchError>;
+	fn set_min_withdraw_amount(
+		min_withdraw_amount: C::Balance,
+	) -> Result<(), dispatch::DispatchError>;
 
-	fn set_max_ext_amount(max_ext_amount: C::Balance) ->  Result<(), dispatch::DispatchError>;
+	fn set_max_ext_amount(max_ext_amount: C::Balance) -> Result<(), dispatch::DispatchError>;
 
-	fn set_max_fee(max_fee: C::Balance) ->  Result<(), dispatch::DispatchError>;
+	fn set_max_fee(max_fee: C::Balance) -> Result<(), dispatch::DispatchError>;
 }
 
 /// Anchor trait for inspecting tree state

@@ -1,7 +1,11 @@
-use crate::{mock::*, test_utils::{
-	deconstruct_public_inputs_el, get_hash_params, prove, setup_circuit_with_data_raw,
-	setup_circuit_with_input_utxos_raw, setup_keys, setup_random_circuit, verify, Utxos,
-}, Error, MaxDepositAmount, MinWithdrawAmount, MaxFee, MaxExtAmount};
+use crate::{
+	mock::*,
+	test_utils::{
+		deconstruct_public_inputs_el, get_hash_params, prove, setup_circuit_with_data_raw,
+		setup_circuit_with_input_utxos_raw, setup_keys, setup_random_circuit, verify, Utxos,
+	},
+	Error, MaxDepositAmount, MaxExtAmount, MaxFee, MinWithdrawAmount, {self as pallet_vanchor},
+};
 use arkworks_utils::utils::common::Curve;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
@@ -9,7 +13,6 @@ use webb_primitives::{
 	types::vanchor::{ExtData, ProofData},
 	AccountId,
 };
-use crate::{self as pallet_vanchor};
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
@@ -875,7 +878,6 @@ fn set__get_min_withdraw_amount() {
 
 		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 5));
 		assert_eq!(MinWithdrawAmount::<Test>::get(), 5);
-
 	})
 }
 
@@ -887,7 +889,6 @@ fn set__get_max_ext_amount() {
 
 		assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 5));
 		assert_eq!(MaxExtAmount::<Test>::get(), 5);
-
 	})
 }
 
@@ -899,6 +900,5 @@ fn set__get_max_fee() {
 
 		assert_ok!(VAnchor::set_max_fee(Origin::root(), 5));
 		assert_eq!(MaxFee::<Test>::get(), 5);
-
 	})
 }

@@ -116,7 +116,7 @@ pub mod pallet {
 
 		/// The tree type
 		type LinkableTree: LinkableTreeInterface<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>
-		+ LinkableTreeInspector<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>;
+			+ LinkableTreeInspector<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>;
 
 		/// The verifier
 		type Verifier2x2: VerifierModule;
@@ -138,22 +138,21 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn max_deposit_amount)]
 	pub type MaxDepositAmount<T: Config<I>, I: 'static = ()> =
-	StorageValue<_, BalanceOf<T, I>, ValueQuery>;
+		StorageValue<_, BalanceOf<T, I>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn min_withdraw_amount)]
 	pub type MinWithdrawAmount<T: Config<I>, I: 'static = ()> =
-	StorageValue<_, BalanceOf<T, I>, ValueQuery>;
+		StorageValue<_, BalanceOf<T, I>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn max_ext_amount)]
-	pub type  MaxExtAmount<T: Config<I>, I: 'static = ()> =
-	StorageValue<_, BalanceOf<T, I>, ValueQuery>;
+	pub type MaxExtAmount<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, BalanceOf<T, I>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn max_fee)]
-	pub type  MaxFee<T: Config<I>, I: 'static = ()> =
-	StorageValue<_, BalanceOf<T, I>, ValueQuery>;
+	pub type MaxFee<T: Config<I>, I: 'static = ()> = StorageValue<_, BalanceOf<T, I>, ValueQuery>;
 
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
@@ -183,7 +182,9 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// New tree created
-		VAnchorCreation { tree_id: T::TreeId },
+		VAnchorCreation {
+			tree_id: T::TreeId,
+		},
 		/// Transaction has been made
 		Transaction {
 			transactor: T::AccountId,
@@ -192,15 +193,27 @@ pub mod pallet {
 			amount: AmountOf<T, I>,
 		},
 		/// Deposit hook has executed successfully
-		Deposit { depositor: T::AccountId, tree_id: T::TreeId, leaf: T::Element },
+		Deposit {
+			depositor: T::AccountId,
+			tree_id: T::TreeId,
+			leaf: T::Element,
+		},
 
-		MaxDepositAmountChanged { max_deposit_amount: BalanceOf<T, I> },
+		MaxDepositAmountChanged {
+			max_deposit_amount: BalanceOf<T, I>,
+		},
 
-		MinWithdrawAmountChanged { min_withdraw_amount: BalanceOf<T, I> },
+		MinWithdrawAmountChanged {
+			min_withdraw_amount: BalanceOf<T, I>,
+		},
 
-		MaxExtAmountChanged { max_ext_amount: BalanceOf<T, I> },
+		MaxExtAmountChanged {
+			max_ext_amount: BalanceOf<T, I>,
+		},
 
-		MaxFeeChanged { max_fee: BalanceOf<T, I> },
+		MaxFeeChanged {
+			max_fee: BalanceOf<T, I>,
+		},
 	}
 
 	#[pallet::error]
@@ -260,28 +273,40 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(0)]
-		pub fn set_max_deposit_amount(origin: OriginFor<T>, max_deposit_amount: BalanceOf<T, I>) -> DispatchResultWithPostInfo {
+		pub fn set_max_deposit_amount(
+			origin: OriginFor<T>,
+			max_deposit_amount: BalanceOf<T, I>,
+		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			<Self as VAnchorInterface<_>>::set_max_deposit_amount(max_deposit_amount);
 			Ok(().into())
 		}
 
 		#[pallet::weight(0)]
-		pub fn set_min_withdraw_amount(origin: OriginFor<T>, min_withdraw_amount: BalanceOf<T, I>) -> DispatchResultWithPostInfo {
+		pub fn set_min_withdraw_amount(
+			origin: OriginFor<T>,
+			min_withdraw_amount: BalanceOf<T, I>,
+		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			<Self as VAnchorInterface<_>>::set_min_withdraw_amount(min_withdraw_amount);
 			Ok(().into())
 		}
 
 		#[pallet::weight(0)]
-		pub fn set_max_ext_amount(origin: OriginFor<T>, max_ext_amount: BalanceOf<T, I>) -> DispatchResultWithPostInfo {
+		pub fn set_max_ext_amount(
+			origin: OriginFor<T>,
+			max_ext_amount: BalanceOf<T, I>,
+		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			<Self as VAnchorInterface<_>>::set_max_ext_amount(max_ext_amount);
 			Ok(().into())
 		}
 
 		#[pallet::weight(0)]
-		pub fn set_max_fee(origin: OriginFor<T>, max_fee: BalanceOf<T, I>) -> DispatchResultWithPostInfo {
+		pub fn set_max_fee(
+			origin: OriginFor<T>,
+			max_fee: BalanceOf<T, I>,
+		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			<Self as VAnchorInterface<_>>::set_max_fee(max_fee);
 			Ok(().into())
@@ -347,13 +372,13 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		);
 
 		// Making sure that public amount and fee are correct
-		ensure!(ext_data.fee < MaxFee::<T,I>::get(), Error::<T, I>::InvalidFee);
+		ensure!(ext_data.fee < MaxFee::<T, I>::get(), Error::<T, I>::InvalidFee);
 		let ext_amount_unsigned: BalanceOf<T, I> = ext_data
 			.ext_amount
 			.abs()
 			.try_into()
 			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
-		ensure!(ext_amount_unsigned < MaxExtAmount::<T,I>::get(), Error::<T, I>::InvalidExtAmount);
+		ensure!(ext_amount_unsigned < MaxExtAmount::<T, I>::get(), Error::<T, I>::InvalidExtAmount);
 
 		// Public amounnt can also be negative, in which
 		// case it would wrap around the field, so we should check if FIELD_SIZE -
@@ -406,7 +431,10 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
 
 		if is_deposit {
-			ensure!(abs_amount <= MaxDepositAmount::<T,I>::get(), Error::<T, I>::InvalidDepositAmount);
+			ensure!(
+				abs_amount <= MaxDepositAmount::<T, I>::get(),
+				Error::<T, I>::InvalidDepositAmount
+			);
 
 			// deposit tokens to the pallet from the transactor's account
 			<T as Config<I>>::Currency::transfer(
@@ -477,28 +505,28 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		T::LinkableTree::update_edge(id, src_chain_id, root, latest_leaf_index)
 	}
 
-	fn set_max_deposit_amount(max_deposit_amount: BalanceOf<T, I>) ->  Result<(), DispatchError> {
+	fn set_max_deposit_amount(max_deposit_amount: BalanceOf<T, I>) -> Result<(), DispatchError> {
 		//ensure!(max_deposit_amount > 0, Error::<T, I>::InvalidMaxDepositAmount);
 		MaxDepositAmount::<T, I>::put(max_deposit_amount);
-		Self::deposit_event(Event::MaxDepositAmountChanged { max_deposit_amount: max_deposit_amount });
+		Self::deposit_event(Event::MaxDepositAmountChanged { max_deposit_amount });
 		Ok(())
 	}
 
-	fn set_min_withdraw_amount(min_withdraw_amount: BalanceOf<T, I>) ->  Result<(), DispatchError> {
+	fn set_min_withdraw_amount(min_withdraw_amount: BalanceOf<T, I>) -> Result<(), DispatchError> {
 		MinWithdrawAmount::<T, I>::put(min_withdraw_amount);
-		Self::deposit_event(Event::MinWithdrawAmountChanged { min_withdraw_amount: min_withdraw_amount });
+		Self::deposit_event(Event::MinWithdrawAmountChanged { min_withdraw_amount });
 		Ok(())
 	}
 
-	fn set_max_ext_amount(max_ext_amount: BalanceOf<T, I>) ->  Result<(), DispatchError> {
+	fn set_max_ext_amount(max_ext_amount: BalanceOf<T, I>) -> Result<(), DispatchError> {
 		MaxExtAmount::<T, I>::put(max_ext_amount);
-		Self::deposit_event(Event::MaxExtAmountChanged { max_ext_amount: max_ext_amount });
+		Self::deposit_event(Event::MaxExtAmountChanged { max_ext_amount });
 		Ok(())
 	}
 
-	fn set_max_fee(max_fee: BalanceOf<T, I>) ->  Result<(), DispatchError> {
+	fn set_max_fee(max_fee: BalanceOf<T, I>) -> Result<(), DispatchError> {
 		MaxFee::<T, I>::put(max_fee);
-		Self::deposit_event(Event::MaxFeeChanged { max_fee: max_fee });
+		Self::deposit_event(Event::MaxFeeChanged { max_fee });
 		Ok(())
 	}
 }
