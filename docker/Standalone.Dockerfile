@@ -4,14 +4,11 @@ WORKDIR /webb
 # Install Required Packages
 RUN apt-get update && \
   apt-get install -y git pkg-config clang curl libssl-dev llvm libudev-dev libgmp3-dev && \
-  rm -rf /var/lib/apt/lists/* && \
-  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && \
-  brew install mold
-
+  rm -rf /var/lib/apt/lists/*
 COPY . .
 
-# Build Standalone Node (with mold linker)
-RUN mold -run cargo build --release -p darkwebb-standalone-node
+# Build Standalone Node.
+RUN cargo build --release -p darkwebb-standalone-node
 
 # This is the 2nd stage: a very small image where we copy the Node binary."
 
