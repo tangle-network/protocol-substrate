@@ -191,7 +191,7 @@ fn testnet_genesis(
 	log::info!("Verifier params");
 	let verifier_params = {
 		let vk_bytes =
-			include_bytes("./protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
+			include_bytes!("./protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
 		vk_bytes.to_vec()
 	};
 
