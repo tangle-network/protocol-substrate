@@ -1,11 +1,7 @@
-use crate::{
-	mock::*,
-	test_utils::{
-		deconstruct_public_inputs_el, get_hash_params, prove, setup_circuit_with_data_raw,
-		setup_circuit_with_input_utxos_raw, setup_keys, setup_random_circuit, verify, Utxos,
-	},
-	Error,
-};
+use crate::{mock::*, test_utils::{
+	deconstruct_public_inputs_el, get_hash_params, prove, setup_circuit_with_data_raw,
+	setup_circuit_with_input_utxos_raw, setup_keys, setup_random_circuit, verify, Utxos,
+}, Error, MaxDepositAmount, MinWithdrawAmount, MaxFee, MaxExtAmount};
 use arkworks_utils::utils::common::Curve;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
@@ -13,6 +9,7 @@ use webb_primitives::{
 	types::vanchor::{ExtData, ProofData},
 	AccountId,
 };
+use crate::{self as pallet_vanchor};
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
@@ -857,4 +854,51 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 		let transactor_balance_after = Balances::free_balance(transactor);
 		assert_eq!(transactor_balance_after, 0);
 	});
+}
+
+#[test]
+fn set_get_max_deposit_amount() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 2));
+		assert_eq!(MaxDepositAmount::<Test>::get(), 2);
+
+		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 5));
+		assert_eq!(MaxDepositAmount::<Test>::get(), 5);
+	})
+}
+
+#[test]
+fn set__get_min_withdraw_amount() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 2));
+		assert_eq!(MinWithdrawAmount::<Test>::get(), 2);
+
+		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 5));
+		assert_eq!(MinWithdrawAmount::<Test>::get(), 5);
+
+	})
+}
+
+#[test]
+fn set__get_max_ext_amount() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 2));
+		assert_eq!(MaxExtAmount::<Test>::get(), 2);
+
+		assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 5));
+		assert_eq!(MaxExtAmount::<Test>::get(), 5);
+
+	})
+}
+
+#[test]
+fn set__get_max_fee() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(VAnchor::set_max_fee(Origin::root(), 2));
+		assert_eq!(MaxFee::<Test>::get(), 2);
+
+		assert_ok!(VAnchor::set_max_fee(Origin::root(), 5));
+		assert_eq!(MaxFee::<Test>::get(), 5);
+
+	})
 }
