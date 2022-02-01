@@ -57,6 +57,11 @@ fn setup_environment(_curve: Curve) -> (Vec<u8>, Vec<u8>) {
 
 	assert_ok!(Balances::set_balance(Origin::root(), bigger_transactor, BIGGER_DEFAULT_BALANCE, 0));
 
+	MaxFee::<Test>::put(5);
+	MaxDepositAmount::<Test>::put(10);
+	MinWithdrawAmount::<Test>::put(3);
+	MaxExtAmount::<Test>::put(21);
+
 	// finally return the provingkey bytes
 	(proving_key_bytes, verifier_key_bytes)
 }
