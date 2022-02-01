@@ -289,10 +289,6 @@ impl pallet_token_wrapper::Config for Test {
 
 parameter_types! {
 	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
-	pub const MaxFee: Balance = 5;
-	pub const MaxDepositAmount: Balance = 10;
-	pub const MinWithdrawAmount: Balance = 3;
-	pub const MaxExtAmount: Balance = 21;
 }
 
 impl pallet_vanchor::Config for Test {
@@ -301,10 +297,6 @@ impl pallet_vanchor::Config for Test {
 	type Event = Event;
 	type IntoField = ArkworksIntoFieldBn254;
 	type LinkableTree = LinkableTree;
-	type MaxDepositAmount = MaxDepositAmount;
-	type MaxExtAmount = MaxExtAmount;
-	type MaxFee = MaxFee;
-	type MinWithdrawAmount = MinWithdrawAmount;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = VAnchorPalletId;
 	type PostDepositHook = ();
