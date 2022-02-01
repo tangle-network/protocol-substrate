@@ -20,7 +20,7 @@
 //! A module for constructing, modifying and inspecting linkable trees.
 //!
 //! ## Overview
-//!	
+//!
 //! The Linkable-tree module provides functionality for the following:
 //!
 //! * Creating new linkable trees
@@ -38,29 +38,31 @@
 //! ### Goals
 //!
 //! The Linkable-tree in Webb is designed to make the following possible:
-//! 
+//!
 //! * Track state across EVM and Substrate chains
-//! *  
+//! *
 //!
 //! ## LinkableTreeInterface Interface
-//! 
+//!
 //! `create`: Creates a new linkable tree.
 //! `insert_in_order`: Inserts new leaf to the tree specified by provided id.
 //! `add_edge`: Adds an edge to tree specified by provided id.
 //! `update_edge`: Updates an edge to tree specified by provided id.
-//! 
+//!
 //! ## LinkableTreeInspector Interface
-//! 
+//!
 //! `get_chain_id`: Creates a new linkable tree.
 //! `is_known_root`: Checks if a merkle root is in a tree's cached history or returns.
 //! `ensure_known_root`: Ensure that passed root is in history.
 //! `get_root`: Gets the merkle root for a tree or returns `TreeDoesntExist`.
 //! `get_neighbor_roots`: Gets the merkle root for a tree or returns `TreeDoesntExist`.
-//! `is_known_neighbor_root`: Checks if a merkle root is in a tree's cached history or returns `TreeDoesntExist`.
-//! `ensure_known_neighbor_roots`: Checks if each root from passed root array is in tree's cached history or returns `InvalidNeighborWithdrawRoot`.
-//! `ensure_known_neighbor_root`: Checks if a merkle root is in a tree's cached history or returns `InvalidNeighborWithdrawRoot`.
+//! `is_known_neighbor_root`: Checks if a merkle root is in a tree's cached history or returns
+//! `TreeDoesntExist`. `ensure_known_neighbor_roots`: Checks if each root from passed root array is
+//! in tree's cached history or returns `InvalidNeighborWithdrawRoot`. `ensure_known_neighbor_root`:
+//! Checks if a merkle root is in a tree's cached history or returns `InvalidNeighborWithdrawRoot`.
 //! `has_edge`: Check if this linked tree has this edge.
-//! `ensure_max_edges`: Check if passed number of roots is the same as max allowed edges or returns `InvalidMerkleRoots`.
+//! `ensure_max_edges`: Check if passed number of roots is the same as max allowed edges or returns
+//! `InvalidMerkleRoots`.
 //!
 //! ## Related Implementations
 //!
