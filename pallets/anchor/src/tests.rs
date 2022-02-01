@@ -5,7 +5,9 @@ use ark_crypto_primitives::commitment;
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_circuits::setup::common::setup_keys;
 use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
-use webb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait, utils::compute_chain_id_type};
+use webb_primitives::{
+	merkle_tree::TreeInspector, utils::compute_chain_id_type, AccountId, ElementTrait,
+};
 
 use codec::Encode;
 
