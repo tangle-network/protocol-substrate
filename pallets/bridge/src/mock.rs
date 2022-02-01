@@ -90,7 +90,7 @@ parameter_types! {
 impl Config for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
-	type ChainId = u32;
+	type ChainId = u64;
 	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
 	type Proposal = Call;

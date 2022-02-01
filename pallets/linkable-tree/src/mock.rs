@@ -22,7 +22,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub type Balance = u128;
-pub type ChainId = u32;
+pub type ChainId = u64;
 
 pub type BlockNumber = u64;
 /// Type for storing the id of an asset.

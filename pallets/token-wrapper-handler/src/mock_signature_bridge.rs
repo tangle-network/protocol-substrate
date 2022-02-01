@@ -171,7 +171,7 @@ impl pallet_token_wrapper::Config for Test {
 	type WeightInfo = ();
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
-pub type ChainId = u32;
+pub type ChainId = u64;
 pub type ProposalNonce = u32;
 
 parameter_types! {

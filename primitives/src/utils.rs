@@ -4,6 +4,17 @@ use sp_std::vec::Vec;
 
 use crate::types::ResourceId;
 
+pub fn compute_chain_id_type<ChainId>(chain_id: ChainId, chain_type: [u8; 2]) -> u64
+where
+	ChainId: AtLeast32Bit,
+{
+	let mut chain_id_value: u32 = chain_id.try_into().unwrap_or_default();
+	let mut buf = [0u8; 8];
+	buf[2..4].copy_from_slice(&chain_type);
+	buf[4..8].copy_from_slice(&chain_id_value.to_be_bytes());
+	u64::from_be_bytes(buf)
+}
+
 /// The ResourceId type is a 32 bytes array represented as the following:
 /// ```md
 /// +---+---+---+---+---+---+---+---+---+
@@ -76,7 +87,7 @@ pub fn element_encoder(v: &[u8]) -> [u8; 32] {
 mod tests {
 	use super::*;
 	type TreeId = u32;
-	type ChainId = u32;
+	type ChainId = u64;
 
 	#[test]
 	fn encode_decode_resource_ids() {

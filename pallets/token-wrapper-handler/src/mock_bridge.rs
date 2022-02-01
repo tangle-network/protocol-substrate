@@ -169,7 +169,7 @@ impl pallet_token_wrapper::Config for Test {
 	type WeightInfo = ();
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
-pub type ChainId = u32;
+pub type ChainId = u64;
 
 parameter_types! {
 	pub const ProposalLifetime: u64 = 50;

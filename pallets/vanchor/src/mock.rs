@@ -34,7 +34,7 @@ pub type AssetId = u32;
 /// Signed version of Balance
 pub type Amount = i128;
 pub type CurrencyId = u32;
-pub type ChainId = u32;
+pub type ChainId = u64;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(

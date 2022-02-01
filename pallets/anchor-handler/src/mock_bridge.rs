@@ -21,7 +21,7 @@ pub type AccountId = u64;
 pub type Balance = u128;
 pub type BlockNumber = u64;
 pub type CurrencyId = u32;
-pub type ChainId = u32;
+pub type ChainId = u64;
 /// Type for storing the id of an asset.
 pub type AssetId = u32;
 /// Signed version of Balance
