@@ -15,32 +15,56 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Anchor Module
+//! # Linkable-tree Module
 //!
-//! A simple module for building Anchors.
+//! A module for constructing, modifying and inspecting linkable trees.
 //!
 //! ## Overview
+//!	
+//! The Linkable-tree module provides functionality for the following:
 //!
-//! The Anchor module provides functionality for the following:
-//!
-//! * Inserting elements to the tree
+//! * Creating new linkable trees
+//! * Inserting new leafs to a specified tree
+//! * Adding an edge to a specified tree
+//! * Updating an edge to a specified tree
+//! * Inspecting a tree's state
 //!
 //! The supported dispatchable functions are documented in the [`Call`] enum.
 //!
 //! ### Terminology
-//!
+//!  
+//! * **EdgeList**: A map of trees and chain ids to their edge metadata
+//!  
 //! ### Goals
 //!
-//! The Anchor system in Webb is designed to make the following possible:
+//! The Linkable-tree in Webb is designed to make the following possible:
+//! 
+//! * Track state across EVM and Substrate chains
+//! *  
 //!
-//! * Define.
+//! ## LinkableTreeInterface Interface
+//! 
+//! `create`: Creates a new linkable tree.
+//! `insert_in_order`: Inserts new leaf to the tree specified by provided id.
+//! `add_edge`: Adds an edge to tree specified by provided id.
+//! `update_edge`: Updates an edge to tree specified by provided id.
+//! 
+//! ## LinkableTreeInspector Interface
+//! 
+//! `get_chain_id`: Creates a new linkable tree.
+//! `is_known_root`: Checks if a merkle root is in a tree's cached history or returns.
+//! `ensure_known_root`: Ensure that passed root is in history.
+//! `get_root`: Gets the merkle root for a tree or returns `TreeDoesntExist`.
+//! `get_neighbor_roots`: Gets the merkle root for a tree or returns `TreeDoesntExist`.
+//! `is_known_neighbor_root`: Checks if a merkle root is in a tree's cached history or returns `TreeDoesntExist`.
+//! `ensure_known_neighbor_roots`: Checks if each root from passed root array is in tree's cached history or returns `InvalidNeighborWithdrawRoot`.
+//! `ensure_known_neighbor_root`: Checks if a merkle root is in a tree's cached history or returns `InvalidNeighborWithdrawRoot`.
+//! `has_edge`: Check if this linked tree has this edge.
+//! `ensure_max_edges`: Check if passed number of roots is the same as max allowed edges or returns `InvalidMerkleRoots`.
 //!
-//! ## Interface
+//! ## Related Implementations
 //!
-//! ## Related Modules
-//!
-//! * [`System`](../frame_system/index.html)
-//! * [`Support`](../frame_support/index.html)
+//! * [`LinkableTree.sol`](https://github.com/webb-tools/protocol-solidity/blob/main/contracts/anchors/LinkableTree.sol)
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
