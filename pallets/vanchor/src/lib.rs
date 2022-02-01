@@ -506,7 +506,6 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 	}
 
 	fn set_max_deposit_amount(max_deposit_amount: BalanceOf<T, I>) -> Result<(), DispatchError> {
-		//ensure!(max_deposit_amount > 0, Error::<T, I>::InvalidMaxDepositAmount);
 		MaxDepositAmount::<T, I>::put(max_deposit_amount);
 		Self::deposit_event(Event::MaxDepositAmountChanged { max_deposit_amount });
 		Ok(())
