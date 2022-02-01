@@ -17,26 +17,27 @@
 
 //! # Anchor Handler Module
 //!
-//! Add description #TODO
+//! A module for executing the creation or modification of anchors.
 //!
 //! ## Overview
 //!
+//! The anchor-handler module provides functionality for the following:
 //!
-//! ### Terminology
-//!
-//! ### Goals
-//!
-//! The anchor handler system in Webb is designed to make the following
-//! possible:
-//!
-//! * Define.
+//! * The creation of anchors
+//! * Updating existing anchors
 //!
 //! ## Interface
 //!
+//! ### Permissioned Functions
+//!
+//! * `execute_anchor_create_proposal`: Creates an anchor from successfully voted on proposal.
+//! * `execute_anchor_update_proposal`: Adds/Updates an anchor from successfully voted on proposal.
+//!
 //! ## Related Modules
 //!
-//! * [`System`](../frame_system/index.html)
-//! * [`Support`](../frame_support/index.html)
+//! * [`Anchor`](https://github.com/webb-tools/protocol-substrate/blob/main/pallets/anchor/src/lib.rs)
+//! * [`Bridge`](https://github.com/webb-tools/protocol-substrate/blob/main/pallets/bridge/src/lib.rs)
+//! * [`Signature-bridge`](https://github.com/webb-tools/protocol-substrate/tree/main/pallets/signature-bridge/src)
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
