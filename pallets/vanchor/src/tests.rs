@@ -862,43 +862,43 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 #[test]
 fn set_get_max_deposit_amount() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 2));
-		assert_eq!(MaxDepositAmount::<Test>::get(), 2);
+		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 10000));
+		assert_eq!(MaxDepositAmount::<Test>::get(), 10000);
 
-		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 5));
-		assert_eq!(MaxDepositAmount::<Test>::get(), 5);
+		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 50000));
+		assert_eq!(MaxDepositAmount::<Test>::get(), 50000);
 	})
 }
 
 #[test]
-fn set__get_min_withdraw_amount() {
+fn set_get_min_withdraw_amount() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 2));
-		assert_eq!(MinWithdrawAmount::<Test>::get(), 2);
+		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 20000));
+		assert_eq!(MinWithdrawAmount::<Test>::get(), 20000);
 
-		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 5));
-		assert_eq!(MinWithdrawAmount::<Test>::get(), 5);
+		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 50000));
+		assert_eq!(MinWithdrawAmount::<Test>::get(), 50000);
 	})
 }
 
 #[test]
-fn set__get_max_ext_amount() {
+fn set_get_max_ext_amount() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 2));
-		assert_eq!(MaxExtAmount::<Test>::get(), 2);
+		assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 20000));
+		assert_eq!(MaxExtAmount::<Test>::get(), 20000);
 
-		assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 5));
-		assert_eq!(MaxExtAmount::<Test>::get(), 5);
+		assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 50000));
+		assert_eq!(MaxExtAmount::<Test>::get(), 50000);
 	})
 }
 
 #[test]
-fn set__get_max_fee() {
+fn set_get_max_fee() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_max_fee(Origin::root(), 2));
-		assert_eq!(MaxFee::<Test>::get(), 2);
+		assert_ok!(VAnchor::set_max_fee(Origin::root(), 20000));
+		assert_eq!(MaxFee::<Test>::get(), 20000);
 
-		assert_ok!(VAnchor::set_max_fee(Origin::root(), 5));
-		assert_eq!(MaxFee::<Test>::get(), 5);
+		assert_ok!(VAnchor::set_max_fee(Origin::root(), 50000));
+		assert_eq!(MaxFee::<Test>::get(), 50000);
 	})
 }
