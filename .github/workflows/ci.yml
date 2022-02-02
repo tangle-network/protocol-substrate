@@ -40,12 +40,12 @@ jobs:
             target/debug
             target/release
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - name: Check Build
-        run: |
-          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo check --release
       - name: Check Format
         run: |
           git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo fmt --all -- --check
+      - name: Check Build
+        run: |
+          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo check --release
       - name: Test
         run: |
           git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo test --release

@@ -1,13 +1,15 @@
 use ark_bn254::Bn254;
 use ark_ff::{BigInteger, PrimeField};
-use arkworks_circuits::setup::anchor::{setup_leaf_with_privates_raw_x5_4, setup_leaf_x5_4, setup_proof_x5_4, AnchorProverSetup};
+use arkworks_circuits::setup::anchor::{
+	setup_leaf_with_privates_raw_x5_4, setup_leaf_x5_4, setup_proof_x5_4, AnchorProverSetup,
+};
 
 use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_4, Curve};
 use webb_primitives::ElementTrait;
 
 use wasm_utils::{
 	note::JsNote,
-	proof::{generate_proof_js, JsProofInput, AnchorProofInput, ProofInput, ProofInputBuilder},
+	proof::{generate_proof_js, AnchorProofInput, JsProofInput, ProofInput, ProofInputBuilder},
 	types::{Backend, Curve as WasmCurve, Leaves},
 };
 
@@ -93,10 +95,10 @@ pub fn setup_wasm_utils_zk_circuit(
 	fee_value: u128,
 	refund_value: u128,
 ) -> (
-	Vec<u8>, // proof bytes
+	Vec<u8>,      // proof bytes
 	Vec<Element>, // roots
-	Element, // nullifier_hash
-	Element, // leaf
+	Element,      // nullifier_hash
+	Element,      // leaf
 ) {
 	match curve {
 		Curve::Bn254 => {
@@ -139,7 +141,7 @@ pub fn setup_wasm_utils_zk_circuit(
 				leaves,
 				leaf_index: index,
 				roots: roots_raw.to_vec(),
-				commitment: commitment_bytes
+				commitment: commitment_bytes,
 			};
 			let js_proof_inputs = JsProofInput { inner: ProofInput::Anchor(mixer_proof_input) };
 			let proof = generate_proof_js(js_proof_inputs).unwrap();

@@ -245,16 +245,17 @@ fn anchor_works_with_wasm_utils() {
 		let commitment_bytes = [0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
-		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_wasm_utils_zk_circuit(
-			curve,
-			recipient_bytes,
-			relayer_bytes,
-			commitment_bytes,
-			pk_bytes,
-			src_chain_id,
-			fee_value,
-			refund_value,
-		);
+		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) =
+			setup_wasm_utils_zk_circuit(
+				curve,
+				recipient_bytes,
+				relayer_bytes,
+				commitment_bytes,
+				pk_bytes,
+				src_chain_id,
+				fee_value,
+				refund_value,
+			);
 
 		assert_ok!(Anchor::deposit(
 			Origin::signed(sender_account_id.clone()),
