@@ -125,8 +125,9 @@ fn should_unwrap_token() {
 
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
-			initial_balance_first_token
-				.saturating_sub(TokenWrapper::get_wrapping_fee(50000, pool_share_id.into()).unwrap())
+			initial_balance_first_token.saturating_sub(
+				TokenWrapper::get_wrapping_fee(50000, pool_share_id.into()).unwrap()
+			)
 		);
 	})
 }

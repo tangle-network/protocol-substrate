@@ -39,11 +39,15 @@ fn get_remove_token_resource() -> Vec<u8> {
 	b"TokenWrapperHandler.execute_remove_token_to_pool_share".to_vec()
 }
 
-fn make_wrapping_fee_proposal(resource_id: &[u8; 32], wrapping_fee_percent: u128, into_pool_share_id: u32) -> Call {
+fn make_wrapping_fee_proposal(
+	resource_id: &[u8; 32],
+	wrapping_fee_percent: u128,
+	into_pool_share_id: u32,
+) -> Call {
 	Call::TokenWrapperHandler(crate::Call::execute_wrapping_fee_proposal {
 		r_id: *resource_id,
 		wrapping_fee_percent,
-		into_pool_share_id
+		into_pool_share_id,
 	})
 }
 
@@ -89,7 +93,7 @@ fn should_update_fee_with_sig_succeed() {
 			AssetType::PoolShare(vec![]),
 			existential_balance.into(),
 		)
-			.unwrap();
+		.unwrap();
 
 		let proposal = make_wrapping_fee_proposal(&r_id, 5, pool_share_id);
 		let msg = keccak_256(&proposal.encode());
@@ -122,7 +126,7 @@ fn should_update_fee_with_sig_succeed() {
 			sig.0.to_vec(),
 		));
 
-		assert_eq!(TokenWrapper::get_wrapping_fee(1000_u128,  pool_share_id).unwrap(), 52);
+		assert_eq!(TokenWrapper::get_wrapping_fee(1000_u128, pool_share_id).unwrap(), 52);
 	})
 }
 

@@ -18,7 +18,11 @@ fn get_remove_token_resource() -> Vec<u8> {
 	b"TokenWrapperHandler.execute_remove_token_to_pool_share".to_vec()
 }
 
-fn make_wrapping_fee_proposal(resource_id: &[u8; 32], wrapping_fee_percent: u128, into_pool_share_id: u32) -> Call {
+fn make_wrapping_fee_proposal(
+	resource_id: &[u8; 32],
+	wrapping_fee_percent: u128,
+	into_pool_share_id: u32,
+) -> Call {
 	Call::TokenWrapperHandler(crate::Call::execute_wrapping_fee_proposal {
 		r_id: *resource_id,
 		wrapping_fee_percent,
@@ -64,7 +68,8 @@ fn relay_fee_update_proposal(
 	// create fee update proposal
 	let resource = b"TokenWrapperHandler.execute_wrapping_fee_proposal".to_vec();
 
-	let update_proposal = make_wrapping_fee_proposal(resource_id, wrapping_fee_percent, pool_share_id);
+	let update_proposal =
+		make_wrapping_fee_proposal(resource_id, wrapping_fee_percent, pool_share_id);
 	// set resource id
 	assert_ok!(Bridge::set_resource(Origin::root(), *resource_id, resource));
 	// make proposals
@@ -126,7 +131,7 @@ fn should_update_fee() {
 			AssetType::PoolShare(vec![]),
 			existential_balance.into(),
 		)
-			.unwrap();
+		.unwrap();
 
 		// create fee update proposal
 		setup_relayers(src_chain_id);
