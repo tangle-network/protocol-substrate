@@ -117,10 +117,11 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			r_id: ResourceId,
 			wrapping_fee_percent: BalanceOf<T>,
+			into_pool_share_id: T::AssetId,
 		) -> DispatchResultWithPostInfo {
 			// TODO: Define and check validity conditions.
 			T::BridgeOrigin::ensure_origin(origin)?;
-			T::TokenWrapper::set_wrapping_fee(wrapping_fee_percent)?;
+			T::TokenWrapper::set_wrapping_fee(into_pool_share_id, wrapping_fee_percent)?;
 			Ok(().into())
 		}
 

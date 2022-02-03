@@ -37,7 +37,7 @@ fn should_wrap_token() {
 		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
+		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into()));
 
 		assert_ok!(TokenWrapper::wrap(
 			Origin::signed(recipient),
@@ -55,7 +55,7 @@ fn should_wrap_token() {
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
 			initial_balance_first_token
-				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
+				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128, pool_share_id))
 		);
 
 		assert_eq!(TokenWrapper::get_balance(pool_share_id, &recipient), 50000);
@@ -93,7 +93,7 @@ fn should_unwrap_token() {
 		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
+		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into()));
 
 		assert_ok!(TokenWrapper::wrap(
 			Origin::signed(recipient),
@@ -110,7 +110,7 @@ fn should_unwrap_token() {
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
 			initial_balance_first_token
-				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
+				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128, pool_share_id))
 		);
 
 		assert_ok!(TokenWrapper::unwrap(
@@ -125,7 +125,8 @@ fn should_unwrap_token() {
 
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
-			initial_balance_first_token.saturating_sub(TokenWrapper::get_wrapping_fee(50000))
+			initial_balance_first_token
+				.saturating_sub(TokenWrapper::get_wrapping_fee(50000, pool_share_id.into()).unwrap())
 		);
 	})
 }
@@ -160,7 +161,7 @@ fn wrapping_should_fail_if_asset_is_not_in_pool() {
 
 		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
+		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into()));
 
 		assert_err!(
 			TokenWrapper::wrap(
@@ -178,9 +179,32 @@ fn wrapping_should_fail_if_asset_is_not_in_pool() {
 #[test]
 fn only_root_should_update_wrapping_fee() {
 	new_test_ext().execute_with(|| {
-		assert_err!(TokenWrapper::set_wrapping_fee(Origin::signed(1), 10), BadOrigin);
+		let existential_balance: u32 = 1000;
+		let first_token_id = AssetRegistry::register_asset(
+			b"shib".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+		let second_token_id = AssetRegistry::register_asset(
+			b"doge".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+		let pool_share_id = AssetRegistry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+			existential_balance.into(),
+		)
+		.unwrap();
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 10));
+		assert_err!(
+			TokenWrapper::set_wrapping_fee(Origin::signed(1), 10, pool_share_id.into()),
+			BadOrigin
+		);
+
+		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 10, pool_share_id.into()));
 	})
 }
 
@@ -216,7 +240,7 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
+		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into()));
 
 		assert_ok!(TokenWrapper::wrap(
 			Origin::signed(recipient),
@@ -233,7 +257,7 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
 			initial_balance_first_token
-				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
+				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128, pool_share_id))
 		);
 
 		assert_err!(
@@ -288,7 +312,7 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 			balance
 		));
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
+		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into()));
 
 		assert_ok!(TokenWrapper::wrap(
 			Origin::signed(recipient),
@@ -303,7 +327,7 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
 			initial_balance_first_token
-				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128))
+				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128, pool_share_id.into()))
 		);
 
 		assert_eq!(TokenWrapper::get_balance(second_token_id, &recipient), Default::default());
@@ -354,7 +378,7 @@ fn should_not_wrap_invalid_amount() {
 
 		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
+		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into()));
 
 		assert_err!(
 			TokenWrapper::wrap(
