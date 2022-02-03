@@ -23,44 +23,44 @@
 //!
 //! The bridge module provides functionality for the following:
 //!
-//! * Private, and public bridging of assets
+//! * Private bridging of assets
 //!
 //! ### Terminology
 //!
-//! * **Admin**: An account ID uniquely privileged to be able to set voting thresholds for
-//!   proposals, add additional chains for bridge transfers, set and remove resource ID's from the
-//!   resource mapping, as well as, add and remove relayers from the active set.
+//! * **Admin**: An account uniquely privileged to be able to set voting thresholds for proposals,
+//!   add additional chains for bridge transfers, set and remove resource ID's from the resource
+//!   mapping, as well as, add and remove relayers from the active set.
 //! * **Whitelist**: Explicitly enabled chains that can be used to bridge assets.
 //!
 //! ### Goals
 //!
 //! The bridge system in Webb is designed to make the following possible:
 //!
-//! * Bridge assets across a EVM and Substrate based chains
-//! * Manage state through voted proposals
+//! * Bridge assets across an EVM and Substrate based chains
 //! * Execute approved proposals and cancel rejected proposals
 //!
 //! ## Interface
 //!
 //! ### Permissioned Functions
 //!
-//! * `set_threshold`: Sets the vote threshold for proposals.
-//! * `set_resource`: Stores a method name on chain under an associated resource ID.
-//! * `remove_resource`: Removes a resource ID from the resource mapping.
-//! * `whitelist_chain`: Enables a chain ID as a source or destination for a bridge transfer.
-//! * `add_relayer`: Adds a new relayer to the relayer set.
-//! * `remove_relayer`: Removes an existing relayer from the set.
+//! * `set_threshold`: Sets the vote threshold for proposals. This method requires the `origin` to
+//!   be [T::AdminOrigin].
+//! * `set_resource`: Stores a method name on chain under an associated resource ID. This method
+//!   requires the `origin` to be [T::AdminOrigin].
+//! * `remove_resource`: Removes a resource ID from the resource mapping. This method requires the
+//!   `origin` to be [T::AdminOrigin].
+//! * `whitelist_chain`: Enables a chain ID as a source or destination for a bridge transfer. This
+//!   method requires the `origin` to be [T::AdminOrigin].
+//! * `add_relayer`: Adds a new relayer to the relayer set. This method requires the `origin` to be
+//!   [T::AdminOrigin].
+//! * `remove_relayer`: Removes an existing relayer from the set. This method requires the `origin`
+//!   to be [T::AdminOrigin].
 //!
 //! ### Permissionless Functions
 //!
 //! * `acknowledge_proposal`: Commits a vote in favour of the provided proposal.
 //! * `reject_proposal`: Commits a vote against a provided proposal.
 //! * `eval_vote_state`: Evaluate the state of a proposal given the current vote threshold.
-//!
-//! ## Related Modules
-//!
-//! * [`Relayers`](https://github.com/webb-tools/relayer)
-//! * [`SignatureBridge.sol`](https://github.com/webb-tools/protocol-solidity/blob/main/contracts/SignatureBridge.sol)
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]

@@ -32,15 +32,15 @@
 //! The supported dispatchable functions are documented in the [`Call`] enum.
 //!
 //! ### Terminology
-//!  
-//! * **EdgeList**: A map of trees and chain ids to their edge metadata
+//!
+//! * **EdgeList**: A map of trees and chain ids to their edge metadata.
 //!  
 //! ### Goals
 //!
 //! The Linkable-tree in Webb is designed to make the following possible:
 //!
-//! * Track state across EVM and Substrate chains
-//! *
+//! * Store edges of neighboring anchors’ merkle roots
+//! * Store historoical data about neighboring merkle roots
 //!
 //! ## LinkableTreeInterface Interface
 //!
@@ -63,10 +63,6 @@
 //! `has_edge`: Check if this linked tree has this edge.
 //! `ensure_max_edges`: Check if passed number of roots is the same as max allowed edges or returns
 //! `InvalidMerkleRoots`.
-//!
-//! ## Related Implementations
-//!
-//! * [`LinkableTree.sol`](https://github.com/webb-tools/protocol-solidity/blob/main/contracts/anchors/LinkableTree.sol)
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]

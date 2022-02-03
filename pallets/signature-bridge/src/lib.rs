@@ -17,26 +17,32 @@
 
 //! # Signature Bridge Module
 //!
-//! Add description #TODO
+//! A module for managing voting, resource, and maintainer composition through signature
+//! verification.
 //!
 //! ## Overview
 //!
+//! The signature bridge module provides functionalight for the following:
 //!
-//! ### Terminology
-//!
-//! ### Goals
-//!
-//! The signature bridge system in Webb is designed to make the following
-//! possible:
-//!
-//! * Define.
+//! * Private bridging of assets governed by signature verification
 //!
 //! ## Interface
 //!
-//! ## Related Modules
+//! ### Permissioned Functions
 //!
-//! * [`System`](../frame_system/index.html)
-//! * [`Support`](../frame_support/index.html)
+//! * `force_set_maintainer`: Forcefully set the maintainer. This method requires the `origin` to be
+//!   [T::AdminOrigin].
+//! * `set_resource`: Stores a method name on chain under an associated resource ID. This method
+//!   requires the `origin` to be [T::AdminOrigin].
+//! * `remove_resource`: Removes a resource ID from the resource mapping. This method requires the
+//!   `origin` to be [T::AdminOrigin].
+//! * `whitelist_chain`: Enables a chain ID as a source or destination for a bridge transfer. This
+//!   method requires the `origin` to be [T::AdminOrigin].
+//!
+//! ### Permissionless Functions
+//!
+//! * `execute_proposal`: Commits a vote in favour of the provided proposal.
+//! * `set_maintainer`: Sets the maintainer.
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -175,7 +181,7 @@ pub mod pallet {
 			new_maintainer: Vec<u8>,
 			signature: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
-			let origin = ensure_signed(origin)?;
+			let _origin = ensure_signed(origin)?;
 			let old_maintainer = <Maintainer<T, I>>::get();
 			// ensure parameter setter is the maintainer
 			ensure!(

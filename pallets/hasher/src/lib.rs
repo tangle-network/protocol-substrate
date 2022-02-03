@@ -34,21 +34,6 @@
 //! webb_primitives::hasher module.
 //!
 //! The supported dispatchable functions are documented in the [`Call`] enum.
-//!
-//! ### Terminology
-//!
-//! ### Goals
-//!
-//! The hasher system in Webb is designed to make the following possible:
-//!
-//! * Define.
-//!
-//! ## Interface
-//!
-//! ## Related Modules
-//!
-//! * [`System`](../frame_system/index.html)
-//! * [`Support`](../frame_support/index.html)
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -60,15 +45,10 @@ pub mod mock;
 mod tests;
 pub mod weights;
 
-use sp_runtime::traits::{Saturating, Zero};
 use sp_std::{prelude::*, vec};
 
-use frame_support::{
-	pallet_prelude::{ensure, DispatchError},
-	traits::{Currency, ReservableCurrency},
-};
-use frame_system::Config as SystemConfig;
-use webb_primitives::{hasher::*, types::DepositDetails};
+use frame_support::pallet_prelude::{ensure, DispatchError};
+use webb_primitives::hasher::*;
 
 pub use pallet::*;
 pub use weights::WeightInfo;

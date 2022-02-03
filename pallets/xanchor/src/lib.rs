@@ -17,26 +17,55 @@
 
 //! # xAnchor Module
 //!
-//! Add description #TODO
+//! A module for managing the linking process between anchors.
 //!
 //! ## Overview
 //!
+//! The xanchor module provides functionality for:
 //!
-//! ### Terminology
-//!
-//! ### Goals
-//!
-//! The xAnchor system in Webb is designed to make the following
-//! possible:
-//!
-//! * Define.
+//! * Linking additional anchors from other chains.
+//! * Updates anchors upon sucessfully requested link.
+//! * Signaling the success of the linking process back to the other chain that requested the link.
 //!
 //! ## Interface
 //!
+//! ### Permissionless Functions
+//!
+//! * `propose_to_link_anchor`: Creates a new Proposal to link two anchors cross-chain by creating
+//!   on-chain proposal that once passed will send to the other chain a link proposal.
+//! * `handle_link_anchor_message`: Handles the Link anchor proposal from other chain, by creating
+//!   an on-chain proposal that once passed will link the anchors on the local chain, also signals
+//!   back the caller chain with the proposal hash, so the caller chain know that the link process
+//!   is complete.
+//! * `sync_anchors`: Sync All the Anchors in this chain to the other chains that are already
+//!   linked.
+//!
+//! ### Permissioned Functions
+//!
+//! * `send_link_anchor_message`: Once a proposal is passed, this function will send a Link proposal
+//!   to the other chain also, save the proposal hash locally so when the other chain passes the
+//!   proposal, we get signled back with the proposal hash and we link the anchors. This method
+//!   requires the `origin` to be [T::DemocracyOrigin].
+//! * `save_link_proposal`: Stores Proposal to link two anchors cross-chain. This method requires
+//!   the `origin` to be a sibling parachain.
+//! * `link_anchors`: Links chain locally, and signal back to the other chain that requested the
+//!   link that the link process is completed. This method requires the `origin` to be
+//!   [T::DemocracyOrigin].
+//! * `handle_link_anchors`: Handles the signal back from the other parachain, if the link process
+//!   is there is done to complete the link process here too. This method requires the `origin` to
+//!   be a sibling parachain.
+//! * `register_resource_id`: Registers this [ResourceId] to an anchor which exists on the other
+//!   chain. Only could be called by [T::DemocracyOrigin].
+//! * `force_register_resource_id`: A Forced version of [Self::register_resource_id] which can be
+//!   only called by the Root.
+//! * `update`: Updates the anchor. This method requires the `origin` to be a sibling parachain.
+//! * `force_update`: A Forced version of [Self::update] which can be only called by the Root.
+//!
 //! ## Related Modules
 //!
-//! * [`System`](../frame_system/index.html)
-//! * [`Support`](../frame_support/index.html)
+//! * Anchor Pallet
+//! * Linkable-tree Pallet
+//! * MT pallet
 
 #![cfg_attr(not(feature = "std"), no_std)]
 

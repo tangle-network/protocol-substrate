@@ -17,27 +17,28 @@
 
 //! # Anchor Handler Module
 //!
-//! A module for executing the creation or modification of anchors.
+//! A module for executing the creation and modification of anchors.
 //!
 //! ## Overview
 //!
 //! The anchor-handler module provides functionality for the following:
 //!
-//! * The creation of anchors
-//! * Updating existing anchors
+//! * The creation of anchors from proposals
+//! * Updating existing anchors from proposals
 //!
 //! ## Interface
 //!
 //! ### Permissioned Functions
 //!
-//! * `execute_anchor_create_proposal`: Creates an anchor from successfully voted on proposal.
+//! * `execute_anchor_create_proposal`: Creates an anchor from successfully voted on proposal. This
+//!   method requires the `origin` to be [T::BridgeOrigin].
 //! * `execute_anchor_update_proposal`: Adds/Updates an anchor from successfully voted on proposal.
+//!   This method requires the `origin` to be [T::BridgeOrigin].
 //!
 //! ## Related Modules
 //!
-//! * [`Anchor`](https://github.com/webb-tools/protocol-substrate/blob/main/pallets/anchor/src/lib.rs)
-//! * [`Bridge`](https://github.com/webb-tools/protocol-substrate/blob/main/pallets/bridge/src/lib.rs)
-//! * [`Signature-bridge`](https://github.com/webb-tools/protocol-substrate/tree/main/pallets/signature-bridge/src)
+//! * Anchor pallet
+//! * Linkable-tree pallet
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
