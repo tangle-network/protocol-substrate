@@ -1,7 +1,7 @@
 use codec::{Decode, Encode};
+use scale_info::prelude::fmt::Debug;
 use sp_runtime::traits::AtLeast32Bit;
 use sp_std::vec::Vec;
-use scale_info::prelude::fmt::Debug;
 
 use crate::types::ResourceId;
 
@@ -46,7 +46,6 @@ where
 	let chain_id = ChainId::try_from(u64::from_be_bytes(chain_id_bytes)).unwrap_or_default();
 	(tree_id, chain_id)
 }
-
 
 /// The ResourceId type is a 32 bytes array represented as the following:
 /// ```md

@@ -59,7 +59,7 @@ use sp_runtime::{
 	RuntimeDebug,
 };
 use sp_std::prelude::*;
-use webb_primitives::{signing::SigningSystem, ResourceId, utils::compute_chain_id_type};
+use webb_primitives::{signing::SigningSystem, utils::compute_chain_id_type, ResourceId};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -329,8 +329,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		ensure!(
 			id != T::ChainId::try_from(compute_chain_id_type(
 				T::ChainIdentifier::get(),
-				T::ChainType::get())
-			).unwrap_or_default(),
+				T::ChainType::get()
+			))
+			.unwrap_or_default(),
 			Error::<T, I>::InvalidChainId
 		);
 		// Cannot whitelist with an existing entry

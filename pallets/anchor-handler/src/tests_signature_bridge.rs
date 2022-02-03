@@ -13,7 +13,11 @@ use sp_core::{
 	keccak_256, Pair, Public,
 };
 
-use webb_primitives::{signing::SigningSystem, ResourceId, utils::{compute_chain_id_type, derive_resource_id}};
+use webb_primitives::{
+	signing::SigningSystem,
+	utils::{compute_chain_id_type, derive_resource_id},
+	ResourceId,
+};
 
 const TEST_MAX_EDGES: u32 = 100;
 const TEST_TREE_DEPTH: u8 = 32;
@@ -332,7 +336,10 @@ fn should_fail_to_whitelist_this_chain() {
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
 			assert_err!(
-				SignatureBridge::whitelist_chain(Origin::root(), compute_chain_id_type(ChainIdentifier::get(), chain_type)),
+				SignatureBridge::whitelist_chain(
+					Origin::root(),
+					compute_chain_id_type(ChainIdentifier::get(), chain_type)
+				),
 				pallet_signature_bridge::Error::<Test, _>::InvalidChainId
 			);
 		})

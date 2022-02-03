@@ -19,7 +19,11 @@ use crate::mock_signature_bridge::new_test_ext_initialized;
 use codec::{Decode, Encode, EncodeLike};
 
 use hex_literal::hex;
-use webb_primitives::{signing::SigningSystem, ResourceId, utils::{derive_resource_id, compute_chain_id_type}};
+use webb_primitives::{
+	signing::SigningSystem,
+	utils::{compute_chain_id_type, derive_resource_id},
+	ResourceId,
+};
 
 use crate::mock_signature_bridge::*;
 

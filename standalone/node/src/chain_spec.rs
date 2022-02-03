@@ -3,13 +3,6 @@ use arkworks_utils::utils::common::{
 };
 use common::{AccountId, BabeId, Balance, Signature};
 
-use webb_runtime::{
-	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
-	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
-	GrandpaConfig, HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig,
-	MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config, SessionConfig, StakerStatus,
-	StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config,
-};
 use itertools::Itertools;
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -19,6 +12,13 @@ use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
 	Perbill,
+};
+use webb_runtime::{
+	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
+	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
+	GrandpaConfig, HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig,
+	MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config, SessionConfig, StakerStatus,
+	StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config,
 };
 
 // ImOnline consensus authority.

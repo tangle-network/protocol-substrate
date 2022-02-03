@@ -2,7 +2,7 @@ use crate::{mock_bridge::*, types::UpdateRecord, AnchorList, Counts, UpdateRecor
 use frame_support::assert_ok;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 use pallet_linkable_tree::types::EdgeMetadata;
-use webb_primitives::utils::{derive_resource_id, compute_chain_id_type};
+use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
 
 const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 100;

@@ -7,7 +7,7 @@ use frame_support::{
 	assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin,
 };
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
-use webb_primitives::utils::{derive_resource_id, compute_chain_id_type};
+use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
 
 const TEST_THRESHOLD: u32 = 2;
 const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
