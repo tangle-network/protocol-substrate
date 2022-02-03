@@ -11,10 +11,13 @@
 
 # The cache for chain data in container
 .local
+tmp
 
-#vscode files
-.vscode/launch.json
+local-test
 
-.idea/
-
-*.iml
+# NodeJS
+**/node_modules/
+scripts/
+docker/
+.github/
+doc/

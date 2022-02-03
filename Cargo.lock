@@ -4091,6 +4091,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-benchmarking",
+ "hex",
  "orml-currencies",
  "orml-tokens",
  "orml-traits",
@@ -4110,6 +4111,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+ "wasm-utils",
  "webb-primitives",
 ]
 
@@ -9092,9 +9094,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-utils"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b61ed8eebe8835b2f3497ee0f003c780ede3e614b73d04a492b27ea5e5ffc982"
+checksum = "f17b6abc9c7bfa93c63bccbcd8f843da44bd588ce890daf22921002b207ff62c"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
