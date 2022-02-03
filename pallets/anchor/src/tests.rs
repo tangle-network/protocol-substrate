@@ -254,7 +254,7 @@ fn anchor_works_with_wasm_utils() {
 				relayer_bytes,
 				commitment_bytes,
 				pk_bytes,
-				src_chain_id,
+				src_chain_id.into(),
 				fee_value,
 				refund_value,
 			);
