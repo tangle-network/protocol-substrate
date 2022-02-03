@@ -99,9 +99,9 @@ where
 	let tree_id_bytes = &resource_id[0..20];
 	let chain_id_bytes = &resource_id[28..];
 	let mut buf_u64: [u8; 8] = [0u8; 8];
-	buf_u64[4..8].copy_from_slice(chain_id_bytes);
+	buf_u64[0..4].copy_from_slice(chain_id_bytes);
 	let tree_id = TreeId::decode(&mut &*tree_id_bytes).unwrap();
-	let chain_id = ChainId::try_from(u64::from_be_bytes(buf_u64)).unwrap_or_default();
+	let chain_id = ChainId::try_from(u64::from_le_bytes(buf_u64)).unwrap_or_default();
 	(tree_id, chain_id)
 }
 

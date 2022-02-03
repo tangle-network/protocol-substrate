@@ -652,6 +652,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 	// force link them.
 	ParaA::execute_with(|| {
 		let r_id = encode_resource_id::<u32, u32>(para_a_tree_id, PARAID_B.into());
+		println!("r_id: {:?}", r_id);
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
@@ -662,6 +663,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 			target_tree_id: Some(para_b_tree_id),
 			local_tree_id: para_a_tree_id,
 		};
+		println!("Payload {:?}", payload);
 		let value = 100;
 		assert_err!(
 			XAnchor::propose_to_link_anchor(Origin::signed(AccountThree::get()), payload, value),
