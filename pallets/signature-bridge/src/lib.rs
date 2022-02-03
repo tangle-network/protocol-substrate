@@ -22,7 +22,7 @@
 //!
 //! ## Overview
 //!
-//! The signature bridge module provides functionalight for the following:
+//! The signature bridge module provides functionality for the following:
 //!
 //! * Private bridging of assets governed by signature verification
 //!
