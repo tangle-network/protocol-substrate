@@ -76,7 +76,7 @@ pub mod fee {
 }
 
 pub mod time {
-	use common::{BlockNumber, Moment};
+	use common::BlockNumber;
 
 	/// This determines the average expected block time that we are targeting.
 	/// Blocks will be produced at a minimum duration defined by

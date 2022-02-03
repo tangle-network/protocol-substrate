@@ -1,24 +1,18 @@
-use ark_bn254::Bn254;
-use arkworks_utils::{
-	poseidon::PoseidonParameters,
-	utils::common::{setup_params_x5_3, setup_params_x5_5, Curve},
-};
+use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 use common::{AccountId, AuraId, Signature};
 use darkwebb_runtime::{
-	wasm_binary_unwrap, AssetRegistryConfig, AuraConfig, BalancesConfig, CouncilConfig,
-	GenesisConfig, HasherBls381Config, HasherBn254Config, MerkleTreeBls381Config,
-	MerkleTreeBn254Config, MixerBn254Config, ParachainStakingConfig, SudoConfig, SystemConfig,
-	VerifierBls381Config, VerifierBn254Config, KUNITS, UNITS,
+	wasm_binary_unwrap, AssetRegistryConfig, CouncilConfig, GenesisConfig, HasherBls381Config,
+	HasherBn254Config, MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config,
+	ParachainStakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config, KUNITS, UNITS,
 };
 use webb_primitives::Balance;
 
 use cumulus_primitives_core::ParaId;
-use hex_literal::hex;
 use pallet_parachain_staking::{InflationInfo, Range};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{crypto::UncheckedInto, sr25519, Pair, Public};
+use sp_core::{sr25519, Pair, Public};
 use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
 	Perbill, Percent,
@@ -26,10 +20,6 @@ use sp_runtime::{
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<darkwebb_runtime::GenesisConfig, Extensions>;
-
-/// Specialized `ChainSpec` for the normal parachain runtime.
-pub type DarkwebbChainSpec =
-	sc_service::GenericChainSpec<darkwebb_runtime::GenesisConfig, Extensions>;
 
 /// Specialized `ChainSpec` for the shell parachain runtime.
 pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
@@ -264,8 +254,6 @@ fn testnet_genesis(
 
 	log::info!("Verifier params");
 	let verifier_params = {
-		use std::fs;
-		// let pk_bytes = fs::read("../../fixtures/proving_key.bin").unwrap();
 		let vk_bytes =
 			include_bytes!("../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
 
