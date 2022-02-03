@@ -113,7 +113,6 @@ pub mod pallet {
 		StorageValue<_, Vec<u8>, ValueQuery>;
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {}
 
 	#[pallet::error]
