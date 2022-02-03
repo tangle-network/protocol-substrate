@@ -7,9 +7,11 @@ use ark_std::{rand::thread_rng, rc::Rc, vec::Vec};
 use arkworks_circuits::{
 	circuit::vanchor::VAnchorCircuit as VACircuit,
 	setup::common::{
+		prove_unchecked,
 		LeafCRHGadget, PoseidonCRH_x5_2, PoseidonCRH_x5_2Gadget, PoseidonCRH_x5_3Gadget,
 		PoseidonCRH_x5_4, TreeConfig_x5, Tree_x5,
 	},
+	setup::vanchor::{VAnchorProverBn2542x2, Utxo},
 };
 use arkworks_gadgets::{
 	arbitrary::vanchor_data::VAnchorArbitraryData,
@@ -41,6 +43,95 @@ const TREE_DEPTH: usize = 30;
 const M: usize = 2;
 const INS: usize = 2;
 const OUTS: usize = 2;
+
+pub fn setup_zk_circuit(
+	curve: Curve,
+	// Metadata inputs
+	public_amount: i128,
+	recipient: Vec<u8>,
+	relayer: Vec<u8>,
+	ext_amount: i128,
+	fee: u128,
+	// Transaction inputs
+	in_chain_id: [u128; M],
+	in_amounts: [u128; M],
+	// Transaction outputs
+	out_chain_ids: [u128; M],
+	out_amounts: [u128; M],
+	pk_bytes: Vec<u8>
+) {
+	let rng = &mut thread_rng();
+
+	match curve {
+		Curve::Bn254 => {
+			let params2 = setup_params_x5_2::<Bn254Fr>(curve);
+			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
+			let params4 = setup_params_x5_4::<Bn254Fr>(curve);
+			let params5 = setup_params_x5_5::<Bn254Fr>(curve);
+	
+			// Set up a random circuit and make pk/vk pair
+			let prover = VAnchorProverBn2542x2::new(params2, params3, params4, params5);
+			let random_circuit = prover.clone().setup_random_circuit(rng).unwrap();
+	
+			// Make a proof now
+			let public_amount = Bn254Fr::from(public_amount);
+			
+			// TODO: use proper ExtData
+			let ext_data_hash = Bn254Fr::rand(rng);
+	
+			// Input Utxos
+			let in_chain_id = Bn254Fr::from(0u32);
+			let in_amount = Bn254Fr::from(5u32);
+			let index = Bn254Fr::from(0u32);
+			let in_utxo1 = prover
+				.new_utxo(in_chain_id, in_amount, Some(index), None, None, rng)
+				.unwrap();
+			let in_utxo2 = prover
+				.new_utxo(in_chain_id, in_amount, Some(index), None, None, rng)
+				.unwrap();
+			let in_utxos = [in_utxo1, in_utxo2];
+	
+			// Output Utxos
+			let out_chain_id = Bn254Fr::from(0u32);
+			let out_amount = Bn254Fr::from(10u32);
+			let out_utxo1 = prover
+				.new_utxo(out_chain_id, out_amount, None, None, None, rng)
+				.unwrap();
+			let out_utxo2 = prover
+				.new_utxo(out_chain_id, out_amount, None, None, None, rng)
+				.unwrap();
+			let out_utxos = [out_utxo1, out_utxo2];
+	
+			let leaf0 = in_utxo1.commitment;
+			let (in_path0, _) = prover.setup_tree(&vec![leaf0], 0).unwrap();
+			let root0 = in_path0.root_hash(&leaf0).unwrap().inner();
+			let leaf1 = in_utxo2.commitment;
+			let (in_path1, _) = prover.setup_tree(&vec![leaf1], 0).unwrap();
+			let root1 = in_path1.root_hash(&leaf1).unwrap().inner();
+	
+			let in_leaves = [vec![leaf0], vec![leaf1]];
+			let in_indices = [0; 2];
+			let in_root_set = [root0, root1];
+	
+			let (circuit, .., pub_ins) = prover
+				.setup_circuit_with_utxos(
+					public_amount,
+					ext_data_hash,
+					in_root_set,
+					in_indices,
+					in_leaves,
+					in_utxos,
+					out_utxos,
+				)
+				.unwrap();
+	
+			let proof = prove_unchecked::<Bn254, _, _>(circuit, &pk_bytes, rng).unwrap();
+		}
+		Curve::Bls381 => {
+			unimplemented!();
+		}
+	};
+}
 
 #[derive(Debug)]
 pub struct ExtData {
