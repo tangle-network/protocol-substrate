@@ -65,7 +65,9 @@ benchmarks! {
 			balance.into()
 		);
 
-		WrappingFeePercent::<T>::put::<BalanceOf<T>>(5u32.into());
+		let fee: <T::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance = 5u32.into();
+
+		WrappingFeePercent::<T>::insert(pool_share_id, fee);
 
 	}: _(RawOrigin::Signed(recipient.clone()), first_token_id, pool_share_id, 5_000u32.into(), recipient.clone())
 	verify {
@@ -123,10 +125,31 @@ benchmarks! {
 	}
 
 	set_wrapping_fee {
-	}:_(RawOrigin::Root, 5u32.into())
+		let existential_balance: u32 = 1000;
+		let balance: u32 = 10_000;
+		let recipient: T::AccountId = whitelisted_caller();
+		let first_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, DispatchError>>::create_asset(
+			&b"shib".to_vec(),
+			existential_balance.into(),
+		)
+		.unwrap();
+		let second_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, DispatchError>>::create_asset(
+			&b"doge".to_vec(),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let pool_share_id = <<T as Config>::AssetRegistry as ShareTokenRegistry<<T as asset_registry::Config>::AssetId, Vec<u8>, T::Balance, DispatchError>>::create_shared_asset(
+			&b"meme".to_vec(),
+			&vec![second_token_id, first_token_id],
+			existential_balance.into(),
+		)
+		.unwrap();
+	}:_(RawOrigin::Root, 5u32.into(), pool_share_id)
 	verify {
 		assert_last_event::<T>(
 			Event::UpdatedWrappingFeePercent {
+				into_pool_share_id: pool_share_id,
 				wrapping_fee_percent: 5u32.into(),
 			}.into()
 		)
