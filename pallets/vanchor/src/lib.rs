@@ -278,7 +278,7 @@ pub mod pallet {
 			max_deposit_amount: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			<Self as VAnchorInterface<_>>::set_max_deposit_amount(max_deposit_amount);
+			<Self as VAnchorInterface<_>>::set_max_deposit_amount(max_deposit_amount)?;
 			Ok(().into())
 		}
 
@@ -288,7 +288,7 @@ pub mod pallet {
 			min_withdraw_amount: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			<Self as VAnchorInterface<_>>::set_min_withdraw_amount(min_withdraw_amount);
+			<Self as VAnchorInterface<_>>::set_min_withdraw_amount(min_withdraw_amount)?;
 			Ok(().into())
 		}
 
@@ -298,7 +298,7 @@ pub mod pallet {
 			max_ext_amount: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			<Self as VAnchorInterface<_>>::set_max_ext_amount(max_ext_amount);
+			<Self as VAnchorInterface<_>>::set_max_ext_amount(max_ext_amount)?;
 			Ok(().into())
 		}
 
@@ -308,7 +308,7 @@ pub mod pallet {
 			max_fee: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			<Self as VAnchorInterface<_>>::set_max_fee(max_fee);
+			<Self as VAnchorInterface<_>>::set_max_fee(max_fee)?;
 			Ok(().into())
 		}
 	}

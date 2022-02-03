@@ -1,6 +1,4 @@
-use arkworks_utils::utils::common::{
-	setup_params_x3_5, setup_params_x5_3, setup_params_x5_5, Curve,
-};
+use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 use common::{AccountId, BabeId, Balance, Signature};
 
 use itertools::Itertools;
