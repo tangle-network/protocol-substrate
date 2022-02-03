@@ -45,10 +45,14 @@ pub mod mock;
 mod tests;
 pub mod weights;
 
+use frame_support::{
+	pallet_prelude::{ensure, DispatchError},
+	traits::{Currency, ReservableCurrency},
+};
+use frame_system::Config as SystemConfig;
+use sp_runtime::traits::{Saturating, Zero};
 use sp_std::{prelude::*, vec};
-
-use frame_support::pallet_prelude::{ensure, DispatchError};
-use webb_primitives::hasher::*;
+use webb_primitives::{hasher::*, types::DepositDetails};
 
 pub use pallet::*;
 pub use weights::WeightInfo;

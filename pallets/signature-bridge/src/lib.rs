@@ -181,7 +181,7 @@ pub mod pallet {
 			new_maintainer: Vec<u8>,
 			signature: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
-			let _origin = ensure_signed(origin)?;
+			let origin = ensure_signed(origin)?;
 			let old_maintainer = <Maintainer<T, I>>::get();
 			// ensure parameter setter is the maintainer
 			ensure!(
