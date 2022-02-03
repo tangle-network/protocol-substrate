@@ -3,8 +3,8 @@ authors = ["Webb Technologies Inc."]
 edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
-name = "darkwebb-runtime"
-repository = "https://github.com/substrate-developer-hub/substrate-darkwebb-node/"
+name = "webb-runtime"
+repository = "https://github.com/webb-tools/protocol-substrate"
 version = "0.1.0"
 
 [package.metadata.docs.rs]

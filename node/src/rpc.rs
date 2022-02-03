@@ -21,7 +21,7 @@
 use std::sync::Arc;
 
 use common::{AccountId, Balance, Block, Index as Nonce};
-use darkwebb_runtime::Element;
+use webb_runtime::Element;
 use pallet_mt_rpc::{MerkleApi, MerkleClient};
 use sc_client_api::AuxStore;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};

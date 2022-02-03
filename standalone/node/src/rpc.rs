@@ -33,7 +33,7 @@
 use std::sync::Arc;
 
 use common::{AccountId, Balance, Block, BlockNumber, Hash, Index};
-use darkwebb_runtime::Element;
+use webb_runtime::Element;
 
 use pallet_mt_rpc::{MerkleApi, MerkleClient};
 use sc_client_api::AuxStore;

@@ -92,8 +92,8 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("darkwebb"),
-	impl_name: create_runtime_str!("darkwebb"),
+	spec_name: create_runtime_str!("webb"),
+	impl_name: create_runtime_str!("webb"),
 	authoring_version: 1,
 	spec_version: 3,
 	impl_version: 0,
@@ -834,11 +834,14 @@ impl pallet_mixer::Config<pallet_mixer::Instance2> for Runtime {
 parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	pub const HistoryLength: u32 = 30;
+	// Substrate parachain chain ID type
+	pub const ChainType: [u8; 2] = [2, 1];
 	pub const ChainIdentifier: ChainId = 1080;
 }
 
 impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance1> for Runtime {
 	type ChainId = ChainId;
+	type ChainType = ChainType;
 	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
@@ -848,6 +851,7 @@ impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance1> for Runtime {
 
 impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance2> for Runtime {
 	type ChainId = ChainId;
+	type ChainType = ChainType;
 	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
@@ -900,6 +904,7 @@ impl pallet_bridge::Config<BridgeInstance> for Runtime {
 	type BridgeAccountId = BridgeAccountId;
 	type ChainId = ChainId;
 	type ChainIdentifier = ChainIdentifier;
+	type ChainType = ChainType;
 	type Event = Event;
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;

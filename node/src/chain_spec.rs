@@ -1,9 +1,10 @@
 use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 use common::{AccountId, AuraId, Signature};
-use darkwebb_runtime::{
-	wasm_binary_unwrap, AssetRegistryConfig, CouncilConfig, GenesisConfig, HasherBls381Config,
-	HasherBn254Config, MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config,
-	ParachainStakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config, KUNITS, UNITS,
+use webb_runtime::{
+	wasm_binary_unwrap, AssetRegistryConfig, AuraConfig, BalancesConfig, CouncilConfig,
+	GenesisConfig, HasherBls381Config, HasherBn254Config, MerkleTreeBls381Config,
+	MerkleTreeBn254Config, MixerBn254Config, ParachainStakingConfig, SudoConfig, SystemConfig,
+	VerifierBls381Config, VerifierBn254Config, KUNITS, UNITS,
 };
 use webb_primitives::Balance;
 
@@ -19,7 +20,11 @@ use sp_runtime::{
 };
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<darkwebb_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<webb_runtime::GenesisConfig, Extensions>;
+
+/// Specialized `ChainSpec` for the normal parachain runtime.
+pub type WebbChainSpec =
+	sc_service::GenericChainSpec<webb_runtime::GenesisConfig, Extensions>;
 
 /// Specialized `ChainSpec` for the shell parachain runtime.
 pub type ShellChainSpec = sc_service::GenericChainSpec<shell_runtime::GenesisConfig, Extensions>;
@@ -77,8 +82,8 @@ pub fn get_collator_keys_from_seed(seed: &str) -> AuraId {
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we
 /// have just one key).
-pub fn darkwebb_session_keys(keys: AuraId) -> darkwebb_runtime::SessionKeys {
-	darkwebb_runtime::SessionKeys { aura: keys }
+pub fn webb_session_keys(keys: AuraId) -> webb_runtime::SessionKeys {
+	webb_runtime::SessionKeys { aura: keys }
 }
 
 pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
@@ -96,7 +101,7 @@ pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
 	)
 }
 
-pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
+pub fn webb_development_config(id: ParaId) -> Result<ChainSpec, String> {
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -151,7 +156,7 @@ pub fn darkwebb_development_config(id: ParaId) -> Result<ChainSpec, String> {
 	))
 }
 
-pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
+pub fn webb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Local Testnet",
@@ -209,7 +214,7 @@ pub fn darkwebb_local_testnet_config(id: ParaId) -> Result<ChainSpec, String> {
 
 pub const ENDOWMENT: u128 = UNITS * 4096_000;
 
-pub fn darkwebb_test_genesis_inflation_config(
+pub fn webb_test_genesis_inflation_config(
 	endowed_accounts: Vec<AccountId>,
 ) -> InflationInfo<Balance> {
 	let total = endowed_accounts.len() as u128;
@@ -262,17 +267,17 @@ fn testnet_genesis(
 
 	log::info!("Genesis Config");
 	GenesisConfig {
-		system: darkwebb_runtime::SystemConfig { code: wasm_binary_unwrap().to_vec() },
+		system: webb_runtime::SystemConfig { code: wasm_binary_unwrap().to_vec() },
 		asset_registry: AssetRegistryConfig {
 			asset_names: vec![],
 			native_asset_name: b"WEBB".to_vec(),
-			native_existential_deposit: darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT,
+			native_existential_deposit: webb_runtime::constants::currency::EXISTENTIAL_DEPOSIT,
 		},
-		balances: darkwebb_runtime::BalancesConfig {
+		balances: webb_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
 		},
-		parachain_info: darkwebb_runtime::ParachainInfoConfig { parachain_id: id },
-		session: darkwebb_runtime::SessionConfig {
+		parachain_info: webb_runtime::ParachainInfoConfig { parachain_id: id },
+		session: webb_runtime::SessionConfig {
 			keys: candidates
 				.iter()
 				.cloned()
@@ -280,7 +285,7 @@ fn testnet_genesis(
 					(
 						acc.clone(),                 // account id
 						acc.clone(),                 // validator id
-						darkwebb_session_keys(aura), // session keys
+						webb_session_keys(aura), // session keys
 					)
 				})
 				.collect(),
@@ -325,7 +330,7 @@ fn testnet_genesis(
 				.map(|(account, _, bond)| (account, bond))
 				.collect(),
 			nominations,
-			inflation_config: darkwebb_test_genesis_inflation_config(endowed_accounts),
+			inflation_config: webb_test_genesis_inflation_config(endowed_accounts),
 		},
 	}
 }

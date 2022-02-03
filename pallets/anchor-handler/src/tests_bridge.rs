@@ -2,14 +2,16 @@ use crate::{mock_bridge::*, types::UpdateRecord, AnchorList, Counts, UpdateRecor
 use frame_support::assert_ok;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 use pallet_linkable_tree::types::EdgeMetadata;
+use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
 
 const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 100;
 const TEST_TREE_DEPTH: u8 = 32;
+const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
 
 fn make_anchor_create_proposal(
 	deposit_size: Balance,
-	src_chain_id: u32,
+	src_chain_id: ChainId,
 	resource_id: &[u8; 32],
 ) -> Call {
 	Call::AnchorHandler(crate::Call::execute_anchor_create_proposal {
@@ -36,7 +38,7 @@ fn make_anchor_update_proposal(
 	})
 }
 
-fn setup_relayers(src_id: u32) {
+fn setup_relayers(src_id: ChainId) {
 	// set anchors threshold
 	assert_ok!(Bridge::set_threshold(Origin::root(), TEST_THRESHOLD,));
 	// add relayers
@@ -48,7 +50,7 @@ fn setup_relayers(src_id: u32) {
 	assert_ok!(Bridge::whitelist_chain(Origin::root(), src_id));
 }
 // helper function to create anchor using Anchor pallet call
-fn mock_anchor_creation_using_pallet_call(src_chain_id: u32, resource_id: &[u8; 32]) {
+fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[u8; 32]) {
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
@@ -66,7 +68,7 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: u32, resource_id: &[u8; 
 
 // helper function to add relayers and then make a proposal
 fn relay_anchor_update_proposal(
-	src_chain_id: u32,
+	src_chain_id: ChainId,
 	resource_id: &[u8; 32],
 	prop_id: u64,
 	edge_metadata: EdgeMetadata<ChainId, Element, <Test as pallet_mt::Config>::LeafIndex>,
@@ -99,8 +101,8 @@ fn relay_anchor_update_proposal(
 // `pallet-bridge`
 fn anchor_create_proposal() {
 	new_test_ext().execute_with(|| {
-		let src_chain_id = 1;
-		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_chain_id, b"hash");
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 		// make anchor create proposal
@@ -154,8 +156,8 @@ fn anchor_create_proposal() {
 // `pallet-bridge`
 fn anchor_update_proposal_edge_add_success() {
 	new_test_ext().execute_with(|| {
-		let src_chain_id = 1;
-		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_chain_id, b"hash");
 		let prop_id = 1;
 		// create anchor update proposal
 		setup_relayers(src_chain_id);
@@ -200,8 +202,8 @@ fn anchor_update_proposal_edge_add_success() {
 // `pallet-anchor-handler` proposal through `pallet-bridge`
 fn anchor_update_proposal_edge_update_success() {
 	new_test_ext().execute_with(|| {
-		let src_chain_id = 1;
-		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_chain_id, b"hash");
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 		mock_anchor_creation_using_pallet_call(src_chain_id, &resource_id);

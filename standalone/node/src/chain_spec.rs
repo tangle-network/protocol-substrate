@@ -1,13 +1,6 @@
 use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 use common::{AccountId, BabeId, Balance, Signature};
 
-use darkwebb_runtime::{
-	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
-	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
-	GrandpaConfig, HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig,
-	MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config, SessionConfig, StakerStatus,
-	StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config,
-};
 use itertools::Itertools;
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -18,6 +11,13 @@ use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
 	Perbill,
 };
+use webb_runtime::{
+	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
+	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
+	GrandpaConfig, HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig,
+	MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config, SessionConfig, StakerStatus,
+	StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config,
+};
 
 // ImOnline consensus authority.
 pub type ImOnlineId = pallet_im_online::sr25519::AuthorityId;
@@ -26,7 +26,7 @@ pub type ImOnlineId = pallet_im_online::sr25519::AuthorityId;
 pub type AuthorityDiscoveryId = sp_authority_discovery::AuthorityId;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<darkwebb_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<webb_runtime::GenesisConfig, Extensions>;
 
 #[derive(Default, Clone, Serialize, Deserialize, ChainSpecExtension)]
 #[serde(rename_all = "camelCase")]
@@ -74,16 +74,16 @@ pub fn authority_keys_from_seed(
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we
 /// have just one key).
-fn darkwebb_session_keys(
+fn webb_session_keys(
 	grandpa: GrandpaId,
 	babe: BabeId,
 	im_online: ImOnlineId,
 	authority_discovery: AuthorityDiscoveryId,
-) -> darkwebb_runtime::SessionKeys {
-	darkwebb_runtime::SessionKeys { grandpa, babe, im_online, authority_discovery }
+) -> webb_runtime::SessionKeys {
+	webb_runtime::SessionKeys { grandpa, babe, im_online, authority_discovery }
 }
 
-pub fn darkwebb_development_config() -> Result<ChainSpec, String> {
+pub fn webb_development_config() -> Result<ChainSpec, String> {
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -123,7 +123,7 @@ pub fn darkwebb_development_config() -> Result<ChainSpec, String> {
 	))
 }
 
-pub fn darkwebb_local_testnet_config() -> Result<ChainSpec, String> {
+pub fn webb_local_testnet_config() -> Result<ChainSpec, String> {
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Local Testnet",
@@ -221,13 +221,13 @@ fn testnet_genesis(
 
 	log::info!("Genesis Config");
 	GenesisConfig {
-		system: darkwebb_runtime::SystemConfig { code: wasm_binary_unwrap().to_vec() },
+		system: webb_runtime::SystemConfig { code: wasm_binary_unwrap().to_vec() },
 		asset_registry: AssetRegistryConfig {
 			asset_names: vec![],
 			native_asset_name: b"WEBB".to_vec(),
-			native_existential_deposit: darkwebb_runtime::constants::currency::EXISTENTIAL_DEPOSIT,
+			native_existential_deposit: webb_runtime::constants::currency::EXISTENTIAL_DEPOSIT,
 		},
-		balances: darkwebb_runtime::BalancesConfig {
+		balances: webb_runtime::BalancesConfig {
 			balances: unique.iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
 		},
 		indices: IndicesConfig { indices: vec![] },
@@ -238,7 +238,7 @@ fn testnet_genesis(
 					(
 						x.0.clone(),
 						x.0.clone(),
-						darkwebb_session_keys(x.2.clone(), x.3.clone(), x.4.clone(), x.5.clone()),
+						webb_session_keys(x.2.clone(), x.3.clone(), x.4.clone(), x.5.clone()),
 					)
 				})
 				.collect::<Vec<_>>(),
@@ -267,7 +267,7 @@ fn testnet_genesis(
 		sudo: SudoConfig { key: Some(root_key) },
 		babe: BabeConfig {
 			authorities: vec![],
-			epoch_config: Some(darkwebb_runtime::BABE_GENESIS_EPOCH_CONFIG),
+			epoch_config: Some(webb_runtime::BABE_GENESIS_EPOCH_CONFIG),
 		},
 		im_online: ImOnlineConfig { keys: vec![] },
 		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },

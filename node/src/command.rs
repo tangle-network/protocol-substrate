@@ -6,7 +6,7 @@ use crate::{
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
-use darkwebb_runtime::{Block, RuntimeApi};
+use webb_runtime::{Block, RuntimeApi};
 use log::info;
 use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
@@ -24,9 +24,9 @@ use std::{io::Write, net::SocketAddr};
 fn load_spec(id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
 		"shell" => Box::new(chain_spec::get_shell_chain_spec(2000.into())),
-		"darkwebb-dev" => Box::new(chain_spec::darkwebb_development_config(2000.into())?),
-		"darkwebb-local" => Box::new(chain_spec::darkwebb_local_testnet_config(2000.into())?),
-		"" => Box::new(chain_spec::darkwebb_local_testnet_config(2000.into())?),
+		"webb-dev" => Box::new(chain_spec::webb_development_config(2000.into())?),
+		"webb-local" => Box::new(chain_spec::webb_local_testnet_config(2000.into())?),
+		"" => Box::new(chain_spec::webb_local_testnet_config(2000.into())?),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 	})
 }
@@ -65,7 +65,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&darkwebb_runtime::VERSION
+		&webb_runtime::VERSION
 	}
 }
 

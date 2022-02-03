@@ -393,7 +393,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			Error::<T, I>::InvalidPublicAmount
 		);
 
-		let chain_id = <T as pallet_linkable_tree::Config<I>>::ChainIdentifier::get();
+		let chain_id_type = T::LinkableTree::get_chain_id_type();
 
 		// Construct public inputs
 		let mut bytes = Vec::new();
@@ -405,7 +405,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		for comm in &proof_data.output_commitments {
 			bytes.extend_from_slice(&comm.to_bytes());
 		}
-		bytes.extend_from_slice(&chain_id.using_encoded(element_encoder));
+		bytes.extend_from_slice(&chain_id_type.using_encoded(element_encoder));
 		for root in proof_data.roots {
 			bytes.extend_from_slice(&root.to_bytes());
 		}

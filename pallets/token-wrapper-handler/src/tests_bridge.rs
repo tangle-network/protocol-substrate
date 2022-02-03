@@ -7,8 +7,10 @@ use frame_support::{
 	assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin,
 };
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
+use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
 
 const TEST_THRESHOLD: u32 = 2;
+const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
 
 fn get_add_token_resource() -> Vec<u8> {
 	b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec()
@@ -41,7 +43,7 @@ fn make_remove_token_proposal(resource_id: &[u8; 32], name: Vec<u8>, asset_id: u
 	})
 }
 
-fn setup_relayers(src_id: u32) {
+fn setup_relayers(src_id: u64) {
 	// set anchors threshold
 	assert_ok!(Bridge::set_threshold(Origin::root(), TEST_THRESHOLD,));
 	// add relayers
@@ -54,7 +56,7 @@ fn setup_relayers(src_id: u32) {
 }
 
 fn relay_fee_update_proposal(
-	src_chain_id: u32,
+	src_chain_id: u64,
 	resource_id: &[u8; 32],
 	prop_id: u64,
 	wrapping_fee_percent: u128,
@@ -82,7 +84,7 @@ fn relay_fee_update_proposal(
 }
 
 fn relay_token_update_proposal(
-	src_chain_id: u32,
+	src_chain_id: u64,
 	resource: Vec<u8>,
 	update_proposal: Call,
 	resource_id: &[u8; 32],
@@ -112,8 +114,8 @@ fn relay_token_update_proposal(
 #[test]
 fn should_update_fee() {
 	new_test_ext().execute_with(|| {
-		let src_chain_id = 1;
-		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_chain_id, b"hash");
 		let prop_id = 1;
 		// create fee update proposal
 		setup_relayers(src_chain_id);
@@ -126,8 +128,8 @@ fn should_update_fee() {
 fn should_succeed_add_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
-		let src_chain_id = 1;
-		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_chain_id, b"hash");
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 
@@ -167,8 +169,8 @@ fn should_succeed_add_token() {
 fn should_succeed_remove_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
-		let src_chain_id = 1;
-		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_chain_id, b"hash");
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 
@@ -222,8 +224,8 @@ fn should_succeed_remove_token() {
 fn should_fail_to_remove_token_not_in_pool() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
-		let src_chain_id = 1;
-		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_chain_id, b"hash");
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 
@@ -264,8 +266,8 @@ fn should_fail_to_remove_token_not_in_pool() {
 fn should_succeed_add_many_tokens() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
-		let src_chain_id = 1;
-		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_chain_id, b"hash");
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 
@@ -349,8 +351,8 @@ fn should_succeed_add_many_tokens() {
 fn should_fail_to_add_same_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
-		let src_chain_id = 1;
-		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_chain_id, b"hash");
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 
@@ -405,8 +407,8 @@ fn should_fail_to_add_same_token() {
 fn should_fail_to_add_non_existent_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
-		let src_chain_id = 1;
-		let resource_id = pallet_bridge::utils::derive_resource_id(src_chain_id, b"hash");
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_chain_id, b"hash");
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 
