@@ -5,7 +5,7 @@ edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
 name = "pallet-hasher"
-repository = "https://github.com/substrate-developer-hub/substrate-darkwebb-node/"
+repository = "https://github.com/webb-tools/protocol-substrate"
 version = "1.0.0"
 
 [package.metadata.docs.rs]

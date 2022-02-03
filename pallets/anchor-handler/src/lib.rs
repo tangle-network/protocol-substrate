@@ -170,6 +170,8 @@ pub mod pallet {
 			T::BridgeOrigin::ensure_origin(origin)?;
 			Self::update_anchor(r_id, anchor_metadata)
 		}
+
+		// TODO: Add configurable limit proposal executors for VAnchors
 	}
 }
 

@@ -26,7 +26,7 @@ pub fn setup_zk_circuit(
 	relayer_bytes: Vec<u8>,
 	commitment_bytes: Vec<u8>,
 	pk_bytes: Vec<u8>,
-	src_chain_id: u128,
+	src_chain_id: u64,
 	fee_value: u128,
 	refund_value: u128,
 ) -> (ProofBytes, RootsElement, NullifierHashElement, LeafElement) {
@@ -35,7 +35,7 @@ pub fn setup_zk_circuit(
 	match curve {
 		Curve::Bn254 => {
 			let (secret, nullifier, leaf, nullifier_hash) =
-				setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, src_chain_id, rng).unwrap();
+				setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, src_chain_id.into(), rng).unwrap();
 			let leaves = vec![leaf.clone()];
 			let leaves_f = vec![Bn254Fr::from_le_bytes_mod_order(&leaf)];
 			let index = 0;
@@ -49,7 +49,7 @@ pub fn setup_zk_circuit(
 
 			let (proof, ..) = setup_proof_x5_4::<Bn254, _>(
 				curve,
-				src_chain_id,
+				src_chain_id.into(),
 				secret,
 				nullifier,
 				leaves,

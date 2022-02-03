@@ -1,6 +1,7 @@
 use codec::{Decode, Encode};
 use sp_runtime::traits::AtLeast32Bit;
 use sp_std::vec::Vec;
+use scale_info::prelude::fmt::Debug;
 
 use crate::types::ResourceId;
 
@@ -14,6 +15,38 @@ where
 	buf[4..8].copy_from_slice(&chain_id_value.to_be_bytes());
 	u64::from_be_bytes(buf)
 }
+/// Helper function to concatenate a chain ID and some bytes to produce a
+/// resource ID. The common format is (31 bytes unique ID + 1 byte chain ID).
+pub fn derive_resource_id(chain: u64, id: &[u8]) -> ResourceId {
+	let mut r_id: ResourceId = [0; 32];
+	let chain = chain.to_be_bytes();
+	// last 6 bytes of chain id
+	r_id[26] = chain[2];
+	r_id[27] = chain[3];
+	r_id[28] = chain[4];
+	r_id[29] = chain[5];
+	r_id[30] = chain[6];
+	r_id[31] = chain[7];
+	let range = if id.len() > 26 { 26 } else { id.len() }; // Use at most 28 bytes
+	for i in 0..range {
+		r_id[25 - i] = id[range - 1 - i]; // Ensure left padding for eth compatibility
+	}
+	r_id
+}
+
+pub fn parse_resource_id<TreeId, ChainId>(resource_id: ResourceId) -> (TreeId, ChainId)
+where
+	TreeId: Encode + Decode + AtLeast32Bit + Default + Copy,
+	ChainId: Encode + Decode + AtLeast32Bit + Default + Copy,
+{
+	let tree_id_bytes = &resource_id[6..26];
+	let mut chain_id_bytes = [0u8; 8];
+	chain_id_bytes[2..8].copy_from_slice(&resource_id[26..]);
+	let tree_id = TreeId::decode(&mut &*tree_id_bytes).unwrap();
+	let chain_id = ChainId::try_from(u64::from_be_bytes(chain_id_bytes)).unwrap_or_default();
+	(tree_id, chain_id)
+}
+
 
 /// The ResourceId type is a 32 bytes array represented as the following:
 /// ```md
@@ -30,8 +63,8 @@ where
 /// bytes of the result array.
 pub fn encode_resource_id<TreeId, ChainId>(tree_id: TreeId, chain_id: ChainId) -> ResourceId
 where
-	TreeId: Encode + Decode + AtLeast32Bit + Default + Copy,
-	ChainId: Encode + Decode + AtLeast32Bit + Default + Copy,
+	TreeId: Encode + Decode + AtLeast32Bit + Default + Copy + Debug,
+	ChainId: Encode + Decode + AtLeast32Bit + Default + Copy + Debug,
 {
 	let mut result = [0u8; 32];
 	let mut tree_id_bytes = tree_id.encode();
@@ -65,8 +98,10 @@ where
 {
 	let tree_id_bytes = &resource_id[0..20];
 	let chain_id_bytes = &resource_id[28..];
+	let mut buf_u64: [u8; 8] = [0u8; 8];
+	buf_u64[4..8].copy_from_slice(chain_id_bytes);
 	let tree_id = TreeId::decode(&mut &*tree_id_bytes).unwrap();
-	let chain_id = ChainId::decode(&mut &*chain_id_bytes).unwrap();
+	let chain_id = ChainId::try_from(u64::from_be_bytes(buf_u64)).unwrap_or_default();
 	(tree_id, chain_id)
 }
 

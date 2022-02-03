@@ -21,7 +21,7 @@
 //! Service implementation. Specialized wrapper over substrate service.
 
 use common::Block;
-use darkwebb_runtime::RuntimeApi;
+use webb_runtime::RuntimeApi;
 use futures::prelude::*;
 use sc_client_api::{BlockBackend, ExecutorProvider};
 use sc_consensus_babe::{self, SlotProportion};
@@ -40,11 +40,11 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		darkwebb_runtime::api::dispatch(method, data)
+		webb_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		darkwebb_runtime::native_version()
+		webb_runtime::native_version()
 	}
 }
 

@@ -13,18 +13,16 @@ use sp_core::{
 	keccak_256, Pair, Public,
 };
 
-use pallet_signature_bridge::utils::derive_resource_id;
-use webb_primitives::{signing::SigningSystem, ResourceId};
+use webb_primitives::{signing::SigningSystem, ResourceId, utils::{compute_chain_id_type, derive_resource_id}};
 
 const TEST_MAX_EDGES: u32 = 100;
 const TEST_TREE_DEPTH: u8 = 32;
 
 // helper function to create anchor using Anchor pallet call
-fn mock_anchor_creation_using_pallet_call(src_chain_id: u32, resource_id: &[u8; 32]) {
+fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[u8; 32]) {
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
-
 	let deposit_size = 100;
 	assert_ok!(Anchor::create(Origin::root(), deposit_size, TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 	// hack: insert an entry in AnchorsList with tree-id=0
@@ -38,7 +36,7 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: u32, resource_id: &[u8; 
 
 fn make_anchor_create_proposal(
 	deposit_size: Balance,
-	src_chain_id: u32,
+	src_chain_id: ChainId,
 	resource_id: &[u8; 32],
 ) -> Call {
 	Call::AnchorHandler(crate::Call::execute_anchor_create_proposal {
@@ -69,7 +67,8 @@ fn make_anchor_update_proposal(
 
 #[test]
 fn should_create_anchor_with_sig_succeed() {
-	let src_id = 1u32;
+	let chain_type = [2, 0];
+	let src_id = compute_chain_id_type(1u32, chain_type);
 	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
@@ -125,7 +124,8 @@ fn should_create_anchor_with_sig_succeed() {
 // `pallet-signature-bridge`
 #[test]
 fn should_add_anchor_edge_with_sig_succeed() {
-	let src_id = 1u32;
+	let chain_type = [2, 0];
+	let src_id = compute_chain_id_type(1u32, chain_type);
 	let r_id = derive_resource_id(src_id, b"execute_anchor_update_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
@@ -195,7 +195,8 @@ fn should_add_anchor_edge_with_sig_succeed() {
 // `pallet-anchor-handler` proposal through `pallet-signature-bridge`
 #[test]
 fn should_update_anchor_edge_with_sig_succeed() {
-	let src_id = 1u32;
+	let chain_type = [2, 0];
+	let src_id = compute_chain_id_type(1u32, chain_type);
 	let r_id = derive_resource_id(src_id, b"execute_anchor_update_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
@@ -297,7 +298,8 @@ fn should_update_anchor_edge_with_sig_succeed() {
 
 #[test]
 fn should_fail_to_whitelist_chain_already_whitelisted() {
-	let src_id = 1u32;
+	let chain_type = [2, 0];
+	let src_id = compute_chain_id_type(1u32, chain_type);
 	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
@@ -317,7 +319,8 @@ fn should_fail_to_whitelist_chain_already_whitelisted() {
 
 #[test]
 fn should_fail_to_whitelist_this_chain() {
-	let src_id = 1u32;
+	let chain_type = [2, 0];
+	let src_id = compute_chain_id_type(1u32, chain_type);
 	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
@@ -329,7 +332,7 @@ fn should_fail_to_whitelist_this_chain() {
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
 			assert_err!(
-				SignatureBridge::whitelist_chain(Origin::root(), ChainIdentifier::get()),
+				SignatureBridge::whitelist_chain(Origin::root(), compute_chain_id_type(ChainIdentifier::get(), chain_type)),
 				pallet_signature_bridge::Error::<Test, _>::InvalidChainId
 			);
 		})
@@ -337,7 +340,8 @@ fn should_fail_to_whitelist_this_chain() {
 
 #[test]
 fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
-	let src_id = 1u32;
+	let chain_type = [2, 0];
+	let src_id = compute_chain_id_type(1u32, chain_type);
 	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
@@ -376,7 +380,8 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 
 #[test]
 fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
-	let src_id = 1u32;
+	let chain_type = [2, 0];
+	let src_id = compute_chain_id_type(1u32, chain_type);
 	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
@@ -415,7 +420,8 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 
 #[test]
 fn should_fail_to_verify_proposal_with_tampered_signature() {
-	let src_id = 1u32;
+	let chain_type = [2, 0];
+	let src_id = compute_chain_id_type(1u32, chain_type);
 	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(

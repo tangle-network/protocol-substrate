@@ -46,7 +46,7 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 pub mod types;
-pub mod utils;
+
 use crate::types::{DepositNonce, ProposalStatus, ProposalVotes};
 use codec::{Decode, Encode, EncodeLike};
 use frame_support::{
@@ -61,7 +61,7 @@ use sp_runtime::{
 	RuntimeDebug,
 };
 use sp_std::prelude::*;
-use webb_primitives::ResourceId;
+use webb_primitives::{ResourceId, utils::{compute_chain_id_type}};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -98,6 +98,10 @@ pub mod pallet {
 		/// set of bridged chains.
 		#[pallet::constant]
 		type ChainIdentifier: Get<Self::ChainId>;
+		/// The chain type for this chain.
+		/// This is either a standalone Substrate chain, relay chain, or parachain
+		#[pallet::constant]
+		type ChainType: Get<[u8; 2]>;
 
 		#[pallet::constant]
 		type ProposalLifetime: Get<Self::BlockNumber>;
@@ -420,7 +424,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Whitelist a chain ID for transfer
 	pub fn whitelist(id: T::ChainId) -> DispatchResultWithPostInfo {
 		// Cannot whitelist this chain
-		ensure!(id != T::ChainIdentifier::get(), Error::<T, I>::InvalidChainId);
+		ensure!(
+			id != T::ChainId::try_from(compute_chain_id_type(
+				T::ChainIdentifier::get(),
+				T::ChainType::get())
+			).unwrap_or_default(),
+			Error::<T, I>::InvalidChainId
+		);
 		// Cannot whitelist with an existing entry
 		ensure!(!Self::chain_whitelisted(id), Error::<T, I>::ChainAlreadyWhitelisted);
 		ChainNonces::<T, I>::insert(&id, 0);

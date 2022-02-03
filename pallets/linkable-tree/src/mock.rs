@@ -180,13 +180,13 @@ parameter_types! {
 parameter_types! {
 	pub const HistoryLength: u32 = 30;
 	// Substrate standalone chain ID type
-	pub const CurrentChainIdType: [u8; 2] = [2, 0];
+	pub const ChainType: [u8; 2] = [2, 0];
 	pub const CurrentChainId: ChainId = 0;
 }
 
 impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
-	type ChainIdType = CurrentChainIdType;
+	type ChainType = ChainType;
 	type ChainIdentifier = CurrentChainId;
 	type Event = Event;
 	type HistoryLength = HistoryLength;

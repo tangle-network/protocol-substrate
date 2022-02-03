@@ -20,7 +20,7 @@ use crate::{
 	cli::{Cli, Subcommand},
 	service,
 };
-use darkwebb_runtime::Block;
+use webb_runtime::Block;
 use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
 use sc_service::PartialComponents;
 
@@ -51,15 +51,15 @@ impl SubstrateCli for Cli {
 
 	fn load_spec(&self, id: &str) -> Result<Box<dyn sc_service::ChainSpec>, String> {
 		Ok(match id {
-			"dev" => Box::new(chain_spec::darkwebb_development_config()?),
-			"" | "local" => Box::new(chain_spec::darkwebb_local_testnet_config()?),
+			"dev" => Box::new(chain_spec::webb_development_config()?),
+			"" | "local" => Box::new(chain_spec::webb_local_testnet_config()?),
 			path =>
 				Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 		})
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&darkwebb_runtime::VERSION
+		&webb_runtime::VERSION
 	}
 }
 

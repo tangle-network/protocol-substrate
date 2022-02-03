@@ -175,6 +175,7 @@ parameter_types! {
 	pub const ProposalLifetime: u64 = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 	pub const ChainIdentifier: u8 = 5;
+	pub const ChainType: [u8; 2] = [2, 0];
 }
 
 type BridgeInstance = pallet_bridge::Instance1;
@@ -183,6 +184,7 @@ impl pallet_bridge::Config<BridgeInstance> for Test {
 	type BridgeAccountId = BridgeAccountId;
 	type ChainId = ChainId;
 	type ChainIdentifier = ChainIdentifier;
+	type ChainType = ChainType;
 	type Event = Event;
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
