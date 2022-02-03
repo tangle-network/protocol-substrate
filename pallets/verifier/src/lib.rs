@@ -62,16 +62,10 @@ mod tests;
 mod benchmarking;
 
 pub mod weights;
-use sp_runtime::traits::{Saturating, Zero};
 use sp_std::prelude::*;
 
-use codec::Encode;
-use frame_support::{
-	pallet_prelude::{ensure, DispatchError},
-	traits::{Currency, ReservableCurrency},
-};
-use frame_system::Config as SystemConfig;
-use webb_primitives::{types::DepositDetails, verifier::*};
+use frame_support::pallet_prelude::{ensure, DispatchError};
+use webb_primitives::verifier::*;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
@@ -132,7 +126,6 @@ pub mod pallet {
 		StorageValue<_, Vec<u8>, ValueQuery>;
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {}
 
 	#[pallet::error]
