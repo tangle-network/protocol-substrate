@@ -403,40 +403,40 @@ fn test_two_different_pool_shares() {
 			AssetType::Token,
 			existential_balance.into(),
 		)
-			.unwrap();
+		.unwrap();
 		let second_token_id = AssetRegistry::register_asset(
 			b"doge".to_vec().try_into().unwrap(),
 			AssetType::Token,
 			existential_balance.into(),
 		)
-			.unwrap();
+		.unwrap();
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
 			AssetType::PoolShare(vec![second_token_id, first_token_id]),
 			existential_balance.into(),
 		)
-			.unwrap();
+		.unwrap();
 
 		let third_token_id = AssetRegistry::register_asset(
 			b"avax".to_vec().try_into().unwrap(),
 			AssetType::Token,
 			existential_balance.into(),
 		)
-			.unwrap();
+		.unwrap();
 		let fourth_token_id = AssetRegistry::register_asset(
 			b"cosmos".to_vec().try_into().unwrap(),
 			AssetType::Token,
 			existential_balance.into(),
 		)
-			.unwrap();
+		.unwrap();
 
 		let second_pool_share_id = AssetRegistry::register_asset(
 			b"real".to_vec().try_into().unwrap(),
 			AssetType::PoolShare(vec![third_token_id, fourth_token_id]),
 			existential_balance.into(),
 		)
-			.unwrap();
+		.unwrap();
 
 		let recipient: u64 = 1;
 
@@ -449,8 +449,14 @@ fn test_two_different_pool_shares() {
 		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
-		assert_ok!(Currencies::update_balance(Origin::root(), second_recipient, third_token_id, second_balance));
-		let initial_balance_third_token = TokenWrapper::get_balance(third_token_id, &second_recipient);
+		assert_ok!(Currencies::update_balance(
+			Origin::root(),
+			second_recipient,
+			third_token_id,
+			second_balance
+		));
+		let initial_balance_third_token =
+			TokenWrapper::get_balance(third_token_id, &second_recipient);
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into()));
 
@@ -486,6 +492,5 @@ fn test_two_different_pool_shares() {
 			initial_balance_third_token
 				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128, second_pool_share_id))
 		);
-
 	})
 }
