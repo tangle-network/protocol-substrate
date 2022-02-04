@@ -5,6 +5,17 @@ use sp_std::vec::Vec;
 
 use crate::types::ResourceId;
 
+/// Takes an (ideally u32) ChainIdentifier and a chain type and re-computes
+/// an updated chain id with the chain type prepended to it. The resulting
+/// chain id is 6 bytes long and so requires a u64 to represent it.
+///
+/// ```rust
+/// pub type ChainId = u64;
+/// let chain_id: u32 = 5;
+/// let chain_type: [u8; 2] = [2, 0];
+///
+/// let chain_id_type: ChainId = compute_chain_id_type(chain_id.into(), chain_type);
+/// ```
 pub fn compute_chain_id_type<ChainId>(chain_id: ChainId, chain_type: [u8; 2]) -> u64
 where
 	ChainId: AtLeast32Bit,
@@ -15,12 +26,13 @@ where
 	buf[4..8].copy_from_slice(&chain_id_value.to_be_bytes());
 	u64::from_be_bytes(buf)
 }
+
 /// Helper function to concatenate a chain ID and some bytes to produce a
 /// resource ID. The common format is (31 bytes unique ID + 1 byte chain ID).
 pub fn derive_resource_id(chain: u64, id: &[u8]) -> ResourceId {
 	let mut r_id: ResourceId = [0; 32];
 	let chain = chain.to_be_bytes();
-	// last 6 bytes of chain id
+	// last 6 bytes of chain id because chain[0] and chain[1] are 0.
 	r_id[26] = chain[2];
 	r_id[27] = chain[3];
 	r_id[28] = chain[4];
@@ -60,6 +72,9 @@ where
 /// (little-endian), pad the remaining `(20 - 4)` butes with zeros, next convert
 /// the chain_id to 4 bytes array (little-endian) and append it to the last 4
 /// bytes of the result array.
+///
+/// TODO: Get rid of this method and use `derive_resource_id` instead.
+/// NOTE: chain_id type is meant to be 6 bytes long and at the end of the resource ID byte array.
 pub fn encode_resource_id<TreeId, ChainId>(tree_id: TreeId, chain_id: ChainId) -> ResourceId
 where
 	TreeId: Encode + Decode + AtLeast32Bit + Default + Copy + Debug,
@@ -90,6 +105,10 @@ where
 /// The process is fairly simple (it the reverse of the [`encode_resource_id`])
 /// as we read the first 20 bytes of the resource_id as the `tree_id` and the
 /// last 4 bytes of the resource_id as `chain_id`.
+///
+/// TODO: Update this method as it is not consistent with `derive_resource_id` function above.
+/// NOTE: chain_id type is meant to be 6 bytes long and at the end of the resource ID byte array.
+/// NOTE: tree_id type is meant to be encoded into the adjacent 20 bytes to the encoded chain_id.
 pub fn decode_resource_id<TreeId, ChainId>(resource_id: ResourceId) -> (TreeId, ChainId)
 where
 	TreeId: Encode + Decode + AtLeast32Bit + Default + Copy,

@@ -61,7 +61,7 @@ use sp_std::prelude::*;
 use types::*;
 use webb_primitives::{
 	traits::{linkable_tree::*, merkle_tree::*},
-	ElementTrait,
+	ElementTrait, utils::compute_chain_id_type,
 };
 pub use weights::WeightInfo;
 
@@ -91,6 +91,7 @@ pub mod pallet {
 		type ChainType: Get<[u8; 2]>;
 
 		// Getter of id of the current chain
+		#[pallet::constant]
 		type ChainIdentifier: Get<Self::ChainId>;
 
 		/// The tree
@@ -98,6 +99,7 @@ pub mod pallet {
 			+ TreeInspector<Self::AccountId, Self::TreeId, Self::Element>;
 
 		/// The pruning length for neighbor root histories
+		#[pallet::constant]
 		type HistoryLength: Get<Self::RootIndex>;
 
 		/// Weight info for pallet
@@ -275,15 +277,9 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 	}
 
 	fn get_chain_id_type() -> T::ChainId {
-		let chain_id: u32 = T::ChainIdentifier::get().try_into().unwrap_or(0);
-		let chain_id_type = T::ChainType::get();
-		// We will attempt to cast it as a u64, if it fails, we will just return 0
-		// All chain IDs are expected to be u32 and with 2 byte type identifier
-		// yields a value that is at most u48::max(). This doesn't exist so we use u64
-		let mut buf = [0u8; 8];
-		buf[2..4].copy_from_slice(&chain_id_type);
-		buf[4..8].copy_from_slice(&chain_id.to_be_bytes());
-		T::ChainId::try_from(u64::from_be_bytes(buf)).unwrap_or(T::ChainId::zero())
+		T::ChainId::try_from(
+			compute_chain_id_type(T::ChainIdentifier::get(), T::ChainType::get())
+		).unwrap_or_default()
 	}
 
 	fn get_root(id: T::TreeId) -> Result<T::Element, DispatchError> {

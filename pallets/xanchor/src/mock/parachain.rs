@@ -476,6 +476,8 @@ parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	// Substrate standalone chain ID type
 	pub const ChainType: [u8; 2] = [2, 0];
+	// This identifier should equal the para ID.
+	// Note: this can cause issues if they do not match in production.
 	pub const ChainIdentifier: ChainId = 0;
 }
 
