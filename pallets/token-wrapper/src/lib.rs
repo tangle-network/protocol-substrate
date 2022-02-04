@@ -243,7 +243,8 @@ impl<T: Config> Pallet<T> {
 		amount: BalanceOf<T>,
 		into_pool_share_id: T::AssetId,
 	) -> BalanceOf<T> {
-		amount.saturating_add(Self::get_wrapping_fee(amount, into_pool_share_id).unwrap_or_default())
+		amount
+			.saturating_add(Self::get_wrapping_fee(amount, into_pool_share_id).unwrap_or_default())
 	}
 
 	pub fn has_sufficient_balance(
