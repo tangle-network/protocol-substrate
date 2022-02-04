@@ -4,13 +4,14 @@ use crate::{
 		deconstruct_public_inputs_el, get_hash_params, prove, setup_circuit_with_data_raw,
 		setup_circuit_with_input_utxos_raw, setup_keys, setup_random_circuit, verify, Utxos,
 	},
-	Error,
+	Error, MaxDepositAmount, MaxExtAmount, MaxFee, MinWithdrawAmount, {self as pallet_vanchor},
 };
 use arkworks_utils::utils::common::Curve;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use webb_primitives::{
 	types::vanchor::{ExtData, ProofData},
+	utils::compute_chain_id_type,
 	AccountId,
 };
 
@@ -57,6 +58,12 @@ fn setup_environment(_curve: Curve) -> (Vec<u8>, Vec<u8>) {
 
 	assert_ok!(Balances::set_balance(Origin::root(), bigger_transactor, BIGGER_DEFAULT_BALANCE, 0));
 
+	// set configurable storage
+	assert_ok!(VAnchor::set_max_fee(Origin::root(), 5));
+	assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 10));
+	assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 3));
+	assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 21));
+
 	// finally return the provingkey bytes
 	(proving_key_bytes, verifier_key_bytes)
 }
@@ -78,9 +85,11 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
 	let fee: Balance = 0;
 
 	let public_amount = DEFAULT_BALANCE as i128;
-	let in_chain_id = 0;
+	let chain_type = [2, 0];
+	let in_chain_id = compute_chain_id_type(0u32, chain_type);
 	let in_amounts = vec![0, 0];
-	let out_chain_ids = vec![0, 0];
+	let out_chain_ids =
+		vec![compute_chain_id_type(0u32, chain_type), compute_chain_id_type(0u32, chain_type)];
 	let out_amounts = vec![DEFAULT_BALANCE, 0];
 
 	let (circuit, public_inputs, _, out_utxos) = setup_circuit_with_data_raw(
@@ -136,9 +145,11 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let public_amount = DEFAULT_BALANCE as i128;
 		let fee: Balance = 0;
 
-		let in_chain_id = 0;
+		let chain_type = [2, 0];
+		let in_chain_id = compute_chain_id_type(0u32, chain_type);
 		let in_amounts = vec![0, 0];
-		let out_chain_ids = vec![0, 0];
+		let out_chain_ids =
+			vec![compute_chain_id_type(0u32, chain_type), compute_chain_id_type(0u32, chain_type)];
 		let out_amounts = vec![DEFAULT_BALANCE, 0];
 
 		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
@@ -210,7 +221,9 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		let fee: Balance = 2;
 
 		let public_amount = -7;
-		let out_chain_ids = vec![0, 0];
+		let chain_type = [2, 0];
+		let out_chain_ids =
+			vec![compute_chain_id_type(0u32, chain_type), compute_chain_id_type(0u32, chain_type)];
 		// After withdrawing -7
 		let out_amounts = vec![1, 2];
 
@@ -282,9 +295,11 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		let public_amount = DEFAULT_BALANCE as i128;
 		let fee: Balance = 0;
 
-		let in_chain_id = 0;
+		let chain_type = [2, 0];
+		let in_chain_id = compute_chain_id_type(0u32, chain_type);
 		let in_amounts = vec![0, 0];
-		let out_chain_ids = vec![0, 0];
+		let out_chain_ids =
+			vec![compute_chain_id_type(0u32, chain_type), compute_chain_id_type(0u32, chain_type)];
 		let out_amounts = vec![DEFAULT_BALANCE, 0];
 
 		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
@@ -361,7 +376,9 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 		let ext_amount: Amount = -5;
 		let fee: Balance = 2;
 
-		let out_chain_ids = vec![0, 0];
+		let chain_type = [2, 0];
+		let out_chain_ids =
+			vec![compute_chain_id_type(0u32, chain_type), compute_chain_id_type(0u32, chain_type)];
 		// Withdraw amount too big
 		let out_amounts = vec![100, 200];
 
@@ -433,7 +450,9 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 		let fee: Balance = 2;
 
 		let public_amount = -7;
-		let out_chain_ids = vec![0, 0];
+		let chain_type = [2, 0];
+		let out_chain_ids =
+			vec![compute_chain_id_type(0u32, chain_type), compute_chain_id_type(0u32, chain_type)];
 		// Withdraw amount too small
 		let out_amounts = vec![1, 0];
 
@@ -504,7 +523,9 @@ fn should_not_be_able_to_double_spend() {
 		let fee: Balance = 2;
 
 		let public_amount = -7;
-		let out_chain_ids = vec![0, 0];
+		let chain_type = [2, 0];
+		let out_chain_ids =
+			vec![compute_chain_id_type(0u32, chain_type), compute_chain_id_type(0u32, chain_type)];
 		// After withdrawing -7
 		let out_amounts = vec![1, 2];
 
@@ -584,9 +605,11 @@ fn should_not_be_able_to_exceed_max_fee() {
 		let public_amount = 4;
 		let fee: Balance = 6;
 
-		let in_chain_id = 0;
+		let chain_type = [2, 0];
+		let in_chain_id = compute_chain_id_type(0u32, chain_type);
 		let in_amounts = vec![0, 0];
-		let out_chain_ids = vec![0, 0];
+		let out_chain_ids =
+			vec![compute_chain_id_type(0u32, chain_type), compute_chain_id_type(0u32, chain_type)];
 		let out_amounts = vec![4, 0];
 
 		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
@@ -656,9 +679,11 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		let public_amount = BIG_DEFAULT_BALANCE as i128;
 		let fee: Balance = 0;
 
-		let in_chain_id = 0;
+		let chain_type = [2, 0];
+		let in_chain_id = compute_chain_id_type(0u32, chain_type);
 		let in_amounts = vec![0, 0];
-		let out_chain_ids = vec![0, 0];
+		let out_chain_ids =
+			vec![compute_chain_id_type(0u32, chain_type), compute_chain_id_type(0u32, chain_type)];
 		let out_amounts = vec![BIG_DEFAULT_BALANCE, 0];
 
 		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
@@ -729,9 +754,11 @@ fn should_not_be_able_to_exceed_external_amount() {
 		let public_amount = 20;
 		let fee: Balance = 3;
 
-		let in_chain_id = 0;
+		let chain_type = [2, 0];
+		let in_chain_id = compute_chain_id_type(0u32, chain_type);
 		let in_amounts = vec![0, 0];
-		let out_chain_ids = vec![0, 0];
+		let out_chain_ids =
+			vec![compute_chain_id_type(0u32, chain_type), compute_chain_id_type(0u32, chain_type)];
 		let out_amounts = vec![20, 0];
 
 		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
@@ -800,7 +827,9 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 		let fee: Balance = 4;
 
 		let public_amount = -6;
-		let out_chain_ids = vec![0, 0];
+		let chain_type = [2, 0];
+		let out_chain_ids =
+			vec![compute_chain_id_type(0u32, chain_type), compute_chain_id_type(0u32, chain_type)];
 		// After withdrawing -7
 		let out_amounts = vec![2, 2];
 
@@ -857,4 +886,48 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 		let transactor_balance_after = Balances::free_balance(transactor);
 		assert_eq!(transactor_balance_after, 0);
 	});
+}
+
+#[test]
+fn set_get_max_deposit_amount() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 1));
+		assert_eq!(MaxDepositAmount::<Test>::get(), 1);
+
+		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 5));
+		assert_eq!(MaxDepositAmount::<Test>::get(), 5);
+	})
+}
+
+#[test]
+fn set_get_min_withdraw_amount() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 2));
+		assert_eq!(MinWithdrawAmount::<Test>::get(), 2);
+
+		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 5));
+		assert_eq!(MinWithdrawAmount::<Test>::get(), 5);
+	})
+}
+
+#[test]
+fn set_get_max_ext_amount() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 2));
+		assert_eq!(MaxExtAmount::<Test>::get(), 2);
+
+		assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 5));
+		assert_eq!(MaxExtAmount::<Test>::get(), 5);
+	})
+}
+
+#[test]
+fn set_get_max_fee() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(VAnchor::set_max_fee(Origin::root(), 2));
+		assert_eq!(MaxFee::<Test>::get(), 2);
+
+		assert_ok!(VAnchor::set_max_fee(Origin::root(), 5));
+		assert_eq!(MaxFee::<Test>::get(), 5);
+	})
 }

@@ -5,7 +5,9 @@ use ark_crypto_primitives::commitment;
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_circuits::setup::common::setup_keys;
 use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
-use webb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
+use webb_primitives::{
+	merkle_tree::TreeInspector, utils::compute_chain_id_type, AccountId, ElementTrait,
+};
 
 use codec::Encode;
 
@@ -19,7 +21,7 @@ const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
 const M: usize = 2;
 const DEPOSIT_SIZE: u128 = 10_000;
-
+const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
 fn setup_environment(curve: Curve) -> Vec<u8> {
 	for account_id in [
 		account::<AccountId>("", 1, SEED),
@@ -166,7 +168,7 @@ fn anchor_works() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = 1;
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -178,7 +180,7 @@ fn anchor_works() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
@@ -197,7 +199,7 @@ fn anchor_works() {
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
 		// sanity check.
-		assert_eq!(roots_element[0], tree_root);
+		assert_eq!(root_elements[0], tree_root);
 
 		let balance_before = Balances::free_balance(recipient_account_id.clone());
 		// fire the call.
@@ -205,7 +207,75 @@ fn anchor_works() {
 			Origin::signed(sender_account_id),
 			tree_id,
 			proof_bytes,
-			roots_element,
+			root_elements,
+			nullifier_hash_element,
+			recipient_account_id.clone(),
+			relayer_account_id,
+			fee_value.into(),
+			refund_value.into(),
+			commitment_element,
+		));
+		// now we check the recipient balance again.
+		let balance_after = Balances::free_balance(recipient_account_id.clone());
+		assert_eq!(balance_after, balance_before + DEPOSIT_SIZE);
+		// perfect
+
+		crate::mock::assert_last_event::<Test>(
+			crate::Event::<Test>::Withdraw { who: recipient_account_id, amount: DEPOSIT_SIZE }
+				.into(),
+		);
+	});
+}
+
+#[test]
+fn anchor_works_with_wasm_utils() {
+	new_test_ext().execute_with(|| {
+		let curve = Curve::Bn254;
+		let pk_bytes = setup_environment(curve);
+
+		// inputs
+		let tree_id = create_anchor(0);
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let sender_account_id = account::<AccountId>("", 1, SEED);
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
+		let fee_value = 0;
+		let refund_value = 0;
+
+		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
+		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
+		let commitment_bytes = [0u8; 32];
+		let commitment_element = Element::from_bytes(&commitment_bytes);
+
+		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) =
+			setup_wasm_utils_zk_circuit(
+				curve,
+				recipient_bytes,
+				relayer_bytes,
+				commitment_bytes,
+				pk_bytes,
+				src_chain_id.into(),
+				fee_value,
+				refund_value,
+			);
+
+		assert_ok!(Anchor::deposit(
+			Origin::signed(sender_account_id.clone()),
+			tree_id,
+			leaf_element.clone(),
+		));
+
+		let tree_root = MerkleTree::get_root(tree_id).unwrap();
+		// sanity check.
+		assert_eq!(root_elements[0], tree_root);
+
+		let balance_before = Balances::free_balance(recipient_account_id.clone());
+		// fire the call.
+		assert_ok!(Anchor::withdraw(
+			Origin::signed(sender_account_id),
+			tree_id,
+			proof_bytes,
+			root_elements,
 			nullifier_hash_element,
 			recipient_account_id.clone(),
 			relayer_account_id,
@@ -233,7 +303,7 @@ fn double_spending_should_fail() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = 1;
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -245,7 +315,7 @@ fn double_spending_should_fail() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
@@ -263,7 +333,7 @@ fn double_spending_should_fail() {
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		assert_eq!(roots_element[0], tree_root);
+		assert_eq!(root_elements[0], tree_root);
 		// all ready, call withdraw.
 		// but first check the balance before that.
 
@@ -273,7 +343,7 @@ fn double_spending_should_fail() {
 			Origin::signed(sender_account_id.clone()),
 			tree_id,
 			proof_bytes.clone(),
-			roots_element.clone(),
+			root_elements.clone(),
 			nullifier_hash_element,
 			recipient_account_id.clone(),
 			relayer_account_id.clone(),
@@ -292,7 +362,7 @@ fn double_spending_should_fail() {
 				Origin::signed(sender_account_id),
 				tree_id,
 				proof_bytes,
-				roots_element,
+				root_elements,
 				nullifier_hash_element,
 				recipient_account_id,
 				relayer_account_id,
@@ -313,7 +383,7 @@ fn should_fail_when_invalid_merkle_roots() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = 1;
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -325,7 +395,7 @@ fn should_fail_when_invalid_merkle_roots() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
-		let (proof_bytes, mut roots_element, nullifier_hash_element, leaf_element) =
+		let (proof_bytes, mut root_elements, nullifier_hash_element, leaf_element) =
 			setup_zk_circuit(
 				curve,
 				recipient_bytes,
@@ -344,10 +414,10 @@ fn should_fail_when_invalid_merkle_roots() {
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		assert_eq!(roots_element[0], tree_root);
+		assert_eq!(root_elements[0], tree_root);
 
 		// invalid root length
-		roots_element
+		root_elements
 			.push(Element::from_bytes(&ark_bn254::Fr::default().into_repr().to_bytes_le()[..]));
 		// all ready, call withdraw.
 
@@ -357,7 +427,7 @@ fn should_fail_when_invalid_merkle_roots() {
 				Origin::signed(sender_account_id),
 				tree_id,
 				proof_bytes,
-				roots_element,
+				root_elements,
 				nullifier_hash_element,
 				recipient_account_id,
 				relayer_account_id,
@@ -378,7 +448,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = 1;
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -390,7 +460,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
-		let (mut proof_bytes, roots_element, nullifier_hash_element, leaf_element) =
+		let (mut proof_bytes, root_elements, nullifier_hash_element, leaf_element) =
 			setup_zk_circuit(
 				curve,
 				recipient_bytes,
@@ -409,7 +479,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		assert_eq!(roots_element[0], tree_root);
+		assert_eq!(root_elements[0], tree_root);
 
 		proof_bytes[1] = proof_bytes[1] % 128 + 1;
 
@@ -418,7 +488,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 				Origin::signed(sender_account_id),
 				tree_id,
 				proof_bytes,
-				roots_element,
+				root_elements,
 				nullifier_hash_element,
 				recipient_account_id,
 				relayer_account_id,
@@ -439,7 +509,7 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = 1;
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -451,7 +521,7 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
@@ -469,14 +539,14 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		assert_eq!(roots_element[0], tree_root);
+		assert_eq!(root_elements[0], tree_root);
 
 		assert_err!(
 			Anchor::withdraw(
 				Origin::signed(sender_account_id),
 				tree_id,
 				proof_bytes,
-				roots_element,
+				root_elements,
 				nullifier_hash_element,
 				recipient_account_id.clone(),
 				recipient_account_id,
@@ -497,7 +567,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = 1;
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -509,7 +579,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
@@ -527,7 +597,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		assert_eq!(roots_element[0], tree_root);
+		assert_eq!(root_elements[0], tree_root);
 
 		// now double spending should fail.
 		assert_err!(
@@ -535,7 +605,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 				Origin::signed(sender_account_id),
 				tree_id,
 				proof_bytes,
-				roots_element,
+				root_elements,
 				nullifier_hash_element,
 				recipient_account_id,
 				relayer_account_id,
@@ -556,7 +626,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = 1;
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -568,7 +638,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
@@ -586,7 +656,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 		));
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		assert_eq!(roots_element[0], tree_root);
+		assert_eq!(root_elements[0], tree_root);
 
 		// now double spending should fail.
 		assert_err!(
@@ -594,7 +664,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 				Origin::signed(sender_account_id),
 				tree_id,
 				proof_bytes,
-				roots_element,
+				root_elements,
 				nullifier_hash_element,
 				recipient_account_id,
 				relayer_account_id,
@@ -636,7 +706,7 @@ fn anchor_works_for_pool_tokens() {
 
 		// inputs
 		let tree_id = create_anchor(pool_share_id);
-		let src_chain_id = 1;
+		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -683,7 +753,7 @@ fn anchor_works_for_pool_tokens() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
-		let (proof_bytes, roots_element, nullifier_hash_element, leaf_element) = setup_zk_circuit(
+		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
@@ -702,14 +772,14 @@ fn anchor_works_for_pool_tokens() {
 
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
 		// sanity check.
-		assert_eq!(roots_element[0], tree_root);
+		assert_eq!(root_elements[0], tree_root);
 
 		let balance_before = TokenWrapper::get_balance(pool_share_id, &recipient_account_id); // fire the call.
 		assert_ok!(Anchor::withdraw(
 			Origin::signed(sender_account_id),
 			tree_id,
 			proof_bytes,
-			roots_element,
+			root_elements,
 			nullifier_hash_element,
 			recipient_account_id.clone(),
 			relayer_account_id,

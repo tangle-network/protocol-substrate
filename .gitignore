@@ -14,3 +14,7 @@
 
 #vscode files
 .vscode/launch.json
+
+.idea/
+
+*.iml

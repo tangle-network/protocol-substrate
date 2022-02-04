@@ -55,7 +55,6 @@ use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::Ensure
 use frame_system::pallet_prelude::OriginFor;
 use pallet_anchor::{BalanceOf, CurrencyIdOf};
 use pallet_linkable_tree::types::EdgeMetadata;
-use sp_std::prelude::*;
 use webb_primitives::{
 	anchor::AnchorConfig,
 	traits::anchor::{AnchorInspector, AnchorInterface},
@@ -170,6 +169,8 @@ pub mod pallet {
 			T::BridgeOrigin::ensure_origin(origin)?;
 			Self::update_anchor(r_id, anchor_metadata)
 		}
+
+		// TODO: Add configurable limit proposal executors for VAnchors
 	}
 }
 

@@ -6,7 +6,7 @@ use std::{sync::Arc, time::Duration};
 
 // Local Runtime Types
 pub use common::{AccountId, Balance, Block, Hash, Header, Index as Nonce};
-use darkwebb_runtime::{Element, RuntimeApi};
+use webb_runtime::{Element, RuntimeApi};
 
 // Cumulus Imports
 use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
@@ -38,11 +38,11 @@ impl sc_executor::NativeExecutionDispatch for RuntimeExecutor {
 	type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		darkwebb_runtime::api::dispatch(method, data)
+		webb_runtime::api::dispatch(method, data)
 	}
 
 	fn native_version() -> sc_executor::NativeVersion {
-		darkwebb_runtime::native_version()
+		webb_runtime::native_version()
 	}
 }
 

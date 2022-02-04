@@ -44,7 +44,6 @@ pub use pallet::*;
 
 use crate::types::{AssetDetails, AssetMetadata};
 use frame_support::BoundedVec;
-use sp_runtime::traits::Zero;
 pub use traits::{Registry, ShareTokenRegistry};
 #[frame_support::pallet]
 pub mod pallet {

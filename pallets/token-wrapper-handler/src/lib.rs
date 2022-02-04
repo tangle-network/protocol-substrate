@@ -59,7 +59,7 @@ pub mod mock_signature_bridge;
 #[cfg(test)]
 mod tests_signature_bridge;
 
-use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
+use frame_support::traits::EnsureOrigin;
 use frame_system::pallet_prelude::OriginFor;
 
 ///TODO: Define BalanceOf
@@ -91,7 +91,6 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		UpdatedWrappingFeePercent { wrapping_fee_percent: BalanceOf<T> },
 	}
@@ -115,7 +114,8 @@ pub mod pallet {
 		#[pallet::weight(195_000_000)]
 		pub fn execute_wrapping_fee_proposal(
 			origin: OriginFor<T>,
-			r_id: ResourceId,
+			// TODO: param not being used
+			_r_id: ResourceId,
 			wrapping_fee_percent: BalanceOf<T>,
 			into_pool_share_id: T::AssetId,
 		) -> DispatchResultWithPostInfo {
@@ -128,7 +128,8 @@ pub mod pallet {
 		#[pallet::weight(195_000_000)]
 		pub fn execute_add_token_to_pool_share(
 			origin: OriginFor<T>,
-			r_id: ResourceId,
+			// TODO: param is not used
+			_r_id: ResourceId,
 			name: Vec<u8>,
 			asset_id: T::AssetId,
 		) -> DispatchResultWithPostInfo {
@@ -141,7 +142,8 @@ pub mod pallet {
 		#[pallet::weight(195_000_000)]
 		pub fn execute_remove_token_from_pool_share(
 			origin: OriginFor<T>,
-			r_id: ResourceId,
+			// TODO: param not being used
+			_r_id: ResourceId,
 			name: Vec<u8>,
 			asset_id: T::AssetId,
 		) -> DispatchResultWithPostInfo {

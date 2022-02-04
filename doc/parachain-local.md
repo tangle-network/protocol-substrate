@@ -1,4 +1,4 @@
-## darkwebb Parachain Local Setup.
+## Webb Parachain Local Setup.
 
 To set up a local development for testing parachains setup, follow the following steps:
 
@@ -36,7 +36,7 @@ In another directory, do the following:
 git checkout parachain-kickstart
 ```
 
-2. Start build the darkwebb node.
+2. Start build the webb node.
 
 ```shell
 cargo build --release
@@ -45,12 +45,12 @@ cargo build --release
 3. Make sure it works:
 
 ```shell
-./target/release/darkwebb-node --help
+./target/release/webb-node --help
 ```
 
 ### Step 3: Put together
 
-In another directory, that is besides the `polkadot` and `darkwebb-substrate`.
+In another directory, that is besides the `polkadot` and `webb-substrate`.
 
 1. Create a new `polkadot-config`
 
@@ -103,7 +103,7 @@ yarn global add polkadot-launch
   },
   "parachains": [
     {
-      "bin": "../darkwebb-substrate/target/release/darkwebb-node",
+      "bin": "../webb-substrate/target/release/webb-node",
       "id": "2000",
       "balance": "1000000000000000000000",
       "nodes": [
@@ -116,7 +116,7 @@ yarn global add polkadot-launch
       ]
     },
     {
-      "bin": "../darkwebb-substrate/target/release/darkwebb-node",
+      "bin": "../webb-substrate/target/release/webb-node",
       "id": "3000",
       "balance": "1000000000000000000000",
       "nodes": [

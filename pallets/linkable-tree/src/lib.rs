@@ -86,6 +86,10 @@ pub mod pallet {
 		/// ChainID for anchor edges
 		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 
+		/// ChainID type for this chain
+		#[pallet::constant]
+		type ChainType: Get<[u8; 2]>;
+
 		// Getter of id of the current chain
 		type ChainIdentifier: Get<Self::ChainId>;
 
@@ -268,6 +272,18 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 {
 	fn get_chain_id() -> T::ChainId {
 		T::ChainIdentifier::get()
+	}
+
+	fn get_chain_id_type() -> T::ChainId {
+		let chain_id: u32 = T::ChainIdentifier::get().try_into().unwrap_or(0);
+		let chain_id_type = T::ChainType::get();
+		// We will attempt to cast it as a u64, if it fails, we will just return 0
+		// All chain IDs are expected to be u32 and with 2 byte type identifier
+		// yields a value that is at most u48::max(). This doesn't exist so we use u64
+		let mut buf = [0u8; 8];
+		buf[2..4].copy_from_slice(&chain_id_type);
+		buf[4..8].copy_from_slice(&chain_id.to_be_bytes());
+		T::ChainId::try_from(u64::from_be_bytes(buf)).unwrap_or(T::ChainId::zero())
 	}
 
 	fn get_root(id: T::TreeId) -> Result<T::Element, DispatchError> {

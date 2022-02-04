@@ -28,5 +28,5 @@ RUN useradd -m -u 1000 -U -s /bin/sh -d /webb webb && \
   /usr/local/bin/darkwebb-standalone-node --version
 
 USER webb
-EXPOSE 30333 9933 9944 9615
+EXPOSE 30333 9933 9944 9615 33334
 VOLUME ["/data"]
