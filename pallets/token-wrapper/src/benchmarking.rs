@@ -103,7 +103,6 @@ benchmarks! {
 		)
 		.unwrap();
 
-
 		<<T as Config>::Currency as MultiCurrency<T::AccountId>>::deposit(
 			TokenWrapper::<T>::to_currency_id(first_token_id).unwrap(),
 			&recipient,
