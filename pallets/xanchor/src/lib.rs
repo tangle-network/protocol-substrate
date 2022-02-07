@@ -480,7 +480,7 @@ use pallet_anchor::BalanceOf;
 		) -> DispatchResultWithPostInfo {
 			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
 			let caller_chain_id = compute_chain_id_type(u32::from(para), T::Anchor::get_chain_type());
-			let (tree_id, r_chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
+			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
 			// double check that the caller is the same as the chain id of the resource
 			// also the the same from the metadata.
 			let src_chain_id:u64 =  metadata.src_chain_id.try_into().unwrap_or_default();
@@ -503,7 +503,7 @@ use pallet_anchor::BalanceOf;
 			metadata: EdgeMetadataOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let (tree_id, chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
+			let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
 			ensure!(metadata.src_chain_id == chain_id, Error::<T, I>::InvalidPermissions);
 			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 			Self::update_anchor(tree_id, metadata)?;
@@ -525,12 +525,12 @@ use pallet_anchor::BalanceOf;
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	fn register_new_resource_id(
+	fn 	register_new_resource_id(
 		r_id: ResourceId,
 		target_tree_id: T::TreeId,
 	) -> DispatchResultWithPostInfo {
 		// extract the resource id information
-		let (tree_id, chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
+		let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
 		println!("register_new_resource_id");
 		println!("tree_id: {:?}", tree_id);
 		println!("chain_id: {:?}", chain_id);
@@ -586,7 +586,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Sync Anchor Edge with other parachains that linked to that anchor
-	/// usinc XCM.
+	/// using XCM.
 	fn sync_anchor(tree_id: T::TreeId) -> DispatchResult {
 		// we get the current anchor tree
 		let tree = match pallet_mt::Trees::<T, I>::get(tree_id) {
@@ -606,7 +606,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			latest_leaf_index,
 		};
 		// now we need an iterator for all the edges connected to this anchor
-		let edges = pallet_linkable_tree::EdgeList::<T, I>::iter_prefix_values(tree_id);
+			let edges = pallet_linkable_tree::EdgeList::<T, I>::iter_prefix_values(tree_id);
 		// for each edge we do the following:
 		// 1. get the target tree id on the other chain (using the other chain id, and
 		// my tree id)

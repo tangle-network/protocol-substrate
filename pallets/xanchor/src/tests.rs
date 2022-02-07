@@ -10,7 +10,7 @@ use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use pallet_anchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};
 use std::{convert::TryInto, path::Path};
-use webb_primitives::utils::encode_resource_id;
+use webb_primitives::utils::{derive_resource_id};
 use xcm_simulator::TestExt;
 
 const SEED: u32 = 0;
@@ -179,7 +179,7 @@ fn should_link_two_anchors() {
 	ParaA::execute_with(|| {
 		// the resource id reads as following
 		// we need to link para_a_tree_id to another anchor defined on ParaB
-		let r_id = encode_resource_id::<u32, u32>(para_a_tree_id, PARAID_B.into());
+		let r_id = derive_resource_id( PARAID_B.into(), &para_a_tree_id.encode());
 		// then, on the call here, we tell it which tree we are going to link to.
 		// (para_b_tree_id).
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
@@ -188,7 +188,7 @@ fn should_link_two_anchors() {
 	// the caller is one of the Parachain A operators.
 	ParaB::execute_with(|| {
 		// we need to link para_b_tree_id to another anchor defined on ParaA
-		let r_id = encode_resource_id::<u32, u32>(para_b_tree_id, PARAID_A.into());
+		let r_id = derive_resource_id( PARAID_A.into(), &para_b_tree_id.encode());
 		// then, when we are sending the call we tell it which tree we are going to link
 		// to. (para_a_tree_id).
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
@@ -243,12 +243,12 @@ fn should_bridge_anchors_using_xcm() {
 	});
 
 	ParaA::execute_with(|| {
-		let r_id = encode_resource_id::<u32, u32>(para_a_tree_id, PARAID_B.into());
+		let r_id = derive_resource_id( PARAID_B.into(), &para_a_tree_id.encode());
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
-		let r_id = encode_resource_id::<u32, u32>(para_b_tree_id, PARAID_A.into());
+		let r_id = derive_resource_id( PARAID_A.into(), &para_b_tree_id.encode());
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
 	});
 
@@ -292,8 +292,8 @@ fn should_fail_to_register_resource_id_if_not_the_democracy() {
 	MockNet::reset();
 	// it should fail to register a resource id if not the current maintainer.
 	ParaA::execute_with(|| {
-		let tree_id = MerkleTree::next_tree_id() - 1;
-		let r_id = encode_resource_id::<u32, u32>(tree_id, PARAID_B.into());
+		let tree_id = MerkleTree::next_tree_id();
+		let r_id = derive_resource_id( PARAID_B.into(), &tree_id.encode());
 		let target_tree_id = 1;
 		assert_err!(
 			XAnchor::register_resource_id(
@@ -312,8 +312,8 @@ fn should_fail_to_register_resource_id_when_anchor_does_not_exist() {
 	// it should fail to register the resource id if the anchor does not exist.
 	ParaA::execute_with(|| {
 		// anchor/tree does not exist.
-		let tree_id = MerkleTree::next_tree_id() - 1;
-		let r_id = encode_resource_id::<u32, u32>(tree_id, PARAID_B.into());
+		let tree_id = MerkleTree::next_tree_id();
+		let r_id = derive_resource_id(PARAID_B.into(), &tree_id.encode());
 		let target_tree_id = 1;
 		assert_err!(
 			XAnchor::register_resource_id(Origin::root(), r_id, target_tree_id),
@@ -335,7 +335,7 @@ fn should_fail_to_link_anchor_if_it_is_already_anchored() {
 		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		// next we start to register the resource id.
 		let tree_id = MerkleTree::next_tree_id() - 1;
-		let r_id = encode_resource_id::<u32, u32>(tree_id, PARAID_B.into());
+		let r_id = derive_resource_id( PARAID_B.into(), &tree_id.encode());
 		let target_tree_id = 1;
 		assert_ok!(XAnchor::register_resource_id(Origin::root(), r_id, target_tree_id));
 		// now we try to link the anchor again, should error.
@@ -354,8 +354,8 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 	ParaA::execute_with(|| {
 		// try to update the edges, from a normal account!
 		// it should fail.
-		let tree_id = MerkleTree::next_tree_id() - 1;
-		let r_id = encode_resource_id::<u32, u32>(tree_id, PARAID_B.into());
+		let tree_id = MerkleTree::next_tree_id();
+		let r_id = derive_resource_id(PARAID_B.into(), &tree_id.encode());
 		assert_err!(
 			XAnchor::update(Origin::signed(parachain::AccountTwo::get()), r_id, Default::default()),
 			frame_support::error::BadOrigin,
@@ -512,7 +512,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 
 	// force link them.
 	ParaA::execute_with(|| {
-		let r_id = encode_resource_id::<u32, u32>(para_a_tree_id, PARAID_B.into());
+		let r_id = derive_resource_id(PARAID_B.into(), &para_a_tree_id.encode());
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
@@ -651,7 +651,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 
 	// force link them.
 	ParaA::execute_with(|| {
-		let r_id = encode_resource_id::<u32, u32>(para_a_tree_id, PARAID_B.into());
+		let r_id = derive_resource_id( PARAID_B.into(), &para_a_tree_id.encode());
 		println!("r_id: {:?}", r_id);
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
@@ -750,7 +750,7 @@ fn should_fail_to_call_register_resource_id_as_signed_account() {
 	// calling register_resource_id as signed account should fail.
 	// on parachain A.
 	ParaA::execute_with(|| {
-		let r_id = encode_resource_id::<u32, u32>(MerkleTree::next_tree_id(), PARAID_B.into());
+		let r_id = derive_resource_id( PARAID_B.into(), &MerkleTree::next_tree_id().encode());
 		assert_err!(
 			XAnchor::register_resource_id(
 				Origin::signed(AccountThree::get()),
@@ -769,7 +769,7 @@ fn should_fail_to_call_update_as_signed_account() {
 	// calling update as signed account should fail.
 	// on parachain A.
 	ParaA::execute_with(|| {
-		let r_id = encode_resource_id::<u32, u32>(MerkleTree::next_tree_id(), PARAID_B.into());
+		let r_id = derive_resource_id( PARAID_B.into(), &MerkleTree::next_tree_id().encode());
 		let edge_metadata =
 			EdgeMetadata { src_chain_id: PARAID_B.into(), root: Element::zero(), latest_leaf_index: 0 };
 		assert_err!(
