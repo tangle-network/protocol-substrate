@@ -39,7 +39,7 @@ pub fn derive_resource_id(chain: u64, id: &[u8]) -> ResourceId {
 	r_id[29] = chain[5];
 	r_id[30] = chain[6];
 	r_id[31] = chain[7];
-	let range = if id.len() > 26 { 26 } else { id.len() }; // Use at most 28 bytes
+	let range = if id.len() > 26 { 26 } else { id.len() }; // Use at most 26 bytes
 	for i in 0..range {
 		r_id[25 - i] = id[range - 1 - i]; // Ensure left padding for eth compatibility
 	}
@@ -115,7 +115,7 @@ where
 	ChainId: Encode + Decode + AtLeast32Bit + Default + Copy,
 {
 	let tree_id_bytes = &resource_id[0..20];
-	let chain_id_bytes = &resource_id[28..];
+	let chain_id_bytes = &resource_id[26..];
 	let mut buf_u64: [u8; 8] = [0u8; 8];
 	buf_u64[0..4].copy_from_slice(chain_id_bytes);
 	let tree_id = TreeId::decode(&mut &*tree_id_bytes).unwrap();

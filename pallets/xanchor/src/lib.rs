@@ -324,7 +324,7 @@ use pallet_anchor::BalanceOf;
 		/// Handles the link proposal from another parachain by creating an
 		/// on-chain proposal. Once passed, this proposal will link the anchors
 		/// on the local chain.
-		/// 
+		///
 		/// It also signals back to the caller chain with the proposal
 		/// hash, so the caller chain knows that the link process is complete.
 		#[pallet::weight(0)]
@@ -384,7 +384,7 @@ use pallet_anchor::BalanceOf;
 			);
 			// Now we can remove the pending linked anchor.
 			PendingLinkedAnchors::<T, I>::remove(payload.target_chain_id, payload.local_tree_id);
-			let r_id = utils::encode_resource_id(payload.local_tree_id, payload.target_chain_id);
+			let r_id =  utils::derive_resource_id(payload.target_chain_id, &payload.local_tree_id.encode());
 			// unwrap here is safe, since we are sure that it has the value of the tree id.
 			let target_tree_id = payload.target_tree_id.unwrap();
 			// We are now ready to link the anchor locally.
