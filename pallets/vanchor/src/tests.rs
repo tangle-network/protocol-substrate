@@ -1,11 +1,10 @@
 use crate::{
 	mock::*,
-	test_utils::{
-		deconstruct_public_inputs_el, get_hash_params, prove, setup_circuit_with_data_raw,
-		setup_circuit_with_input_utxos_raw, setup_keys, setup_random_circuit, verify, Utxos,
-	},
-	Error, MaxDepositAmount, MaxExtAmount, MaxFee, MinWithdrawAmount, {self as pallet_vanchor},
+	test_utils::{deconstruct_public_inputs_el, setup_zk_circuit, setup_utxos},
+	Error, MaxDepositAmount, MaxExtAmount, MaxFee, MinWithdrawAmount,
 };
+use ark_ff::BigInteger;
+use arkworks_circuits::setup::vanchor::Utxo;
 use arkworks_utils::utils::common::Curve;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
@@ -13,6 +12,11 @@ use webb_primitives::{
 	types::vanchor::{ExtData, ProofData},
 	AccountId,
 };
+use sp_core::hashing::keccak_256;
+use ark_ff::PrimeField;
+use arkworks_utils::utils::common::setup_params_x5_3;
+
+type Bn254Fr = ark_bn254::Fr;
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
@@ -32,7 +36,7 @@ pub fn get_account(id: u32) -> AccountId {
 }
 
 fn setup_environment(_curve: Curve) -> (Vec<u8>, Vec<u8>) {
-	let (_, params3, ..) = get_hash_params::<ark_bn254::Fr>(Curve::Bn254);
+	let params3 = setup_params_x5_3::<ark_bn254::Fr>(Curve::Bn254);
 	// 1. Setup The Hasher Pallet.
 	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
 	// 2. Initialize MerkleTree pallet.
@@ -40,10 +44,14 @@ fn setup_environment(_curve: Curve) -> (Vec<u8>, Vec<u8>) {
 	// 3. Setup the VerifierPallet
 	//    but to do so, we need to have a VerifyingKey
 
-	let circuit = setup_random_circuit();
-	let (proving_key_bytes, verifier_key_bytes) = setup_keys(circuit);
+	let pk_bytes = include_bytes!(
+		"../../../protocol-substrate-fixtures/vanchor/bn254/x5/proving_key_uncompressed.bin"
+	).to_vec();
+	let vk_bytes = include_bytes!(
+		"../../../protocol-substrate-fixtures/vanchor/bn254/x5/verifying_key.bin"
+	).to_vec();
 
-	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), verifier_key_bytes.clone()));
+	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.clone()));
 
 	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
 	let big_transactor = account::<AccountId>("", BIG_TRANSACTOR_ACCOUNT_ID, SEED);
@@ -64,7 +72,7 @@ fn setup_environment(_curve: Curve) -> (Vec<u8>, Vec<u8>) {
 	assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 21));
 
 	// finally return the provingkey bytes
-	(proving_key_bytes, verifier_key_bytes)
+	(pk_bytes, vk_bytes)
 }
 
 fn create_vanchor(asset_id: u32) -> u32 {
@@ -74,7 +82,7 @@ fn create_vanchor(asset_id: u32) -> u32 {
 	MerkleTree::next_tree_id() - 1
 }
 
-fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
+fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, [Utxo<Bn254Fr>; 2]) {
 	let tree_id = create_vanchor(0);
 
 	let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -84,40 +92,38 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
 	let fee: Balance = 0;
 
 	let public_amount = DEFAULT_BALANCE as i128;
-	let in_chain_id = 0;
-	let in_amounts = vec![0, 0];
-	let out_chain_ids = vec![0, 0];
-	let out_amounts = vec![DEFAULT_BALANCE, 0];
+	let in_chain_ids = [0, 0];
+	let in_amounts = [0, 0];
+	let out_chain_ids = [0, 0];
+	let out_amounts = [DEFAULT_BALANCE, 0];
 
-	let (circuit, public_inputs, _, out_utxos) = setup_circuit_with_data_raw(
-		public_amount,
-		recipient.clone(),
-		relayer.clone(),
-		ext_amount,
-		fee,
-		in_chain_id,
-		in_amounts.clone(),
-		out_chain_ids,
-		out_amounts,
-	);
+	let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(0));
+	let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(0));
 
-	let proof = prove(circuit, proving_key_bytes);
-
-	// Deconstructing public inputs
-	let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-		deconstruct_public_inputs_el(&public_inputs);
-
-	// Constructing external data
-	let output1 = commitments[0].clone();
-	let output2 = commitments[1].clone();
+	let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+	let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
 	let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
 		recipient.clone(),
 		relayer.clone(),
 		ext_amount,
 		fee,
-		output1,
-		output2,
+		Element::from_bytes(&output1),
+		Element::from_bytes(&output2),
 	);
+
+	let ext_data_hash = keccak_256(&ext_data.encode_abi());
+
+	let (proof, public_inputs) = setup_zk_circuit(
+		public_amount,
+		ext_data_hash.to_vec(),
+		in_utxos,
+		out_utxos,
+		&proving_key_bytes
+	);
+
+	// Deconstructing public inputs
+	let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+		deconstruct_public_inputs_el(&public_inputs);
 
 	// Constructing proof data
 	let proof_data =
@@ -131,7 +137,7 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, Utxos) {
 #[test]
 fn should_complete_2x2_transaction_with_deposit() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (proving_key_bytes, _) = setup_environment(Curve::Bn254);
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -142,32 +148,38 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let public_amount = DEFAULT_BALANCE as i128;
 		let fee: Balance = 0;
 
-		let in_chain_id = 0;
-		let in_amounts = vec![0, 0];
-		let out_chain_ids = vec![0, 0];
-		let out_amounts = vec![DEFAULT_BALANCE, 0];
+		let in_chain_ids = [0, 0];
+		let in_amounts = [0, 0];
+		let out_chain_ids = [0, 0];
+		let out_amounts = [DEFAULT_BALANCE, 0];
 
-		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
-			public_amount,
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(0));
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			in_chain_id,
-			in_amounts.clone(),
-			out_chain_ids,
-			out_amounts,
+			Element::from_bytes(&output1),
+			Element::from_bytes(&output2),
 		);
 
-		let proof = prove(circuit, &proving_key_bytes);
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		// Check locally
-		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
-		assert!(res);
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			&proving_key_bytes
+		);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_f);
+			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -206,7 +218,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 #[test]
 fn should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (proving_key_bytes, _) = setup_environment(Curve::Bn254);
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(&proving_key_bytes);
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -216,30 +228,36 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		let fee: Balance = 2;
 
 		let public_amount = -7;
-		let out_chain_ids = vec![0, 0];
+		let out_chain_ids = [0, 0];
 		// After withdrawing -7
-		let out_amounts = vec![1, 2];
+		let out_amounts = [1, 2];
 
-		let (circuit, public_inputs_f, ..) = setup_circuit_with_input_utxos_raw(
-			public_amount,
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			in_utxos,
-			out_chain_ids,
-			out_amounts.to_vec(),
+			Element::from_bytes(&output1),
+			Element::from_bytes(&output2),
 		);
 
-		let proof = prove(circuit, &proving_key_bytes);
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		// Check locally
-		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
-		assert!(res);
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			&proving_key_bytes
+		);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_f);
+			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -277,7 +295,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 #[test]
 fn should_not_complete_transaction_if_ext_data_is_invalid() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (proving_key_bytes, _) = setup_environment(Curve::Bn254);
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -288,32 +306,38 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		let public_amount = DEFAULT_BALANCE as i128;
 		let fee: Balance = 0;
 
-		let in_chain_id = 0;
-		let in_amounts = vec![0, 0];
-		let out_chain_ids = vec![0, 0];
-		let out_amounts = vec![DEFAULT_BALANCE, 0];
+		let in_chain_ids = [0, 0];
+		let in_amounts = [0, 0];
+		let out_chain_ids = [0, 0];
+		let out_amounts = [DEFAULT_BALANCE, 0];
 
-		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
-			public_amount,
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(0));
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			in_chain_id,
-			in_amounts.clone(),
-			out_chain_ids,
-			out_amounts,
+			Element::from_bytes(&output1),
+			Element::from_bytes(&output2),
 		);
 
-		let proof = prove(circuit, &proving_key_bytes);
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		// Check locally
-		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
-		assert!(res);
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			&proving_key_bytes
+		);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_f);
+			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -367,26 +391,36 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 		let ext_amount: Amount = -5;
 		let fee: Balance = 2;
 
-		let out_chain_ids = vec![0, 0];
+		let out_chain_ids = [0, 0];
 		// Withdraw amount too big
-		let out_amounts = vec![100, 200];
+		let out_amounts = [100, 200];
 
-		let (circuit, public_inputs_el, ..) = setup_circuit_with_input_utxos_raw(
-			public_amount,
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			in_utxos,
-			out_chain_ids,
-			out_amounts.to_vec(),
+			Element::from_bytes(&output1),
+			Element::from_bytes(&output2),
 		);
 
-		let proof = prove(circuit, &proving_key_bytes);
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
+
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			&proving_key_bytes
+		);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_el);
+			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -439,26 +473,36 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 		let fee: Balance = 2;
 
 		let public_amount = -7;
-		let out_chain_ids = vec![0, 0];
+		let out_chain_ids = [0, 0];
 		// Withdraw amount too small
-		let out_amounts = vec![1, 0];
+		let out_amounts = [1, 0];
 
-		let (circuit, public_inputs_el, ..) = setup_circuit_with_input_utxos_raw(
-			public_amount,
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			in_utxos,
-			out_chain_ids,
-			out_amounts.to_vec(),
+			Element::from_bytes(&output1),
+			Element::from_bytes(&output2),
 		);
 
-		let proof = prove(circuit, &proving_key_bytes);
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
+
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			&proving_key_bytes
+		);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_el);
+			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -500,7 +544,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 #[test]
 fn should_not_be_able_to_double_spend() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (proving_key_bytes, _) = setup_environment(Curve::Bn254);
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(&proving_key_bytes);
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -510,30 +554,36 @@ fn should_not_be_able_to_double_spend() {
 		let fee: Balance = 2;
 
 		let public_amount = -7;
-		let out_chain_ids = vec![0, 0];
+		let out_chain_ids = [0, 0];
 		// After withdrawing -7
-		let out_amounts = vec![1, 2];
+		let out_amounts = [1, 2];
 
-		let (circuit, public_inputs_f, ..) = setup_circuit_with_input_utxos_raw(
-			public_amount,
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			in_utxos,
-			out_chain_ids,
-			out_amounts.to_vec(),
+			Element::from_bytes(&output1),
+			Element::from_bytes(&output2),
 		);
 
-		let proof = prove(circuit, &proving_key_bytes);
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		// Check locally
-		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
-		assert!(res);
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			&proving_key_bytes
+		);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_f);
+			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -579,7 +629,7 @@ fn should_not_be_able_to_double_spend() {
 #[test]
 fn should_not_be_able_to_exceed_max_fee() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (proving_key_bytes, _) = setup_environment(Curve::Bn254);
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -590,32 +640,38 @@ fn should_not_be_able_to_exceed_max_fee() {
 		let public_amount = 4;
 		let fee: Balance = 6;
 
-		let in_chain_id = 0;
-		let in_amounts = vec![0, 0];
-		let out_chain_ids = vec![0, 0];
-		let out_amounts = vec![4, 0];
+		let in_chain_ids = [0, 0];
+		let in_amounts = [0, 0];
+		let out_chain_ids = [0, 0];
+		let out_amounts = [4, 0];
 
-		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
-			public_amount,
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(0));
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			in_chain_id,
-			in_amounts.clone(),
-			out_chain_ids,
-			out_amounts,
+			Element::from_bytes(&output1),
+			Element::from_bytes(&output2),
 		);
 
-		let proof = prove(circuit, &proving_key_bytes);
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		// Check locally
-		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
-		assert!(res);
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			&proving_key_bytes
+		);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_f);
+			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -651,7 +707,7 @@ fn should_not_be_able_to_exceed_max_fee() {
 #[test]
 fn should_not_be_able_to_exceed_max_deposit() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (proving_key_bytes, _) = setup_environment(Curve::Bn254);
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(BIG_TRANSACTOR_ACCOUNT_ID);
@@ -662,32 +718,38 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		let public_amount = BIG_DEFAULT_BALANCE as i128;
 		let fee: Balance = 0;
 
-		let in_chain_id = 0;
-		let in_amounts = vec![0, 0];
-		let out_chain_ids = vec![0, 0];
-		let out_amounts = vec![BIG_DEFAULT_BALANCE, 0];
+		let in_chain_ids = [0, 0];
+		let in_amounts = [0, 0];
+		let out_chain_ids = [0, 0];
+		let out_amounts = [BIG_DEFAULT_BALANCE, 0];
 
-		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
-			public_amount,
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(0));
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			in_chain_id,
-			in_amounts.clone(),
-			out_chain_ids,
-			out_amounts,
+			Element::from_bytes(&output1),
+			Element::from_bytes(&output2),
 		);
 
-		let proof = prove(circuit, &proving_key_bytes);
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		// Check locally
-		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
-		assert!(res);
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			&proving_key_bytes
+		);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_f);
+			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -723,7 +785,7 @@ fn should_not_be_able_to_exceed_max_deposit() {
 #[test]
 fn should_not_be_able_to_exceed_external_amount() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (proving_key_bytes, _) = setup_environment(Curve::Bn254);
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(BIGGER_TRANSACTOR_ACCOUNT_ID);
@@ -735,32 +797,38 @@ fn should_not_be_able_to_exceed_external_amount() {
 		let public_amount = 20;
 		let fee: Balance = 3;
 
-		let in_chain_id = 0;
-		let in_amounts = vec![0, 0];
-		let out_chain_ids = vec![0, 0];
-		let out_amounts = vec![20, 0];
+		let in_chain_ids = [0, 0];
+		let in_amounts = [0, 0];
+		let out_chain_ids = [0, 0];
+		let out_amounts = [20, 0];
 
-		let (circuit, public_inputs_f, ..) = setup_circuit_with_data_raw(
-			public_amount,
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(0));
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			in_chain_id,
-			in_amounts.clone(),
-			out_chain_ids,
-			out_amounts,
+			Element::from_bytes(&output1),
+			Element::from_bytes(&output2),
 		);
 
-		let proof = prove(circuit, &proving_key_bytes);
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		// Check locally
-		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
-		assert!(res);
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			&proving_key_bytes
+		);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_f);
+			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
@@ -796,7 +864,7 @@ fn should_not_be_able_to_exceed_external_amount() {
 #[test]
 fn should_not_be_able_to_withdraw_less_than_minimum() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, verifying_key_bytes) = setup_environment(Curve::Bn254);
+		let (proving_key_bytes, _) = setup_environment(Curve::Bn254);
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(&proving_key_bytes);
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -806,30 +874,36 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 		let fee: Balance = 4;
 
 		let public_amount = -6;
-		let out_chain_ids = vec![0, 0];
+		let out_chain_ids = [0, 0];
 		// After withdrawing -7
-		let out_amounts = vec![2, 2];
+		let out_amounts = [2, 2];
 
-		let (circuit, public_inputs_f, ..) = setup_circuit_with_input_utxos_raw(
-			public_amount,
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			in_utxos,
-			out_chain_ids,
-			out_amounts.to_vec(),
+			Element::from_bytes(&output1),
+			Element::from_bytes(&output2),
 		);
 
-		let proof = prove(circuit, &proving_key_bytes);
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		// Check locally
-		let res = verify(&public_inputs_f, &verifying_key_bytes, &proof);
-		assert!(res);
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			&proving_key_bytes
+		);
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
-			deconstruct_public_inputs_el(&public_inputs_f);
+			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
 		let output1 = commitments[0].clone();
