@@ -91,6 +91,7 @@ pub mod pallet {
 
 	/// Pallet for parachain staking
 	#[pallet::pallet]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
@@ -1950,8 +1951,8 @@ pub mod pallet {
 								T::Currency::unreserve(&bond.owner, bond.amount);
 								// remove nomination from nominator state
 								let mut nominator = NominatorState2::<T>::get(&bond.owner).expect(
-									"Collator state and nominator state are consistent. 
-										Collator state has a record of this nomination. Therefore, 
+									"Collator state and nominator state are consistent.
+										Collator state has a record of this nomination. Therefore,
 										Nominator state also has a record. qed.",
 								);
 								if let Some(remaining) = nominator.rm_nomination(who.clone()) {
@@ -2018,7 +2019,7 @@ pub mod pallet {
 								}
 							} else {
 								log::warn!(
-									"Nominator State for Nominator {:?} Not Found During Revocation 
+									"Nominator State for Nominator {:?} Not Found During Revocation
 									of Support for Collator {:?}",
 									nominator,
 									collator,

@@ -43,6 +43,7 @@ pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 	fn get_chain_id() -> C::ChainId;
 	fn get_chain_id_type() -> C::ChainId;
+	fn get_chain_type() -> [u8; 2];
 	/// Checks if a merkle root is in a tree's cached history or returns
 	fn is_known_root(id: C::TreeId, root: C::Element) -> Result<bool, dispatch::DispatchError>;
 	// Ensure that passed root is in history

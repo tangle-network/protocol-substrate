@@ -75,6 +75,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
@@ -280,6 +281,10 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		T::ChainId::try_from(
 			compute_chain_id_type(T::ChainIdentifier::get(), T::ChainType::get())
 		).unwrap_or_default()
+	}
+
+	fn get_chain_type() -> [u8; 2] {
+		T::ChainType::get()
 	}
 
 	fn get_root(id: T::TreeId) -> Result<T::Element, DispatchError> {

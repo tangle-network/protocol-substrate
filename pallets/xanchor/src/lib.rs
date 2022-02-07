@@ -84,6 +84,7 @@ use pallet_anchor::BalanceOf;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T, I = ()>(_);
 
 	/// The module configuration trait.
@@ -384,7 +385,7 @@ use pallet_anchor::BalanceOf;
 			);
 			// Now we can remove the pending linked anchor.
 			PendingLinkedAnchors::<T, I>::remove(payload.target_chain_id, payload.local_tree_id);
-			let r_id =  utils::derive_resource_id(payload.target_chain_id, &payload.local_tree_id.encode());
+			let r_id =  utils::derive_resource_id(payload.target_chain_id.try_into().unwrap_or_default(), &payload.local_tree_id.encode());
 			// unwrap here is safe, since we are sure that it has the value of the tree id.
 			let target_tree_id = payload.target_tree_id.unwrap();
 			// We are now ready to link the anchor locally.
@@ -429,7 +430,7 @@ use pallet_anchor::BalanceOf;
 			);
 			// Now we can remove the pending linked anchor.
 			PendingLinkedAnchors::<T, I>::remove(caller_chain_id, my_tree_id);
-			let r_id = utils::derive_resource_id(caller_chain_id, &my_tree_id.encode());
+			let r_id = utils::derive_resource_id(caller_chain_id.try_into().unwrap_or_default(), &my_tree_id.encode());
 			let target_tree_id = payload.local_tree_id;
 			// We are now ready to link them locally.
 			Self::register_new_resource_id(r_id, target_tree_id)?;
@@ -482,8 +483,10 @@ use pallet_anchor::BalanceOf;
 			let (tree_id, r_chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
 			// double check that the caller is the same as the chain id of the resource
 			// also the the same from the metadata.
+			let src_chain_id:u64 =  metadata.src_chain_id.try_into().unwrap_or_default();
+			let r_chain_id:u64 = r_chain_id.try_into().unwrap_or_default();
 			ensure!(
-				caller_chain_id == metadata.src_chain_id && caller_chain_id == r_chain_id,
+				caller_chain_id == src_chain_id && caller_chain_id == r_chain_id,
 				Error::<T, I>::InvalidPermissions
 			);
 			// and finally, ensure that the anchor exists
@@ -619,7 +622,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			// target_tree_id + my_chain_id
 			// TODO: Document this clearly
 			let r_id =
-				utils::derive_resource_id(my_chain_id, &target_tree_id.encode());
+				utils::derive_resource_id(my_chain_id.try_into().unwrap_or_default(), &target_tree_id.encode());
 			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
 			let update_edge = Transact {
 				// we should keep using the OriginKind::Native here
@@ -666,7 +669,7 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 #[inline(always)]
 pub fn chain_id_to_para_id<T: Config<I>, I: 'static>(chain_id: T::ChainId) -> ParaId {
 	// First convert chain ID into a u64
-	let chain_id_u64: u64 = chain_id.into();
+	let chain_id_u64: u64 = chain_id.try_into().unwrap_or_default();
 	// Next convert into big-endian byte representation
 	let chain_id_bytes: [u8; 8] = chain_id_u64.to_be_bytes();
 	// Create a 4-byte para id byte array
