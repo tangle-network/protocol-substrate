@@ -77,10 +77,10 @@ pub fn setup_zk_circuit(
 	let public_amount = Bn254Fr::from(public_amount);
 
 	let leaf0 = in_utxos[0].commitment;
-	let (in_path0, _) = prover.setup_tree(&vec![leaf0, leaf1], 0).unwrap();
+	let (in_path0, _) = prover.setup_tree(&vec![leaf0], 0).unwrap();
 	let root0 = in_path0.root_hash(&leaf0).unwrap().inner();
 	let leaf1 = in_utxos[1].commitment;
-	let (in_path1, _) = prover.setup_tree(&vec![leaf0, leaf1], 1).unwrap();
+	let (in_path1, _) = prover.setup_tree(&vec![leaf1], 0).unwrap();
 	let root1 = in_path1.root_hash(&leaf1).unwrap().inner();
 
 	let in_leaves = [vec![leaf0], vec![leaf1]];
