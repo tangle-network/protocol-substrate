@@ -61,7 +61,8 @@ use sp_std::prelude::*;
 use types::*;
 use webb_primitives::{
 	traits::{linkable_tree::*, merkle_tree::*},
-	ElementTrait, utils::compute_chain_id_type,
+	utils::compute_chain_id_type,
+	ElementTrait,
 };
 pub use weights::WeightInfo;
 
@@ -278,9 +279,8 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 	}
 
 	fn get_chain_id_type() -> T::ChainId {
-		T::ChainId::try_from(
-			compute_chain_id_type(T::ChainIdentifier::get(), T::ChainType::get())
-		).unwrap_or_default()
+		T::ChainId::try_from(compute_chain_id_type(T::ChainIdentifier::get(), T::ChainType::get()))
+			.unwrap_or_default()
 	}
 
 	fn get_chain_type() -> [u8; 2] {

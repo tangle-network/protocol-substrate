@@ -54,7 +54,8 @@ use pallet_linkable_tree::types::EdgeMetadata;
 use sp_std::prelude::*;
 use webb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
-	utils::{self, compute_chain_id_type}, ResourceId,
+	utils::{self, compute_chain_id_type},
+	ResourceId,
 };
 use xcm::latest::prelude::*;
 
@@ -79,7 +80,7 @@ pub type LinkProposalOf<T, I> = LinkProposal<ChainIdOf<T, I>, TreeIdOf<T, I>>;
 pub mod pallet {
 	use super::*;
 	use frame_support::transactional;
-use pallet_anchor::BalanceOf;
+	use pallet_anchor::BalanceOf;
 	use webb_primitives::utils::{self, compute_chain_id_type};
 
 	#[pallet::pallet]
@@ -217,8 +218,8 @@ use pallet_anchor::BalanceOf;
 			// TODO: Ensure the target chain ID has the updated chain ID type encoded in it.
 			// TODO: Ensure that the chain type in the target chain ID matches our chain type.
 			// TODO: Implement get_chain_type, should return [u8; 2]
-			// ensure!(get_chain_type(payload.target_chain_id) == T::Anchor::get_chain_type(), Error::<T, I>::InvalidChainType);
-			// Add the proposal to the pending link storage.
+			// ensure!(get_chain_type(payload.target_chain_id) == T::Anchor::get_chain_type(),
+			// Error::<T, I>::InvalidChainType); Add the proposal to the pending link storage.
 			PendingLinkedAnchors::<T, I>::insert(
 				payload.target_chain_id,
 				payload.local_tree_id,
@@ -343,8 +344,9 @@ use pallet_anchor::BalanceOf;
 					tree_id
 				},
 				// TODO: Create an anchor if the caller does not provide one.
-				// TODO: Identify if there is a bug if both the `save_link_proposal` and `handle_link_anchor_message` create trees.
-				// TODO: Find the record of the newly created tree and the caller chain ID from the `save_link_proposal`
+				// TODO: Identify if there is a bug if both the `save_link_proposal` and
+				// `handle_link_anchor_message` create trees. TODO: Find the record of the newly
+				// created tree and the caller chain ID from the `save_link_proposal`
 				None => todo!("create an anchor if the caller does not provide one"),
 			};
 			// Double check that it is already in the pending link storage.
@@ -385,7 +387,10 @@ use pallet_anchor::BalanceOf;
 			);
 			// Now we can remove the pending linked anchor.
 			PendingLinkedAnchors::<T, I>::remove(payload.target_chain_id, payload.local_tree_id);
-			let r_id =  utils::derive_resource_id(payload.target_chain_id.try_into().unwrap_or_default(), &payload.local_tree_id.encode());
+			let r_id = utils::derive_resource_id(
+				payload.target_chain_id.try_into().unwrap_or_default(),
+				&payload.local_tree_id.encode(),
+			);
 			// unwrap here is safe, since we are sure that it has the value of the tree id.
 			let target_tree_id = payload.target_tree_id.unwrap();
 			// We are now ready to link the anchor locally.
@@ -430,7 +435,10 @@ use pallet_anchor::BalanceOf;
 			);
 			// Now we can remove the pending linked anchor.
 			PendingLinkedAnchors::<T, I>::remove(caller_chain_id, my_tree_id);
-			let r_id = utils::derive_resource_id(caller_chain_id.try_into().unwrap_or_default(), &my_tree_id.encode());
+			let r_id = utils::derive_resource_id(
+				caller_chain_id.try_into().unwrap_or_default(),
+				&my_tree_id.encode(),
+			);
 			let target_tree_id = payload.local_tree_id;
 			// We are now ready to link them locally.
 			Self::register_new_resource_id(r_id, target_tree_id)?;
@@ -471,7 +479,6 @@ use pallet_anchor::BalanceOf;
 			Ok(().into())
 		}
 
-
 		#[pallet::weight(0)]
 		pub fn update(
 			origin: OriginFor<T>,
@@ -479,12 +486,13 @@ use pallet_anchor::BalanceOf;
 			metadata: EdgeMetadataOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
-			let caller_chain_id = compute_chain_id_type(u32::from(para), T::Anchor::get_chain_type());
+			let caller_chain_id =
+				compute_chain_id_type(u32::from(para), T::Anchor::get_chain_type());
 			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
 			// double check that the caller is the same as the chain id of the resource
 			// also the the same from the metadata.
-			let src_chain_id:u64 =  metadata.src_chain_id.try_into().unwrap_or_default();
-			let r_chain_id:u64 = r_chain_id.try_into().unwrap_or_default();
+			let src_chain_id: u64 = metadata.src_chain_id.try_into().unwrap_or_default();
+			let r_chain_id: u64 = r_chain_id.try_into().unwrap_or_default();
 			ensure!(
 				caller_chain_id == src_chain_id && caller_chain_id == r_chain_id,
 				Error::<T, I>::InvalidPermissions
@@ -525,7 +533,7 @@ use pallet_anchor::BalanceOf;
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	fn 	register_new_resource_id(
+	fn register_new_resource_id(
 		r_id: ResourceId,
 		target_tree_id: T::TreeId,
 	) -> DispatchResultWithPostInfo {
@@ -606,7 +614,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			latest_leaf_index,
 		};
 		// now we need an iterator for all the edges connected to this anchor
-			let edges = pallet_linkable_tree::EdgeList::<T, I>::iter_prefix_values(tree_id);
+		let edges = pallet_linkable_tree::EdgeList::<T, I>::iter_prefix_values(tree_id);
 		// for each edge we do the following:
 		// 1. get the target tree id on the other chain (using the other chain id, and
 		// my tree id)
@@ -621,8 +629,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			let my_chain_id = metadata.src_chain_id;
 			// target_tree_id + my_chain_id
 			// TODO: Document this clearly
-			let r_id =
-				utils::derive_resource_id(my_chain_id.try_into().unwrap_or_default(), &target_tree_id.encode());
+			let r_id = utils::derive_resource_id(
+				my_chain_id.try_into().unwrap_or_default(),
+				&target_tree_id.encode(),
+			);
 			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
 			let update_edge = Transact {
 				// we should keep using the OriginKind::Native here
@@ -682,7 +692,6 @@ pub fn chain_id_to_para_id<T: Config<I>, I: 'static>(chain_id: T::ChainId) -> Pa
 
 #[inline(always)]
 pub fn para_id_to_chain_id<T: Config<I>, I: 'static>(para_id: ParaId) -> T::ChainId {
-	T::ChainId::try_from(
-		compute_chain_id_type(u32::from(para_id), T::Anchor::get_chain_type())
-	).unwrap_or_default()
+	T::ChainId::try_from(compute_chain_id_type(u32::from(para_id), T::Anchor::get_chain_type()))
+		.unwrap_or_default()
 }

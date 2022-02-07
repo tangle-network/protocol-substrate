@@ -548,7 +548,8 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 	type UnsignedPhase = UnsignedPhase;
 	type VoterSnapshotPerBlock = VoterSnapshotPerBlock;
 	type WeightInfo = pallet_election_provider_multi_phase::weights::SubstrateWeight<Self>;
-	type GovernanceFallback = frame_election_provider_support::onchain::OnChainSequentialPhragmen<Self>;
+	type GovernanceFallback =
+		frame_election_provider_support::onchain::OnChainSequentialPhragmen<Self>;
 }
 
 parameter_types! {
