@@ -128,7 +128,7 @@ parameter_types! {
 	pub const ProposalBondMinimum: u64 = 1;
 	pub const SpendPeriod: u64 = 2;
 	pub const Burn: Permill = Permill::from_percent(50);
-	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const TreasuryPalletId: PalletId = PalletId(*b"trsry/py");
 	pub const BountyUpdatePeriod: u32 = 20;
 	pub const BountyCuratorDeposit: Permill = Permill::from_percent(50);
 	pub const BountyValueMinimum: u64 = 1;
@@ -154,7 +154,7 @@ impl pallet_treasury::Config for Test {
 }
 
 parameter_types! {
-	pub const TokenWrapperPalletId: PalletId = PalletId(*b"py/tkwrp");
+	pub const TokenWrapperPalletId: PalletId = PalletId(*b"tkwrp/py");
 	pub const WrappingFeeDivider: u128 = 100;
 }
 

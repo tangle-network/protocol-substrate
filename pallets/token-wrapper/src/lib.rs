@@ -137,6 +137,11 @@ pub mod pallet {
 		UpdatedWrappingFeePercent {
 			wrapping_fee_percent: BalanceOf<T>,
 		},
+		RescuedTokens {
+			asset_id: T::AssetId,
+			to: T::AccountId,
+			actual_amount_rescued: BalanceOf<T>,
+		},
 	}
 
 	#[pallet::error]
@@ -362,5 +367,34 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 		asset_id: T::AssetId,
 	) -> Result<T::AssetId, DispatchError> {
 		<T::AssetRegistry as ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::delete_asset_from_existing_pool(name, asset_id)
+	}
+
+	fn rescue_tokens(
+		asset_id: T::AssetId,
+		to: T::AccountId,
+		amount_to_rescue: BalanceOf<T>,
+	) -> Result<(), DispatchError> {
+		ensure!(amount_to_rescue > <BalanceOf<T>>::default(), Error::<T>::InvalidAmount);
+
+		ensure!(
+			<T::AssetRegistry as Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::exists(
+				asset_id
+			),
+			Error::<T>::UnregisteredAssetId
+		);
+
+		let currency_id = Self::to_currency_id(asset_id)?;
+		let actual_amount_rescued;
+
+		if Self::has_sufficient_balance(currency_id, &Self::treasury_id(), amount_to_rescue) {
+			actual_amount_rescued = amount_to_rescue;
+		} else {
+			actual_amount_rescued = Self::get_balance(currency_id, &Self::treasury_id());
+		}
+
+		T::Currency::transfer(currency_id, &Self::treasury_id(), &to, actual_amount_rescued)?;
+
+		Self::deposit_event(Event::RescuedTokens { asset_id, to, actual_amount_rescued });
+		Ok(())
 	}
 }

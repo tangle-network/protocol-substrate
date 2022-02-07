@@ -39,6 +39,8 @@ fn should_wrap_token() {
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5));
 
+		println!("{:?}", TokenWrapper::get_balance(first_token_id, &TokenWrapper::treasury_id()));
+
 		assert_ok!(TokenWrapper::wrap(
 			Origin::signed(recipient),
 			first_token_id,
@@ -46,9 +48,6 @@ fn should_wrap_token() {
 			50000_u128,
 			recipient
 		));
-		println!("{:?}", Tokens::total_issuance(pool_share_id));
-		println!("{:?}", TokenWrapper::get_balance(first_token_id, &recipient));
-		println!("{:?}", TokenWrapper::get_balance(pool_share_id, &recipient));
 		assert_eq!(Tokens::total_issuance(pool_share_id), 50000);
 
 		// Second argument should be balance minus amount_to_wrap

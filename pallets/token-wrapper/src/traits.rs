@@ -25,4 +25,9 @@ pub trait TokenWrapperInterface<AccountId, AssetId, Balance> {
 		name: &Vec<u8>,
 		asset_id: AssetId,
 	) -> Result<AssetId, dispatch::DispatchError>;
+	fn rescue_tokens(
+		asset_id: AssetId,
+		to: AccountId,
+		actual_amount_rescued: Balance,
+	) -> Result<(), dispatch::DispatchError>;
 }
