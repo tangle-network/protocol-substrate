@@ -29,7 +29,7 @@ pub fn setup_utxos(
 	// Transaction inputs
 	chain_ids: [u128; M],
 	amounts: [u128; M],
-	index: Option<u64>
+	index: [Option<u64>; M]
 ) -> [Utxo<Bn254Fr>; M] {
 	let rng = &mut thread_rng();
 
@@ -77,14 +77,16 @@ pub fn setup_zk_circuit(
 	let public_amount = Bn254Fr::from(public_amount);
 
 	let leaf0 = in_utxos[0].commitment;
-	let (in_path0, _) = prover.setup_tree(&vec![leaf0], 0).unwrap();
-	let root0 = in_path0.root_hash(&leaf0).unwrap().inner();
 	let leaf1 = in_utxos[1].commitment;
-	let (in_path1, _) = prover.setup_tree(&vec![leaf1], 0).unwrap();
+
+	let leaves = vec![leaf0, leaf1];
+	let (in_path0, _) = prover.setup_tree(&leaves, 0).unwrap();
+	let root0 = in_path0.root_hash(&leaf0).unwrap().inner();
+	let (in_path1, _) = prover.setup_tree(&leaves, 1).unwrap();
 	let root1 = in_path1.root_hash(&leaf1).unwrap().inner();
 
-	let in_leaves = [vec![leaf0], vec![leaf1]];
-	let in_indices = [0; 2];
+	let in_leaves = [leaves.clone(), leaves.clone()];
+	let in_indices = [0, 1];
 	let in_root_set = [root0, root1];
 
 	let ext_data_hash_f = Bn254Fr::from_le_bytes_mod_order(&ext_data_hash);
