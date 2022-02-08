@@ -563,7 +563,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Self::update_anchor(
 			tree_id,
 			EdgeMetadata {
-				src_chain_id: chain_id_to_bytes::<T, I>(chain_id),
+				src_chain_id: chain_id,
 				..Default::default()
 			},
 		)?;
@@ -720,8 +720,3 @@ pub fn para_id_to_chain_id<T: Config<I>, I: 'static>(para_id: ParaId) -> T::Chai
 		.unwrap_or_default()
 }
 
-#[inline(always)]
-pub fn chain_id_to_bytes<T: Config<I>, I: 'static>(chain_id: T::ChainId) -> T::ChainId {
-	T::ChainId::try_from(compute_chain_id_type(chain_id, T::Anchor::get_chain_type()))
-		.unwrap_or_default()
-}
