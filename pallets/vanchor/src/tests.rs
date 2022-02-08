@@ -1,21 +1,19 @@
 use crate::{
 	mock::*,
-	test_utils::{deconstruct_public_inputs_el, setup_zk_circuit, setup_utxos},
+	test_utils::{deconstruct_public_inputs_el, setup_utxos, setup_zk_circuit},
 	Error, MaxDepositAmount, MaxExtAmount, MaxFee, MinWithdrawAmount,
 };
-use ark_ff::BigInteger;
+use ark_ff::{BigInteger, PrimeField};
 use arkworks_circuits::setup::vanchor::Utxo;
-use arkworks_utils::utils::common::Curve;
+use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
+use sp_core::hashing::keccak_256;
 use webb_primitives::{
 	types::vanchor::{ExtData, ProofData},
 	utils::compute_chain_id_type,
 	AccountId,
 };
-use sp_core::hashing::keccak_256;
-use ark_ff::PrimeField;
-use arkworks_utils::utils::common::setup_params_x5_3;
 
 type Bn254Fr = ark_bn254::Fr;
 
@@ -47,10 +45,11 @@ fn setup_environment(_curve: Curve) -> (Vec<u8>, Vec<u8>) {
 
 	let pk_bytes = include_bytes!(
 		"../../../protocol-substrate-fixtures/vanchor/bn254/x5/proving_key_uncompressed.bin"
-	).to_vec();
-	let vk_bytes = include_bytes!(
-		"../../../protocol-substrate-fixtures/vanchor/bn254/x5/verifying_key.bin"
-	).to_vec();
+	)
+	.to_vec();
+	let vk_bytes =
+		include_bytes!("../../../protocol-substrate-fixtures/vanchor/bn254/x5/verifying_key.bin")
+			.to_vec();
 
 	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.clone()));
 
@@ -103,7 +102,8 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, [Utxo<Bn25
 	let out_amounts = [DEFAULT_BALANCE, 0];
 
 	let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
-	// We are adding indecies to out utxos, since they will be used as an input utxos in next transaction
+	// We are adding indecies to out utxos, since they will be used as an input utxos in next
+	// transaction
 	let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
 
 	let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
@@ -126,7 +126,7 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, [Utxo<Bn25
 		in_utxos,
 		out_utxos,
 		custom_roots,
-		&proving_key_bytes
+		&proving_key_bytes,
 	);
 
 	// Deconstructing public inputs
@@ -187,7 +187,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 			in_utxos,
 			out_utxos,
 			custom_roots,
-			&proving_key_bytes
+			&proving_key_bytes,
 		);
 
 		// Deconstructing public inputs
@@ -269,7 +269,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 			in_utxos,
 			out_utxos,
 			None,
-			&proving_key_bytes
+			&proving_key_bytes,
 		);
 
 		// Deconstructing public inputs
@@ -354,7 +354,7 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 			in_utxos,
 			out_utxos,
 			custom_roots,
-			&proving_key_bytes
+			&proving_key_bytes,
 		);
 
 		// Deconstructing public inputs
@@ -440,7 +440,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 			in_utxos,
 			out_utxos,
 			None,
-			&proving_key_bytes
+			&proving_key_bytes,
 		);
 
 		// Deconstructing public inputs
@@ -526,7 +526,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 			in_utxos,
 			out_utxos,
 			None,
-			&proving_key_bytes
+			&proving_key_bytes,
 		);
 
 		// Deconstructing public inputs
@@ -611,7 +611,7 @@ fn should_not_be_able_to_double_spend() {
 			in_utxos,
 			out_utxos,
 			None,
-			&proving_key_bytes
+			&proving_key_bytes,
 		);
 
 		// Deconstructing public inputs
@@ -704,7 +704,7 @@ fn should_not_be_able_to_exceed_max_fee() {
 			in_utxos,
 			out_utxos,
 			custom_roots,
-			&proving_key_bytes
+			&proving_key_bytes,
 		);
 
 		// Deconstructing public inputs
@@ -787,7 +787,7 @@ fn should_not_be_able_to_exceed_max_deposit() {
 			in_utxos,
 			out_utxos,
 			custom_roots,
-			&proving_key_bytes
+			&proving_key_bytes,
 		);
 
 		// Deconstructing public inputs
@@ -871,7 +871,7 @@ fn should_not_be_able_to_exceed_external_amount() {
 			in_utxos,
 			out_utxos,
 			custom_roots,
-			&proving_key_bytes
+			&proving_key_bytes,
 		);
 
 		// Deconstructing public inputs
@@ -950,7 +950,7 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 			in_utxos,
 			out_utxos,
 			None,
-			&proving_key_bytes
+			&proving_key_bytes,
 		);
 
 		// Deconstructing public inputs

@@ -1,8 +1,8 @@
 use crate::hasher::InstanceHasher;
 use ark_crypto_primitives::Error;
 use ark_ff::{BigInteger, PrimeField};
-use sp_std::{marker::PhantomData, vec::Vec};
 pub use sp_core::hashing::keccak_256;
+use sp_std::{marker::PhantomData, vec::Vec};
 
 pub struct Keccak256Hasher<F: PrimeField>(PhantomData<F>);
 

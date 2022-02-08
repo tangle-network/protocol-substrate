@@ -1,19 +1,13 @@
 use ark_ff::{BigInteger, PrimeField};
 use ark_std::{rand::thread_rng, vec::Vec};
-use arkworks_circuits::{
-	setup::{common::{
-		prove_unchecked,
-	}, vanchor::Utxo},
-	setup::vanchor::{VAnchorProverBn2542x2},
+use arkworks_circuits::setup::{
+	common::prove_unchecked,
+	vanchor::{Utxo, VAnchorProverBn2542x2},
 };
-use arkworks_utils::{
-	utils::common::{
-		setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve,
-	},
+use arkworks_utils::utils::common::{
+	setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve,
 };
-use webb_primitives::{
-	ElementTrait,
-};
+use webb_primitives::ElementTrait;
 
 use crate::mock::Element;
 
@@ -28,7 +22,7 @@ pub fn setup_utxos(
 	// Transaction inputs
 	chain_ids: [u64; N],
 	amounts: [u128; N],
-	indices: Option<[u64; N]>
+	indices: Option<[u64; N]>,
 ) -> [Utxo<Bn254Fr>; N] {
 	let rng = &mut thread_rng();
 
@@ -49,12 +43,8 @@ pub fn setup_utxos(
 	} else {
 		[None; N]
 	};
-	let utxo1 = prover
-		.new_utxo(chain_id1, amount1, indices[0], None, None, rng)
-		.unwrap();
-	let utxo2 = prover
-		.new_utxo(chain_id2, amount2, indices[1], None, None, rng)
-		.unwrap();
+	let utxo1 = prover.new_utxo(chain_id1, amount1, indices[0], None, None, rng).unwrap();
+	let utxo2 = prover.new_utxo(chain_id2, amount2, indices[1], None, None, rng).unwrap();
 	let in_utxos = [utxo1, utxo2];
 
 	in_utxos
@@ -67,7 +57,7 @@ pub fn setup_zk_circuit(
 	in_utxos: [Utxo<Bn254Fr>; N],
 	out_utxos: [Utxo<Bn254Fr>; N],
 	custom_roots: Option<[Vec<u8>; M]>,
-	pk_bytes: &Vec<u8>
+	pk_bytes: &Vec<u8>,
 ) -> (Vec<u8>, Vec<Bn254Fr>) {
 	let rng = &mut thread_rng();
 
