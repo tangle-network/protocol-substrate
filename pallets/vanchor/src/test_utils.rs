@@ -16,7 +16,6 @@ use arkworks_gadgets::{
 	keypair::vanchor::Keypair,
 	leaf::vanchor::{Private as LeafPrivateInput, Public as LeafPublicInput, VAnchorLeaf as Leaf},
 	merkle_tree::Path,
-	set::membership::{Private as SetPrivateInputs, SetMembership},
 };
 use arkworks_utils::{
 	poseidon::PoseidonParameters,
@@ -303,9 +302,9 @@ pub fn setup_circuit_with_input_utxos(
 ) {
 	let (params2, params3, params4, params5) = get_hash_params::<Bn254Fr>(Curve::Bn254);
 
-	// Tree + set for proving input txos
-	let (in_paths, in_indices, in_root_set, in_set_private_inputs) =
-		setup_tree_and_set(&in_utxos.commitments, &params3);
+	// Tree for proving input txos
+	let (in_paths, in_indices, root) = setup_tree(&in_utxos.commitments, &params3);
+	let in_root_set = [root; M];
 
 	// Output leaves (txos)
 	let out_utxos = Utxos::new(out_chain_ids, out_amounts);
@@ -329,7 +328,6 @@ pub fn setup_circuit_with_input_utxos(
 		in_utxos.clone(),
 		in_indices,
 		in_paths,
-		in_set_private_inputs,
 		in_root_set,
 		out_utxos.clone(),
 		params2,
@@ -385,9 +383,9 @@ pub fn setup_circuit_with_data(
 	// Input leaves (txos)
 	let in_utxos = Utxos::new(in_chain_ids, in_amounts);
 
-	// Tree + set for proving input txos
-	let (in_paths, in_indices, _, in_set_private_inputs) =
-		setup_tree_and_set(&in_utxos.commitments, &params3);
+	// Tree for proving input txos
+	let (in_paths, in_indices, _) = setup_tree(&in_utxos.commitments, &params3);
+
 	// Since on chain tree is empty we set the roots to zero
 	let in_root_set = [Bn254Fr::from(0u32); M];
 
@@ -414,7 +412,6 @@ pub fn setup_circuit_with_data(
 		in_utxos.clone(),
 		in_indices,
 		in_paths,
-		in_set_private_inputs,
 		in_root_set,
 		out_utxos.clone(),
 		params2,
@@ -442,7 +439,6 @@ pub fn setup_circuit(
 	// Data related to tree
 	in_indicies: Vec<Bn254Fr>,
 	in_paths: Vec<Path<TreeConfig_x5<Bn254Fr>, TREE_DEPTH>>,
-	in_set_private_inputs: Vec<SetPrivateInputs<Bn254Fr, M>>,
 	in_root_set: [Bn254Fr; M],
 	// Output transactions
 	out_utxos: Utxos,
@@ -481,7 +477,6 @@ pub fn setup_circuit(
 		in_utxos.leaf_privates,
 		in_utxos.keypairs,
 		in_utxos.leaf_publics[0].clone(),
-		in_set_private_inputs,
 		in_root_set,
 		params2,
 		params4,
@@ -637,32 +632,6 @@ pub fn setup_tree(
 	}
 
 	(paths, indices, root.inner())
-}
-
-pub fn setup_root_set(root: Bn254Fr) -> ([Bn254Fr; M], Vec<SetPrivateInputs<Bn254Fr, M>>) {
-	let root_set = [root.clone(); M];
-
-	let mut set_private_inputs = Vec::new();
-	for _ in 0..M {
-		let set_private_input = SetMembership::generate_secrets(&root, &root_set).unwrap();
-		set_private_inputs.push(set_private_input);
-	}
-
-	(root_set, set_private_inputs)
-}
-
-pub fn setup_tree_and_set(
-	leaves: &Vec<Bn254Fr>,
-	params3: &PoseidonParameters<Bn254Fr>,
-) -> (
-	Vec<Path<TreeConfig_x5<Bn254Fr>, TREE_DEPTH>>,
-	Vec<Bn254Fr>,
-	[Bn254Fr; M],
-	Vec<SetPrivateInputs<Bn254Fr, M>>,
-) {
-	let (paths, indices, root) = setup_tree(&leaves, params3);
-	let (root_set, set_private_inputs) = setup_root_set(root);
-	(paths, indices, root_set, set_private_inputs)
 }
 
 pub fn setup_arbitrary_data(ext_data: Bn254Fr) -> VAnchorArbitraryData<Bn254Fr> {
