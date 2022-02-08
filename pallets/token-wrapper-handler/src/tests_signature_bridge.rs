@@ -43,10 +43,15 @@ fn get_remove_token_resource() -> Vec<u8> {
 	b"TokenWrapperHandler.execute_remove_token_to_pool_share".to_vec()
 }
 
-fn make_wrapping_fee_proposal(resource_id: &[u8; 32], wrapping_fee_percent: u128) -> Call {
+fn make_wrapping_fee_proposal(
+	resource_id: &[u8; 32],
+	wrapping_fee_percent: u128,
+	into_pool_share_id: u32,
+) -> Call {
 	Call::TokenWrapperHandler(crate::Call::execute_wrapping_fee_proposal {
 		r_id: *resource_id,
 		wrapping_fee_percent,
+		into_pool_share_id,
 	})
 }
 
@@ -86,7 +91,15 @@ fn should_update_fee_with_sig_succeed() {
 	)
 	.execute_with(|| {
 		let prop_id = 1;
-		let proposal = make_wrapping_fee_proposal(&r_id, 5);
+		let existential_balance: u32 = 1000;
+		let pool_share_id = AssetRegistry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![]),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let proposal = make_wrapping_fee_proposal(&r_id, 5, pool_share_id);
 		let msg = keccak_256(&proposal.encode());
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 		// should fail to execute proposal as non-maintainer
@@ -116,7 +129,8 @@ fn should_update_fee_with_sig_succeed() {
 			Box::new(proposal.clone()),
 			sig.0.to_vec(),
 		));
-		assert_eq!(TokenWrapper::get_wrapping_fee(1000_u128), 52);
+
+		assert_eq!(TokenWrapper::get_wrapping_fee(1000_u128, pool_share_id).unwrap(), 52);
 	})
 }
 

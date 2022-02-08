@@ -728,7 +728,7 @@ fn anchor_works_for_pool_tokens() {
 			balance.into()
 		));
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 0));
+		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 0, pool_share_id));
 
 		assert_ok!(TokenWrapper::wrap(
 			Origin::signed(sender_account_id.clone()),

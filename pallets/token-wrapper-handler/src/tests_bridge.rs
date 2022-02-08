@@ -20,10 +20,15 @@ fn get_remove_token_resource() -> Vec<u8> {
 	b"TokenWrapperHandler.execute_remove_token_to_pool_share".to_vec()
 }
 
-fn make_wrapping_fee_proposal(resource_id: &[u8; 32], wrapping_fee_percent: u128) -> Call {
+fn make_wrapping_fee_proposal(
+	resource_id: &[u8; 32],
+	wrapping_fee_percent: u128,
+	into_pool_share_id: u32,
+) -> Call {
 	Call::TokenWrapperHandler(crate::Call::execute_wrapping_fee_proposal {
 		r_id: *resource_id,
 		wrapping_fee_percent,
+		into_pool_share_id,
 	})
 }
 
@@ -60,10 +65,13 @@ fn relay_fee_update_proposal(
 	resource_id: &[u8; 32],
 	prop_id: u64,
 	wrapping_fee_percent: u128,
+	pool_share_id: u32,
 ) {
 	// create fee update proposal
 	let resource = b"TokenWrapperHandler.execute_wrapping_fee_proposal".to_vec();
-	let update_proposal = make_wrapping_fee_proposal(resource_id, wrapping_fee_percent);
+
+	let update_proposal =
+		make_wrapping_fee_proposal(resource_id, wrapping_fee_percent, pool_share_id);
 	// set resource id
 	assert_ok!(Bridge::set_resource(Origin::root(), *resource_id, resource));
 	// make proposals
@@ -117,10 +125,21 @@ fn should_update_fee() {
 		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let resource_id = derive_resource_id(src_chain_id, b"hash");
 		let prop_id = 1;
+
+		let existential_balance: u32 = 1000;
+
+		let pool_share_id = AssetRegistry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![]),
+			existential_balance.into(),
+		)
+		.unwrap();
+
 		// create fee update proposal
 		setup_relayers(src_chain_id);
-		relay_fee_update_proposal(src_chain_id, &resource_id, prop_id, 5);
-		assert_eq!(TokenWrapper::get_wrapping_fee(1000_u128), 52);
+		relay_fee_update_proposal(src_chain_id, &resource_id, prop_id, 5, pool_share_id);
+
+		assert_eq!(TokenWrapper::get_wrapping_fee(1000_u128, pool_share_id).unwrap(), 52);
 	})
 }
 
