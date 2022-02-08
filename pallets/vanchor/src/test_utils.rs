@@ -22,15 +22,14 @@ type Bn254 = ark_bn254::Bn254;
 
 const TREE_DEPTH: usize = 30;
 const M: usize = 2;
-const INS: usize = 2;
-const OUTS: usize = 2;
+const N: usize = 2;
 
 pub fn setup_utxos(
 	// Transaction inputs
-	chain_ids: [u128; M],
-	amounts: [u128; M],
-	index: [Option<u64>; M]
-) -> [Utxo<Bn254Fr>; M] {
+	chain_ids: [u128; N],
+	amounts: [u128; N],
+	indices: Option<[u64; N]>
+) -> [Utxo<Bn254Fr>; N] {
 	let rng = &mut thread_rng();
 
 	let params2 = setup_params_x5_2::<Bn254Fr>(Curve::Bn254);
@@ -44,12 +43,17 @@ pub fn setup_utxos(
 	let chain_id2 = Bn254Fr::from(chain_ids[1]);
 	let amount1 = Bn254Fr::from(amounts[0]);
 	let amount2 = Bn254Fr::from(amounts[1]);
-	let index = index.map(|x| Bn254Fr::from(x));
+	let indices: [Option<Bn254Fr>; N] = if indices.is_some() {
+		let ind_unw = indices.unwrap();
+		ind_unw.map(|x| Some(Bn254Fr::from(x)))
+	} else {
+		[None; N]
+	};
 	let utxo1 = prover
-		.new_utxo(chain_id1, amount1, index, None, None, rng)
+		.new_utxo(chain_id1, amount1, indices[0], None, None, rng)
 		.unwrap();
 	let utxo2 = prover
-		.new_utxo(chain_id2, amount2, index, None, None, rng)
+		.new_utxo(chain_id2, amount2, indices[1], None, None, rng)
 		.unwrap();
 	let in_utxos = [utxo1, utxo2];
 
@@ -60,8 +64,9 @@ pub fn setup_zk_circuit(
 	// Metadata inputs
 	public_amount: i128,
 	ext_data_hash: Vec<u8>,
-	in_utxos: [Utxo<Bn254Fr>; 2],
-	out_utxos: [Utxo<Bn254Fr>; 2],
+	in_utxos: [Utxo<Bn254Fr>; N],
+	out_utxos: [Utxo<Bn254Fr>; N],
+	custom_roots: Option<[Vec<u8>; M]>,
 	pk_bytes: &Vec<u8>
 ) -> (Vec<u8>, Vec<Bn254Fr>) {
 	let rng = &mut thread_rng();
@@ -80,14 +85,18 @@ pub fn setup_zk_circuit(
 	let leaf1 = in_utxos[1].commitment;
 
 	let leaves = vec![leaf0, leaf1];
-	let (in_path0, _) = prover.setup_tree(&leaves, 0).unwrap();
-	let root0 = in_path0.root_hash(&leaf0).unwrap().inner();
-	let (in_path1, _) = prover.setup_tree(&leaves, 1).unwrap();
-	let root1 = in_path1.root_hash(&leaf1).unwrap().inner();
 
 	let in_leaves = [leaves.clone(), leaves.clone()];
 	let in_indices = [0, 1];
-	let in_root_set = [root0, root1];
+
+	// This allows us to pass zero roots for initial transaction
+	let in_root_set = if custom_roots.is_some() {
+		let custom_roots_bytes = custom_roots.unwrap();
+		custom_roots_bytes.map(|x| Bn254Fr::from_le_bytes_mod_order(&x))
+	} else {
+		let (_, root) = prover.setup_tree(&leaves, 0).unwrap();
+		[root; M]
+	};
 
 	let ext_data_hash_f = Bn254Fr::from_le_bytes_mod_order(&ext_data_hash);
 

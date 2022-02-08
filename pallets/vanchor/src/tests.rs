@@ -94,11 +94,13 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, [Utxo<Bn25
 	let public_amount = DEFAULT_BALANCE as i128;
 	let in_chain_ids = [0, 0];
 	let in_amounts = [0, 0];
+	let in_indices = [0, 1];
 	let out_chain_ids = [0, 0];
 	let out_amounts = [DEFAULT_BALANCE, 0];
 
-	let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(0));
-	let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(0));
+	let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
+	// We are adding indecies to out utxos, since they will be used as an input utxos in next transaction
+	let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
 
 	let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 	let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
@@ -113,11 +115,13 @@ fn create_vanchor_with_deposits(proving_key_bytes: &Vec<u8>) -> (u32, [Utxo<Bn25
 
 	let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
+	let custom_roots = Some([[0u8; 32]; M].map(|x| x.to_vec()));
 	let (proof, public_inputs) = setup_zk_circuit(
 		public_amount,
 		ext_data_hash.to_vec(),
 		in_utxos,
 		out_utxos,
+		custom_roots,
 		&proving_key_bytes
 	);
 
@@ -150,10 +154,11 @@ fn should_complete_2x2_transaction_with_deposit() {
 
 		let in_chain_ids = [0, 0];
 		let in_amounts = [0, 0];
+		let in_indices = [0, 1];
 		let out_chain_ids = [0, 0];
 		let out_amounts = [DEFAULT_BALANCE, 0];
 
-		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(0));
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
@@ -169,11 +174,13 @@ fn should_complete_2x2_transaction_with_deposit() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
+		let custom_roots = Some([[0u8; 32]; M].map(|x| x.to_vec()));
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
+			custom_roots,
 			&proving_key_bytes
 		);
 
@@ -252,6 +259,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
+			None,
 			&proving_key_bytes
 		);
 
@@ -308,10 +316,11 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 
 		let in_chain_ids = [0, 0];
 		let in_amounts = [0, 0];
+		let in_indices = [0, 1];
 		let out_chain_ids = [0, 0];
 		let out_amounts = [DEFAULT_BALANCE, 0];
 
-		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(0));
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
@@ -327,11 +336,13 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
+		let custom_roots = Some([[0u8; 32]; M].map(|x| x.to_vec()));
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
+			custom_roots,
 			&proving_key_bytes
 		);
 
@@ -415,6 +426,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
+			None,
 			&proving_key_bytes
 		);
 
@@ -497,6 +509,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
+			None,
 			&proving_key_bytes
 		);
 
@@ -578,6 +591,7 @@ fn should_not_be_able_to_double_spend() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
+			None,
 			&proving_key_bytes
 		);
 
@@ -642,10 +656,11 @@ fn should_not_be_able_to_exceed_max_fee() {
 
 		let in_chain_ids = [0, 0];
 		let in_amounts = [0, 0];
+		let in_indices = [0, 1];
 		let out_chain_ids = [0, 0];
 		let out_amounts = [4, 0];
 
-		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(0));
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
@@ -661,11 +676,13 @@ fn should_not_be_able_to_exceed_max_fee() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
+		let custom_roots = Some([[0u8; 32]; M].map(|x| x.to_vec()));
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
+			custom_roots,
 			&proving_key_bytes
 		);
 
@@ -720,10 +737,11 @@ fn should_not_be_able_to_exceed_max_deposit() {
 
 		let in_chain_ids = [0, 0];
 		let in_amounts = [0, 0];
+		let in_indices = [0, 1];
 		let out_chain_ids = [0, 0];
 		let out_amounts = [BIG_DEFAULT_BALANCE, 0];
 
-		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(0));
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
@@ -739,11 +757,13 @@ fn should_not_be_able_to_exceed_max_deposit() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
+		let custom_roots = Some([[0u8; 32]; M].map(|x| x.to_vec()));
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
+			custom_roots,
 			&proving_key_bytes
 		);
 
@@ -799,10 +819,11 @@ fn should_not_be_able_to_exceed_external_amount() {
 
 		let in_chain_ids = [0, 0];
 		let in_amounts = [0, 0];
+		let in_indices = [0, 1];
 		let out_chain_ids = [0, 0];
 		let out_amounts = [20, 0];
 
-		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(0));
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
@@ -818,11 +839,13 @@ fn should_not_be_able_to_exceed_external_amount() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
+		let custom_roots = Some([[0u8; 32]; M].map(|x| x.to_vec()));
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
+			custom_roots,
 			&proving_key_bytes
 		);
 
@@ -898,6 +921,7 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
+			None,
 			&proving_key_bytes
 		);
 
