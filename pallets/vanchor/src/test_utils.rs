@@ -26,7 +26,7 @@ const N: usize = 2;
 
 pub fn setup_utxos(
 	// Transaction inputs
-	chain_ids: [u128; N],
+	chain_ids: [u64; N],
 	amounts: [u128; N],
 	indices: Option<[u64; N]>
 ) -> [Utxo<Bn254Fr>; N] {

@@ -510,6 +510,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> DispatchResultWithPostInfo {
 		// extract the resource id information
 		let (tree_id, chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
+		println!("register_new_resource_id");
+		println!("tree_id: {:?}", tree_id);
+		println!("chain_id: {:?}", chain_id);
 		// and we need to also ensure that the anchor exists
 		ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 		// and not already anchored/linked

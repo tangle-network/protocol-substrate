@@ -82,7 +82,8 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
-	pub const ChainIdentifier: u32 = 5;
+	pub const ChainIdentifier: u64 = 5;
+	pub const ChainType: [u8; 2] = [2, 0];
 	pub const ProposalLifetime: u64 = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
@@ -90,8 +91,9 @@ parameter_types! {
 impl Config for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
-	type ChainId = u32;
+	type ChainId = u64;
 	type ChainIdentifier = ChainIdentifier;
+	type ChainType = ChainType;
 	type Event = Event;
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;

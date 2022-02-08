@@ -3,7 +3,6 @@ pub use sp_core::hashing::keccak_256;
 use sp_std::vec::Vec;
 
 pub const SIGNATURE_LENGTH: usize = 65;
-const KEY_LENGTH: usize = 32;
 
 pub fn validate_ecdsa_signature(data: &[u8], signature: &[u8]) -> bool {
 	if signature.len() == SIGNATURE_LENGTH {

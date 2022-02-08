@@ -5,12 +5,12 @@ description = "A fresh FRAME-based Substrate node, ready for hacking."
 edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
-name = "darkwebb-node"
-repository = "https://github.com/substrate-developer-hub/substrate-darkwebb-node/"
+name = "webb-node"
+repository = "https://github.com/webb-tools/protocol-substrate/"
 version = "1.0.0"
 
 [[bin]]
-name = "darkwebb-node"
+name = "webb-node"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -35,7 +35,7 @@ webb-primitives = { path = "../primitives" }
 common = { path = "../common" }
 
 # Parachain runtimes
-darkwebb-runtime = { path = "../runtime", version = "0.1.0" }
+webb-runtime = { path = "../runtime", version = "0.1.0" }
 shell-runtime = { git = "https://github.com/paritytech/cumulus", branch = "master" }
 try-runtime-cli = { version = "0.10.0-dev", git = 'https://github.com/paritytech/substrate', branch = "master" }
 
@@ -109,5 +109,5 @@ ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "cu
 default = []
 runtime-benchmarks = [
   "polkadot-service/runtime-benchmarks",
-  "darkwebb-runtime/runtime-benchmarks",
+  "webb-runtime/runtime-benchmarks",
 ]

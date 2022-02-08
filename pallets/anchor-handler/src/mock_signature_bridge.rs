@@ -21,7 +21,7 @@ pub type AccountId = u64;
 pub type Balance = u128;
 pub type BlockNumber = u64;
 pub type CurrencyId = u32;
-pub type ChainId = u32;
+pub type ChainId = u64;
 /// Type for storing the id of an asset.
 pub type AssetId = u32;
 /// Signed version of Balance
@@ -232,6 +232,8 @@ impl pallet_asset_registry::Config for Test {
 parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	pub const HistoryLength: u32 = 30;
+	// Substrate standalone chain ID type
+	pub const ChainType: [u8; 2] = [2, 0];
 	pub const ChainIdentifier: u32 = 5;
 }
 
@@ -248,6 +250,7 @@ impl pallet_anchor::Config for Test {
 
 impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
+	type ChainType = ChainType;
 	type ChainIdentifier = ChainIdentifier;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
@@ -268,6 +271,7 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type BridgeAccountId = BridgeAccountId;
 	type ChainId = ChainId;
 	type ChainIdentifier = ChainIdentifier;
+	type ChainType = ChainType;
 	type Event = Event;
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
