@@ -17,26 +17,28 @@
 
 //! # Anchor Handler Module
 //!
-//! Add description #TODO
+//! A module for executing the creation and modification of anchors.
 //!
 //! ## Overview
 //!
+//! The anchor-handler module provides functionality for the following:
 //!
-//! ### Terminology
-//!
-//! ### Goals
-//!
-//! The anchor handler system in Webb is designed to make the following
-//! possible:
-//!
-//! * Define.
+//! * The creation of anchors from proposals
+//! * Updating existing anchors from proposals
 //!
 //! ## Interface
 //!
+//! ### Permissioned Functions
+//!
+//! * `execute_anchor_create_proposal`: Creates an anchor from successfully voted on proposal. This
+//!   method requires the `origin` to be [T::BridgeOrigin].
+//! * `execute_anchor_update_proposal`: Adds/Updates an anchor from successfully voted on proposal.
+//!   This method requires the `origin` to be [T::BridgeOrigin].
+//!
 //! ## Related Modules
 //!
-//! * [`System`](../frame_system/index.html)
-//! * [`Support`](../frame_support/index.html)
+//! * Anchor pallet
+//! * Linkable-tree pallet
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]

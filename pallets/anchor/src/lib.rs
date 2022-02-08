@@ -29,18 +29,27 @@
 //!
 //! ### Terminology
 //!
-//! ### Goals
-//!
-//! The Anchor system in Webb is designed to make the following possible:
-//!
-//! * Define.
+//! * **Anchor**: Connected instances that contains an on-chain merkle tree and tracks a set of
+//!   connected __anchors__ across chains (through edges) in its local storage.
+//! * **Edge**: An edge is a directed connection or link between two anchors.
 //!
 //! ## Interface
 //!
+//! ### Permissioned Functions
+//!
+//! * `create`: Creates an anchor. This can be only called by the Root.
+//!
+//! ### Permissionless Functions
+//!
+//! * `deposit`: Inserts elements into on-chain merkle tree.
+//! * `deposit_and_update_linked_anchors`: Same as [Self::deposit] but with another call to update
+//!   the linked anchors cross-chain (if any).
+//! * `withdraw`: Withdraw requires a zero-knowledge proof of a unspent deposit in some anchors’
+//!   merkle tree on either this chain or a neighboring chain
+//!
 //! ## Related Modules
 //!
-//! * [`System`](../frame_system/index.html)
-//! * [`Support`](../frame_support/index.html)
+//! * Linkable-tree pallet
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]

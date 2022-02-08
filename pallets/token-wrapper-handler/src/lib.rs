@@ -40,11 +40,9 @@
 //! ## Interface
 //!
 //! ## Related Modules
+//!
 //! * Token-Wrapper Pallet
 //! * Bridge Pallet
-//!
-//! * [`System`](../frame_system/index.html)
-//! * [`Support`](../frame_support/index.html)
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
