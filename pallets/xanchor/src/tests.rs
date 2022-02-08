@@ -76,7 +76,7 @@ fn dmp() {
 	Relay::execute_with(|| {
 		assert_ok!(RelayChainPalletXcm::send_xcm(
 			Here,
-			Parachain(PARAID_A.into()),
+			Parachain(PARAID_A),
 			Xcm(vec![Transact {
 				origin_type: OriginKind::SovereignAccount,
 				require_weight_at_most: INITIAL_BALANCE as u64,
@@ -89,9 +89,6 @@ fn dmp() {
 		use parachain::{Event, System};
 		assert!(System::events()
 			.iter()
-			.inspect(|r| {
-				dbg!(r);
-			})
 			.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked { .. }))));
 	});
 }
