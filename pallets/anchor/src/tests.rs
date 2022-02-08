@@ -44,16 +44,14 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 			// 3. Setup the VerifierPallet
 			//    but to do so, we need to have a VerifyingKey
-			let (pk_bytes, vk_bytes) = (
-				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key_uncompressed.bin")
-					.expect("Unable to read file")
-					.to_vec(),
-				std::fs::read("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin")
-					.expect("Unable to read file")
-					.to_vec(),
+			let pk_bytes = include_bytes!(
+				"../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key_uncompressed.bin"
+			);
+			let vk_bytes = include_bytes!(
+				"../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin"
 			);
 
-			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes));
+			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
 
 			// finally return the provingkey bytes
 			pk_bytes.to_vec()
