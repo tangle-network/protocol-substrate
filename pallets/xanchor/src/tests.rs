@@ -446,8 +446,10 @@ fn governance_system_works() {
 	// now we do the on-chain proposal checking on chain B.
 	ParaB::execute_with(|| {
 		// we should see the anchor in the pending list.
+		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		dbg!(converted_chain_id_bytes);
 		assert_eq!(
-			XAnchor::pending_linked_anchors(u64::from(PARAID_A), para_b_tree_id),
+			XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_b_tree_id),
 			Some(para_a_tree_id),
 		);
 		// start of 2 => next referendum scheduled.
@@ -465,14 +467,21 @@ fn governance_system_works() {
 		fast_forward_to(6);
 		// at this point the proposal should be enacted and the anchors should be linked
 		// on this chain.
-		assert_eq!(XAnchor::pending_linked_anchors(u64::from(PARAID_A), para_b_tree_id), None,);
-		assert_eq!(XAnchor::linked_anchors(u64::from(PARAID_A), para_b_tree_id), para_a_tree_id);
+		assert_eq!(XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_b_tree_id), None,);
+		assert_eq!(
+			XAnchor::linked_anchors(converted_chain_id_bytes, para_b_tree_id),
+			para_a_tree_id
+		);
 	});
 
 	// on chain A we should find them linked too.
 	ParaA::execute_with(|| {
-		assert_eq!(XAnchor::pending_linked_anchors(u64::from(PARAID_B), para_a_tree_id), None);
-		assert_eq!(XAnchor::linked_anchors(u64::from(PARAID_B), para_a_tree_id), para_b_tree_id);
+		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
+		assert_eq!(XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_a_tree_id), None);
+		assert_eq!(
+			XAnchor::linked_anchors(converted_chain_id_bytes, para_a_tree_id),
+			para_b_tree_id
+		);
 	});
 
 	// the link process is now done!
