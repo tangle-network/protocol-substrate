@@ -250,7 +250,7 @@ pub mod pallet {
 			Self::ensure_democracy(origin)?;
 			// The proposal to link anchors on this chain has passed. We now need to
 			// signal the other chain to start a link proposal on that chain too.
-			// TODO: Ensure the the parachain targer chain ID has the same chain type
+			// TODO: Ensure the the parachain target chain ID has the same chain type
 			let other_para_id = chain_id_to_para_id::<T, I>(payload.target_chain_id);
 			let my_para_id = T::ParaId::get();
 			let payload = LinkProposal {
@@ -554,7 +554,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// also, add the new edge to the anchor
 		Self::update_anchor(
 			tree_id,
-			EdgeMetadata { src_chain_id: chain_id, ..Default::default() },
+			EdgeMetadata {
+				src_chain_id: chain_id_to_bytes::<T, I>(chain_id),
+				..Default::default()
+			},
 		)?;
 		Ok(().into())
 	}
@@ -570,6 +573,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				metadata.root,
 				metadata.latest_leaf_index,
 			)?;
+
+			Self::deposit_event(Event::AnchorEdgeAdded);
 			Self::deposit_event(Event::AnchorEdgeUpdated);
 		} else {
 			T::Anchor::add_edge(
@@ -578,6 +583,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				metadata.root,
 				metadata.latest_leaf_index,
 			)?;
+
 			Self::deposit_event(Event::AnchorEdgeAdded);
 		}
 
@@ -610,6 +616,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// and construct the metadata
 		let metadata = EdgeMetadata {
 			src_chain_id: para_id_to_chain_id::<T, I>(my_para_id),
+			//src_chain_id: my
 			root,
 			latest_leaf_index,
 		};
@@ -627,12 +634,21 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			let other_chain_id = edge.src_chain_id;
 			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id, tree_id);
 			let my_chain_id = metadata.src_chain_id;
+
+			println!("SYNC ANCHOR");
+			println!("target_tree_id: {:?}", target_tree_id);
+			println!("target_chain_id: {:?}", edge.src_chain_id);
+			println!("root_chain_id: {:?}", edge.root);
+			println!("metadata_root: {:?}", metadata.root);
+			println!("metadata_src_chain_id: {:?}", metadata.src_chain_id);
+			println!("my_para_id: {:?}", metadata.src_chain_id);
 			// target_tree_id + my_chain_id
 			// TODO: Document this clearly
 			let r_id = utils::derive_resource_id(
 				my_chain_id.try_into().unwrap_or_default(),
 				&target_tree_id.encode(),
 			);
+
 			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
 			let update_edge = Transact {
 				// we should keep using the OriginKind::Native here
@@ -693,5 +709,11 @@ pub fn chain_id_to_para_id<T: Config<I>, I: 'static>(chain_id: T::ChainId) -> Pa
 #[inline(always)]
 pub fn para_id_to_chain_id<T: Config<I>, I: 'static>(para_id: ParaId) -> T::ChainId {
 	T::ChainId::try_from(compute_chain_id_type(u32::from(para_id), T::Anchor::get_chain_type()))
+		.unwrap_or_default()
+}
+
+#[inline(always)]
+pub fn chain_id_to_bytes<T: Config<I>, I: 'static>(chain_id: T::ChainId) -> T::ChainId {
+	T::ChainId::try_from(compute_chain_id_type(chain_id, T::Anchor::get_chain_type()))
 		.unwrap_or_default()
 }

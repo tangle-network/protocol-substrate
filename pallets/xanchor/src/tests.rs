@@ -89,6 +89,9 @@ fn dmp() {
 		use parachain::{Event, System};
 		assert!(System::events()
 			.iter()
+			.inspect(|r| {
+				dbg!(r);
+			})
 			.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked { .. }))));
 	});
 }
@@ -279,8 +282,9 @@ fn should_bridge_anchors_using_xcm() {
 	// ok now we go to ParaB and check the edges.
 	// we should expect that the edge for ParaA is there, and the merkle root equal
 	// to the one we got from ParaA.
+	let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
 	ParaB::execute_with(|| {
-		let edge = LinkableTree::edge_list(para_b_tree_id, u64::from(PARAID_A));
+		let edge = LinkableTree::edge_list(&para_b_tree_id, converted_chain_id_bytes);
 		assert_eq!(edge.root, para_a_root);
 		assert_eq!(edge.latest_leaf_index, 1);
 	});
