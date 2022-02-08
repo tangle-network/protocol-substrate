@@ -82,10 +82,10 @@ mod tests {
 	fn derive_parse_resource_ids() {
 		let tree_id = 1u32;
 		let chain_id = 2000u32;
-		let updated_chain_id = compute_chain_id_type(chain_id, [2, 0]);
+		let updated_chain_id: u64 = compute_chain_id_type(chain_id, [2, 0]);
 		let resource_id = derive_resource_id(updated_chain_id, &tree_id.encode());
-		let (tree_id2, chain_id2) = parse_resource_id(resource_id);
+		let (tree_id2, chain_id2): (u32, u64) = parse_resource_id(resource_id);
 		assert_eq!(tree_id, tree_id2);
-		assert_eq!(updated_chain_id, chain_id2);
+		assert_eq!(updated_chain_id as u64, chain_id2 as u64);
 	}
 }
