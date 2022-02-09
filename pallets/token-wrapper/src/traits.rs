@@ -2,7 +2,10 @@ use frame_support::dispatch;
 use sp_std::vec::Vec;
 
 pub trait TokenWrapperInterface<AccountId, AssetId, Balance> {
-	fn set_wrapping_fee(fee: Balance) -> Result<(), dispatch::DispatchError>;
+	fn set_wrapping_fee(
+		into_pool_share_id: AssetId,
+		fee: Balance,
+	) -> Result<(), dispatch::DispatchError>;
 	fn wrap(
 		from: AccountId,
 		from_asset_id: AssetId,

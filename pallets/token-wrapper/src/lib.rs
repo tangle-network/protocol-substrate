@@ -118,7 +118,8 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn wrapping_fee_percent)]
 	/// Percentage of amount to be used as wrapping fee
-	pub type WrappingFeePercent<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+	pub type WrappingFeePercent<T: Config> =
+		StorageMap<_, Blake2_128Concat, T::AssetId, BalanceOf<T>, OptionQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -136,6 +137,7 @@ pub mod pallet {
 			recipient: T::AccountId,
 		},
 		UpdatedWrappingFeePercent {
+			into_pool_share_id: T::AssetId,
 			wrapping_fee_percent: BalanceOf<T>,
 		},
 	}
@@ -150,6 +152,9 @@ pub mod pallet {
 		NotFoundInPool,
 		/// Insufficient Balance for an asset
 		InsufficientBalance,
+
+		// No wrapping fee percentage found for the pool share
+		NoWrappingFeePercentFound,
 	}
 
 	#[pallet::call]
@@ -158,9 +163,10 @@ pub mod pallet {
 		pub fn set_wrapping_fee(
 			origin: OriginFor<T>,
 			fee: BalanceOf<T>,
+			into_pool_share_id: T::AssetId,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			<Self as TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>>>::set_wrapping_fee(fee)?;
+			<Self as TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>>>::set_wrapping_fee(into_pool_share_id, fee)?;
 			Ok(().into())
 		}
 
@@ -224,21 +230,31 @@ impl<T: Config> Pallet<T> {
 	/// If X is amount of pooled share tokens and fee is 5%,
 	/// need to wrap X / 0.95 total, so wrapping fee is
 	/// (X / 0.95) - X
-	pub fn get_wrapping_fee(amount: BalanceOf<T>) -> BalanceOf<T> {
-		let percent = Self::wrapping_fee_percent();
-		amount.saturating_mul(percent) / T::WrappingFeeDivider::get().saturating_sub(percent)
+	pub fn get_wrapping_fee(
+		amount: BalanceOf<T>,
+		into_pool_share_id: T::AssetId,
+	) -> Result<BalanceOf<T>, DispatchError> {
+		let percent = WrappingFeePercent::<T>::get(into_pool_share_id);
+		ensure!(percent.is_some(), Error::<T>::NoWrappingFeePercentFound);
+		let percent = percent.unwrap_or_default();
+		Ok(amount.saturating_mul(percent) / T::WrappingFeeDivider::get().saturating_sub(percent))
 	}
 
-	pub fn get_amount_to_wrap(amount: BalanceOf<T>) -> BalanceOf<T> {
-		amount.saturating_add(Self::get_wrapping_fee(amount))
+	pub fn get_amount_to_wrap(
+		amount: BalanceOf<T>,
+		into_pool_share_id: T::AssetId,
+	) -> BalanceOf<T> {
+		amount
+			.saturating_add(Self::get_wrapping_fee(amount, into_pool_share_id).unwrap_or_default())
 	}
 
 	pub fn has_sufficient_balance(
 		currency_id: CurrencyIdOf<T>,
 		sender: &T::AccountId,
 		amount: BalanceOf<T>,
+		into_pool_share_id: T::AssetId,
 	) -> bool {
-		let total = Self::get_amount_to_wrap(amount);
+		let total = Self::get_amount_to_wrap(amount, into_pool_share_id);
 		T::Currency::free_balance(currency_id, sender) > total
 	}
 
@@ -248,10 +264,16 @@ impl<T: Config> Pallet<T> {
 }
 
 impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> for Pallet<T> {
-	fn set_wrapping_fee(fee: BalanceOf<T>) -> Result<(), DispatchError> {
-		WrappingFeePercent::<T>::put(fee);
+	fn set_wrapping_fee(
+		into_pool_share_id: T::AssetId,
+		fee: BalanceOf<T>,
+	) -> Result<(), DispatchError> {
+		WrappingFeePercent::<T>::insert(into_pool_share_id, fee);
 
-		Self::deposit_event(Event::UpdatedWrappingFeePercent { wrapping_fee_percent: fee });
+		Self::deposit_event(Event::UpdatedWrappingFeePercent {
+			wrapping_fee_percent: fee,
+			into_pool_share_id,
+		});
 		Ok(().into())
 	}
 
@@ -285,7 +307,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 		let pool_share_currency_id = Self::to_currency_id(into_pool_share_id)?;
 
 		ensure!(
-			Self::has_sufficient_balance(from_currency_id, &from, amount),
+			Self::has_sufficient_balance(from_currency_id, &from, amount, into_pool_share_id),
 			Error::<T>::InsufficientBalance
 		);
 
@@ -293,7 +315,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 			from_currency_id,
 			&from,
 			&Self::treasury_id(),
-			Self::get_wrapping_fee(amount),
+			Self::get_wrapping_fee(amount, into_pool_share_id)?,
 		)?;
 
 		T::Currency::transfer(from_currency_id, &from, &Self::account_id(), amount)?;

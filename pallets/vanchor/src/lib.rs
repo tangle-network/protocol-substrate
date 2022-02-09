@@ -29,20 +29,13 @@
 //!
 //! The supported dispatchable functions are documented in the [`Call`] enum.
 //!
-//! ### Terminology
-//!
-//! ### Goals
-//!
-//! The VAnchor system in Webb is designed to make the following possible:
-//!
-//! * Define.
-//!
 //! ## Interface
 //!
-//! ## Related Modules
+//! ### Permissionless Functions
 //!
-//! * [`System`](../frame_system/index.html)
-//! * [`Support`](../frame_support/index.html)
+//! * `create`: Creates an vanchor and inserts an element into the on-chain merkle tree.
+//! * `transact`: Allows the withdrawel of variable asset sizes but requires a zero-knowledge proof
+//!   of an unspent (UTXO) in an anchors merkle tree specified by TreeId.
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
