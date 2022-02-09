@@ -243,12 +243,14 @@ fn should_bridge_anchors_using_xcm() {
 	});
 
 	ParaA::execute_with(|| {
+		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
 		let r_id = derive_resource_id(PARAID_B.into(), &para_a_tree_id.encode());
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
-		let r_id = derive_resource_id(PARAID_A.into(), &para_b_tree_id.encode());
+		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		let r_id = derive_resource_id(converted_chain_id_bytes, &para_b_tree_id.encode());
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
 	});
 
@@ -279,8 +281,9 @@ fn should_bridge_anchors_using_xcm() {
 	// ok now we go to ParaB and check the edges.
 	// we should expect that the edge for ParaA is there, and the merkle root equal
 	// to the one we got from ParaA.
-	let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
 	ParaB::execute_with(|| {
+		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		dbg!(converted_chain_id_bytes);
 		let edge = LinkableTree::edge_list(&para_b_tree_id, converted_chain_id_bytes);
 		assert_eq!(edge.root, para_a_root);
 		assert_eq!(edge.latest_leaf_index, 1);
@@ -406,8 +409,9 @@ fn governance_system_works() {
 		// create a link proposal, saying that we (parachain A) want to link the anchor
 		// (local_tree_id) to the anchor (target_tree_id) located on Parachain B
 		// (target_chain_id).
+		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id: converted_chain_id_bytes,
 			target_tree_id: Some(para_b_tree_id),
 			local_tree_id: para_a_tree_id,
 		};
@@ -419,7 +423,7 @@ fn governance_system_works() {
 		));
 		// we should see this anchor link in the pending list
 		assert_eq!(
-			XAnchor::pending_linked_anchors(u64::from(PARAID_B), para_a_tree_id),
+			XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_a_tree_id),
 			Some(para_b_tree_id),
 		);
 
@@ -473,12 +477,8 @@ fn governance_system_works() {
 
 	// on chain A we should find them linked too.
 	ParaA::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
-		assert_eq!(XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_a_tree_id), None);
-		assert_eq!(
-			XAnchor::linked_anchors(converted_chain_id_bytes, para_a_tree_id),
-			para_b_tree_id
-		);
+		assert_eq!(XAnchor::pending_linked_anchors(u64::from(PARAID_B), para_a_tree_id), None);
+		assert_eq!(XAnchor::linked_anchors(u64::from(PARAID_B), para_a_tree_id), para_b_tree_id);
 	});
 
 	// the link process is now done!

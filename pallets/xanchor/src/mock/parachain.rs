@@ -37,9 +37,9 @@ use xcm::{latest::prelude::*, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter,
 	EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter,
-	NativeAsset, ParentAsSuperuser, RelayChainAsNative, SiblingParachainAsNative,
+	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
-	SovereignSignedViaLocation, ParentIsPreset,
+	SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -107,18 +107,33 @@ parameter_types! {
 parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
+	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
 }
 
 pub type LocationToAccountId = (
 	ParentIsPreset<AccountId>,
+	SiblingParachainConvertsVia<ParaId, AccountId>,
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
 pub type XcmOriginToCallOrigin = (
 	SovereignSignedViaLocation<LocationToAccountId, Origin>,
+	// Native converter for Relay-chain (Parent) location; will converts to a
+	// `Relay` origin when recognised.
+	RelayChainAsNative<RelayChainOrigin, Origin>,
+	// Native converter for sibling Parachains; will convert to a `SiblingPara`
+	// origin when recognised.
+	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
+	// Superuser converter for the Relay-chain (Parent) location. This will
+	// allow it to issue a transaction from the Root origin.
+	ParentAsSuperuser<Origin>,
+	// Native signed account converter; this just converts an `AccountId32`
+	// origin into a normal `Origin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RelayNetwork, Origin>,
+	// Xcm origins can be represented natively under the Xcm pallet's Xcm
+	// origin.
 	XcmPassthrough<Origin>,
 );
 

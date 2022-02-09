@@ -261,6 +261,7 @@ pub mod pallet {
 				target_chain_id: para_id_to_chain_id::<T, I>(my_para_id),
 				..payload
 			};
+			println!("send link");
 			let save_link_proposal = Transact {
 				origin_type: OriginKind::Native,
 				require_weight_at_most: 1_000_000_000,
@@ -270,6 +271,7 @@ pub mod pallet {
 				.encode()
 				.into(),
 			};
+			println!("{:?}", save_link_proposal);
 			let handle_link_anchor_message = Transact {
 				origin_type: OriginKind::SovereignAccount,
 				require_weight_at_most: 1_000_000_000,
@@ -308,6 +310,7 @@ pub mod pallet {
 				// TODO: Identify if we need to encode more metadata
 				None => todo!("create an anchor if the caller does not provide one"),
 			};
+			println!("{:?}", my_tree_id);
 			// Next, we check if the anchor is not linked to the local chain already.
 			ensure!(
 				!LinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
@@ -318,7 +321,6 @@ pub mod pallet {
 				!PendingLinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
 				Error::<T, I>::AnchorLinkIsAlreadyPending
 			);
-			println!("save link proposal");
 			println!("caller_chain_id: {:?}", caller_chain_id);
 			println!("my_tree_id: {:?}", my_tree_id);
 			println!("local_tree_id: {:?}", payload.local_tree_id);
@@ -497,6 +499,11 @@ pub mod pallet {
 			let caller_chain_id =
 				compute_chain_id_type(u32::from(para), T::Anchor::get_chain_type());
 			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
+			println!("UPDATE ANCHOR");
+			println!("target_chain_id: {:?}", metadata.src_chain_id);
+			println!("root_chain_id: {:?}", metadata.root);
+			println!("tree_id: {:?}", tree_id);
+			println!("r_chain_id: {:?}", r_chain_id);
 			// double check that the caller is the same as the chain id of the resource
 			// also the the same from the metadata.
 			let src_chain_id: u64 = metadata.src_chain_id.try_into().unwrap_or_default();
@@ -562,10 +569,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// also, add the new edge to the anchor
 		Self::update_anchor(
 			tree_id,
-			EdgeMetadata {
-				src_chain_id: chain_id,
-				..Default::default()
-			},
+			EdgeMetadata { src_chain_id: chain_id, ..Default::default() },
 		)?;
 		Ok(().into())
 	}
@@ -671,6 +675,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				.encode()
 				.into(),
 			};
+			println!("{:?}", update_edge);
 			let dest = (Parent, Parachain(other_para_id.into()));
 			let result = T::XcmSender::send_xcm(dest, Xcm(vec![update_edge]));
 			match result {
@@ -720,3 +725,7 @@ pub fn para_id_to_chain_id<T: Config<I>, I: 'static>(para_id: ParaId) -> T::Chai
 		.unwrap_or_default()
 }
 
+pub fn chain_id_to_bytes<T: Config<I>, I: 'static>(chain_id: T::ChainId) -> T::ChainId {
+	T::ChainId::try_from(compute_chain_id_type(chain_id, T::Anchor::get_chain_type()))
+		.unwrap_or_default()
+}
