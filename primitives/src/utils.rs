@@ -10,11 +10,12 @@ use crate::types::ResourceId;
 /// chain id is 6 bytes long and so requires a u64 to represent it.
 ///
 /// ```rust
+/// use webb_primitives::utils::compute_chain_id_type;
 /// pub type ChainId = u64;
 /// let chain_id: u32 = 5;
 /// let chain_type: [u8; 2] = [2, 0];
 ///
-/// let chain_id_type: ChainId = compute_chain_id_type(chain_id.into(), chain_type);
+/// let chain_id_type: ChainId = compute_chain_id_type::<ChainId>(chain_id.into(), chain_type);
 /// ```
 pub fn compute_chain_id_type<ChainId>(chain_id: ChainId, chain_type: [u8; 2]) -> u64
 where
@@ -80,12 +81,12 @@ mod tests {
 
 	#[test]
 	fn derive_parse_resource_ids() {
-		let tree_id = 1u32;
+		let tree_id = 0u32;
 		let chain_id = 2000u32;
 		let updated_chain_id: u64 = compute_chain_id_type(chain_id, [2, 0]);
 		let resource_id = derive_resource_id(updated_chain_id, &tree_id.encode());
 		let (tree_id2, chain_id2): (u32, u64) = parse_resource_id(resource_id);
-		assert_eq!(tree_id, tree_id2);
 		assert_eq!(updated_chain_id as u64, chain_id2 as u64);
+		assert_eq!(tree_id, tree_id2);
 	}
 }
