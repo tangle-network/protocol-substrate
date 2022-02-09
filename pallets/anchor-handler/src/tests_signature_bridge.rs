@@ -67,13 +67,22 @@ fn make_anchor_update_proposal(
 	})
 }
 
+fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u8>) -> Vec<u8> {
+	let mut prop_data = encoded_r_id;
+	prop_data.extend_from_slice(&nonce);
+	prop_data.extend_from_slice(&[0u8; 4]);
+	prop_data.extend_from_slice(&encoded_call[..]);
+	prop_data
+}
+
 // Signature Bridge Tests
 
 #[test]
 fn should_create_anchor_with_sig_succeed() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
+	let this_chain_id = compute_chain_id_type(5u32, chain_type);
+	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_create_proposal");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -83,24 +92,24 @@ fn should_create_anchor_with_sig_succeed() {
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
-			let prop_id = 1;
 			let deposit_size = 100;
-			let proposal = make_anchor_create_proposal(deposit_size, src_id, &r_id);
-			let msg = keccak_256(&proposal.encode());
+			let anchor_create_call = make_anchor_create_proposal(deposit_size, src_id, &r_id);
+			let anchor_create_call_encoded = anchor_create_call.encode();
+			let nonce = [0u8, 0u8, 0u8, 1u8];
+			let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_create_call_encoded);
+			let msg = keccak_256(&prop_data);
 			let sig: Signature = pair.sign_prehashed(&msg).into();
 			// should fail to execute proposal as non-maintainer
 			assert_err!(
 				SignatureBridge::execute_proposal(
 					Origin::signed(RELAYER_A),
-					prop_id,
 					src_id,
-					r_id,
-					Box::new(proposal.clone()),
+					Box::new(anchor_create_call.clone()),
+					prop_data.clone(),
 					sig.0.to_vec(),
 				),
 				pallet_signature_bridge::Error::<Test, _>::InvalidPermissions
 			);
-
 			// set the maintainer
 			assert_ok!(SignatureBridge::force_set_maintainer(
 				Origin::root(),
@@ -110,10 +119,9 @@ fn should_create_anchor_with_sig_succeed() {
 
 			assert_ok!(SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
-				prop_id,
 				src_id,
-				r_id,
-				Box::new(proposal.clone()),
+				Box::new(anchor_create_call.clone()),
+				prop_data.clone(),
 				sig.0.to_vec(),
 			));
 
@@ -130,8 +138,11 @@ fn should_create_anchor_with_sig_succeed() {
 fn should_add_anchor_edge_with_sig_succeed() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(src_id, b"execute_anchor_update_proposal");
-	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let this_chain_id = compute_chain_id_type(5u32, chain_type);
+	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_update_proposal");
+	let public_uncompressed =
+hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+);
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
 		None,
@@ -148,10 +159,12 @@ fn should_add_anchor_edge_with_sig_succeed() {
 			let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index };
 			assert_eq!(0, Counts::<Test>::get(src_id));
 
-			let proposal = make_anchor_update_proposal(&r_id, edge_metadata.clone());
-			let msg = keccak_256(&proposal.encode());
+			let anchor_update_call = make_anchor_update_proposal(&r_id, edge_metadata.clone());
+			let anchor_update_call_encoded = anchor_update_call.encode();
+			let nonce = [0u8, 0u8, 0u8, 1u8];
+			let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_update_call_encoded);
+			let msg = keccak_256(&prop_data);
 			let sig: Signature = pair.sign_prehashed(&msg).into();
-
 			// set the maintainer
 			assert_ok!(SignatureBridge::force_set_maintainer(
 				Origin::root(),
@@ -160,10 +173,9 @@ fn should_add_anchor_edge_with_sig_succeed() {
 
 			assert_ok!(SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
-				prop_id,
 				src_id,
-				r_id,
-				Box::new(proposal.clone()),
+				Box::new(anchor_update_call.clone()),
+				prop_data,
 				sig.0.to_vec(),
 			));
 			assert_eq!(1, Counts::<Test>::get(src_id));
@@ -201,8 +213,11 @@ fn should_add_anchor_edge_with_sig_succeed() {
 fn should_update_anchor_edge_with_sig_succeed() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(src_id, b"execute_anchor_update_proposal");
-	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let this_chain_id = compute_chain_id_type(5u32, chain_type);
+	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_update_proposal");
+	let public_uncompressed =
+hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+);
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
 		None,
@@ -211,7 +226,6 @@ fn should_update_anchor_edge_with_sig_succeed() {
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec())
 		.execute_with(|| {
-			let prop_id = 1;
 			mock_anchor_creation_using_pallet_call(src_id, &r_id);
 
 			let root = Element::from_bytes(&[1; 32]);
@@ -219,8 +233,11 @@ fn should_update_anchor_edge_with_sig_succeed() {
 			let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index };
 			assert_eq!(0, Counts::<Test>::get(src_id));
 
-			let proposal = make_anchor_update_proposal(&r_id, edge_metadata.clone());
-			let msg = keccak_256(&proposal.encode());
+			let anchor_update_call = make_anchor_update_proposal(&r_id, edge_metadata.clone());
+			let anchor_update_call_encoded = anchor_update_call.encode();
+			let nonce = [0u8, 0u8, 0u8, 1u8];
+			let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_update_call_encoded);
+			let msg = keccak_256(&prop_data);
 			let sig: Signature = pair.sign_prehashed(&msg).into();
 
 			// set the maintainer
@@ -231,10 +248,9 @@ fn should_update_anchor_edge_with_sig_succeed() {
 
 			assert_ok!(SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
-				prop_id,
 				src_id,
-				r_id,
-				Box::new(proposal.clone()),
+				Box::new(anchor_update_call.clone()),
+				prop_data,
 				sig.0.to_vec(),
 			));
 			assert_eq!(1, Counts::<Test>::get(src_id));
@@ -265,16 +281,18 @@ fn should_update_anchor_edge_with_sig_succeed() {
 			let latest_leaf_index = 10;
 			let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index };
 
-			let proposal = make_anchor_update_proposal(&r_id, edge_metadata.clone());
-			let msg = keccak_256(&proposal.encode());
+			let anchor_update_call = make_anchor_update_proposal(&r_id, edge_metadata.clone());
+			let anchor_update_call_encoded = anchor_update_call.encode();
+			let nonce = [0u8, 0u8, 0u8, 2u8];
+			let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_update_call_encoded);
+			let msg = keccak_256(&prop_data);
 			let sig: Signature = pair.sign_prehashed(&msg).into();
 
 			assert_ok!(SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
-				prop_id + 1,
 				src_id,
-				r_id,
-				Box::new(proposal.clone()),
+				Box::new(anchor_update_call.clone()),
+				prop_data,
 				sig.0.to_vec(),
 			));
 
@@ -304,8 +322,11 @@ fn should_update_anchor_edge_with_sig_succeed() {
 fn should_fail_to_whitelist_chain_already_whitelisted() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
-	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let this_chain_id = compute_chain_id_type(1u32, chain_type);
+	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_create_proposal");
+	let public_uncompressed =
+hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+);
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
 		None,
@@ -325,8 +346,11 @@ fn should_fail_to_whitelist_chain_already_whitelisted() {
 fn should_fail_to_whitelist_this_chain() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
-	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let this_chain_id = compute_chain_id_type(5u32, chain_type);
+	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_create_proposal");
+	let public_uncompressed =
+hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+);
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
 		None,
@@ -349,8 +373,11 @@ fn should_fail_to_whitelist_this_chain() {
 fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
-	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let this_chain_id = compute_chain_id_type(5u32, chain_type);
+	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_create_proposal");
+	let public_uncompressed =
+hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+);
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
 		None,
@@ -359,10 +386,12 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
-			let prop_id = 1;
 			let deposit_size = 100;
-			let proposal = make_anchor_create_proposal(deposit_size, src_id, &r_id);
-			let msg = keccak_256(&proposal.encode());
+			let anchor_create_call = make_anchor_create_proposal(deposit_size, src_id, &r_id);
+			let anchor_create_call_encoded = anchor_create_call.encode();
+			let nonce = [0u8, 0u8, 0u8, 1u8];
+			let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_create_call_encoded);
+			let msg = keccak_256(&prop_data);
 			let sig: Signature = pair.sign_prehashed(&msg).into();
 			// set the maintainer
 			assert_ok!(SignatureBridge::force_set_maintainer(
@@ -374,10 +403,9 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 			assert_err!(
 				SignatureBridge::execute_proposal(
 					Origin::signed(RELAYER_A),
-					prop_id,
 					src_id + 1,
-					r_id,
-					Box::new(proposal.clone()),
+					Box::new(anchor_create_call.clone()),
+					prop_data,
 					sig.0.to_vec(),
 				),
 				pallet_signature_bridge::Error::<Test, _>::ChainNotWhitelisted
@@ -389,8 +417,11 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
-	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let this_chain_id = compute_chain_id_type(5u32, chain_type);
+	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_create_proposal");
+	let public_uncompressed =
+hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+);
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
 		None,
@@ -399,10 +430,16 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
-			let prop_id = 1;
 			let deposit_size = 100;
-			let proposal = make_anchor_create_proposal(deposit_size, src_id, &r_id);
-			let msg = keccak_256(&proposal.encode());
+			let non_existent_r_id =
+				derive_resource_id(this_chain_id, b"execute_anchor_crate_proposal");
+			let anchor_create_call =
+				make_anchor_create_proposal(deposit_size, src_id, &non_existent_r_id);
+			let anchor_create_call_encoded = anchor_create_call.encode();
+			let nonce = [0u8, 0u8, 0u8, 1u8];
+			let prop_data =
+				make_proposal_data(non_existent_r_id.encode(), nonce, anchor_create_call_encoded);
+			let msg = keccak_256(&prop_data);
 			let sig: Signature = pair.sign_prehashed(&msg).into();
 			// set the maintainer
 			assert_ok!(SignatureBridge::force_set_maintainer(
@@ -414,10 +451,9 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 			assert_err!(
 				SignatureBridge::execute_proposal(
 					Origin::signed(RELAYER_A),
-					prop_id,
 					src_id,
-					derive_resource_id(src_id, b"execute_anchor_crate_proposal"),
-					Box::new(proposal.clone()),
+					Box::new(anchor_create_call.clone()),
+					prop_data,
 					sig.0.to_vec(),
 				),
 				pallet_signature_bridge::Error::<Test, _>::ResourceDoesNotExist
@@ -429,8 +465,11 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 fn should_fail_to_verify_proposal_with_tampered_signature() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(src_id, b"execute_anchor_create_proposal");
-	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let this_chain_id = compute_chain_id_type(5u32, chain_type);
+	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_create_proposal");
+	let public_uncompressed =
+hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+);
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
 		None,
@@ -439,10 +478,12 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
-			let prop_id = 1;
 			let deposit_size = 100;
-			let proposal = make_anchor_create_proposal(deposit_size, src_id, &r_id);
-			let msg = keccak_256(&proposal.encode());
+			let anchor_create_call = make_anchor_create_proposal(deposit_size, src_id, &r_id);
+			let anchor_create_call_encoded = anchor_create_call.encode();
+			let nonce = [0u8, 0u8, 0u8, 1u8];
+			let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_create_call_encoded);
+			let msg = keccak_256(&prop_data);
 			let sig: Signature = pair.sign_prehashed(&msg).into();
 			// set the maintainer
 			assert_ok!(SignatureBridge::force_set_maintainer(
@@ -458,10 +499,9 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 			assert_err!(
 				SignatureBridge::execute_proposal(
 					Origin::signed(RELAYER_A),
-					prop_id,
 					src_id,
-					r_id,
-					Box::new(proposal.clone()),
+					Box::new(anchor_create_call.clone()),
+					prop_data,
 					tampered_sig.clone(),
 				),
 				pallet_signature_bridge::Error::<Test, _>::InvalidPermissions
