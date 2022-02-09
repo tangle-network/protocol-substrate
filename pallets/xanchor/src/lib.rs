@@ -261,7 +261,6 @@ pub mod pallet {
 				target_chain_id: para_id_to_chain_id::<T, I>(my_para_id),
 				..payload
 			};
-			println!("send link");
 			let save_link_proposal = Transact {
 				origin_type: OriginKind::Native,
 				require_weight_at_most: 1_000_000_000,
@@ -271,7 +270,6 @@ pub mod pallet {
 				.encode()
 				.into(),
 			};
-			println!("{:?}", save_link_proposal);
 			let handle_link_anchor_message = Transact {
 				origin_type: OriginKind::SovereignAccount,
 				require_weight_at_most: 1_000_000_000,
@@ -499,11 +497,6 @@ pub mod pallet {
 			let caller_chain_id =
 				compute_chain_id_type(u32::from(para), T::Anchor::get_chain_type());
 			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
-			println!("UPDATE ANCHOR");
-			println!("target_chain_id: {:?}", metadata.src_chain_id);
-			println!("root_chain_id: {:?}", metadata.root);
-			println!("tree_id: {:?}", tree_id);
-			println!("r_chain_id: {:?}", r_chain_id);
 			// double check that the caller is the same as the chain id of the resource
 			// also the the same from the metadata.
 			let src_chain_id: u64 = metadata.src_chain_id.try_into().unwrap_or_default();
@@ -647,13 +640,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id, tree_id);
 			let my_chain_id = metadata.src_chain_id;
 
-			println!("SYNC ANCHOR");
-			println!("target_tree_id: {:?}", target_tree_id);
-			println!("target_chain_id: {:?}", edge.src_chain_id);
-			println!("root_chain_id: {:?}", edge.root);
-			println!("metadata_root: {:?}", metadata.root);
-			println!("metadata_src_chain_id: {:?}", metadata.src_chain_id);
-			println!("my_para_id: {:?}", metadata.src_chain_id);
 			// target_tree_id + my_chain_id
 			// TODO: Document this clearly
 			let r_id = utils::derive_resource_id(
