@@ -41,7 +41,8 @@
 //!
 //! ### Permissionless Functions
 //!
-//! * `execute_proposal`: Commits a vote in favour of the provided proposal.
+//! * `execute_proposal`: Executes proposal if the proposal data is well-formed and signed by DKG
+//!   (see the function below for more documentation)
 //! * `set_maintainer`: Sets the maintainer.
 
 // Ensure we're `no_std` when compiling for Wasm.
@@ -266,12 +267,27 @@ pub mod pallet {
 			Self::whitelist(id)
 		}
 
-		/// Commits a vote in favour of the provided proposal.
+		/// @param origin
+		/// @param src_id
+		/// @param call: the dispatchable call corresponding to a
+		/// handler function
+		/// @param proposal_data: (r_id, nonce, 4 bytes of zeroes, call)
+		/// @param signature: a signature over the proposal_data
 		///
-		/// If a proposal with the given nonce and source chain ID does not
-		/// already exist, it will be created with an initial vote in favour
-		/// from the caller.
+		/// We check:
+		/// 1. That the signature is actually over the proposal data
+		/// 2. That the r_id parsed from the proposal data exists
+		/// 3. That the call from the proposal data and the call input parameter to the function are
+		/// consistent with each other 4. That the execution chain id type parsed from the r_id is
+		/// indeed this chain's id type
 		///
+		/// If all these checks pass then we call finalize_execution which actually executes the
+		/// dispatchable call. The dispatchable call is usually a handler function, for instance in
+		/// the anchor-handler or token-wrapper-handler pallet.
+		///
+		/// There are a few TODOs left in the function.
+		///
+		/// In the execute_proposal
 		/// # <weight>
 		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
@@ -300,14 +316,9 @@ pub mod pallet {
 			let encoded_call = call.encode();
 			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
 
-			// // Ensure that the call and the resources mapping of r_id
-			// // are consistent
-			// let call_method = Self::parse_method_from_call(parsed_call);
-			// let r_id_method = Self::resources(r_id);
-			// ensure!(
-			// 	call_method == r_id_method.unwrap_or_default(),
-			// 	Error::<T, I>::CallDoesNotMatchResourceId
-			// );
+			// TODO: Ensure that the call and the resources mapping of r_id are consistent
+
+			// TODO: Nonce incrementation and checking
 
 			// Ensure this chain id matches the r_id
 			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
