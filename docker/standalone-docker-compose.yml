@@ -1,0 +1,25 @@
+version: '3.3'
+services:
+ main-node:
+   container_name: main-node
+   restart: "no"
+   image:  ghcr.io/webb-tools/protocol-substrate-standalone-node:edge
+   networks:
+     - webb-network
+   entrypoint: webb-standalone-node  --dev --alice --node-key 0000000000000000000000000000000000000000000000000000000000000001 --ws-port=9944 --rpc-cors all --ws-external
+   ports:
+   - 9944:9944
+   - 30333:30333
+ validator-node:
+    container_name: validator-node
+    restart: "no"
+    networks:
+      - webb-network
+    image: ghcr.io/webb-tools/protocol-substrate-standalone-node:edge
+    entrypoint: webb-standalone-node --dev --bob --port 33334 --tmp --bootnodes /ip4/127.0.0.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp --ws-port=9993
+    ports:
+      - 9993:9993
+      - 33334:33334
+networks:
+  webb-network:
+    driver: bridge
