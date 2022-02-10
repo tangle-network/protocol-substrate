@@ -137,11 +137,11 @@ fn create_proposal_tests() {
 		assert_events(vec![
 			Event::Bridge(pallet_bridge::Event::ProposalApproved {
 				chain_id: src_id,
-				proposal_nonce: u32::from_le_bytes(nonce),
+				proposal_nonce: u32::from_be_bytes(nonce),
 			}),
 			Event::Bridge(pallet_bridge::Event::ProposalSucceeded {
 				chain_id: src_id,
-				proposal_nonce: u32::from_le_bytes(nonce),
+				proposal_nonce: u32::from_be_bytes(nonce),
 			}),
 		]);
 	})

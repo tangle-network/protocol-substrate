@@ -137,6 +137,11 @@ pub mod pallet {
 	pub type Resources<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_256, ResourceId, Vec<u8>>;
 
+	/// The proposal nonce used to prevent replay attacks on execute_proposal
+	#[pallet::storage]
+	pub type ProposalNonce<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::ProposalNonce, ValueQuery>;
+
 	// Pallets use events to inform users when important changes are made.
 	#[pallet::event]
 	#[pallet::generate_deposit(pub fn deposit_event)]
@@ -178,6 +183,8 @@ pub mod pallet {
 		CallDoesNotMatchResourceId,
 		/// Chain Id Type from the r_id does not match this chain
 		IncorrectExecutionChainIdType,
+		/// Invalid nonce
+		InvalidNonce,
 	}
 
 	#[pallet::hooks]
@@ -305,6 +312,16 @@ pub mod pallet {
 			let nonce = Self::parse_nonce_from_proposal_data(&proposal_data);
 			let parsed_call = Self::parse_call_from_proposal_data(&proposal_data);
 
+			// Nonce should be greater than the proposal nonce in storage
+			let proposal_nonce = ProposalNonce::<T, I>::get();
+			ensure!(proposal_nonce < nonce, Error::<T, I>::InvalidNonce);
+
+			// Nonce should increment by 1
+			ensure!(
+				nonce <= proposal_nonce + T::ProposalNonce::from(1u32),
+				Error::<T, I>::InvalidNonce
+			);
+
 			ensure!(
 				T::SignatureVerifier::verify(&Self::maintainer(), &proposal_data[..], &signature)
 					.unwrap_or(false),
@@ -316,8 +333,6 @@ pub mod pallet {
 			// Ensure that call is consistent with parsed_call
 			let encoded_call = call.encode();
 			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
-
-			// TODO: Nonce incrementation and checking
 
 			// Ensure this chain id matches the r_id
 			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
@@ -364,7 +379,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub fn parse_nonce_from_proposal_data(proposal_data: &Vec<u8>) -> T::ProposalNonce {
 		let nonce_bytes = proposal_data[32..36].try_into().unwrap_or_default();
-		let nonce = u32::from_le_bytes(nonce_bytes);
+		let nonce = u32::from_be_bytes(nonce_bytes);
 		T::ProposalNonce::from(nonce)
 	}
 
@@ -435,6 +450,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			.map(|_| ())
 			.map_err(|e| e.error)?;
 		Self::deposit_event(Event::ProposalSucceeded { chain_id: src_id, proposal_nonce: nonce });
+		// Increment the nonce once the proposal succeeds
+		ProposalNonce::<T, I>::put(nonce);
 		Ok(().into())
 	}
 }
