@@ -3,7 +3,7 @@ use ark_ff::{BigInteger, PrimeField};
 use arkworks_circuits::setup::anchor::{
 	setup_leaf_with_privates_raw_x5_4, setup_leaf_x5_4, setup_proof_x5_4, AnchorProverSetup,
 };
-
+use arkworks_gadgets::poseidon::field_hasher::{Poseidon, FieldHasher};
 use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_4, Curve};
 use webb_primitives::ElementTrait;
 
@@ -114,6 +114,15 @@ pub fn setup_wasm_utils_zk_circuit(
 			)
 			.unwrap();
 
+			let secret_f = Bn254Fr::from_le_bytes_mod_order(&secret);
+			let nullifier_f = Bn254Fr::from_le_bytes_mod_order(&nullifier);
+			let chain_id_f = Bn254Fr::from(2199023256632u128);
+
+			let params4 = setup_params_x5_4::<Bn254Fr>(curve);
+			let poseidon = Poseidon::<Bn254Fr>::new(params4);
+			let calc_leaf = poseidon.hash(&[secret_f, nullifier_f, chain_id_f]).unwrap();
+			println!("{:?}", hex::encode(&calc_leaf.into_repr().to_bytes_le()));
+
 			let leaves = vec![leaf.clone()];
 			let leaves_f = vec![Bn254Fr::from_le_bytes_mod_order(&leaf)];
 			let index = 0;
@@ -124,6 +133,8 @@ pub fn setup_wasm_utils_zk_circuit(
 			let (tree, _) = anchor_setup.setup_tree_and_path(&leaves_f, index).unwrap();
 			let roots_f = [tree.root().inner(); M];
 			let roots_raw = roots_f.map(|x| x.into_repr().to_bytes_le());
+			let roots_hex = roots_f.map(|x| hex::encode(&x.into_repr().to_bytes_be()));
+			println!("{:?}", roots_hex);
 
 			let mixer_proof_input = AnchorProofInput {
 				exponentiation: 5,

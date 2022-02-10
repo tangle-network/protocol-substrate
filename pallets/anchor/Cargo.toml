@@ -28,7 +28,7 @@ pallet-asset-registry = { path = "../asset-registry", default-features = false }
 
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true }
-
+log = "0.4.14"
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
