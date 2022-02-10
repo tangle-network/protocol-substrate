@@ -343,9 +343,6 @@ pub mod pallet {
 				!PendingLinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
 				Error::<T, I>::AnchorLinkIsAlreadyPending
 			);
-			println!("caller_chain_id: {:?}", caller_chain_id);
-			println!("my_tree_id: {:?}", my_tree_id);
-			println!("local_tree_id: {:?}", payload.local_tree_id);
 			// Otherwise we save the link proposal.
 			PendingLinkedAnchors::<T, I>::insert(
 				caller_chain_id,
