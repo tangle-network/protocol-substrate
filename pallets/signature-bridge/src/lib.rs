@@ -316,8 +316,6 @@ pub mod pallet {
 			let encoded_call = call.encode();
 			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
 
-			// TODO: Ensure that the call and the resources mapping of r_id are consistent
-
 			// TODO: Nonce incrementation and checking
 
 			// Ensure this chain id matches the r_id
