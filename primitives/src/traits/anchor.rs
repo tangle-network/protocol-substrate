@@ -74,4 +74,7 @@ pub trait AnchorInspector<C: AnchorConfig> {
 	) -> Result<(), dispatch::DispatchError>;
 	/// Check if this linked tree has this edge (for backwards compatability)
 	fn has_edge(id: C::TreeId, src_chain_id: C::ChainId) -> bool;
+	/// Compute the updated chain id type for this chain
+	fn get_chain_id_type() -> C::ChainId;
+	fn get_chain_type() -> [u8; 2];
 }

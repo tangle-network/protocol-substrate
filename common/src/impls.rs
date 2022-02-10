@@ -70,11 +70,12 @@ mod tests {
 	};
 	use frame_system::limits;
 	use polkadot_primitives::v1::AccountId;
-	use sp_core::H256;
+	use sp_core::{Pair, H256};
+	use sp_keyring::AccountKeyring;
 	use sp_runtime::{
 		testing::Header,
-		traits::{BlakeTwo256, IdentityLookup},
-		Perbill, Permill,
+		traits::{BlakeTwo256, IdentifyAccount, IdentityLookup},
+		MultiSigner, Perbill, Permill,
 	};
 
 	type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -144,7 +145,7 @@ mod tests {
 		where
 			I: 'a,
 		{
-			Some(Default::default())
+			Some(MultiSigner::from(AccountKeyring::Alice.pair().public()).into_account())
 		}
 	}
 
@@ -190,6 +191,7 @@ mod tests {
 		type SpendPeriod = SpendPeriod;
 		// Just gets burned.
 		type WeightInfo = ();
+		type ProposalBondMaximum = ();
 	}
 
 	pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -207,7 +209,12 @@ mod tests {
 			let fee = Balances::issue(10);
 			let tip = Balances::issue(20);
 
-			assert_eq!(Balances::free_balance(AccountId::default()), 0);
+			assert_eq!(
+				Balances::free_balance(
+					MultiSigner::from(AccountKeyring::Alice.pair().public()).into_account()
+				),
+				0
+			);
 
 			DealWithFees::on_unbalanceds(vec![fee, tip].into_iter());
 

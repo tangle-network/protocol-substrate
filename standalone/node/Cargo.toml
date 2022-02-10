@@ -28,6 +28,7 @@ hex-literal = "0.2.1"
 async-trait = "0.1.42"
 rand = "0.7.2"
 itertools = "0.10.0"
+clap = { version = "3.0", features = ["derive"] }
 
 
 pallet-mt = { path = "../../pallets/mt", version = "1.0.0" }

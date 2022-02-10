@@ -37,7 +37,7 @@ use xcm::{latest::prelude::*, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter,
 	EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter,
-	NativeAsset, ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
+	NativeAsset, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation,
 };
@@ -104,11 +104,6 @@ parameter_types! {
 	pub const ReservedDmpWeight: Weight = WEIGHT_PER_SECOND / 4;
 }
 
-impl cumulus_pallet_xcm::Config for Runtime {
-	type Event = Event;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-}
-
 parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
@@ -117,21 +112,13 @@ parameter_types! {
 }
 
 pub type LocationToAccountId = (
-	ParentIsDefault<AccountId>,
+	ParentIsPreset<AccountId>,
 	SiblingParachainConvertsVia<ParaId, AccountId>,
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-/// This is the type we use to convert an (incoming) XCM origin into a local
-/// `Origin` instance, ready for dispatching a transaction with Xcm's
-/// `Transact`. There is an `OriginKind` which can biases the kind of local
-/// `Origin` it will become.
-pub type XcmOriginToTransactDispatchOrigin = (
-	// Sovereign account converter; this attempts to derive an `AccountId` from
-	// the origin location using `LocationToAccountId` and then turn that into
-	// the usual `Signed` origin. Useful for foreign chains who want to have a
-	// local sovereign account on this chain which they control.
+pub type XcmOriginToCallOrigin = (
 	SovereignSignedViaLocation<LocationToAccountId, Origin>,
 	// Native converter for Relay-chain (Parent) location; will converts to a
 	// `Relay` origin when recognised.
@@ -153,7 +140,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 parameter_types! {
 	pub const UnitWeightCost: Weight = 1;
 	pub KsmPerSecond: (AssetId, u128) = (Concrete(Parent.into()), 1);
-	pub const MaxInstructions: u32 = 10_00;
+	pub const MaxInstructions: u32 = 100;
 }
 
 pub type LocalAssetTransactor =
@@ -164,20 +151,20 @@ pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
-	type AssetClaims = ();
-	type AssetTransactor = LocalAssetTransactor;
-	type AssetTrap = ();
-	type Barrier = Barrier;
 	type Call = Call;
+	type XcmSender = XcmRouter;
+	type AssetTransactor = LocalAssetTransactor;
+	type OriginConverter = XcmOriginToCallOrigin;
 	type IsReserve = NativeAsset;
 	type IsTeleporter = ();
 	type LocationInverter = LocationInverter<Ancestry>;
-	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type ResponseHandler = ();
-	type SubscriptionService = ();
-	type Trader = FixedRateOfFungible<KsmPerSecond, ()>;
+	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-	type XcmSender = XcmRouter;
+	type Trader = FixedRateOfFungible<KsmPerSecond, ()>;
+	type ResponseHandler = ();
+	type AssetTrap = ();
+	type AssetClaims = ();
+	type SubscriptionService = ();
 }
 
 #[frame_support::pallet]
@@ -196,6 +183,7 @@ pub mod mock_msg_queue {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
@@ -253,7 +241,7 @@ pub mod mock_msg_queue {
 				Ok(xcm) => {
 					let location = (1, Parachain(sender.into()));
 					match T::XcmExecutor::execute_xcm(location, xcm, max_weight) {
-						Outcome::Error(e) => (Err(e), Event::Fail(Some(hash), e)),
+						Outcome::Error(e) => (Err(e.clone()), Event::Fail(Some(hash), e)),
 						Outcome::Complete(w) => (Ok(w), Event::Success(Some(hash))),
 						// As far as the caller is concerned, this was dispatched without error, so
 						// we just report the weight used.
@@ -277,7 +265,7 @@ pub mod mock_msg_queue {
 				let _ = XcmpMessageFormat::decode(&mut data_ref)
 					.expect("Simulator encodes with versioned xcm format; qed");
 
-				let mut remaining_fragments = data_ref;
+				let mut remaining_fragments = &data_ref[..];
 				while !remaining_fragments.is_empty() {
 					if let Ok(xcm) = VersionedXcm::<T::Call>::decode(&mut remaining_fragments) {
 						let _ = Self::handle_xcmp_message(sender, sent_at, xcm, max_weight);
@@ -326,21 +314,25 @@ impl mock_msg_queue::Config for Runtime {
 pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNetwork>;
 
 impl pallet_xcm::Config for Runtime {
-	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
-	type Call = Call;
 	type Event = Event;
-	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type LocationInverter = LocationInverter<Ancestry>;
-	type Origin = Origin;
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
-	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+	type XcmRouter = XcmRouter;
+	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmExecuteFilter = Everything;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type XcmReserveTransferFilter = Everything;
-	type XcmRouter = XcmRouter;
 	type XcmTeleportFilter = Nothing;
-
+	type XcmReserveTransferFilter = Everything;
+	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+	type LocationInverter = LocationInverter<Ancestry>;
+	type Origin = Origin;
+	type Call = Call;
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
+	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+}
+
+impl cumulus_pallet_xcm::Config for Runtime {
+	type Event = Event;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 parameter_types! {
@@ -476,6 +468,8 @@ parameter_types! {
 	pub const AnchorPalletId: PalletId = PalletId(*b"py/anchr");
 	// Substrate standalone chain ID type
 	pub const ChainType: [u8; 2] = [2, 0];
+	// This identifier should equal the para ID.
+	// Note: this can cause issues if they do not match in production.
 	pub const ChainIdentifier: ChainId = 0;
 }
 

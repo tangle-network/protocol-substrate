@@ -83,7 +83,8 @@ use pallet_linkable_tree::types::EdgeMetadata;
 use sp_std::prelude::*;
 use webb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
-	utils, ResourceId,
+	utils::{self, compute_chain_id_type},
+	ResourceId,
 };
 use xcm::latest::prelude::*;
 
@@ -107,11 +108,13 @@ pub type LinkProposalOf<T, I> = LinkProposal<ChainIdOf<T, I>, TreeIdOf<T, I>>;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use frame_support::transactional;
 	use pallet_anchor::BalanceOf;
-	use webb_primitives::utils;
+	use webb_primitives::utils::{self, compute_chain_id_type};
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T, I = ()>(_);
 
 	/// The module configuration trait.
@@ -214,6 +217,8 @@ pub mod pallet {
 		/// Creates a new Proposal to link two anchors cross-chain
 		/// by creating on-chain proposal that once passed will send to the
 		/// other chain a link proposal.
+		///
+		/// TODO: Add a bond (a payment that gets locked up) when calling this xt.
 		#[pallet::weight(0)]
 		pub fn propose_to_link_anchor(
 			origin: OriginFor<T>,
@@ -221,9 +226,9 @@ pub mod pallet {
 			value: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin.clone())?;
-			// first we check if the anchor exists locally
+			// First we check if the anchor exists locally
 			ensure!(Self::anchor_exists(payload.local_tree_id), Error::<T, I>::AnchorNotFound);
-			// then we do check if it is not linked to the other chain already.
+			// Then we check if it is not linked to the other chain already.
 			ensure!(
 				!LinkedAnchors::<T, I>::contains_key(
 					payload.target_chain_id,
@@ -231,7 +236,7 @@ pub mod pallet {
 				),
 				Error::<T, I>::ResourceIsAlreadyAnchored
 			);
-			// we double check again, if there is not pending link for this.
+			// We double check again, if there is not pending link for this.
 			ensure!(
 				!PendingLinkedAnchors::<T, I>::contains_key(
 					payload.target_chain_id,
@@ -239,7 +244,11 @@ pub mod pallet {
 				),
 				Error::<T, I>::AnchorLinkIsAlreadyPending
 			);
-			// add the proposal to the pending link storage.
+			// TODO: Ensure the target chain ID has the updated chain ID type encoded in it.
+			// TODO: Ensure that the chain type in the target chain ID matches our chain type.
+			// TODO: Implement get_chain_type, should return [u8; 2]
+			// ensure!(get_chain_type(payload.target_chain_id) == T::Anchor::get_chain_type(),
+			// Error::<T, I>::InvalidChainType); Add the proposal to the pending link storage.
 			PendingLinkedAnchors::<T, I>::insert(
 				payload.target_chain_id,
 				payload.local_tree_id,
@@ -256,7 +265,7 @@ pub mod pallet {
 
 		/// Once a proposal is passed, this function will send a Link proposal
 		/// to the other chain also, save the proposal hash locally so when the
-		/// other chain passes the proposal, we get signled back with the
+		/// other chain passes the proposal, we get signaled back with the
 		/// proposal hash and we link the anchors.
 		///
 		/// **Note**: This method requires the `origin` to be
@@ -268,9 +277,9 @@ pub mod pallet {
 			value: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			Self::ensure_democracy(origin)?;
-			// this means that the proposal for link anchors on this chain is passed.
-			// we need now to signal the other chain to start a link proposal on that chain
-			// too.
+			// The proposal to link anchors on this chain has passed. We now need to
+			// signal the other chain to start a link proposal on that chain too.
+			// TODO: Ensure the the parachain target chain ID has the same chain type
 			let other_para_id = chain_id_to_para_id::<T, I>(payload.target_chain_id);
 			let my_para_id = T::ParaId::get();
 			let payload = LinkProposal {
@@ -304,6 +313,7 @@ pub mod pallet {
 
 		/// **Note**: This method requires the `origin` to be a sibling
 		/// parachain.
+		#[transactional]
 		#[pallet::weight(0)]
 		pub fn save_link_proposal(
 			origin: OriginFor<T>,
@@ -311,27 +321,29 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
 			let caller_chain_id = para_id_to_chain_id::<T, I>(para);
-			// now we on the other chain (if you look at it from the caller point of view)
-			// here, we do first check if the requested anchor exists (if any).
+			// Now we are on the other chain (if you look at it from the caller point of view)
+			// We first check if the requested anchor exists (if any).
 			let my_tree_id = match payload.target_tree_id {
 				Some(tree_id) => {
 					ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 					tree_id
 				},
+				// TODO: Create an anchor if the caller does not provide one.
+				// TODO: Create a record of the newly created tree and the caller chain ID.
+				// TODO: Identify if we need to encode more metadata
 				None => todo!("create an anchor if the caller does not provide one"),
 			};
-			// next, we check if the anchor is not linked to the local chain already.
+			// Next, we check if the anchor is not linked to the local chain already.
 			ensure!(
 				!LinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
 				Error::<T, I>::ResourceIsAlreadyAnchored
 			);
-			// we double check again, if there is not a pending link for this
-			// anchor/proposal.
+			// We double check again if there is not a pending link for this anchor/proposal.
 			ensure!(
 				!PendingLinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
 				Error::<T, I>::AnchorLinkIsAlreadyPending
 			);
-			// now we save the link proposal.
+			// Otherwise we save the link proposal.
 			PendingLinkedAnchors::<T, I>::insert(
 				caller_chain_id,
 				my_tree_id,
@@ -340,32 +352,39 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		/// Handles the Link anchor proposal from other chain, by creating an
-		/// on-chain proposal that once passed will link the anchors on the
-		/// local chain, also signals back the caller chain with the proposal
-		/// hash, so the caller chain know that the link process is complete.
+		/// Handles the link proposal from another parachain by creating an
+		/// on-chain proposal. Once passed, this proposal will link the anchors
+		/// on the local chain.
+		///
+		/// It also signals back to the caller chain with the proposal
+		/// hash, so the caller chain knows that the link process is complete.
 		#[pallet::weight(0)]
 		pub fn handle_link_anchor_message(
 			origin: OriginFor<T>,
 			payload: LinkProposalOf<T, I>,
 			value: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
+			// TODO: Should the following line be here?
+			// TODO: let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
 			let _caller = ensure_signed(origin.clone())?;
 			let my_tree_id = match payload.target_tree_id {
 				Some(tree_id) => {
 					ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 					tree_id
 				},
+				// TODO: Create an anchor if the caller does not provide one.
+				// TODO: Identify if there is a bug if both the `save_link_proposal` and
+				// `handle_link_anchor_message` create trees. TODO: Find the record of the newly
+				// created tree and the caller chain ID from the `save_link_proposal`
 				None => todo!("create an anchor if the caller does not provide one"),
 			};
-			// double check that it is already in the pending link storage.
+			// Double check that it is already in the pending link storage.
 			ensure!(
 				PendingLinkedAnchors::<T, I>::contains_key(payload.target_chain_id, my_tree_id),
 				Error::<T, I>::AnchorLinkNotFound
 			);
-			// finally, we create the on-chain proposal, that's when passed will link the
-			// anchors locally and send back to the other chain that the link process is
-			// done.
+			// Finally, we create the on-chain proposal that when passed will link the
+			// anchors locally and send back to the other chain the completed link proposal.
 			let payload = LinkProposal {
 				target_tree_id: Some(payload.local_tree_id),
 				local_tree_id: my_tree_id,
@@ -377,13 +396,14 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		/// **Note**: This method requires the `origin` to be the democracy.
 		#[pallet::weight(0)]
 		pub fn link_anchors(
 			origin: OriginFor<T>,
 			payload: LinkProposalOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			Self::ensure_democracy(origin)?;
-			// at this point both chains agress to link the anchors.
+			// At this point both chains agress to link the anchors.
 			// so we link them locally, and also signal back to the other chain that
 			// requested the link that the link process is done.
 			let other_para_id = chain_id_to_para_id::<T, I>(payload.target_chain_id);
@@ -394,14 +414,17 @@ pub mod pallet {
 				),
 				Error::<T, I>::AnchorLinkNotFound,
 			);
-			// now we can remove the pending linked anchor.
+			// Now we can remove the pending linked anchor.
 			PendingLinkedAnchors::<T, I>::remove(payload.target_chain_id, payload.local_tree_id);
-			let r_id = utils::encode_resource_id(payload.local_tree_id, payload.target_chain_id);
+			let r_id = utils::derive_resource_id(
+				payload.target_chain_id.try_into().unwrap_or_default(),
+				&payload.local_tree_id.encode(),
+			);
 			// unwrap here is safe, since we are sure that it has the value of the tree id.
 			let target_tree_id = payload.target_tree_id.unwrap();
-			// it is now ready to link them locally.
+			// We are now ready to link the anchor locally.
 			Self::register_new_resource_id(r_id, target_tree_id)?;
-			// next, we signal back to the other chain that the link process is done.
+			// Next, we signal back to the other chain that the link process is done.
 			let handle_link_anchor = Transact {
 				origin_type: OriginKind::Native,
 				require_weight_at_most: 1_000_000_000,
@@ -432,20 +455,23 @@ pub mod pallet {
 				},
 				None => return Err(Error::<T, I>::AnchorNotFound.into()),
 			};
-			// if we are here, on this chain, that means this chain it is the one who
-			// started the link process means, that we should find the anchor in the linked
+			// If we are here, on this chain, that means this chain is the one who
+			// started the link process. This means that we should find the anchor in the linked
 			// anchors list.
 			ensure!(
 				PendingLinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
 				Error::<T, I>::AnchorLinkNotFound,
 			);
-			// now we can remove the pending linked anchor.
+			// Now we can remove the pending linked anchor.
 			PendingLinkedAnchors::<T, I>::remove(caller_chain_id, my_tree_id);
-			let r_id = utils::encode_resource_id(my_tree_id, caller_chain_id);
+			let r_id = utils::derive_resource_id(
+				caller_chain_id.try_into().unwrap_or_default(),
+				&my_tree_id.encode(),
+			);
 			let target_tree_id = payload.local_tree_id;
-			// it is now ready to link them locally.
+			// We are now ready to link them locally.
 			Self::register_new_resource_id(r_id, target_tree_id)?;
-			// Link process is done!, Yay!
+			// We are done linking them.
 			Ok(().into())
 		}
 
@@ -489,12 +515,15 @@ pub mod pallet {
 			metadata: EdgeMetadataOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
-			let caller_chain_id = T::ChainId::from(u32::from(para));
-			let (tree_id, r_chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
+			let caller_chain_id =
+				compute_chain_id_type(u32::from(para), T::Anchor::get_chain_type());
+			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
 			// double check that the caller is the same as the chain id of the resource
 			// also the the same from the metadata.
+			let src_chain_id: u64 = metadata.src_chain_id.try_into().unwrap_or_default();
+			let r_chain_id: u64 = r_chain_id.try_into().unwrap_or_default();
 			ensure!(
-				caller_chain_id == metadata.src_chain_id && caller_chain_id == r_chain_id,
+				caller_chain_id == src_chain_id && caller_chain_id == r_chain_id,
 				Error::<T, I>::InvalidPermissions
 			);
 			// and finally, ensure that the anchor exists
@@ -511,7 +540,7 @@ pub mod pallet {
 			metadata: EdgeMetadataOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let (tree_id, chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
+			let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
 			ensure!(metadata.src_chain_id == chain_id, Error::<T, I>::InvalidPermissions);
 			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 			Self::update_anchor(tree_id, metadata)?;
@@ -538,7 +567,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		target_tree_id: T::TreeId,
 	) -> DispatchResultWithPostInfo {
 		// extract the resource id information
-		let (tree_id, chain_id) = utils::decode_resource_id::<T::TreeId, T::ChainId>(r_id);
+		let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
 		println!("register_new_resource_id");
 		println!("tree_id: {:?}", tree_id);
 		println!("chain_id: {:?}", chain_id);
@@ -570,6 +599,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				metadata.root,
 				metadata.latest_leaf_index,
 			)?;
+
+			Self::deposit_event(Event::AnchorEdgeAdded);
 			Self::deposit_event(Event::AnchorEdgeUpdated);
 		} else {
 			T::Anchor::add_edge(
@@ -578,6 +609,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				metadata.root,
 				metadata.latest_leaf_index,
 			)?;
+
 			Self::deposit_event(Event::AnchorEdgeAdded);
 		}
 
@@ -594,7 +626,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Sync Anchor Edge with other parachains that linked to that anchor
-	/// usinc XCM.
+	/// using XCM.
 	fn sync_anchor(tree_id: T::TreeId) -> DispatchResult {
 		// we get the current anchor tree
 		let tree = match pallet_mt::Trees::<T, I>::get(tree_id) {
@@ -610,6 +642,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// and construct the metadata
 		let metadata = EdgeMetadata {
 			src_chain_id: para_id_to_chain_id::<T, I>(my_para_id),
+			//src_chain_id: my
 			root,
 			latest_leaf_index,
 		};
@@ -627,9 +660,14 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			let other_chain_id = edge.src_chain_id;
 			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id, tree_id);
 			let my_chain_id = metadata.src_chain_id;
+
 			// target_tree_id + my_chain_id
-			let r_id =
-				utils::encode_resource_id::<T::TreeId, T::ChainId>(target_tree_id, my_chain_id);
+			// TODO: Document this clearly
+			let r_id = utils::derive_resource_id(
+				my_chain_id.try_into().unwrap_or_default(),
+				&target_tree_id.encode(),
+			);
+
 			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
 			let update_edge = Transact {
 				// we should keep using the OriginKind::Native here
@@ -644,6 +682,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				.encode()
 				.into(),
 			};
+			println!("{:?}", update_edge);
 			let dest = (Parent, Parachain(other_para_id.into()));
 			let result = T::XcmSender::send_xcm(dest, Xcm(vec![update_edge]));
 			match result {
@@ -675,12 +714,25 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 
 #[inline(always)]
 pub fn chain_id_to_para_id<T: Config<I>, I: 'static>(chain_id: T::ChainId) -> ParaId {
-	let mut chain_id_bytes = [0u8; 4];
-	chain_id_bytes.copy_from_slice(&chain_id.encode()[..4]);
-	ParaId::from(u32::from_le_bytes(chain_id_bytes))
+	// First convert chain ID into a u64
+	let chain_id_u64: u64 = chain_id.try_into().unwrap_or_default();
+	// Next convert into big-endian byte representation
+	let chain_id_bytes: [u8; 8] = chain_id_u64.to_be_bytes();
+	// Create a 4-byte para id byte array
+	let mut para_id_bytes = [0u8; 4];
+	// Copy the last 4 bytes of the chain_id which contains the untyped chain id
+	para_id_bytes.copy_from_slice(&chain_id_bytes[4..8]);
+	// Finally convert these bytes into a u32 and ParaId
+	ParaId::from(u32::from_be_bytes(para_id_bytes))
 }
 
 #[inline(always)]
 pub fn para_id_to_chain_id<T: Config<I>, I: 'static>(para_id: ParaId) -> T::ChainId {
-	T::ChainId::from(u32::from(para_id))
+	T::ChainId::try_from(compute_chain_id_type(u32::from(para_id), T::Anchor::get_chain_type()))
+		.unwrap_or_default()
+}
+
+pub fn chain_id_to_bytes<T: Config<I>, I: 'static>(chain_id: T::ChainId) -> T::ChainId {
+	T::ChainId::try_from(compute_chain_id_type(chain_id, T::Anchor::get_chain_type()))
+		.unwrap_or_default()
 }
