@@ -137,12 +137,110 @@ fn create_proposal_tests() {
 		assert_events(vec![
 			Event::Bridge(pallet_bridge::Event::ProposalApproved {
 				chain_id: src_id,
-				proposal_nonce: u32::from_le_bytes(nonce),
+				proposal_nonce: u32::from_be_bytes(nonce),
 			}),
 			Event::Bridge(pallet_bridge::Event::ProposalSucceeded {
 				chain_id: src_id,
-				proposal_nonce: u32::from_le_bytes(nonce),
+				proposal_nonce: u32::from_be_bytes(nonce),
 			}),
 		]);
+	})
+}
+
+// Nonce Tests
+#[test]
+fn should_fail_to_execute_proposal_with_same_nonce() {
+	let chain_type = [2, 0];
+	let src_id = compute_chain_id_type(1u32, chain_type);
+	let this_chain_id = compute_chain_id_type(5u32, chain_type);
+	let r_id = derive_resource_id(this_chain_id, b"remark");
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let pair = ecdsa::Pair::from_string(
+		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+		None,
+	)
+	.unwrap();
+
+	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
+		let call = make_proposal(vec![10]);
+		let call_encoded = call.encode();
+		let nonce = [0u8, 0u8, 0u8, 1u8];
+		let prop_data = make_proposal_data(r_id.encode(), nonce, call_encoded);
+		let msg = keccak_256(&prop_data);
+		let sig: Signature = pair.sign_prehashed(&msg).into();
+
+		// set the new maintainer
+		assert_ok!(Bridge::force_set_maintainer(Origin::root(), public_uncompressed.to_vec()));
+		// Create proposal (& vote)
+		assert_ok!(Bridge::execute_proposal(
+			Origin::signed(RELAYER_A),
+			src_id,
+			Box::new(call.clone()),
+			prop_data.clone(),
+			sig.0.to_vec(),
+		));
+
+		assert_events(vec![
+			Event::Bridge(pallet_bridge::Event::ProposalApproved {
+				chain_id: src_id,
+				proposal_nonce: u32::from_be_bytes(nonce),
+			}),
+			Event::Bridge(pallet_bridge::Event::ProposalSucceeded {
+				chain_id: src_id,
+				proposal_nonce: u32::from_be_bytes(nonce),
+			}),
+		]);
+
+		let call = make_proposal(vec![10]);
+		let call_encoded = call.encode();
+		let nonce = [0u8, 0u8, 0u8, 1u8];
+		let prop_data = make_proposal_data(r_id.encode(), nonce, call_encoded);
+		let msg = keccak_256(&prop_data);
+		let sig: Signature = pair.sign_prehashed(&msg).into();
+
+		assert_err!(
+			Bridge::execute_proposal(
+				Origin::signed(RELAYER_A),
+				src_id,
+				Box::new(call.clone()),
+				prop_data.clone(),
+				sig.0.to_vec(),
+			),
+			Error::<Test>::InvalidNonce
+		);
+	})
+}
+
+#[test]
+fn should_fail_when_nonce_increments_by_more_than_one() {
+	let chain_type = [2, 0];
+	let src_id = compute_chain_id_type(1u32, chain_type);
+	let this_chain_id = compute_chain_id_type(5u32, chain_type);
+	let r_id = derive_resource_id(this_chain_id, b"remark");
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let pair = ecdsa::Pair::from_string(
+		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+		None,
+	)
+	.unwrap();
+
+	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
+		let call = make_proposal(vec![10]);
+		let call_encoded = call.encode();
+		let nonce = [0u8, 0u8, 0u8, 2u8];
+		let prop_data = make_proposal_data(r_id.encode(), nonce, call_encoded);
+		let msg = keccak_256(&prop_data);
+		let sig: Signature = pair.sign_prehashed(&msg).into();
+
+		assert_err!(
+			Bridge::execute_proposal(
+				Origin::signed(RELAYER_A),
+				src_id,
+				Box::new(call.clone()),
+				prop_data.clone(),
+				sig.0.to_vec(),
+			),
+			Error::<Test>::InvalidNonce
+		);
 	})
 }

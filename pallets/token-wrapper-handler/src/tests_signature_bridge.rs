@@ -135,7 +135,7 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 		let fee_call = make_wrapping_fee_proposal(&r_id, 5, pool_share_id);
 		let fee_call_encoded = fee_call.encode();
-		let nonce = [0u8, 0u8, 0u8, 2u8];
+		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, fee_call_encoded);
 		let msg = keccak_256(&prop_data);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
@@ -345,7 +345,7 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 		let remove_token_call = make_remove_token_proposal(&r_id, b"meme".to_vec(), first_token_id);
 		let remove_token_call_encoded = remove_token_call.encode();
-		let nonce = [0u8, 0u8, 0u8, 2u8];
+		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, remove_token_call_encoded);
 		let msg = keccak_256(&prop_data);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
@@ -435,7 +435,7 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 		let add_token_call = make_add_token_proposal(&r_id, b"meme".to_vec(), second_token_id);
 		let add_token_call_encoded = add_token_call.encode();
-		let nonce = [0u8, 0u8, 0u8, 1u8];
+		let nonce = [0u8, 0u8, 0u8, 2u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, add_token_call_encoded);
 		let msg = keccak_256(&prop_data);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
@@ -451,7 +451,7 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 		let add_token_call = make_add_token_proposal(&r_id, b"meme".to_vec(), third_token_id);
 		let add_token_call_encoded = add_token_call.encode();
-		let nonce = [0u8, 0u8, 0u8, 1u8];
+		let nonce = [0u8, 0u8, 0u8, 3u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, add_token_call_encoded);
 		let msg = keccak_256(&prop_data);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
@@ -524,7 +524,7 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 			Origin::root(),
 			public_uncompressed.to_vec()
 		));
-		// Create proposal (& vote)
+		// Create proposal
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
@@ -535,7 +535,13 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 		// Check that first_token_id is part of pool
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
 
-		let prop_id = 2;
+		// Have to remake prop_data with incremented nonce
+		let add_token_call = make_add_token_proposal(&r_id, b"meme".to_vec(), first_token_id);
+		let add_token_call_encoded = add_token_call.encode();
+		let nonce = [0u8, 0u8, 0u8, 2u8];
+		let prop_data = make_proposal_data(r_id.encode(), nonce, add_token_call_encoded);
+		let msg = keccak_256(&prop_data);
+		let sig: Signature = pair.sign_prehashed(&msg).into();
 
 		assert_err!(
 			SignatureBridge::execute_proposal(
