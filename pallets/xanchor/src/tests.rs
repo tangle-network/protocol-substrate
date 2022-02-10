@@ -244,7 +244,7 @@ fn should_bridge_anchors_using_xcm() {
 
 	ParaA::execute_with(|| {
 		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
-		let r_id = derive_resource_id(PARAID_B.into(), &para_a_tree_id.encode());
+		let r_id = derive_resource_id(converted_chain_id_bytes, &para_a_tree_id.encode());
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 

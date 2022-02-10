@@ -249,10 +249,6 @@ pub mod pallet {
 			// TODO: Implement get_chain_type, should return [u8; 2]
 			// ensure!(get_chain_type(payload.target_chain_id) == T::Anchor::get_chain_type(),
 			// Error::<T, I>::InvalidChainType); Add the proposal to the pending link storage.
-			println!("propose to link");
-			println!("caller_chain_id: {:?}", payload.target_chain_id);
-			println!("my_tree_id: {:?}", payload.local_tree_id);
-			println!("local_tree_id: {:?}", payload.target_tree_id);
 			PendingLinkedAnchors::<T, I>::insert(
 				payload.target_chain_id,
 				payload.local_tree_id,
@@ -337,7 +333,6 @@ pub mod pallet {
 				// TODO: Identify if we need to encode more metadata
 				None => todo!("create an anchor if the caller does not provide one"),
 			};
-			println!("{:?}", my_tree_id);
 			// Next, we check if the anchor is not linked to the local chain already.
 			ensure!(
 				!LinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
