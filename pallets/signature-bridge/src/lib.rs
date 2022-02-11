@@ -378,7 +378,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	pub fn parse_nonce_from_proposal_data(proposal_data: &Vec<u8>) -> T::ProposalNonce {
-		let nonce_bytes = proposal_data[32..36].try_into().unwrap_or_default();
+		let nonce_bytes = proposal_data[36..40].try_into().unwrap_or_default();
 		let nonce = u32::from_be_bytes(nonce_bytes);
 		T::ProposalNonce::from(nonce)
 	}
