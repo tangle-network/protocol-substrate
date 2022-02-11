@@ -16,7 +16,7 @@ use webb_runtime::{
 	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
 	GrandpaConfig, HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig,
 	MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config, SessionConfig, StakerStatus,
-	StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config,
+	StakingConfig, SudoConfig, MixerVerifierBls381Config, MixerVerifierBn254Config, AnchorVerifierBn254Config, AnchorVerifierBls381Config
 };
 
 // ImOnline consensus authority.
@@ -186,10 +186,17 @@ fn testnet_genesis(
 	log::info!("BLS381 x5 w3 params");
 	let bls381_x5_3_params = setup_params_x5_3::<ark_bls12_381::Fr>(curve_bls381);
 
-	log::info!("Verifier params");
-	let verifier_params = {
+	log::info!("Verifier params for mixer");
+	let mixer_verifier_bn254_params = {
 		let vk_bytes =
 			include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
+		vk_bytes.to_vec()
+	};
+
+	log::info!("Verifier params for anchor");
+	let anchor_verifier_bn254_params = {
+		let vk_bytes =
+			include_bytes!("../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin");
 		vk_bytes.to_vec()
 	};
 
@@ -281,11 +288,16 @@ fn testnet_genesis(
 			parameters: Some(bls381_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		verifier_bn_254: VerifierBn254Config {
-			parameters: Some(verifier_params),
+		mixer_verifier_bn_254: MixerVerifierBn254Config {
+			parameters: Some(mixer_verifier_bn254_params),
 			phantom: Default::default(),
 		},
-		verifier_bls_381: VerifierBls381Config { parameters: None, phantom: Default::default() },
+		mixer_verifier_bls_381: MixerVerifierBls381Config { parameters: None, phantom: Default::default() },
+		anchor_verifier_bn_254: AnchorVerifierBn254Config {
+			parameters: Some(anchor_verifier_bn254_params),
+			phantom: Default::default(),
+		},
+		anchor_verifier_bls_381: AnchorVerifierBls381Config { parameters: None, phantom: Default::default() },
 		merkle_tree_bn_254: MerkleTreeBn254Config {
 			phantom: Default::default(),
 			default_hashes: None,
