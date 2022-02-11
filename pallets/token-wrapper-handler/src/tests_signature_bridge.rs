@@ -73,8 +73,8 @@ fn make_remove_token_proposal(resource_id: &[u8; 32], name: Vec<u8>, asset_id: u
 
 fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u8>) -> Vec<u8> {
 	let mut prop_data = encoded_r_id;
-	prop_data.extend_from_slice(&nonce);
 	prop_data.extend_from_slice(&[0u8; 4]);
+	prop_data.extend_from_slice(&nonce);
 	prop_data.extend_from_slice(&encoded_call[..]);
 	prop_data
 }
