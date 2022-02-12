@@ -156,6 +156,8 @@ pub mod pallet {
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// New tree created
 		MixerCreation { tree_id: T::TreeId },
+		Deposit { tree_id: T::TreeId, leaf: T::Element },
+		Withdraw { tree_id: T::TreeId, recipient: T::AccountId }
 	}
 
 	#[pallet::error]
@@ -230,6 +232,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			<Self as MixerInterface<_, _, _, _, _>>::deposit(origin, tree_id, leaf)?;
+			Self::deposit_event(Event::Deposit { tree_id, leaf });
 			Ok(().into())
 		}
 
@@ -252,11 +255,12 @@ pub mod pallet {
 				&proof_bytes,
 				root,
 				nullifier_hash,
-				recipient,
+				recipient.clone(),
 				relayer,
 				fee,
 				refund,
 			)?;
+			Self::deposit_event(Event::Withdraw { tree_id: id, recipient });
 			Ok(().into())
 		}
 	}
