@@ -1,0 +1,55 @@
+name: Code Coverage
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+
+    container:
+      image: xd009642/tarpaulin:develop-nightly
+      options: --security-opt seccomp=unconfined
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install apt dependencies
+        run: |
+          apt-get update && \
+          apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev && \
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Generate code coverage
+        run: |
+          git submodule update --init && \
+          SKIP_WASM_BUILD=1 cargo +nightly tarpaulin --out Xml \
+              -p webb-standalone-runtime \
+              -p pallet-token-wrapper-handler \
+              -p pallet-token-wrapper \
+              -p pallet-anchor-handler \
+              -p pallet-signature-bridge \
+              -p pallet-anchor \
+              -p pallet-mixer \
+              -p pallet-linkable-tree \
+              -p pallet-mt \
+              -p pallet-verifier \
+              -p pallet-hasher \
+              -p pallet-asset-registry \
+              --timeout 3600
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v2
+        with:
+          fail_ci_if_error: true
