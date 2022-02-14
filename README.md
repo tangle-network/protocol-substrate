@@ -64,6 +64,18 @@ echo 'export CC="/opt/homebrew/opt/llvm/bin/clang"' >> ~/.bash_profile
 echo 'export AR="/opt/homebrew/opt/llvm/bin/llvm-ar"' >> ~/.bash_profile
 ```
 
+### Code Coverage
+
+You need to have docker installed to generate code coverage.
+
+```sh
+docker build -t cov -f docker/Coverage.Dockerfile .
+```
+
+```sh
+docker run --security-opt seccomp=unconfined cov
+```
+
 # Standalone local testnets
 In order to run the standalone development network, you should prepare your terminal environment for running 2 substrate nodes. Execute in either terminal the following commands. This will set up a development network using the BABE consensus mechanism for a 2 node network.
 
