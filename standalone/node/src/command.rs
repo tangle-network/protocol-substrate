@@ -20,9 +20,9 @@ use crate::{
 	cli::{Cli, Subcommand},
 	service,
 };
-use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
-use sc_service::PartialComponents;
 use webb_runtime::Block;
+use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
+use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
@@ -129,7 +129,6 @@ pub fn run() -> sc_cli::Result<()> {
 			let runner = cli.create_runner(&cli.run)?;
 			runner.run_node_until_exit(|config| async move {
 				match config.role {
-					Role::Light => panic!("Light Clients got removed from Substrate. See: https://github.com/paritytech/substrate/pull/9684"),
 					_ => service::new_full(config),
 				}
 				.map_err(sc_cli::Error::Service)
