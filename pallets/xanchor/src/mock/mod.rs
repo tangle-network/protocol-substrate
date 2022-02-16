@@ -1,5 +1,6 @@
 pub mod parachain;
 pub mod relay_chain;
+pub(crate) mod test_utils;
 
 use std::ops::Mul;
 

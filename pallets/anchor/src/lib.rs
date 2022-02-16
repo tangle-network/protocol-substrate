@@ -385,6 +385,10 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		bytes.extend_from_slice(&fee_bytes);
 		bytes.extend_from_slice(&refund_bytes);
 		bytes.extend_from_slice(&commitment.encode());
+		println!("WITHDRAW PROOF bytes");
+		println!("{:?}", &bytes);
+		println!("WITHDRAW PROOF proof_bytes");
+		println!("{:?}", &proof_bytes);
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 		// withdraw or refresh depending on the refresh commitment value

@@ -64,6 +64,9 @@ polkadot-core-primitives = { git = "https://github.com/paritytech/polkadot", bra
 polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master", default-features = false }
 
+wasm-utils = { version = "0.1.1" }
+hex = "0.4"
+
 [features]
 default = ["std"]
 std = [

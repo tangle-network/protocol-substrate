@@ -453,6 +453,8 @@ impl<T: Config<I>, I: 'static> TreeInspector<T::AccountId, T::TreeId, T::Element
 
 	fn is_known_root(tree_id: T::TreeId, target_root: T::Element) -> Result<bool, DispatchError> {
 		ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T, I>::TreeDoesntExist);
+		println!("{:?}", tree_id);
+		println!("{:?}", target_root);
 		let mut temp: T::RootIndex = Zero::zero();
 		while temp < T::RootHistorySize::get() {
 			let cached_root = CachedRoots::<T, I>::get(tree_id, temp);

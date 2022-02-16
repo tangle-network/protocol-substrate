@@ -166,7 +166,9 @@ fn anchor_works() {
 
 		// inputs
 		let tree_id = create_anchor(0);
+		dbg!(tree_id);
 		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		dbg!(src_chain_id);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);

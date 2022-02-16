@@ -682,17 +682,21 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				.encode()
 				.into(),
 			};
-			println!("{:?}", update_edge);
+			println!("{:?}", "updating edge");
+			println!("{:?}", r_id);
+			println!("{:?}", other_para_id);
 			let dest = (Parent, Parachain(other_para_id.into()));
 			let result = T::XcmSender::send_xcm(dest, Xcm(vec![update_edge]));
 			match result {
 				Ok(()) => {
+					println!("{:?}", "acnchor updated");
 					Self::deposit_event(Event::RemoteAnchorEdgeUpdated {
 						para_id: other_para_id,
 						resource_id: r_id,
 					});
 				},
 				Err(e) => {
+					println!("{:?}", "acnchor update failed");
 					Self::deposit_event(Event::RemoteAnchorEdgeUpdateFailed {
 						para_id: other_para_id,
 						resource_id: r_id,
