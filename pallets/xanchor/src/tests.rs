@@ -9,7 +9,7 @@ use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use pallet_anchor::{truncate_and_pad, BalanceOf};
 use pallet_democracy::{AccountVote, Conviction, Vote};
-use std::{convert::TryInto, path::Path};
+use webb_primitives::{merkle_tree::TreeInspector, linkable_tree::LinkableTreeInspector};
 use webb_primitives::utils::derive_resource_id;
 use xcm_simulator::TestExt;
 
@@ -283,14 +283,14 @@ fn should_bridge_anchors_using_xcm() {
 	});
 
 	ParaA::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
-		let r_id = derive_resource_id(converted_chain_id_bytes, &para_a_tree_id.encode());
+		let converted_chain_id = compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_B));
+		let r_id = derive_resource_id(converted_chain_id, &para_a_tree_id.encode());
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
-		let r_id = derive_resource_id(converted_chain_id_bytes, &para_b_tree_id.encode());
+		let converted_chain_id = compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
+		let r_id = derive_resource_id(converted_chain_id, &para_b_tree_id.encode());
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
 	});
 
@@ -322,7 +322,7 @@ fn should_bridge_anchors_using_xcm() {
 	// we should expect that the edge for ParaA is there, and the merkle root equal
 	// to the one we got from ParaA.
 	ParaB::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		let converted_chain_id_bytes = compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
 		dbg!(converted_chain_id_bytes);
 		let edge = LinkableTree::edge_list(&para_b_tree_id, converted_chain_id_bytes);
 		assert_eq!(edge.root, para_a_root);
@@ -449,7 +449,7 @@ fn governance_system_works() {
 		// create a link proposal, saying that we (parachain A) want to link the anchor
 		// (local_tree_id) to the anchor (target_tree_id) located on Parachain B
 		// (target_chain_id).
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
+		let converted_chain_id_bytes = compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_B));
 		let payload = LinkProposal {
 			target_chain_id: converted_chain_id_bytes,
 			target_tree_id: Some(para_b_tree_id),
@@ -487,7 +487,7 @@ fn governance_system_works() {
 	// now we do the on-chain proposal checking on chain B.
 	ParaB::execute_with(|| {
 		// we should see the anchor in the pending list.
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		let converted_chain_id_bytes = compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
 		dbg!(converted_chain_id_bytes);
 		assert_eq!(
 			XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_b_tree_id),
@@ -862,6 +862,7 @@ fn test_cross_chain_withdrawal() {
 	});
 
 	ParaB::execute_with(|| {
+		setup_environment_withdraw(curve);
 		let max_edges = 2;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
@@ -872,14 +873,14 @@ fn test_cross_chain_withdrawal() {
 	ParaA::execute_with(|| {
 		dbg!(para_a_tree_id);
 		dbg!(para_b_tree_id);
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
+		let converted_chain_id_bytes = compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_B));
 		let r_id = derive_resource_id(converted_chain_id_bytes, &para_a_tree_id.encode());
 		src_chain_id_a = converted_chain_id_bytes;
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		let converted_chain_id_bytes = compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
 		let r_id = derive_resource_id(converted_chain_id_bytes, &para_b_tree_id.encode());
 		src_chain_id_b = converted_chain_id_bytes.clone();
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
@@ -888,8 +889,34 @@ fn test_cross_chain_withdrawal() {
 	// now we do a deposit on one chain (ParaA) for example
 	// and check the edges on the other chain (ParaB).
 	let mut para_a_root = Element::from_bytes(&[0u8; 32]);
+
+	let recipient_account_id = account::<AccountId>("", 2, SEED);
+	let relayer_account_id = account::<AccountId>("", 0, SEED);
+	let fee_value = 0;
+	let refund_value = 0;
+
+	let recipient_bytes = truncate_and_pad(&recipient_account_id.encode()[..]);
+	let relayer_bytes = truncate_and_pad(&relayer_account_id.encode()[..]);
+	let commitment_bytes = vec![0u8; 32];
+	let commitment_element = Element::from_bytes(&commitment_bytes);
+	
+	let src_chain_id = src_chain_id_a.clone();
+	dbg!(src_chain_id);
+
+	let (proof_bytes, mut root_elements, nullifier_hash_element, leaf_element) =
+		setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			commitment_bytes,
+			pk_bytes,
+			src_chain_id,
+			fee_value,
+			refund_value,
+		);
+
 	ParaA::execute_with(|| {
-		let leaf = Element::from_bytes(&[1u8; 32]);
+		let leaf = leaf_element;
 		// check the balance before the deposit.
 		let balance_before = Balances::free_balance(sender_account_id.clone());
 		// and we do the deposit
@@ -910,47 +937,25 @@ fn test_cross_chain_withdrawal() {
 	});
 
 	ParaB::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		let converted_chain_id_bytes = compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
 		dbg!(converted_chain_id_bytes);
 		let edge = LinkableTree::edge_list(&para_b_tree_id, converted_chain_id_bytes);
 		assert_eq!(edge.root, para_a_root);
 		assert_eq!(edge.latest_leaf_index, 1);
 
 		//dbg!(&pk_bytes);
-
-		let src_chain_id = src_chain_id_a.clone();
-		dbg!(src_chain_id);
-
-		let recipient_account_id = account::<AccountId>("", 2, SEED);
-		let relayer_account_id = account::<AccountId>("", 0, SEED);
-		let fee_value = 0;
-		let refund_value = 0;
-
-		let recipient_bytes = truncate_and_pad(&recipient_account_id.encode()[..]);
-		let relayer_bytes = truncate_and_pad(&relayer_account_id.encode()[..]);
-		let commitment_bytes = vec![0u8; 32];
-		let commitment_element = Element::from_bytes(&commitment_bytes);
-
-		let (proof_bytes, mut root_elements, nullifier_hash_element, leaf_element) =
-			setup_zk_circuit(
-				curve,
-				recipient_bytes,
-				relayer_bytes,
-				commitment_bytes,
-				pk_bytes,
-				src_chain_id,
-				fee_value,
-				refund_value,
-			);
-
-		//let tree_root = MerkleTree::get_root(tree_id).unwrap();
-		let tree_root: Element = para_a_root.clone();
-		dbg!(&root_elements);
 		dbg!(&para_a_root);
-		//root_elements[0] = Element::from_bytes(&[0u8; 32]);
-		//root_elements[1] = Element::from_bytes(&[0u8; 32]);
-		// sanity check.
-		assert_eq!(root_elements[0], tree_root);
+
+		// Set the first element of `roots` set to be the merkle tree root on `ParaB`.
+		let tree_root = MerkleTree::get_root(para_b_tree_id).unwrap();
+		root_elements[0] = tree_root;
+		
+		// Sanity check - the neighbor root should match `ParaA`'s merkle tree root.
+		assert_eq!(root_elements[1], para_a_root.clone());
+		dbg!(&root_elements);
+
+		let neighbor_roots = <LinkableTree as LinkableTreeInspector<_>>::get_neighbor_roots(para_b_tree_id);
+		dbg!(&neighbor_roots);
 
 		let balance_before = Balances::free_balance(recipient_account_id.clone());
 		// fire the call.

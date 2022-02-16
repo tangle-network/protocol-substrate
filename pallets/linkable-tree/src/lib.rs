@@ -392,10 +392,6 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		if roots.len() > 1 {
 			// Get edges and corresponding chain IDs for the anchor
 			let edges = EdgeList::<T, I>::iter_prefix(id).into_iter().collect::<Vec<_>>();
-
-			println!("nighbor roots");
-			println!("{:?}", edges);
-
 			// Check membership of provided historical neighbor roots
 			for (i, (chain_id, _)) in edges.iter().enumerate() {
 				Self::ensure_known_neighbor_root(id, *chain_id, roots[i + 1])?;

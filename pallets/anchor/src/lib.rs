@@ -180,8 +180,6 @@ pub mod pallet {
 	pub enum Error<T, I = ()> {
 		/// Invalid Merkle Roots
 		InvalidMerkleRoots,
-		/// Unknown root
-		UnknownRoot,
 		/// Invalid withdraw proof
 		InvalidWithdrawProof,
 		/// Mixer not found.
