@@ -682,21 +682,16 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				.encode()
 				.into(),
 			};
-			println!("{:?}", "updating edge");
-			println!("{:?}", r_id);
-			println!("{:?}", other_para_id);
 			let dest = (Parent, Parachain(other_para_id.into()));
 			let result = T::XcmSender::send_xcm(dest, Xcm(vec![update_edge]));
 			match result {
 				Ok(()) => {
-					println!("{:?}", "acnchor updated");
 					Self::deposit_event(Event::RemoteAnchorEdgeUpdated {
 						para_id: other_para_id,
 						resource_id: r_id,
 					});
 				},
 				Err(e) => {
-					println!("{:?}", "acnchor update failed");
 					Self::deposit_event(Event::RemoteAnchorEdgeUpdateFailed {
 						para_id: other_para_id,
 						resource_id: r_id,
@@ -736,7 +731,9 @@ pub fn para_id_to_chain_id<T: Config<I>, I: 'static>(para_id: ParaId) -> T::Chai
 		.unwrap_or_default()
 }
 
-pub fn compute_chain_id_with_internal_type<T: Config<I>, I: 'static>(chain_id: T::ChainId) -> T::ChainId {
+pub fn compute_chain_id_with_internal_type<T: Config<I>, I: 'static>(
+	chain_id: T::ChainId,
+) -> T::ChainId {
 	T::ChainId::try_from(compute_chain_id_type(chain_id, T::Anchor::get_chain_type()))
 		.unwrap_or_default()
 }
