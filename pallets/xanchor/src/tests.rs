@@ -274,7 +274,7 @@ fn should_bridge_anchors_using_xcm() {
 	});
 
 	ParaB::execute_with(|| {
-		setup_environment(Curve::Bn254);
+		//setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
@@ -847,8 +847,13 @@ fn test_cross_chain_withdrawal() {
 	let mut src_chain_id_b = 0;
 	let mut src_chain_id_a = 0;
 
+	let mut pk_bytes = Vec::new();
+	let mut sender_account_id = parachain::AccountOne::get();
+
+	let curve = Curve::Bn254;
+
 	ParaA::execute_with(|| {
-		setup_environment_withdraw(Curve::Bn254);
+		pk_bytes = setup_environment_withdraw(curve);
 		let max_edges = 2;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
@@ -857,7 +862,6 @@ fn test_cross_chain_withdrawal() {
 	});
 
 	ParaB::execute_with(|| {
-		setup_environment_withdraw(Curve::Bn254);
 		let max_edges = 2;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
@@ -865,21 +869,17 @@ fn test_cross_chain_withdrawal() {
 		para_b_tree_id = MerkleTree::next_tree_id() - 1;
 	});
 
-	const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
-
 	ParaA::execute_with(|| {
 		dbg!(para_a_tree_id);
 		dbg!(para_b_tree_id);
-		//let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
-		let converted_chain_id_bytes = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
 		let r_id = derive_resource_id(converted_chain_id_bytes, &para_a_tree_id.encode());
 		src_chain_id_a = converted_chain_id_bytes;
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
-		//let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
-		let converted_chain_id_bytes = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
 		let r_id = derive_resource_id(converted_chain_id_bytes, &para_b_tree_id.encode());
 		src_chain_id_b = converted_chain_id_bytes.clone();
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
@@ -889,11 +889,9 @@ fn test_cross_chain_withdrawal() {
 	// and check the edges on the other chain (ParaB).
 	let mut para_a_root = Element::from_bytes(&[0u8; 32]);
 	ParaA::execute_with(|| {
-		let account_id = parachain::AccountOne::get();
-		let sender_account_id = account_id.clone();
 		let leaf = Element::from_bytes(&[1u8; 32]);
 		// check the balance before the deposit.
-		let balance_before = Balances::free_balance(account_id.clone());
+		let balance_before = Balances::free_balance(sender_account_id.clone());
 		// and we do the deposit
 		assert_ok!(Anchor::deposit_and_update_linked_anchors(
 			Origin::signed(sender_account_id.clone()),
@@ -901,7 +899,7 @@ fn test_cross_chain_withdrawal() {
 			leaf
 		));
 		// now we check the balance after the deposit.
-		let balance_after = Balances::free_balance(account_id);
+		let balance_after = Balances::free_balance(sender_account_id.clone());
 		// the balance should be less now with `deposit_size`
 		assert_eq!(balance_after, balance_before - DEPOSIT_SIZE);
 		// now we need also to check if the state got updated.
@@ -909,14 +907,18 @@ fn test_cross_chain_withdrawal() {
 		//dbg!(tree);
 		assert_eq!(tree.leaf_count, 1);
 		para_a_root = tree.root;
+	});
 
-		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment_withdraw(curve);
+	ParaB::execute_with(|| {
+		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		dbg!(converted_chain_id_bytes);
+		let edge = LinkableTree::edge_list(&para_b_tree_id, converted_chain_id_bytes);
+		assert_eq!(edge.root, para_a_root);
+		assert_eq!(edge.latest_leaf_index, 1);
+
 		//dbg!(&pk_bytes);
 
-		// inputs
-		let tree_id = para_b_tree_id;
-		let src_chain_id = src_chain_id_b.clone(); //2199023257552; //compute_chain_id_type(0u32, [2, 0]);
+		let src_chain_id = src_chain_id_a.clone();
 		dbg!(src_chain_id);
 
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
@@ -948,13 +950,13 @@ fn test_cross_chain_withdrawal() {
 		//root_elements[0] = Element::from_bytes(&[0u8; 32]);
 		//root_elements[1] = Element::from_bytes(&[0u8; 32]);
 		// sanity check.
-		//assert_eq!(root_elements[0], tree_root);
+		assert_eq!(root_elements[0], tree_root);
 
 		let balance_before = Balances::free_balance(recipient_account_id.clone());
 		// fire the call.
 		assert_ok!(Anchor::withdraw(
 			Origin::signed(sender_account_id),
-			tree_id,
+			para_b_tree_id,
 			proof_bytes,
 			root_elements,
 			nullifier_hash_element,
@@ -967,23 +969,5 @@ fn test_cross_chain_withdrawal() {
 		// now we check the recipient balance again.
 		let balance_after = Balances::free_balance(recipient_account_id.clone());
 		assert_eq!(balance_after, balance_before + DEPOSIT_SIZE);
-		// perfect
-
-		/*crate::mock::assert_last_event::<Runtime, _>(
-			crate::Event::<Runtime, _>::Withdraw { who: recipient_account_id, amount: DEPOSIT_SIZE }
-				.into(),
-		);*/
-		// Nice!
-	});
-
-	// ok now we go to ParaB and check the edges.
-	// we should expect that the edge for ParaA is there, and the merkle root equal
-	// to the one we got from ParaA.
-	ParaB::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
-		dbg!(converted_chain_id_bytes);
-		let edge = LinkableTree::edge_list(&para_b_tree_id, converted_chain_id_bytes);
-		assert_eq!(edge.root, para_a_root);
-		assert_eq!(edge.latest_leaf_index, 1);
 	});
 }
