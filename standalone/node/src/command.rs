@@ -20,9 +20,9 @@ use crate::{
 	cli::{Cli, Subcommand},
 	service,
 };
-use webb_runtime::Block;
 use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 use sc_service::PartialComponents;
+use webb_runtime::Block;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
