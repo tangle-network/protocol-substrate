@@ -1,5 +1,4 @@
-use ark_bn254::Bn254;
-use ark_ff::{BigInteger, FromBytes, PrimeField};
+use ark_ff::{PrimeField, BigInteger};
 pub use arkworks_circuits::setup::{
 	common::{prove, prove_unchecked, verify_unchecked_raw},
 	mixer::{
@@ -13,12 +12,44 @@ use wasm_utils::{
 	proof::{generate_proof_js, JsProofInput, MixerProofInput, ProofInput},
 	types::{Backend, Curve as WasmCurve},
 };
+use ark_std::rand::thread_rng;
+use ark_std::UniformRand;
 
 use super::Element;
 
 use ark_bn254::Fr as Bn254Fr;
 
+pub fn setup_leaf() -> (Element, Element, Element, Element) {
+    let rng = &mut thread_rng();
+    let secret = Bn254Fr::rand(rng).into_repr().to_bytes_le();
+    let nullifier = Bn254Fr::rand(rng).into_repr().to_bytes_le();
+    let (leaf, nullifier_hash) = setup_leaf_with_privates_raw_x5_5::<Bn254Fr>(
+        Curve::Bn254,
+        secret.clone(),
+        nullifier.clone(),
+    )
+    .unwrap();
+
+    let leaf_array: [u8; 32] = leaf.try_into().unwrap();
+    let leaf_element = Element(leaf_array);
+
+    let secret_array: [u8; 32] = secret.try_into().unwrap();
+    let secret_element = Element(secret_array);
+
+    let nullifier_array: [u8; 32] = nullifier.try_into().unwrap();
+    let nullifier_element = Element(nullifier_array);
+
+    let nullifier_hash_array: [u8; 32] = nullifier_hash.try_into().unwrap();
+    let nullifier_hash_element = Element(nullifier_hash_array);
+    
+    (leaf_element, secret_element, nullifier_element, nullifier_hash_element)
+}
+
 pub fn setup_wasm_utils_zk_circuit(
+    leaves: Vec<Vec<u8>>,
+    leaf_index: u64,
+    secret: Vec<u8>,
+    nullifier: Vec<u8>,
 	recipient_bytes: Vec<u8>,
 	relayer_bytes: Vec<u8>,
 	pk_bytes: Vec<u8>,
@@ -27,22 +58,7 @@ pub fn setup_wasm_utils_zk_circuit(
 ) -> (
 	Vec<u8>, // proof bytes
 	Element, // root
-	Element, // nullifier_hash
-	Element, // leaf
 ) {
-    let note_secret = "7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d0729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";
-
-    let secret = hex::decode(&note_secret[0..32]).unwrap();
-    let nullifier = hex::decode(&note_secret[32..64]).unwrap();
-    let (leaf, _) = setup_leaf_with_privates_raw_x5_5::<Bn254Fr>(
-        Curve::Bn254,
-        secret.clone(),
-        nullifier.clone(),
-    )
-    .unwrap();
-
-    let leaves = vec![leaf];
-
     let mixer_proof_input = MixerProofInput {
         exponentiation: 5,
         width: 5,
@@ -57,7 +73,7 @@ pub fn setup_wasm_utils_zk_circuit(
         fee: fee_value,
         chain_id: 0,
         leaves,
-        leaf_index: 0,
+        leaf_index,
     };
     let js_proof_inputs = JsProofInput { inner: ProofInput::Mixer(mixer_proof_input) };
     let proof = generate_proof_js(js_proof_inputs).unwrap();
@@ -65,11 +81,5 @@ pub fn setup_wasm_utils_zk_circuit(
     let root_array: [u8; 32] = proof.root.try_into().unwrap();
     let root_element = Element(root_array);
 
-    let nullifier_hash_array: [u8; 32] = proof.nullifier_hash.try_into().unwrap();
-    let nullifier_hash_element = Element(nullifier_hash_array);
-
-    let leaf_array: [u8; 32] = proof.leaf.try_into().unwrap();
-    let leaf_element = Element(leaf_array);
-
-    (proof.proof, root_element, nullifier_hash_element, leaf_element)
+    (proof.proof, root_element)
 }
