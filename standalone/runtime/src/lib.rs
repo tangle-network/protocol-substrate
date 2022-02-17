@@ -1377,7 +1377,7 @@ construct_runtime!(
 		MixerBls381: pallet_mixer::<Instance2>::{Pallet, Call, Storage, Event<T>},
 
 		// Anchor
-		AnchorBn254: pallet_anchor::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		AnchorBn254: pallet_anchor::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		AnchorBls381: pallet_anchor::<Instance2>::{Pallet, Call, Storage, Event<T>},
 
 		// Anchor Handler

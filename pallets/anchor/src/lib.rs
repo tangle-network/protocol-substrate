@@ -190,6 +190,29 @@ pub mod pallet {
 		AlreadyRevealedNullifier,
 	}
 
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+		// (asset_id, deposit_size, max_edges)
+		pub anchors: Vec<(CurrencyIdOf<T, I>, BalanceOf<T, I>, u32)>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+		fn default() -> Self {
+			GenesisConfig::<T, I> { anchors: Vec::new() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+		fn build(&self) {
+			self.anchors.iter().for_each(|(asset_id, deposit_size, max_edges)| {
+				let _ = <Pallet<T, I> as AnchorInterface<_>>::create(None, deposit_size.clone(), 30, *max_edges, asset_id.clone())
+				.map_err(|_| panic!("Failed to create anchor"));
+			})
+		}
+	}
+
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
 
@@ -374,6 +397,13 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		let refund_bytes = refund.using_encoded(element_encoder);
 		let chain_id_type_bytes =
 			T::LinkableTree::get_chain_id_type().using_encoded(element_encoder);
+
+		log::info!("nullifier_hash: {:?}", nullifier_hash.encode());
+		log::info!("root: {:?}", roots[0].encode());
+		log::info!("recipient_bytes: {:?}", recipient_bytes);
+		log::info!("relayer_bytes: {:?}", relayer_bytes);
+		log::info!("fee_bytes: {:?}", fee_bytes);
+		log::info!("refund_bytes: {:?}", refund_bytes);
 		bytes.extend_from_slice(&chain_id_type_bytes);
 		bytes.extend_from_slice(&nullifier_hash.encode());
 		for root in &roots {

@@ -15,7 +15,7 @@ use webb_runtime::{
 	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
 	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
 	GrandpaConfig, HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig,
-	MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config, SessionConfig, StakerStatus,
+	MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config, AnchorBn254Config, SessionConfig, StakerStatus,
 	StakingConfig, SudoConfig, MixerVerifierBls381Config, MixerVerifierBn254Config, AnchorVerifierBn254Config, AnchorVerifierBls381Config
 };
 
@@ -322,6 +322,9 @@ fn testnet_genesis(
 		},
 		mixer_bn_254: MixerBn254Config {
 			mixers: vec![(0, 10 * UNITS), (0, 100 * UNITS), (0, 1000 * UNITS)],
+		},
+		anchor_bn_254: AnchorBn254Config {
+			anchors: vec![(0, 10 * UNITS, 2), (0, 100 * UNITS, 2), (0, 1000 * UNITS, 2)],
 		},
 	}
 }
