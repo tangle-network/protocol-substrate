@@ -1,7 +1,7 @@
 use subxt::{DefaultConfig, DefaultExtra, ClientBuilder, BasicError, PairSigner};
 use sp_keyring::AccountKeyring;
 use codec::Encode;
-use proof::{setup_wasm_utils_zk_circuit, verify_unchecked_raw, setup_leaf};
+use proof::{setup_mixer_circuit, verify_unchecked_raw, setup_mixer_leaf};
 
 mod proof;
 mod utils;
@@ -21,9 +21,8 @@ pub async fn client() -> Result<WebbRuntimeApi, BasicError> {
 	Ok(client.to_runtime_api())
 }
 
-#[async_std::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-	let api = client().await?;
+async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
+    let api = client().await?;
 
     let mut signer = PairSigner::<DefaultConfig, DefaultExtra<DefaultConfig>, _>::new(AccountKeyring::Alice.pair());
 
@@ -36,7 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let fee = 0;
     let refund = 0;
 
-    let (leaf, secret, nullifier, nullifier_hash) = setup_leaf();
+    let (leaf, secret, nullifier, nullifier_hash) = setup_mixer_leaf();
     
     // Get the mixer transaction API
     let mixer = api.tx().mixer_bn254();
@@ -63,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Number of leaves in the tree: {:?}", leaves.len());
     println!("Leaf count: {:?}", leaf_count);
 
-    let (proof_bytes, root) = setup_wasm_utils_zk_circuit(leaves, (leaf_count - 1) as u64, secret.0.to_vec(), nullifier.0.to_vec(), recipient_bytes.clone(), relayer_bytes.clone(), pk_bytes.to_vec(), fee, refund);
+    let (proof_bytes, root) = setup_mixer_circuit(leaves, (leaf_count - 1) as u64, secret.0.to_vec(), nullifier.0.to_vec(), recipient_bytes.clone(), relayer_bytes.clone(), pk_bytes.to_vec(), fee, refund);
 
     // Fetch the root from chain storage and check if it equals the local root
     let tree_metadata_res = mt_storage.trees(0, None).await?;
@@ -98,6 +97,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     
     expect_event::<webb_runtime::mixer_bn254::events::Withdraw>(&mut withdraw_res).await?;
+
+    Ok(())
+}
+
+async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
+    Ok(())
+}
+
+#[async_std::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+	test_mixer().await?;
+    test_anchor().await?;
 
     Ok(())
 }

@@ -19,7 +19,7 @@ use super::Element;
 
 use ark_bn254::Fr as Bn254Fr;
 
-pub fn setup_leaf() -> (Element, Element, Element, Element) {
+pub fn setup_mixer_leaf() -> (Element, Element, Element, Element) {
     let rng = &mut thread_rng();
     let secret = Bn254Fr::rand(rng).into_repr().to_bytes_le();
     let nullifier = Bn254Fr::rand(rng).into_repr().to_bytes_le();
@@ -45,7 +45,7 @@ pub fn setup_leaf() -> (Element, Element, Element, Element) {
     (leaf_element, secret_element, nullifier_element, nullifier_hash_element)
 }
 
-pub fn setup_wasm_utils_zk_circuit(
+pub fn setup_mixer_circuit(
     leaves: Vec<Vec<u8>>,
     leaf_index: u64,
     secret: Vec<u8>,
