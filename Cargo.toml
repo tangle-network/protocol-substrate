@@ -13,6 +13,7 @@ members = [
 	"pallets/anchor",
 	"pallets/signature-bridge",
 	"pallets/vanchor",
+	"pallets/xanchor",
 	"pallets/anchor-handler",
 	"pallets/token-wrapper",
 	"pallets/token-wrapper-handler",
@@ -23,4 +24,4 @@ members = [
 	"open-runtime-module-library/utilities",
 ]
 
-exclude = ["pallets/xanchor", "node", "runtime", "tests"]
+exclude = ["node", "runtime", "tests"]

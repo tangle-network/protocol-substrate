@@ -381,6 +381,7 @@ parameter_types! {
 	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
 	pub const MaxNominatorRewardedPerValidator: u32 = 256;
 	pub OffchainRepeat: BlockNumber = 5;
+	pub const MaxNominations: u32 = MAX_NOMINATIONS;
 }
 
 use frame_election_provider_support::onchain;
@@ -427,7 +428,7 @@ impl pallet_staking::Config for Runtime {
 	type UnixTime = Timestamp;
 	type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
 
-	const MAX_NOMINATIONS: u32 = MAX_NOMINATIONS;
+	type MaxNominations = MaxNominations;
 }
 
 parameter_types! {
@@ -547,6 +548,8 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 	type UnsignedPhase = UnsignedPhase;
 	type VoterSnapshotPerBlock = VoterSnapshotPerBlock;
 	type WeightInfo = pallet_election_provider_multi_phase::weights::SubstrateWeight<Self>;
+	type GovernanceFallback =
+		frame_election_provider_support::onchain::OnChainSequentialPhragmen<Self>;
 }
 
 parameter_types! {
@@ -730,6 +733,7 @@ impl pallet_treasury::Config for Runtime {
 	>;
 	type SpendFunds = Bounties;
 	type SpendPeriod = SpendPeriod;
+	type ProposalBondMaximum = ();
 	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 

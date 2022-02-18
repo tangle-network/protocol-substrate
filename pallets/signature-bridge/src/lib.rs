@@ -41,7 +41,8 @@
 //!
 //! ### Permissionless Functions
 //!
-//! * `execute_proposal`: Commits a vote in favour of the provided proposal.
+//! * `execute_proposal`: Executes proposal if the proposal data is well-formed and signed by DKG
+//!   (see the function below for more documentation)
 //! * `set_maintainer`: Sets the maintainer.
 
 // Ensure we're `no_std` when compiling for Wasm.
@@ -80,6 +81,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
@@ -93,6 +95,7 @@ pub mod pallet {
 		type Proposal: Parameter
 			+ Dispatchable<Origin = Self::Origin>
 			+ EncodeLike
+			+ Decode
 			+ GetDispatchInfo;
 		/// ChainID for anchor edges
 		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
@@ -134,6 +137,11 @@ pub mod pallet {
 	pub type Resources<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_256, ResourceId, Vec<u8>>;
 
+	/// The proposal nonce used to prevent replay attacks on execute_proposal
+	#[pallet::storage]
+	pub type ProposalNonce<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::ProposalNonce, ValueQuery>;
+
 	// Pallets use events to inform users when important changes are made.
 	#[pallet::event]
 	#[pallet::generate_deposit(pub fn deposit_event)]
@@ -169,6 +177,14 @@ pub mod pallet {
 		MustBeMaintainer,
 		/// A proposal with these parameters has already been submitted
 		ProposalAlreadyExists,
+		/// Call does not match parsed call from proposal data
+		CallNotConsistentWithProposalData,
+		/// Call does not match resource id according to resources mapping
+		CallDoesNotMatchResourceId,
+		/// Chain Id Type from the r_id does not match this chain
+		IncorrectExecutionChainIdType,
+		/// Invalid nonce
+		InvalidNonce,
 	}
 
 	#[pallet::hooks]
@@ -259,32 +275,74 @@ pub mod pallet {
 			Self::whitelist(id)
 		}
 
-		/// Commits a vote in favour of the provided proposal.
+		/// @param origin
+		/// @param src_id
+		/// @param call: the dispatchable call corresponding to a
+		/// handler function
+		/// @param proposal_data: (r_id, nonce, 4 bytes of zeroes, call)
+		/// @param signature: a signature over the proposal_data
 		///
-		/// If a proposal with the given nonce and source chain ID does not
-		/// already exist, it will be created with an initial vote in favour
-		/// from the caller.
+		/// We check:
+		/// 1. That the signature is actually over the proposal data
+		/// 2. That the r_id parsed from the proposal data exists
+		/// 3. That the call from the proposal data and the call input parameter to the function are
+		/// consistent with each other 4. That the execution chain id type parsed from the r_id is
+		/// indeed this chain's id type
 		///
+		/// If all these checks pass then we call finalize_execution which actually executes the
+		/// dispatchable call. The dispatchable call is usually a handler function, for instance in
+		/// the anchor-handler or token-wrapper-handler pallet.
+		///
+		/// There are a few TODOs left in the function.
+		///
+		/// In the execute_proposal
 		/// # <weight>
 		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
 		#[pallet::weight((call.get_dispatch_info().weight + 195_000_000, call.get_dispatch_info().class, Pays::Yes))]
 		pub fn execute_proposal(
 			origin: OriginFor<T>,
-			nonce: T::ProposalNonce,
 			src_id: T::ChainId,
-			r_id: ResourceId,
 			call: Box<<T as Config<I>>::Proposal>,
+			proposal_data: Vec<u8>,
 			signature: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let _ = ensure_signed(origin)?;
+			let r_id = Self::parse_r_id_from_proposal_data(&proposal_data);
+			let nonce = Self::parse_nonce_from_proposal_data(&proposal_data);
+			let parsed_call = Self::parse_call_from_proposal_data(&proposal_data);
+
+			// Nonce should be greater than the proposal nonce in storage
+			let proposal_nonce = ProposalNonce::<T, I>::get();
+			ensure!(proposal_nonce < nonce, Error::<T, I>::InvalidNonce);
+
+			// Nonce should increment by 1
 			ensure!(
-				T::SignatureVerifier::verify(&Self::maintainer(), &call.encode()[..], &signature)
+				nonce <= proposal_nonce + T::ProposalNonce::from(1u32),
+				Error::<T, I>::InvalidNonce
+			);
+
+			ensure!(
+				T::SignatureVerifier::verify(&Self::maintainer(), &proposal_data[..], &signature)
 					.unwrap_or(false),
 				Error::<T, I>::InvalidPermissions,
 			);
 			ensure!(Self::chain_whitelisted(src_id), Error::<T, I>::ChainNotWhitelisted);
 			ensure!(Self::resource_exists(r_id), Error::<T, I>::ResourceDoesNotExist);
+
+			// Ensure that call is consistent with parsed_call
+			let encoded_call = call.encode();
+			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
+
+			// Ensure this chain id matches the r_id
+			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
+			let this_chain_id_type =
+				compute_chain_id_type(T::ChainIdentifier::get(), T::ChainType::get());
+
+			ensure!(
+				this_chain_id_type == execution_chain_id_type,
+				Error::<T, I>::IncorrectExecutionChainIdType
+			);
 
 			Self::finalize_execution(src_id, nonce, call)
 		}
@@ -313,6 +371,37 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Checks if a chain exists as a whitelisted destination
 	pub fn chain_whitelisted(id: T::ChainId) -> bool {
 		Self::chains(id) != None
+	}
+
+	pub fn parse_r_id_from_proposal_data(proposal_data: &Vec<u8>) -> [u8; 32] {
+		proposal_data[0..32].try_into().unwrap_or_default()
+	}
+
+	pub fn parse_nonce_from_proposal_data(proposal_data: &Vec<u8>) -> T::ProposalNonce {
+		let nonce_bytes = proposal_data[36..40].try_into().unwrap_or_default();
+		let nonce = u32::from_be_bytes(nonce_bytes);
+		T::ProposalNonce::from(nonce)
+	}
+
+	pub fn parse_call_from_proposal_data(proposal_data: &Vec<u8>) -> Vec<u8> {
+		// Not [36..] because there are 4 byte of zero padding to match Solidity side
+		proposal_data[40..].to_vec()
+	}
+
+	pub fn parse_method_from_call(parsed_call: Vec<u8>) -> Vec<u8> {
+		parsed_call.clone()
+	}
+
+	pub fn parse_chain_id_type_from_r_id(r_id: ResourceId) -> u64 {
+		let mut chain_id_type = [0u8; 8];
+		chain_id_type[2] = r_id[26];
+		chain_id_type[3] = r_id[27];
+		chain_id_type[4] = r_id[28];
+		chain_id_type[5] = r_id[29];
+		chain_id_type[6] = r_id[30];
+		chain_id_type[7] = r_id[31];
+
+		u64::from_be_bytes(chain_id_type)
 	}
 
 	// *** Admin methods ***
@@ -361,6 +450,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			.map(|_| ())
 			.map_err(|e| e.error)?;
 		Self::deposit_event(Event::ProposalSucceeded { chain_id: src_id, proposal_nonce: nonce });
+		// Increment the nonce once the proposal succeeds
+		ProposalNonce::<T, I>::put(nonce);
 		Ok(().into())
 	}
 }

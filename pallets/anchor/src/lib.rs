@@ -98,6 +98,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
@@ -477,6 +478,14 @@ impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pal
 
 	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
 		T::LinkableTree::has_edge(id, src_chain_id)
+	}
+
+	fn get_chain_id_type() -> T::ChainId {
+		T::LinkableTree::get_chain_id_type()
+	}
+
+	fn get_chain_type() -> [u8; 2] {
+		T::LinkableTree::get_chain_type()
 	}
 }
 

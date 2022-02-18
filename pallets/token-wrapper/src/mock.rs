@@ -151,6 +151,7 @@ impl pallet_treasury::Config for Test {
 	type SpendPeriod = SpendPeriod;
 	// Just gets burned.
 	type WeightInfo = ();
+	type ProposalBondMaximum = ();
 }
 
 parameter_types! {
