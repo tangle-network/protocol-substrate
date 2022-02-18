@@ -275,7 +275,7 @@ fn should_bridge_anchors_using_xcm() {
 	});
 
 	ParaB::execute_with(|| {
-		//setup_environment(Curve::Bn254);
+		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
