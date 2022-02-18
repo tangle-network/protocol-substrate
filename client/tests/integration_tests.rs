@@ -1,30 +1,21 @@
-use subxt::{DefaultConfig, DefaultExtra, ClientBuilder, BasicError, PairSigner};
-use sp_keyring::AccountKeyring;
-use codec::Encode;
-use proof::{setup_mixer_circuit, setup_anchor_circuit, verify_unchecked_raw, setup_mixer_leaf, setup_anchor_leaf};
-
-mod proof;
-mod utils;
-
-use utils::{truncate_and_pad, expect_event};
-
-#[subxt::subxt(runtime_metadata_path = "metadata/webb_metadata.scale")]
-pub mod webb_runtime {}
-
-type WebbRuntimeApi = webb_runtime:: RuntimeApi<DefaultConfig, DefaultExtra<DefaultConfig>>;
+use webb_client;
+use webb_client::{client, webb_runtime};
 use webb_runtime::runtime_types::webb_standalone_runtime::Element;
 
-pub async fn client() -> Result<WebbRuntimeApi, BasicError> {
-	let client = ClientBuilder::new()
-		.build()
-		.await?;
-	Ok(client.to_runtime_api())
-}
+use subxt::{DefaultConfig, DefaultExtra, PairSigner};
+use sp_keyring::AccountKeyring;
 
+mod utils;
+
+use codec::Encode;
+use utils::{setup_mixer_circuit, setup_anchor_circuit, verify_unchecked_raw, setup_mixer_leaf, setup_anchor_leaf};
+use utils::{truncate_and_pad, expect_event};
+
+#[tokio::test]
 async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
     let api = client().await?;
 
-    let mut signer = PairSigner::<DefaultConfig, DefaultExtra<DefaultConfig>, _>::new(AccountKeyring::Alice.pair());
+    let signer = PairSigner::<DefaultConfig, DefaultExtra<DefaultConfig>, _>::new(AccountKeyring::Alice.pair());
 
     let pk_bytes = include_bytes!("../../protocol-substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin");
     let vk_bytes = include_bytes!("../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key_uncompressed.bin");
@@ -90,7 +81,6 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
     assert!(res, "Invalid proof");
 
     // Do the withdraw
-    signer.increment_nonce();
     let withdraw_tx = mixer.withdraw(tree_id, proof_bytes, root, nullifier_hash, recipient, relayer, fee, refund);
     let mut withdraw_res = withdraw_tx
         .sign_and_submit_then_watch(&signer)
@@ -101,10 +91,11 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[tokio::test]
 async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
     let api = client().await?;
 
-    let mut signer = PairSigner::<DefaultConfig, DefaultExtra<DefaultConfig>, _>::new(AccountKeyring::Alice.pair());
+    let signer = PairSigner::<DefaultConfig, DefaultExtra<DefaultConfig>, _>::new(AccountKeyring::Alice.pair());
 
     let pk_bytes = include_bytes!("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key_uncompressed.bin");
     let vk_bytes = include_bytes!("../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key_uncompressed.bin");
@@ -175,7 +166,6 @@ async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
     assert!(res, "Invalid proof");
 
     // Do the withdraw
-    signer.increment_nonce();
     let withdraw_tx = anchor.withdraw(tree_id, proof_bytes, root_elemets, nullifier_hash, recipient, relayer, fee, refund, commitment);
     let mut withdraw_res = withdraw_tx
         .sign_and_submit_then_watch(&signer)
@@ -185,17 +175,3 @@ async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-
-#[async_std::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("Testing Mixer");
-    println!("");
-	test_mixer().await?;
-    println!("");
-    println!("Testing Anchor");
-    println!("");
-    test_anchor().await?;
-
-    Ok(())
-}
-

@@ -24,4 +24,4 @@ members = [
 	"open-runtime-module-library/utilities",
 ]
 
-exclude = ["node", "runtime", "tests"]
+exclude = ["node", "runtime", "client"]
