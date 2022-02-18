@@ -156,9 +156,17 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// New tree created
-		MixerCreation { tree_id: T::TreeId },
-		Deposit { tree_id: T::TreeId, leaf: T::Element },
-		Withdraw { tree_id: T::TreeId, recipient: T::AccountId }
+		MixerCreation {
+			tree_id: T::TreeId,
+		},
+		Deposit {
+			tree_id: T::TreeId,
+			leaf: T::Element,
+		},
+		Withdraw {
+			tree_id: T::TreeId,
+			recipient: T::AccountId,
+		},
 	}
 
 	#[pallet::error]

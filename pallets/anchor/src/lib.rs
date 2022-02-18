@@ -208,7 +208,13 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
 		fn build(&self) {
 			self.anchors.iter().for_each(|(asset_id, deposit_size, max_edges)| {
-				let _ = <Pallet<T, I> as AnchorInterface<_>>::create(None, deposit_size.clone(), 30, *max_edges, asset_id.clone())
+				let _ = <Pallet<T, I> as AnchorInterface<_>>::create(
+					None,
+					deposit_size.clone(),
+					30,
+					*max_edges,
+					asset_id.clone(),
+				)
 				.map_err(|_| panic!("Failed to create anchor"));
 			})
 		}

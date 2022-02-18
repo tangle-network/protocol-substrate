@@ -12,11 +12,12 @@ use sp_runtime::{
 	Perbill,
 };
 use webb_runtime::{
-	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
-	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
-	GrandpaConfig, HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig,
-	MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config, AnchorBn254Config, SessionConfig, StakerStatus,
-	StakingConfig, SudoConfig, MixerVerifierBls381Config, MixerVerifierBn254Config, AnchorVerifierBn254Config, AnchorVerifierBls381Config
+	constants::currency::*, wasm_binary_unwrap, AnchorBn254Config, AnchorVerifierBls381Config,
+	AnchorVerifierBn254Config, AssetRegistryConfig, AuthorityDiscoveryConfig, BabeConfig, Block,
+	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig,
+	HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config,
+	MerkleTreeBn254Config, MixerBn254Config, MixerVerifierBls381Config, MixerVerifierBn254Config,
+	SessionConfig, StakerStatus, StakingConfig, SudoConfig,
 };
 
 // ImOnline consensus authority.
@@ -209,8 +210,9 @@ fn testnet_genesis(
 
 	log::info!("Verifier params for anchor");
 	let anchor_verifier_bn254_params = {
-		let vk_bytes =
-			include_bytes!("../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin");
+		let vk_bytes = include_bytes!(
+			"../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin"
+		);
 		vk_bytes.to_vec()
 	};
 
@@ -306,12 +308,18 @@ fn testnet_genesis(
 			parameters: Some(mixer_verifier_bn254_params),
 			phantom: Default::default(),
 		},
-		mixer_verifier_bls_381: MixerVerifierBls381Config { parameters: None, phantom: Default::default() },
+		mixer_verifier_bls_381: MixerVerifierBls381Config {
+			parameters: None,
+			phantom: Default::default(),
+		},
 		anchor_verifier_bn_254: AnchorVerifierBn254Config {
 			parameters: Some(anchor_verifier_bn254_params),
 			phantom: Default::default(),
 		},
-		anchor_verifier_bls_381: AnchorVerifierBls381Config { parameters: None, phantom: Default::default() },
+		anchor_verifier_bls_381: AnchorVerifierBls381Config {
+			parameters: None,
+			phantom: Default::default(),
+		},
 		merkle_tree_bn_254: MerkleTreeBn254Config {
 			phantom: Default::default(),
 			default_hashes: None,
