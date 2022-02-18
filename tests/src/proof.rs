@@ -77,9 +77,9 @@ pub fn setup_mixer_circuit(
     nullifier: Vec<u8>,
 	recipient_bytes: Vec<u8>,
 	relayer_bytes: Vec<u8>,
-	pk_bytes: Vec<u8>,
 	fee_value: u128,
 	refund_value: u128,
+    pk_bytes: Vec<u8>,
 ) -> (
 	Vec<u8>, // proof bytes
 	Element, // root
@@ -118,10 +118,10 @@ pub fn setup_anchor_circuit(
     nullifier: Vec<u8>,
 	recipient_bytes: Vec<u8>,
 	relayer_bytes: Vec<u8>,
-	pk_bytes: Vec<u8>,
 	fee_value: u128,
 	refund_value: u128,
     commitment_bytes: Vec<u8>,
+    pk_bytes: Vec<u8>,
 ) -> (
 	Vec<u8>, // proof bytes
 	Element, // root
