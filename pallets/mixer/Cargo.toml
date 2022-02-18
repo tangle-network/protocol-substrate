@@ -44,7 +44,7 @@ arkworks-gadgets  = { version = "0.4.19", default-features = false }
 arkworks-circuits = { version = "0.4.19", default-features = false }
 arkworks-utils    = { version = "0.4.19", features = ["default_poseidon", "default_mimc"], default-features = false }
 
-wasm-utils = { version = "0.1.0" }
+wasm-utils = { version = "0.1.2" }
 pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
 serde = {version = "1.0.119"}
