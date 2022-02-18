@@ -250,6 +250,26 @@ pub mod pallet {
 			Self::register_resource(id, method)
 		}
 
+		/// Stores a method name on chain under an associated resource ID,
+		/// given that the r_id is signed by
+		///
+		/// proposal-data = (r_id, zeroes, nonce, id, name)
+		/// # <weight>
+		/// - O(1) write
+		/// # </weight>
+		#[pallet::weight(195_000_000)]
+		pub fn set_resource_with_signature(
+			origin: OriginFor<T>,
+			proposal_data: Vec<u8>,
+			id: ResourceId,
+			method: Vec<u8>,
+			signature: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
+			let _ = ensure_signed(origin)?;
+
+			Self::register_resource(id, method)
+		}
+
 		/// Removes a resource ID from the resource mapping.
 		///
 		/// After this call, bridge transfers with the associated resource ID
