@@ -1,4 +1,4 @@
-name: Code Coverage
+name: ci
 
 # Controls when the action will run.
 on:
@@ -30,6 +30,9 @@ jobs:
           apt-get update && \
           apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev && \
           rm -rf /var/lib/apt/lists/*
+    
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1.3.0
 
       - name: Generate code coverage
         run: |
