@@ -25,10 +25,18 @@ jobs:
       - name: Set-Up
         run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
 
-      - name: Install Rustup
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source ~/.cargo/env
+      - name: Install toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+
+      - name: Install cargo-nextest
+        uses: baptiste0928/cargo-install@v1
+        with:
+          crate: cargo-nextest
+          version: latest
+
       - name: Cache Cargo
         uses: actions/cache@v2
         with:
@@ -40,6 +48,7 @@ jobs:
             target/debug
             target/release
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Check Format
         run: |
           git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo fmt --all -- --check
@@ -48,4 +57,4 @@ jobs:
           git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo check --release
       - name: Test
         run: |
-          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo test --release
+          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo nextest run --release
