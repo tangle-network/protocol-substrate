@@ -27,56 +27,72 @@ pub const TREE_DEPTH: usize = 30;
 pub const M: usize = 2;
 pub type AnchorSetup30_2 = AnchorProverSetup<Bn254Fr, M, TREE_DEPTH>;
 
-pub fn setup_zk_circuit(
-	curve: Curve,
-	recipient_bytes: Vec<u8>,
-	relayer_bytes: Vec<u8>,
-	commitment_bytes: Vec<u8>,
-	pk_bytes: Vec<u8>,
-	src_chain_id: u64,
-	fee_value: u128,
-	refund_value: u128,
-) -> (ProofBytes, RootsElement, NullifierHashElement, LeafElement) {
+pub fn setup_leaf(curve: Curve, chain_id: u128) -> (
+	Element, // Secret
+	Element, // Nullifier
+	Element, // Leaf
+	Element  // Nullifier Hash
+) {
 	let rng = &mut ark_std::test_rng();
 
 	match curve {
 		Curve::Bn254 => {
 			let (secret, nullifier, leaf, nullifier_hash) =
-				setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, src_chain_id.into(), rng).unwrap();
-			let leaves = vec![leaf.clone()];
-			let leaves_f = vec![Bn254Fr::from_le_bytes_mod_order(&leaf)];
-			let index = 0;
+				setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, chain_id.into(), rng).unwrap();
 
-			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
-			let params4 = setup_params_x5_4::<Bn254Fr>(curve);
-			let anchor_setup = AnchorSetup30_2::new(params3, params4);
-			let (tree, _) = anchor_setup.setup_tree_and_path(&leaves_f, index).unwrap();
-			let roots_f = [tree.root().inner(); M];
-			let roots_raw = roots_f.map(|x| x.into_repr().to_bytes_le());
+			let secret_element = Element::from_bytes(&secret);
+			let nullifier_element = Element::from_bytes(&nullifier);
+			let nullifier_hash_element = Element::from_bytes(&nullifier_hash);
+			let leaf_element = Element::from_bytes(&leaf);
 
+			(secret_element, nullifier_element, leaf_element, nullifier_hash_element)
+		}
+		Curve::Bls381 => {
+			unimplemented!()
+		},
+	}
+}
+
+pub fn setup_zk_circuit(
+	curve: Curve,
+	chain_id: u128,
+	secret: Element,
+	nullifier: Element,
+	leaves: Vec<Element>,
+	index: u64,
+	roots: [Element; M],
+	recipient: Element,
+	relayer: Element,
+	commitment: Element,
+	fee: u128,
+	refund: u128,
+	pk_bytes: Vec<u8>,
+) -> Vec<u8> {
+	let rng = &mut ark_std::test_rng();
+
+	match curve {
+		Curve::Bn254 => {
+			let leaves_bytes = leaves.iter().map(|x| x.to_vec()).collect();
+			let roots_bytes = roots.map(|x| x.to_vec());
 			let (proof, ..) = setup_proof_x5_4::<Bn254, _>(
 				curve,
-				src_chain_id.into(),
-				secret,
-				nullifier,
-				leaves,
+				chain_id.into(),
+				secret.to_vec(),
+				nullifier.to_vec(),
+				leaves_bytes,
 				index,
-				roots_raw.clone(),
-				recipient_bytes,
-				relayer_bytes,
-				commitment_bytes,
-				fee_value,
-				refund_value,
+				roots_bytes,
+				recipient.to_vec(),
+				relayer.to_vec(),
+				commitment.to_vec(),
+				fee,
+				refund,
 				pk_bytes,
 				rng,
 			)
 			.unwrap();
 
-			let roots_element = roots_raw.map(|x| Element::from_bytes(&x)).to_vec();
-			let nullifier_hash_element = Element::from_bytes(&nullifier_hash);
-			let leaf_element = Element::from_bytes(&leaf);
-
-			(proof, roots_element, nullifier_hash_element, leaf_element)
+			proof
 		},
 		Curve::Bls381 => {
 			unimplemented!()

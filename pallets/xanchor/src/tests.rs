@@ -854,7 +854,7 @@ fn test_cross_chain_withdrawal() {
 	let mut src_chain_id_b = 0;
 
 	let mut pk_bytes = Vec::new();
-	let mut sender_account_id = parachain::AccountOne::get();
+	let sender_account_id = parachain::AccountOne::get();
 
 	let curve = Curve::Bn254;
 
@@ -894,35 +894,23 @@ fn test_cross_chain_withdrawal() {
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
 	});
 
-	// set up what is needed to perform deposit on paraA and withdrawal on paraB
-	let mut para_a_root = Element::from_bytes(&[0u8; 32]);
-
 	let recipient_account_id = account::<AccountId>("", 2, SEED);
 	let relayer_account_id = account::<AccountId>("", 0, SEED);
 	let fee_value = 0;
 	let refund_value = 0;
 
-	let recipient_bytes = truncate_and_pad(&recipient_account_id.encode()[..]);
-	let relayer_bytes = truncate_and_pad(&relayer_account_id.encode()[..]);
-	let commitment_bytes = vec![0u8; 32];
-	let commitment_element = Element::from_bytes(&commitment_bytes);
+	let recipient_element = Element::from_bytes(&truncate_and_pad(&recipient_account_id.encode()[..]));
+	let relayer_element = Element::from_bytes(&truncate_and_pad(&relayer_account_id.encode()[..]));
+	let commitment_element = Element::from_bytes(&vec![0u8; 32]);
 
 	let src_chain_id = src_chain_id_a.clone();
 
-	let (proof_bytes, mut root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
-		curve,
-		recipient_bytes,
-		relayer_bytes,
-		commitment_bytes,
-		pk_bytes,
-		src_chain_id,
-		fee_value,
-		refund_value,
-	);
+	let (secret, nullifier, leaf, nullifier_hash) = setup_leaf(Curve::Bn254, src_chain_id.into());
+
+	let mut root_elements = [Element::zero(); M];
 
 	// Perform deposit on ParaA
 	ParaA::execute_with(|| {
-		let leaf = leaf_element;
 		// check the balance before the deposit.
 		let balance_before = Balances::free_balance(sender_account_id.clone());
 		// and we do the deposit
@@ -938,7 +926,8 @@ fn test_cross_chain_withdrawal() {
 		// now we need also to check if the state got updated.
 		let tree = MerkleTree::trees(para_a_tree_id).unwrap();
 		assert_eq!(tree.leaf_count, 1);
-		para_a_root = tree.root;
+		// set up what is needed to perform deposit on paraA and withdrawal on paraB
+		root_elements[1] = tree.root;
 	});
 
 	// Perform withdrawal on ParaB
@@ -947,18 +936,22 @@ fn test_cross_chain_withdrawal() {
 			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
 		dbg!(converted_chain_id_bytes);
 		let edge = LinkableTree::edge_list(&para_b_tree_id, converted_chain_id_bytes);
-		assert_eq!(edge.root, para_a_root);
+		// Sanity check - the neighbor root should match `ParaA`'s merkle tree root.
+		assert_eq!(edge.root, root_elements[1]);
 		assert_eq!(edge.latest_leaf_index, 1);
 
 		// Set the first element of `roots` set to be the merkle tree root on `ParaB`.
 		let tree_root = MerkleTree::get_root(para_b_tree_id).unwrap();
 		root_elements[0] = tree_root;
 
-		// Sanity check - the neighbor root should match `ParaA`'s merkle tree root.
-		assert_eq!(root_elements[1], para_a_root.clone());
-
-		let neighbor_roots =
-			<LinkableTree as LinkableTreeInspector<_>>::get_neighbor_roots(para_b_tree_id);
+		println!("chain_id: {:?}", src_chain_id.encode());
+		println!("nullifier_hash: {:?}", nullifier_hash);
+		println!("roots: {:?}", root_elements);
+		println!("recipient_bytes: {:?}", recipient_element);
+		println!("relayer_bytes: {:?}", relayer_element);
+		println!("fee_bytes: {:?}", fee_value);
+		println!("refund_bytes: {:?}", refund_value);
+		let proof_bytes = setup_zk_circuit(Curve::Bn254, src_chain_id.into(), secret, nullifier, vec![leaf], 0, root_elements, recipient_element, relayer_element, commitment_element, fee_value, refund_value, pk_bytes);
 
 		let balance_before = Balances::free_balance(recipient_account_id.clone());
 		// fire the call.
@@ -966,8 +959,8 @@ fn test_cross_chain_withdrawal() {
 			Origin::signed(sender_account_id),
 			para_b_tree_id,
 			proof_bytes,
-			root_elements,
-			nullifier_hash_element,
+			root_elements.to_vec(),
+			nullifier_hash,
 			recipient_account_id.clone(),
 			relayer_account_id,
 			fee_value.into(),
