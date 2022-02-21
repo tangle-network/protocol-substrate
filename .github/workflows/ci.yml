@@ -58,5 +58,3 @@ jobs:
       - name: Test
         run: |
           git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo nextest run --release --workspace --exclude webb-client
-      - name: Integration Test
-        run: ./scripts/run-integration.sh
