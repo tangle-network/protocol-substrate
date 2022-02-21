@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 async-std = { version = "1.9.0", features = ["attributes", "tokio1"] }
-subxt = { version = "0.17.0", git = "https://github.com/paritytech/subxt.git" }
+subxt = { version = "0.17.0" }
 codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = ["derive", "full", "bit-vec"] }
 
 [dev-dependencies]

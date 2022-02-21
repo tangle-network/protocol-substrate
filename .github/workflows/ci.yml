@@ -48,4 +48,6 @@ jobs:
           git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo check --release
       - name: Test
         run: |
-          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo test --release
+          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo test --release --exclude webb-client
+      - name: Integration Test
+        run: ./scripts/run-integration.sh
