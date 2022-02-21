@@ -57,4 +57,4 @@ jobs:
           git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo check --release
       - name: Test
         run: |
-          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo nextest run --release
+          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo nextest run --release --workspace --exclude webb-client

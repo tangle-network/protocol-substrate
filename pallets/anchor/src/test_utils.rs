@@ -34,7 +34,7 @@ pub fn setup_zk_circuit(
 	relayer_bytes: Vec<u8>,
 	commitment_bytes: Vec<u8>,
 	pk_bytes: Vec<u8>,
-	src_chain_id: u64,
+	chain_id: u64,
 	fee_value: u128,
 	refund_value: u128,
 ) -> (ProofBytes, RootsElement, NullifierHashElement, LeafElement) {
@@ -43,7 +43,7 @@ pub fn setup_zk_circuit(
 	match curve {
 		Curve::Bn254 => {
 			let (secret, nullifier, leaf, nullifier_hash) =
-				setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, src_chain_id.into(), rng).unwrap();
+				setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, chain_id.into(), rng).unwrap();
 			let leaves = vec![leaf.clone()];
 			let leaves_f = vec![Bn254Fr::from_le_bytes_mod_order(&leaf)];
 			let index = 0;
@@ -57,7 +57,7 @@ pub fn setup_zk_circuit(
 
 			let (proof, ..) = setup_proof_x5_4::<Bn254, _>(
 				curve,
-				src_chain_id.into(),
+				chain_id.into(),
 				secret,
 				nullifier,
 				leaves,
@@ -91,7 +91,7 @@ pub fn setup_wasm_utils_zk_circuit(
 	relayer_bytes: Vec<u8>,
 	commitment_bytes: [u8; 32],
 	pk_bytes: Vec<u8>,
-	src_chain_id: u128,
+	chain_id: u128,
 	fee_value: u128,
 	refund_value: u128,
 ) -> (
@@ -103,14 +103,15 @@ pub fn setup_wasm_utils_zk_circuit(
 	match curve {
 		Curve::Bn254 => {
 			let note_secret = "7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d0729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";
+			let raw = hex::decode(&note_secret).unwrap();
 
-			let secret = hex::decode(&note_secret[0..32]).unwrap();
-			let nullifier = hex::decode(&note_secret[32..64]).unwrap();
+			let secret = &raw[0..32];
+			let nullifier = &raw[32..64];
 			let (leaf, _) = setup_leaf_with_privates_raw_x5_4::<Bn254Fr>(
 				curve,
-				secret.clone(),
-				nullifier.clone(),
-				src_chain_id,
+				secret.to_vec(),
+				nullifier.to_vec(),
+				chain_id,
 			)
 			.unwrap();
 
@@ -130,14 +131,14 @@ pub fn setup_wasm_utils_zk_circuit(
 				width: 4,
 				curve: WasmCurve::Bn254,
 				backend: Backend::Arkworks,
-				secrets: secret,
-				nullifier,
+				secrets: secret.to_vec(),
+				nullifier: nullifier.to_vec(),
 				recipient: recipient_bytes,
 				relayer: relayer_bytes,
 				pk: pk_bytes,
 				refund: refund_value,
 				fee: fee_value,
-				chain_id: src_chain_id,
+				chain_id,
 				leaves,
 				leaf_index: index,
 				roots: roots_raw.to_vec(),

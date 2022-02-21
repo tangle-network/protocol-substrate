@@ -12,11 +12,12 @@ use sp_runtime::{
 	Perbill,
 };
 use webb_runtime::{
-	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
-	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
-	GrandpaConfig, HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig,
-	MerkleTreeBls381Config, MerkleTreeBn254Config, MixerBn254Config, SessionConfig, StakerStatus,
-	StakingConfig, SudoConfig, VerifierBls381Config, VerifierBn254Config,
+	constants::currency::*, wasm_binary_unwrap, AnchorBn254Config, AnchorVerifierBls381Config,
+	AnchorVerifierBn254Config, AssetRegistryConfig, AuthorityDiscoveryConfig, BabeConfig, Block,
+	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig,
+	HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config,
+	MerkleTreeBn254Config, MixerBn254Config, MixerVerifierBls381Config, MixerVerifierBn254Config,
+	SessionConfig, StakerStatus, StakingConfig, SudoConfig,
 };
 
 // ImOnline consensus authority.
@@ -105,7 +106,14 @@ pub fn webb_development_config() -> Result<ChainSpec, String> {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				vec![],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+				],
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
@@ -145,7 +153,14 @@ pub fn webb_local_testnet_config() -> Result<ChainSpec, String> {
 					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
-				vec![],
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+				],
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 			)
 		},
@@ -186,10 +201,18 @@ fn testnet_genesis(
 	log::info!("BLS381 x5 w3 params");
 	let bls381_x5_3_params = setup_params_x5_3::<ark_bls12_381::Fr>(curve_bls381);
 
-	log::info!("Verifier params");
-	let verifier_params = {
+	log::info!("Verifier params for mixer");
+	let mixer_verifier_bn254_params = {
 		let vk_bytes =
 			include_bytes!("../../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
+		vk_bytes.to_vec()
+	};
+
+	log::info!("Verifier params for anchor");
+	let anchor_verifier_bn254_params = {
+		let vk_bytes = include_bytes!(
+			"../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin"
+		);
 		vk_bytes.to_vec()
 	};
 
@@ -281,11 +304,22 @@ fn testnet_genesis(
 			parameters: Some(bls381_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		verifier_bn_254: VerifierBn254Config {
-			parameters: Some(verifier_params),
+		mixer_verifier_bn_254: MixerVerifierBn254Config {
+			parameters: Some(mixer_verifier_bn254_params),
 			phantom: Default::default(),
 		},
-		verifier_bls_381: VerifierBls381Config { parameters: None, phantom: Default::default() },
+		mixer_verifier_bls_381: MixerVerifierBls381Config {
+			parameters: None,
+			phantom: Default::default(),
+		},
+		anchor_verifier_bn_254: AnchorVerifierBn254Config {
+			parameters: Some(anchor_verifier_bn254_params),
+			phantom: Default::default(),
+		},
+		anchor_verifier_bls_381: AnchorVerifierBls381Config {
+			parameters: None,
+			phantom: Default::default(),
+		},
 		merkle_tree_bn_254: MerkleTreeBn254Config {
 			phantom: Default::default(),
 			default_hashes: None,
@@ -296,6 +330,9 @@ fn testnet_genesis(
 		},
 		mixer_bn_254: MixerBn254Config {
 			mixers: vec![(0, 10 * UNITS), (0, 100 * UNITS), (0, 1000 * UNITS)],
+		},
+		anchor_bn_254: AnchorBn254Config {
+			anchors: vec![(0, 10 * UNITS, 2), (0, 100 * UNITS, 2), (0, 1000 * UNITS, 2)],
 		},
 	}
 }

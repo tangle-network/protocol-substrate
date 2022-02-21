@@ -1,0 +1,32 @@
+[package]
+name = "webb-client"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-std = { version = "1.9.0", features = ["attributes", "tokio1"] }
+subxt = { version = "0.17.0" }
+codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = ["derive", "full", "bit-vec"] }
+
+[dev-dependencies]
+sp-keyring = "5.0.0"
+hex = "0.4"
+wasm-utils = { version = "0.1.1" }
+
+ark-bls12-377 = {version = "^0.3.0", default-features = false, features = ["curve", "r1cs"]}
+ark-bls12-381 = {version = "^0.3.0", default-features = false, features = ["curve"]}
+ark-bn254 = {version = "^0.3.0", default-features = false, features = ["curve"]}
+ark-crypto-primitives = {version = "^0.3.0", features = ["r1cs"], default-features = false}
+ark-ec = {version = "^0.3.0", default-features = false}
+ark-ff = {version = "^0.3.0", default-features = false}
+ark-relations = {version = "^0.3.0", default-features = false}
+ark-serialize = {version = "^0.3.0", default-features = false, features = ["derive"]}
+ark-std = {version = "^0.3.0", default-features = false}
+
+arkworks-gadgets  = { version = "0.4.19", default-features = false }
+arkworks-circuits = { version = "0.4.19", default-features = false }
+arkworks-utils    = { version = "0.4.19", features = ["default_poseidon", "default_mimc"], default-features = false }
+
+tokio = { version = "1.17.0", features = ["full"] }
