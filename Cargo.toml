@@ -4,6 +4,7 @@ codegen-units = 1
 
 [workspace]
 members = [
+	"client",
 	"pallets/asset-registry",
 	"pallets/hasher",
 	"pallets/verifier",

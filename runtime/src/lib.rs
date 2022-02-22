@@ -774,6 +774,20 @@ impl pallet_verifier::Config<pallet_verifier::Instance2> for Runtime {
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
+impl pallet_verifier::Config<pallet_verifier::Instance3> for Runtime {
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Verifier = ArkworksVerifierBn254;
+	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
+}
+
+impl pallet_verifier::Config<pallet_verifier::Instance4> for Runtime {
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Verifier = ArkworksVerifierBls381;
+	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
+}
+
 impl pallet_asset_registry::Config for Runtime {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
@@ -817,7 +831,7 @@ impl pallet_mixer::Config<pallet_mixer::Instance1> for Runtime {
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = MixerPalletId;
 	type Tree = MerkleTreeBn254;
-	type Verifier = VerifierBn254;
+	type Verifier = MixerVerifierBn254;
 	type WeightInfo = pallet_mixer::weights::WebbWeight<Runtime>;
 }
 
@@ -827,7 +841,7 @@ impl pallet_mixer::Config<pallet_mixer::Instance2> for Runtime {
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = MixerPalletId;
 	type Tree = MerkleTreeBls381;
-	type Verifier = VerifierBls381;
+	type Verifier = MixerVerifierBls381;
 	type WeightInfo = pallet_mixer::weights::WebbWeight<Runtime>;
 }
 
@@ -866,7 +880,7 @@ impl pallet_anchor::Config<pallet_anchor::Instance1> for Runtime {
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = ();
-	type Verifier = VerifierBn254;
+	type Verifier = AnchorVerifierBn254;
 	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }
 
@@ -877,7 +891,7 @@ impl pallet_anchor::Config<pallet_anchor::Instance2> for Runtime {
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = ();
-	type Verifier = VerifierBls381;
+	type Verifier = AnchorVerifierBls381;
 	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }
 
@@ -1071,9 +1085,13 @@ construct_runtime!(
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Storage, Call, Event<T>},
 
-		// Verifier
-		VerifierBn254: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
-		VerifierBls381: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		// Mixer Verifier
+		MixerVerifierBn254: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		MixerVerifierBls381: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
+
+		// Anchor Verifier
+		AnchorVerifierBn254: pallet_verifier::<Instance3>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		AnchorVerifierBls381: pallet_verifier::<Instance4>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		// Merkle Tree
 		MerkleTreeBn254: pallet_mt::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
@@ -1279,8 +1297,10 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_anchor, AnchorBls381);
 			list_benchmark!(list, extra, pallet_mixer, MixerBn254);
 			list_benchmark!(list, extra, pallet_mixer, MixerBls381);
-			list_benchmark!(list, extra, pallet_verifier, VerifierBn254);
-			list_benchmark!(list, extra, pallet_verifier, VerifierBls381);
+			list_benchmark!(list, extra, pallet_verifier, MixerVerifierBn254);
+			list_benchmark!(list, extra, pallet_verifier, MixerVerifierBls381);
+			list_benchmark!(list, extra, pallet_verifier, AnchorVerifierBn254);
+			list_benchmark!(list, extra, pallet_verifier, AnchorVerifierBls381);
 			list_benchmark!(list, extra, pallet_token_wrapper, TokenWrapper);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
@@ -1322,8 +1342,10 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_anchor, AnchorBls381);
 			add_benchmark!(params, batches, pallet_mixer, MixerBn254);
 			add_benchmark!(params, batches, pallet_mixer, MixerBls254);
-			add_benchmark!(params, batches, pallet_verifier, VerifierBn254);
-			add_benchmark!(params, batches, pallet_verifier, VerifierBls381);
+			add_benchmark!(params, batches, pallet_verifier, MixerVerifierBn254);
+			add_benchmark!(params, batches, pallet_verifier, MixerVerifierBls381);
+			add_benchmark!(params, batches, pallet_verifier, AnchorVerifierBn254);
+			add_benchmark!(params, batches, pallet_verifier, AnchorVerifierBls381);
 			add_benchmark!(params, batches, pallet_token_wrapper, TokenWrapper);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }

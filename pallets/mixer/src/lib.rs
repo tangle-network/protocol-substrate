@@ -156,7 +156,17 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// New tree created
-		MixerCreation { tree_id: T::TreeId },
+		MixerCreation {
+			tree_id: T::TreeId,
+		},
+		Deposit {
+			tree_id: T::TreeId,
+			leaf: T::Element,
+		},
+		Withdraw {
+			tree_id: T::TreeId,
+			recipient: T::AccountId,
+		},
 	}
 
 	#[pallet::error]
@@ -231,6 +241,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			<Self as MixerInterface<_, _, _, _, _>>::deposit(origin, tree_id, leaf)?;
+			Self::deposit_event(Event::Deposit { tree_id, leaf });
 			Ok(().into())
 		}
 
@@ -253,11 +264,12 @@ pub mod pallet {
 				&proof_bytes,
 				root,
 				nullifier_hash,
-				recipient,
+				recipient.clone(),
 				relayer,
 				fee,
 				refund,
 			)?;
+			Self::deposit_event(Event::Withdraw { tree_id: id, recipient });
 			Ok(().into())
 		}
 	}
@@ -328,6 +340,12 @@ impl<T: Config<I>, I: 'static>
 		let relayer_bytes = truncate_and_pad(&relayer.using_encoded(element_encoder)[..]);
 		let fee_bytes = fee.using_encoded(element_encoder);
 		let refund_bytes = refund.using_encoded(element_encoder);
+		log::info!("nullifier_hash: {:?}", nullifier_hash.encode());
+		log::info!("root: {:?}", root.encode());
+		log::info!("recipient_bytes: {:?}", recipient_bytes);
+		log::info!("relayer_bytes: {:?}", relayer_bytes);
+		log::info!("fee_bytes: {:?}", fee_bytes);
+		log::info!("refund_bytes: {:?}", refund_bytes);
 		bytes.extend_from_slice(&nullifier_hash.encode());
 		bytes.extend_from_slice(&root.encode());
 		bytes.extend_from_slice(&recipient_bytes);
@@ -339,6 +357,7 @@ impl<T: Config<I>, I: 'static>
 		// arkworks_gadgets::setup::mixer::get_public_inputs bytes.extend_from_slice(&
 		// fee.encode());
 		let result = T::Verifier::verify(&bytes, proof_bytes)?;
+		log::info!("verification result: {}", result);
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 
 		<T as pallet::Config<I>>::Currency::transfer(
