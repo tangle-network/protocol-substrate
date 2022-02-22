@@ -1,5 +1,5 @@
-use core::fmt::Debug;
 use arkworks_circuits::setup::common::Leaf;
+use core::fmt::Debug;
 use subxt::{DefaultConfig, Event, TransactionProgress};
 
 use webb_client::webb_runtime;
@@ -26,17 +26,13 @@ pub fn setup_mixer_leaf() -> (Element, Element, Element, Element) {
 	let rng = &mut thread_rng();
 	let secret = Bn254Fr::rand(rng).into_repr().to_bytes_le();
 	let nullifier = Bn254Fr::rand(rng).into_repr().to_bytes_le();
-	let Leaf {
-		secret_bytes,
-		nullifier_bytes,
-		leaf_bytes,
-		nullifier_hash_bytes,
-	} = mixer::setup_leaf_with_privates_raw_x5_5::<Bn254Fr>(
-		Curve::Bn254,
-		secret.clone(),
-		nullifier.clone(),
-	)
-	.unwrap();
+	let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes } =
+		mixer::setup_leaf_with_privates_raw_x5_5::<Bn254Fr>(
+			Curve::Bn254,
+			secret.clone(),
+			nullifier.clone(),
+		)
+		.unwrap();
 
 	let leaf_array: [u8; 32] = leaf_bytes.try_into().unwrap();
 	let leaf_element = Element(leaf_array);
@@ -57,18 +53,14 @@ pub fn setup_anchor_leaf(chain_id: u128) -> (Element, Element, Element, Element)
 	let rng = &mut thread_rng();
 	let secret = Bn254Fr::rand(rng).into_repr().to_bytes_le();
 	let nullifier = Bn254Fr::rand(rng).into_repr().to_bytes_le();
-	let Leaf {
-		secret_bytes,
-		nullifier_bytes,
-		leaf_bytes,
-		nullifier_hash_bytes,
-	} = anchor::setup_leaf_with_privates_raw_x5_4::<Bn254Fr>(
-		Curve::Bn254,
-		secret.clone(),
-		nullifier.clone(),
-		chain_id,
-	)
-	.unwrap();
+	let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes } =
+		anchor::setup_leaf_with_privates_raw_x5_4::<Bn254Fr>(
+			Curve::Bn254,
+			secret.clone(),
+			nullifier.clone(),
+			chain_id,
+		)
+		.unwrap();
 
 	let leaf_array: [u8; 32] = leaf_bytes.try_into().unwrap();
 	let leaf_element = Element(leaf_array);
