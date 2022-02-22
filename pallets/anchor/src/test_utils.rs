@@ -45,7 +45,7 @@ pub fn setup_zk_circuit(
 	match curve {
 		Curve::Bn254 => {
 			let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes } =
-				setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, src_chain_id.into(), rng).unwrap();
+				setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, chain_id.into(), rng).unwrap();
 			let leaves = vec![leaf_bytes.clone()];
 			let leaves_f = vec![Bn254Fr::from_le_bytes_mod_order(&leaf_bytes)];
 			let index = 0;
@@ -59,7 +59,7 @@ pub fn setup_zk_circuit(
 
 			let AnchorProof { proof, roots_raw, .. } = setup_proof_x5_4::<Bn254, _>(
 				curve,
-				src_chain_id.into(),
+				chain_id.into(),
 				secret_bytes,
 				nullifier_bytes,
 				leaves,

@@ -404,13 +404,6 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		let refund_bytes = refund.using_encoded(element_encoder);
 		let chain_id_type_bytes =
 			T::LinkableTree::get_chain_id_type().using_encoded(element_encoder);
-
-		log::info!("nullifier_hash: {:?}", nullifier_hash.encode());
-		log::info!("root: {:?}", roots[0].encode());
-		log::info!("recipient_bytes: {:?}", recipient_bytes);
-		log::info!("relayer_bytes: {:?}", relayer_bytes);
-		log::info!("fee_bytes: {:?}", fee_bytes);
-		log::info!("refund_bytes: {:?}", refund_bytes);
 		bytes.extend_from_slice(&chain_id_type_bytes);
 		bytes.extend_from_slice(&nullifier_hash.encode());
 		for root in &roots {

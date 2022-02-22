@@ -340,12 +340,6 @@ impl<T: Config<I>, I: 'static>
 		let relayer_bytes = truncate_and_pad(&relayer.using_encoded(element_encoder)[..]);
 		let fee_bytes = fee.using_encoded(element_encoder);
 		let refund_bytes = refund.using_encoded(element_encoder);
-		log::info!("nullifier_hash: {:?}", nullifier_hash.encode());
-		log::info!("root: {:?}", root.encode());
-		log::info!("recipient_bytes: {:?}", recipient_bytes);
-		log::info!("relayer_bytes: {:?}", relayer_bytes);
-		log::info!("fee_bytes: {:?}", fee_bytes);
-		log::info!("refund_bytes: {:?}", refund_bytes);
 		bytes.extend_from_slice(&nullifier_hash.encode());
 		bytes.extend_from_slice(&root.encode());
 		bytes.extend_from_slice(&recipient_bytes);
