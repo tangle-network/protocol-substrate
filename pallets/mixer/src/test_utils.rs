@@ -1,6 +1,6 @@
 use ark_bn254::Bn254;
 use arkworks_circuits::setup::{
-	common::{MixerProof, Leaf},
+	common::{Leaf, MixerProof},
 	mixer::{
 		setup_leaf_with_privates_raw_x5_5, setup_leaf_x5_5, setup_proof_x5_5, MixerProverSetup,
 	},
@@ -36,20 +36,12 @@ pub fn setup_zk_circuit(
 	match curve {
 		Curve::Bn254 => {
 			// fit inputs to the curve.
-			let Leaf {
-				secret_bytes,
-				nullifier_bytes,
-				leaf_bytes,
-				nullifier_hash_bytes
-			 } = setup_leaf_x5_5::<Bn254Fr, _>(curve, rng).unwrap();
+			let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes } =
+				setup_leaf_x5_5::<Bn254Fr, _>(curve, rng).unwrap();
 
 			let leaves = vec![leaf_bytes.clone()];
 			let index = 0;
-			let MixerProof {
-				proof,
-				root_raw,
-				..
-			} = setup_proof_x5_5::<Bn254, _>(
+			let MixerProof { proof, root_raw, .. } = setup_proof_x5_5::<Bn254, _>(
 				curve,
 				secret_bytes,
 				nullifier_bytes,
