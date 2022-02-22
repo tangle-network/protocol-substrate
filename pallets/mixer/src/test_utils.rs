@@ -1,7 +1,6 @@
 use ark_bn254::Bn254;
-use ark_ff::{BigInteger, FromBytes, PrimeField};
 use arkworks_circuits::setup::{
-	common::{prove, prove_unchecked, verify_unchecked_raw},
+	common::{MixerProof, Leaf},
 	mixer::{
 		setup_leaf_with_privates_raw_x5_5, setup_leaf_x5_5, setup_proof_x5_5, MixerProverSetup,
 	},
@@ -11,18 +10,13 @@ use webb_primitives::ElementTrait;
 
 // wasm-utils dependencies
 use wasm_utils::{
-	note::JsNote,
-	proof::{generate_proof_js, JsProofInput, MixerProofInput, ProofInput, ProofInputBuilder},
-	types::{Backend, Curve as WasmCurve, Leaves},
+	proof::{generate_proof_js, JsProofInput, MixerProofInput, ProofInput},
+	types::{Backend, Curve as WasmCurve},
 };
 
 use crate::mock::Element;
 
 type Bn254Fr = ark_bn254::Fr;
-type Bls12_381Fr = ark_bls12_381::Fr;
-
-pub const LEN: usize = 30;
-pub type MixerProverSetupBn254_30 = MixerProverSetup<Bn254Fr, LEN>;
 
 pub fn setup_zk_circuit(
 	curve: Curve,
@@ -42,15 +36,23 @@ pub fn setup_zk_circuit(
 	match curve {
 		Curve::Bn254 => {
 			// fit inputs to the curve.
-			let (secret, nullifier, leaf, nullifier_hash) =
-				setup_leaf_x5_5::<Bn254Fr, _>(curve, rng).unwrap();
+			let Leaf {
+				secret_bytes,
+				nullifier_bytes,
+				leaf_bytes,
+				nullifier_hash_bytes
+			 } = setup_leaf_x5_5::<Bn254Fr, _>(curve, rng).unwrap();
 
-			let leaves = vec![leaf.clone()];
+			let leaves = vec![leaf_bytes.clone()];
 			let index = 0;
-			let (proof, _, _, root, public_inputs) = setup_proof_x5_5::<Bn254, _>(
+			let MixerProof {
+				proof,
+				root_raw,
+				..
+			} = setup_proof_x5_5::<Bn254, _>(
 				curve,
-				secret,
-				nullifier,
+				secret_bytes,
+				nullifier_bytes,
 				leaves,
 				index,
 				recipient_bytes,
@@ -62,9 +64,9 @@ pub fn setup_zk_circuit(
 			)
 			.unwrap();
 
-			let leaf_element = Element::from_bytes(&leaf);
-			let nullifier_hash_element = Element::from_bytes(&nullifier_hash);
-			let root_element = Element::from_bytes(&root);
+			let leaf_element = Element::from_bytes(&leaf_bytes);
+			let nullifier_hash_element = Element::from_bytes(&nullifier_hash_bytes);
+			let root_element = Element::from_bytes(&root_raw);
 
 			(proof, root_element, nullifier_hash_element, leaf_element)
 		},
@@ -93,14 +95,14 @@ pub fn setup_wasm_utils_zk_circuit(
 
 			let secret = hex::decode(&note_secret[0..32]).unwrap();
 			let nullifier = hex::decode(&note_secret[32..64]).unwrap();
-			let (leaf, _) = setup_leaf_with_privates_raw_x5_5::<Bn254Fr>(
+			let leaf = setup_leaf_with_privates_raw_x5_5::<Bn254Fr>(
 				curve,
 				secret.clone(),
 				nullifier.clone(),
 			)
 			.unwrap();
 
-			let leaves = vec![leaf];
+			let leaves = vec![leaf.leaf_bytes];
 
 			let mixer_proof_input = MixerProofInput {
 				exponentiation: 5,
