@@ -1,16 +1,18 @@
 use ark_bn254::Bn254;
 use ark_ff::{BigInteger, PrimeField};
-use arkworks_circuits::setup::anchor::{
-	setup_leaf_with_privates_raw_x5_4, setup_leaf_x5_4, setup_proof_x5_4, AnchorProverSetup,
+use arkworks_circuits::setup::{
+	anchor::{
+		setup_leaf_with_privates_raw_x5_4, setup_leaf_x5_4, setup_proof_x5_4, AnchorProverSetup,
+	},
+	common::{AnchorProof, Leaf},
 };
 
 use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_4, Curve};
 use webb_primitives::ElementTrait;
 
 use wasm_utils::{
-	note::JsNote,
-	proof::{generate_proof_js, AnchorProofInput, JsProofInput, ProofInput, ProofInputBuilder},
-	types::{Backend, Curve as WasmCurve, Leaves},
+	proof::{generate_proof_js, AnchorProofInput, JsProofInput, ProofInput},
+	types::{Backend, Curve as WasmCurve},
 };
 
 use crate::mock::Element;
@@ -42,10 +44,10 @@ pub fn setup_zk_circuit(
 
 	match curve {
 		Curve::Bn254 => {
-			let (secret, nullifier, leaf, nullifier_hash) =
+			let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes } =
 				setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, chain_id.into(), rng).unwrap();
-			let leaves = vec![leaf.clone()];
-			let leaves_f = vec![Bn254Fr::from_le_bytes_mod_order(&leaf)];
+			let leaves = vec![leaf_bytes.clone()];
+			let leaves_f = vec![Bn254Fr::from_le_bytes_mod_order(&leaf_bytes)];
 			let index = 0;
 
 			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
@@ -55,11 +57,11 @@ pub fn setup_zk_circuit(
 			let roots_f = [tree.root().inner(); M];
 			let roots_raw = roots_f.map(|x| x.into_repr().to_bytes_le());
 
-			let (proof, ..) = setup_proof_x5_4::<Bn254, _>(
+			let AnchorProof { proof, roots_raw, .. } = setup_proof_x5_4::<Bn254, _>(
 				curve,
 				chain_id.into(),
-				secret,
-				nullifier,
+				secret_bytes,
+				nullifier_bytes,
 				leaves,
 				index,
 				roots_raw.clone(),
@@ -73,9 +75,9 @@ pub fn setup_zk_circuit(
 			)
 			.unwrap();
 
-			let roots_element = roots_raw.map(|x| Element::from_bytes(&x)).to_vec();
-			let nullifier_hash_element = Element::from_bytes(&nullifier_hash);
-			let leaf_element = Element::from_bytes(&leaf);
+			let roots_element = roots_raw.iter().map(|x| Element::from_bytes(&x)).collect();
+			let nullifier_hash_element = Element::from_bytes(&nullifier_hash_bytes);
+			let leaf_element = Element::from_bytes(&leaf_bytes);
 
 			(proof, roots_element, nullifier_hash_element, leaf_element)
 		},
@@ -105,9 +107,9 @@ pub fn setup_wasm_utils_zk_circuit(
 			let note_secret = "7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d0729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";
 			let raw = hex::decode(&note_secret).unwrap();
 
-			let secret = &raw[0..32];
-			let nullifier = &raw[32..64];
-			let (leaf, _) = setup_leaf_with_privates_raw_x5_4::<Bn254Fr>(
+			let secret = hex::decode(&note_secret[0..32]).unwrap();
+			let nullifier = hex::decode(&note_secret[32..64]).unwrap();
+			let leaf = setup_leaf_with_privates_raw_x5_4::<Bn254Fr>(
 				curve,
 				secret.to_vec(),
 				nullifier.to_vec(),
@@ -115,8 +117,8 @@ pub fn setup_wasm_utils_zk_circuit(
 			)
 			.unwrap();
 
-			let leaves = vec![leaf.clone()];
-			let leaves_f = vec![Bn254Fr::from_le_bytes_mod_order(&leaf)];
+			let leaves = vec![leaf.leaf_bytes.clone()];
+			let leaves_f = vec![Bn254Fr::from_le_bytes_mod_order(&leaf.leaf_bytes)];
 			let index = 0;
 
 			let params3 = setup_params_x5_3::<Bn254Fr>(curve);

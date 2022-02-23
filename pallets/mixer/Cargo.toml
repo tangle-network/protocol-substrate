@@ -14,8 +14,8 @@ codec = {package = "parity-scale-codec", version = "2.3.0", default-features = f
 scale-info = {version = "1.0", default-features = false, features = ["derive"]}
 log = "0.4"
 webb-primitives = {path = "../../primitives", features = ["verifying"], default-features = false}
-frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"}
-frame-system = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"}
+frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16"}
+frame-system = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16"}
 orml-currencies = {path = "../../open-runtime-module-library/currencies", default-features = false}
 orml-tokens = {path = "../../open-runtime-module-library/tokens", default-features = false}
 orml-traits = {path = "../../open-runtime-module-library/traits", default-features = false}
@@ -23,11 +23,11 @@ pallet-asset-registry = {path = "../asset-registry", default-features = false}
 pallet-hasher = {path = "../hasher", default-features = false}
 pallet-mt = {path = "../mt", default-features = false}
 pallet-verifier = {path = "../verifier", default-features = false}
-sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"}
-sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master"}
+sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16"}
+sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16"}
 
-frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true}
-frame-system-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master", optional = true}
+frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16", optional = true}
+frame-system-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16", optional = true}
 
 [dev-dependencies]
 ark-bls12-377 = {version = "^0.3.0", default-features = false, features = ["curve", "r1cs"]}
@@ -44,14 +44,14 @@ arkworks-gadgets  = { version = "0.4.19", default-features = false }
 arkworks-circuits = { version = "0.4.19", default-features = false }
 arkworks-utils    = { version = "0.4.19", features = ["default_poseidon", "default_mimc"], default-features = false }
 
-wasm-utils = { version = "0.1.0" }
-pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "master", default-features = false }
+wasm-utils = { version = "0.1.2" }
+pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
 serde = {version = "1.0.119"}
 hex = "0.4"
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
 
 [features]
 default = ["std"]

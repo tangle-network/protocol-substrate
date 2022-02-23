@@ -1,6 +1,5 @@
 use arkworks_gadgets::prelude::ark_ff::{BigInteger, Field, PrimeField};
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
-use sp_runtime::ModuleError;
 use sp_std::vec;
 
 use super::*;
@@ -19,11 +18,11 @@ fn should_fail_in_case_of_larger_depth() {
 		let max_depth = <Test as Config>::MaxTreeDepth::get();
 		assert_err!(
 			MerkleTree::create(Origin::signed(1), max_depth + 1),
-			DispatchError::Module(ModuleError {
+			DispatchError::Module {
 				index: 3,
 				error: 1, // InvalidTreeDepth,
 				message: None,
-			})
+			}
 		);
 	});
 }
@@ -76,11 +75,11 @@ fn should_fail_if_the_tree_is_full() {
 		});
 		assert_err!(
 			MerkleTree::insert(Origin::signed(1), tree_id, leaf),
-			DispatchError::Module(ModuleError {
+			DispatchError::Module {
 				index: 3,
 				error: 3, // ExceedsMaxLeaves
 				message: None,
-			})
+			}
 		);
 	});
 }
