@@ -373,6 +373,11 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		let refund_bytes = refund.using_encoded(element_encoder);
 		let chain_id_type_bytes =
 			T::LinkableTree::get_chain_id_type().using_encoded(element_encoder);
+		println!("on chain id: {:?}", T::LinkableTree::get_chain_id_type());
+		// println!("on chain nullifier_hash: {:?}", nullifier_hash.encode());
+		// println!("on chain roots: {:?}", roots.clone());
+		// println!("on chain recipient: {:?}", recipient);
+		// println!("on chain relayer: {:?}", relayer);
 		bytes.extend_from_slice(&chain_id_type_bytes);
 		bytes.extend_from_slice(&nullifier_hash.encode());
 		for root in &roots {

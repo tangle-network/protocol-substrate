@@ -1,17 +1,15 @@
 use super::{
-	mock::{parachain::*, test_utils::*, *},
+	mock::{parachain_a, parachain_b, test_utils::*, *},
 	*,
 };
-use ark_bn254::Fr as Bn254Fr;
-use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_4, Curve};
+
 use codec::Encode;
 use frame_benchmarking::account;
-use frame_support::{assert_err, assert_ok, traits::OnInitialize};
-use pallet_anchor::{truncate_and_pad, BalanceOf};
-use pallet_democracy::{AccountVote, Conviction, Vote};
-use webb_primitives::{
-	linkable_tree::LinkableTreeInspector, merkle_tree::TreeInspector, utils::derive_resource_id,
-};
+use frame_support::{assert_err, assert_ok};
+use pallet_anchor::truncate_and_pad;
+use webb_primitives::utils::derive_resource_id;
+use webb_primitives::merkle_tree::TreeInspector;
+use arkworks_utils::utils::common::Curve;
 use xcm_simulator::TestExt;
 
 const SEED: u32 = 0;
@@ -19,99 +17,13 @@ const TREE_DEPTH: usize = 30;
 const M: usize = 2;
 const DEPOSIT_SIZE: u128 = 10_000;
 
-fn setup_environment(curve: Curve) -> Vec<u8> {
-	match curve {
-		Curve::Bn254 => {
-			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
-
-			// 1. Setup The Hasher Pallet.
-			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
-			// 2. Initialize MerkleTree pallet.
-			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
-			// 3. Setup the VerifierPallet
-			//    but to do so, we need to have a VerifyingKey
-			let (pk_bytes, vk_bytes) = (
-				std::fs::read(
-					"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key.bin",
-				)
-				.expect("Unable to read file")
-				.to_vec(),
-				std::fs::read(
-					"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin",
-				)
-				.expect("Unable to read file")
-				.to_vec(),
-			);
-
-			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
-
-			for account_id in [
-				account::<AccountId>("", 1, SEED),
-				account::<AccountId>("", 2, SEED),
-				account::<AccountId>("", 3, SEED),
-				account::<AccountId>("", 4, SEED),
-				account::<AccountId>("", 5, SEED),
-				account::<AccountId>("", 6, SEED),
-			] {
-				assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
-			}
-
-			// finally return the provingkey bytes
-			pk_bytes.to_vec()
-		},
-		Curve::Bls381 => {
-			unimplemented!()
-		},
-	}
-}
-
-fn setup_environment_withdraw(curve: Curve) -> Vec<u8> {
-	for account_id in [
-		account::<AccountId>("", 1, SEED),
-		account::<AccountId>("", 2, SEED),
-		account::<AccountId>("", 3, SEED),
-		account::<AccountId>("", 4, SEED),
-		account::<AccountId>("", 5, SEED),
-		account::<AccountId>("", 6, SEED),
-	] {
-		assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
-	}
-
-	match curve {
-		Curve::Bn254 => {
-			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
-
-			// 1. Setup The Hasher Pallet.
-			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
-			// 2. Initialize MerkleTree pallet.
-			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
-			// 3. Setup the VerifierPallet
-			//    but to do so, we need to have a VerifyingKey
-			let pk_bytes = include_bytes!(
-				"../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key_uncompressed.bin"
-			);
-			let vk_bytes = include_bytes!(
-				"../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin"
-			);
-
-			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
-
-			// finally return the provingkey bytes
-			pk_bytes.to_vec()
-		},
-		Curve::Bls381 => {
-			unimplemented!()
-		},
-	}
-}
-
 // sanity check that XCM is working
 #[test]
 fn dmp() {
 	MockNet::reset();
 
 	let remark =
-		parachain::Call::System(frame_system::Call::<parachain::Runtime>::remark_with_event {
+		parachain_a::Call::System(frame_system::Call::<parachain_a::Runtime>::remark_with_event {
 			remark: vec![1, 2, 3],
 		});
 	Relay::execute_with(|| {
@@ -127,7 +39,7 @@ fn dmp() {
 	});
 
 	ParaA::execute_with(|| {
-		use parachain::{Event, System};
+		use parachain_a::{Event, System};
 		assert!(System::events()
 			.iter()
 			.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked { .. }))));
@@ -143,7 +55,7 @@ fn ump() {
 			remark: vec![1, 2, 3],
 		});
 	ParaA::execute_with(|| {
-		assert_ok!(ParachainPalletXcm::send_xcm(
+		assert_ok!(parachain_a::ParachainPalletXcm::send_xcm(
 			Here,
 			Parent,
 			Xcm(vec![Transact {
@@ -167,11 +79,11 @@ fn xcmp() {
 	MockNet::reset();
 
 	let remark =
-		parachain::Call::System(frame_system::Call::<parachain::Runtime>::remark_with_event {
+		parachain_a::Call::System(frame_system::Call::<parachain_a::Runtime>::remark_with_event {
 			remark: vec![1, 2, 3],
 		});
 	ParaA::execute_with(|| {
-		assert_ok!(ParachainPalletXcm::send_xcm(
+		assert_ok!(parachain_a::ParachainPalletXcm::send_xcm(
 			Here,
 			(Parent, Parachain(PARAID_B.into())),
 			Xcm(vec![Transact {
@@ -183,7 +95,7 @@ fn xcmp() {
 	});
 
 	ParaB::execute_with(|| {
-		use parachain::{Event, System};
+		use parachain_b::{Event, System};
 		assert!(System::events()
 			.iter()
 			.any(|r| matches!(r.event, Event::System(frame_system::Event::Remarked { .. }))));
@@ -197,6 +109,7 @@ fn should_link_two_anchors() {
 	let mut para_b_tree_id = 0;
 
 	ParaA::execute_with(|| {
+		use parachain_a::{setup_environment, Anchor, Origin, MerkleTree};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -206,6 +119,7 @@ fn should_link_two_anchors() {
 	});
 
 	ParaB::execute_with(|| {
+		use parachain_b::{setup_environment, Anchor, Origin, MerkleTree};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -218,6 +132,7 @@ fn should_link_two_anchors() {
 	// it will try to link the para_a_tree_id to para_b_tree_id
 	// we tell ParaA to link the `para_a_tree_id` to `para_b_tree_id` on the ParaB.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, Origin};
 		// the resource id reads as following
 		// we need to link para_a_tree_id to another anchor defined on ParaB
 		let r_id = derive_resource_id(PARAID_B.into(), &para_a_tree_id.encode());
@@ -228,6 +143,7 @@ fn should_link_two_anchors() {
 	// Here, the same as above, but the only difference is that
 	// the caller is one of the Parachain A operators.
 	ParaB::execute_with(|| {
+		use parachain_b::{XAnchor, Origin};
 		// we need to link para_b_tree_id to another anchor defined on ParaA
 		let r_id = derive_resource_id(PARAID_A.into(), &para_b_tree_id.encode());
 		// then, when we are sending the call we tell it which tree we are going to link
@@ -237,7 +153,8 @@ fn should_link_two_anchors() {
 
 	// now we assume both of them are linked, let's check that.
 	ParaA::execute_with(|| {
-		let exists = crate::LinkedAnchors::<parachain::Runtime, _>::iter().any(
+		use parachain_a::Runtime;
+		let exists = crate::LinkedAnchors::<Runtime, _>::iter().any(
 			|(chain_id, tree_id, target_tree_id)| {
 				chain_id == u64::from(PARAID_B) &&
 					tree_id == para_a_tree_id &&
@@ -248,7 +165,8 @@ fn should_link_two_anchors() {
 	});
 
 	ParaB::execute_with(|| {
-		let exists = crate::LinkedAnchors::<parachain::Runtime, _>::iter().any(
+		use parachain_b::Runtime;
+		let exists = crate::LinkedAnchors::<Runtime, _>::iter().any(
 			|(chain_id, tree_id, target_tree_id)| {
 				chain_id == u64::from(PARAID_A) &&
 					tree_id == para_b_tree_id &&
@@ -266,6 +184,7 @@ fn should_bridge_anchors_using_xcm() {
 	let mut para_b_tree_id = 0;
 
 	ParaA::execute_with(|| {
+		use parachain_a::{setup_environment, Anchor, Origin, MerkleTree};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -275,6 +194,7 @@ fn should_bridge_anchors_using_xcm() {
 	});
 
 	ParaB::execute_with(|| {
+		use parachain_b::{setup_environment, Anchor, Origin, MerkleTree};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -284,6 +204,7 @@ fn should_bridge_anchors_using_xcm() {
 	});
 
 	ParaA::execute_with(|| {
+		use parachain_a::{Runtime, XAnchor, Origin};
 		let converted_chain_id =
 			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_B));
 		let r_id = derive_resource_id(converted_chain_id, &para_a_tree_id.encode());
@@ -291,6 +212,7 @@ fn should_bridge_anchors_using_xcm() {
 	});
 
 	ParaB::execute_with(|| {
+		use parachain_b::{Runtime, XAnchor, Origin};
 		let converted_chain_id =
 			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
 		let r_id = derive_resource_id(converted_chain_id, &para_b_tree_id.encode());
@@ -301,7 +223,8 @@ fn should_bridge_anchors_using_xcm() {
 	// and check the edges on the other chain (ParaB).
 	let mut para_a_root = Element::from_bytes(&[0u8; 32]);
 	ParaA::execute_with(|| {
-		let account_id = parachain::AccountOne::get();
+		use parachain_a::{Anchor, Origin, Balances, MerkleTree};
+		let account_id = AccountOne::get();
 		let leaf = Element::from_bytes(&[1u8; 32]);
 		// check the balance before the deposit.
 		let balance_before = Balances::free_balance(account_id.clone());
@@ -325,6 +248,7 @@ fn should_bridge_anchors_using_xcm() {
 	// we should expect that the edge for ParaA is there, and the merkle root equal
 	// to the one we got from ParaA.
 	ParaB::execute_with(|| {
+		use parachain_b::{Runtime, LinkableTree};
 		let converted_chain_id_bytes =
 			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
 		dbg!(converted_chain_id_bytes);
@@ -340,12 +264,13 @@ fn should_fail_to_register_resource_id_if_not_the_democracy() {
 	MockNet::reset();
 	// it should fail to register a resource id if not the current maintainer.
 	ParaA::execute_with(|| {
+		use parachain_a::{MerkleTree, XAnchor, Origin};
 		let tree_id = MerkleTree::next_tree_id();
 		let r_id = derive_resource_id(PARAID_B.into(), &tree_id.encode());
 		let target_tree_id = 1;
 		assert_err!(
 			XAnchor::register_resource_id(
-				Origin::signed(parachain::AccountTwo::get()),
+				Origin::signed(AccountTwo::get()),
 				r_id,
 				target_tree_id
 			),
@@ -359,13 +284,14 @@ fn should_fail_to_register_resource_id_when_anchor_does_not_exist() {
 	MockNet::reset();
 	// it should fail to register the resource id if the anchor does not exist.
 	ParaA::execute_with(|| {
+		use parachain_a::{MerkleTree, XAnchor, Origin, Runtime};
 		// anchor/tree does not exist.
 		let tree_id = MerkleTree::next_tree_id();
 		let r_id = derive_resource_id(PARAID_B.into(), &tree_id.encode());
 		let target_tree_id = 1;
 		assert_err!(
 			XAnchor::register_resource_id(Origin::root(), r_id, target_tree_id),
-			crate::Error::<parachain::Runtime, _>::AnchorNotFound,
+			crate::Error::<Runtime, _>::AnchorNotFound,
 		);
 	});
 }
@@ -375,6 +301,7 @@ fn should_fail_to_link_anchor_if_it_is_already_anchored() {
 	// it should fail if the resource id is already anchored.
 	MockNet::reset();
 	ParaA::execute_with(|| {
+		use parachain_a::{setup_environment, Runtime, Anchor, MerkleTree, XAnchor, Origin};
 		// first we create the anchor
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
@@ -389,7 +316,7 @@ fn should_fail_to_link_anchor_if_it_is_already_anchored() {
 		// now we try to link the anchor again, should error.
 		assert_err!(
 			XAnchor::register_resource_id(Origin::root(), r_id, target_tree_id),
-			crate::Error::<parachain::Runtime, _>::ResourceIsAlreadyAnchored
+			crate::Error::<Runtime, _>::ResourceIsAlreadyAnchored
 		);
 	});
 }
@@ -400,30 +327,16 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 	// from another parachain.
 	MockNet::reset();
 	ParaA::execute_with(|| {
+		use parachain_a::{MerkleTree, XAnchor, Origin};
 		// try to update the edges, from a normal account!
 		// it should fail.
 		let tree_id = MerkleTree::next_tree_id();
 		let r_id = derive_resource_id(PARAID_B.into(), &tree_id.encode());
 		assert_err!(
-			XAnchor::update(Origin::signed(parachain::AccountTwo::get()), r_id, Default::default()),
+			XAnchor::update(Origin::signed(AccountTwo::get()), r_id, Default::default()),
 			frame_support::error::BadOrigin,
 		);
 	});
-}
-
-// Governance System Tests
-fn aye(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
-	AccountVote::Standard {
-		vote: Vote { aye: true, conviction: Conviction::None },
-		balance: Balances::free_balance(&who),
-	}
-}
-
-fn nay(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
-	AccountVote::Standard {
-		vote: Vote { aye: false, conviction: Conviction::None },
-		balance: Balances::free_balance(&who),
-	}
 }
 
 #[test]
@@ -431,6 +344,7 @@ fn governance_system_works() {
 	MockNet::reset();
 	// create an anchor on parachain A.
 	let para_a_tree_id = ParaA::execute_with(|| {
+		use parachain_a::{setup_environment, MerkleTree, Anchor, Origin};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -440,6 +354,7 @@ fn governance_system_works() {
 	});
 	// Also, Create an anchor on parachain B.
 	let para_b_tree_id = ParaB::execute_with(|| {
+		use parachain_b::{setup_environment, MerkleTree, Anchor, Origin};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -450,6 +365,7 @@ fn governance_system_works() {
 
 	// next, we start doing the linking process through the governance system.
 	ParaA::execute_with(|| {
+		use parachain_a::{fast_forward_to, aye, Democracy, Runtime, XAnchor, Origin};
 		// create a link proposal, saying that we (parachain A) want to link the anchor
 		// (local_tree_id) to the anchor (target_tree_id) located on Parachain B
 		// (target_chain_id).
@@ -491,6 +407,7 @@ fn governance_system_works() {
 
 	// now we do the on-chain proposal checking on chain B.
 	ParaB::execute_with(|| {
+		use parachain_b::{fast_forward_to, aye, Democracy, Runtime, XAnchor, Origin};
 		// we should see the anchor in the pending list.
 		let converted_chain_id_bytes =
 			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
@@ -503,6 +420,7 @@ fn governance_system_works() {
 		fast_forward_to(2);
 		// now we need to vote on the proposal.
 		let referendum_index = Democracy::referendum_count() - 1;
+		println!("{:?}", referendum_index);
 		assert_ok!(Democracy::vote(
 			Origin::signed(AccountTwo::get()),
 			referendum_index,
@@ -523,6 +441,7 @@ fn governance_system_works() {
 
 	// on chain A we should find them linked too.
 	ParaA::execute_with(|| {
+		use parachain_a::XAnchor;
 		assert_eq!(XAnchor::pending_linked_anchors(u64::from(PARAID_B), para_a_tree_id), None);
 		assert_eq!(XAnchor::linked_anchors(u64::from(PARAID_B), para_a_tree_id), para_b_tree_id);
 	});
@@ -537,6 +456,7 @@ fn should_fail_to_create_proposal_if_the_anchor_does_not_exist() {
 	MockNet::reset();
 	// creating a proposal for a non-existing anchor.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, MerkleTree, Runtime, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
 			target_tree_id: Some(MerkleTree::next_tree_id()),
@@ -555,6 +475,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 	MockNet::reset();
 	// create an anchor on parachain A.
 	let para_a_tree_id = ParaA::execute_with(|| {
+		use parachain_a::{setup_environment, Anchor, MerkleTree, Origin};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -564,6 +485,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 	});
 	// create an anchor on parachain B.
 	let para_b_tree_id = ParaB::execute_with(|| {
+		use parachain_b::{setup_environment, Anchor, MerkleTree, Origin};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -574,6 +496,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 
 	// force link them.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, Origin};
 		let r_id = derive_resource_id(PARAID_B.into(), &para_a_tree_id.encode());
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
@@ -581,6 +504,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 	// now try create a proposal on chain A, it should fail since it is already
 	// linked.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, Runtime, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
 			target_tree_id: Some(para_b_tree_id),
@@ -599,6 +523,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 	MockNet::reset();
 	// create an anchor on parachain A.
 	let para_a_tree_id = ParaA::execute_with(|| {
+		use parachain_a::{setup_environment, Anchor, MerkleTree, Origin};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -609,6 +534,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 
 	// create an anchor on parachain B.
 	let para_b_tree_id = ParaB::execute_with(|| {
+		use parachain_b::{setup_environment, Anchor, MerkleTree, Origin};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -619,6 +545,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 
 	// create a proposal on chain A.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
 			target_tree_id: Some(para_b_tree_id),
@@ -635,6 +562,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 	// now try create a new proposal on chain A with different Account it should
 	// fail.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, Origin, Runtime};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
 			target_tree_id: Some(para_b_tree_id),
@@ -655,6 +583,7 @@ fn should_fail_to_call_send_link_anchor_message_as_signed_account() {
 	// calling send_link_anchor_message as signed account should fail.
 	// on parachain A.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, MerkleTree, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
 			target_tree_id: Some(MerkleTree::next_tree_id()),
@@ -675,6 +604,7 @@ fn should_fail_to_call_save_link_proposal_as_signed_account() {
 	// calling save_link_proposal as signed account should fail.
 	// on parachain A.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, MerkleTree, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
 			target_tree_id: Some(MerkleTree::next_tree_id()),
@@ -693,6 +623,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 	MockNet::reset();
 	// create an anchor on parachain A.
 	let para_a_tree_id = ParaA::execute_with(|| {
+		use parachain_a::{setup_environment, Anchor, MerkleTree, Origin};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -703,6 +634,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 
 	// create an anchor on parachain B.
 	let para_b_tree_id = ParaB::execute_with(|| {
+		use parachain_b::{setup_environment, Anchor, MerkleTree, Origin};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -713,6 +645,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 
 	// force link them.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, Origin};
 		let r_id = derive_resource_id(PARAID_B.into(), &para_a_tree_id.encode());
 		println!("r_id: {:?}", r_id);
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
@@ -720,6 +653,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 
 	// now creating a proposal on chain A should fail since it is already linked.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, Runtime, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
 			target_tree_id: Some(para_b_tree_id),
@@ -740,6 +674,7 @@ fn should_fail_to_call_handle_link_anchor_message_without_anchor_being_pending()
 	MockNet::reset();
 	// create an anchor on parachain A.
 	let para_a_tree_id = ParaA::execute_with(|| {
+		use parachain_a::{setup_environment, Anchor, MerkleTree, Origin};
 		setup_environment(Curve::Bn254);
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -750,6 +685,7 @@ fn should_fail_to_call_handle_link_anchor_message_without_anchor_being_pending()
 	// now calling handle_link_anchor_message directly should fail.
 	// on parachain A, since this anchor is not pending.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, Runtime, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
 			target_tree_id: Some(para_a_tree_id),
@@ -774,6 +710,7 @@ fn should_fail_to_call_link_anchors_as_signed_account() {
 	// calling link_anchors as signed account should fail.
 	// on parachain A.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, MerkleTree, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
 			target_tree_id: Some(MerkleTree::next_tree_id()),
@@ -793,6 +730,7 @@ fn should_fail_to_call_handle_link_anchors_as_signed_account() {
 	// calling handle_link_anchors as signed account should fail.
 	// on parachain A.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, MerkleTree, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
 			target_tree_id: Some(MerkleTree::next_tree_id()),
@@ -812,6 +750,7 @@ fn should_fail_to_call_register_resource_id_as_signed_account() {
 	// calling register_resource_id as signed account should fail.
 	// on parachain A.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, MerkleTree, Origin};
 		let r_id = derive_resource_id(PARAID_B.into(), &MerkleTree::next_tree_id().encode());
 		assert_err!(
 			XAnchor::register_resource_id(
@@ -831,6 +770,7 @@ fn should_fail_to_call_update_as_signed_account() {
 	// calling update as signed account should fail.
 	// on parachain A.
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, MerkleTree, Origin};
 		let r_id = derive_resource_id(PARAID_B.into(), &MerkleTree::next_tree_id().encode());
 		let edge_metadata = EdgeMetadata {
 			src_chain_id: PARAID_B.into(),
@@ -854,11 +794,12 @@ fn test_cross_chain_withdrawal() {
 	let mut src_chain_id_b = 0;
 
 	let mut pk_bytes = Vec::new();
-	let sender_account_id = parachain::AccountOne::get();
+	let sender_account_id = AccountOne::get();
 
 	let curve = Curve::Bn254;
 
 	ParaA::execute_with(|| {
+		use parachain_a::{setup_environment_withdraw, Anchor, MerkleTree, Origin};
 		pk_bytes = setup_environment_withdraw(curve);
 		let max_edges = 2;
 		let depth = TREE_DEPTH as u8;
@@ -868,6 +809,7 @@ fn test_cross_chain_withdrawal() {
 	});
 
 	ParaB::execute_with(|| {
+		use parachain_b::{setup_environment_withdraw, Anchor, MerkleTree, Origin};
 		setup_environment_withdraw(curve);
 		let max_edges = 2;
 		let depth = TREE_DEPTH as u8;
@@ -877,6 +819,7 @@ fn test_cross_chain_withdrawal() {
 	});
 
 	ParaA::execute_with(|| {
+		use parachain_a::{XAnchor, Runtime, Origin};
 		dbg!(para_a_tree_id);
 		dbg!(para_b_tree_id);
 		let converted_chain_id_bytes =
@@ -887,6 +830,7 @@ fn test_cross_chain_withdrawal() {
 	});
 
 	ParaB::execute_with(|| {
+		use parachain_b::{XAnchor, Runtime, Origin};
 		let converted_chain_id_bytes =
 			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
 		let r_id = derive_resource_id(converted_chain_id_bytes, &para_b_tree_id.encode());
@@ -911,6 +855,7 @@ fn test_cross_chain_withdrawal() {
 
 	// Perform deposit on ParaA
 	ParaA::execute_with(|| {
+		use parachain_a::{Balances, Anchor, MerkleTree, Origin};
 		// check the balance before the deposit.
 		let balance_before = Balances::free_balance(sender_account_id.clone());
 		// and we do the deposit
@@ -932,6 +877,7 @@ fn test_cross_chain_withdrawal() {
 
 	// Perform withdrawal on ParaB
 	ParaB::execute_with(|| {
+		use parachain_b::{Balances, Anchor, MerkleTree, LinkableTree, Runtime, Origin};
 		let converted_chain_id_bytes =
 			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
 		dbg!(converted_chain_id_bytes);
@@ -944,13 +890,7 @@ fn test_cross_chain_withdrawal() {
 		let tree_root = MerkleTree::get_root(para_b_tree_id).unwrap();
 		root_elements[0] = tree_root;
 
-		println!("chain_id: {:?}", src_chain_id.encode());
-		println!("nullifier_hash: {:?}", nullifier_hash);
-		println!("roots: {:?}", root_elements);
-		println!("recipient_bytes: {:?}", recipient_element);
-		println!("relayer_bytes: {:?}", relayer_element);
-		println!("fee_bytes: {:?}", fee_value);
-		println!("refund_bytes: {:?}", refund_value);
+		println!("local chain_id: {:?}", src_chain_id);
 		let proof_bytes = setup_zk_circuit(Curve::Bn254, src_chain_id.into(), secret, nullifier, vec![leaf], 0, root_elements, recipient_element, relayer_element, commitment_element, fee_value, refund_value, pk_bytes);
 
 		let balance_before = Balances::free_balance(recipient_account_id.clone());

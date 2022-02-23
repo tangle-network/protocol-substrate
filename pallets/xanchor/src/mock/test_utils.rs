@@ -7,7 +7,7 @@ use arkworks_circuits::setup::anchor::{
 use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_4, Curve};
 use webb_primitives::ElementTrait;
 
-use crate::mock::parachain::Element;
+use super::Element;
 use wasm_utils::{
 	note::JsNote,
 	proof::{generate_proof_js, AnchorProofInput, JsProofInput, ProofInput, ProofInputBuilder},

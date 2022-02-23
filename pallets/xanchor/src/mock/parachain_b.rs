@@ -6,11 +6,12 @@ use codec::{Decode, Encode};
 use frame_support::{
 	construct_runtime,
 	dispatch::DispatchResult,
-	ord_parameter_types, parameter_types,
+	parameter_types,
 	traits::{Everything, Nothing, SortedMembers},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
-	Deserialize, PalletId, Serialize,
+	PalletId,
 };
+use frame_support::traits::{OnInitialize, GenesisBuild};
 use frame_system::{pallet_prelude::OriginFor, EnsureRoot, EnsureSignedBy};
 use orml_currencies::BasicCurrencyAdapter;
 use pallet_anchor::BalanceOf;
@@ -22,17 +23,18 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryFrom, prelude::*};
 use webb_primitives::{Amount, BlockNumber, ChainId};
-
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
 use polkadot_parachain::primitives::{
 	DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
 };
 pub use webb_primitives::{
+	runtime,
 	hasher::{HasherModule, InstanceHasher},
 	types::ElementTrait,
-	AccountId,
+	AccountId
 };
+use std::ops::Mul;
 use xcm::{latest::prelude::*, VersionedXcm};
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter,
@@ -41,12 +43,153 @@ use xcm_builder::{
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation,
 };
+use pallet_democracy::{AccountVote, Conviction, Vote};
+use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
+use ark_bn254::Fr as Bn254Fr;
+use frame_support::assert_ok;
+use frame_benchmarking::account;
 use xcm_executor::{Config, XcmExecutor};
+use super::{AccountOne, AccountTwo, AccountThree, AccountFour, AccountFive, AccountSix, para_account_id, PARAID_B, INITIAL_BALANCE, Element};
 
 pub type Balance = u128;
-
 /// Type for storing the id of an asset.
 pub type OrmlAssetId = u32;
+
+pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
+	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+
+	pallet_balances::GenesisConfig::<Runtime> {
+		balances: vec![
+			(AccountOne::get(), INITIAL_BALANCE.mul(1u128)),
+			(AccountTwo::get(), INITIAL_BALANCE.mul(2u128)),
+			(AccountThree::get(), INITIAL_BALANCE.mul(3u128)),
+			(AccountFour::get(), INITIAL_BALANCE.mul(4u128)),
+			(AccountFive::get(), INITIAL_BALANCE.mul(5u128)),
+			(AccountSix::get(), INITIAL_BALANCE.mul(6u128)),
+			(para_account_id(para_id), INITIAL_BALANCE),
+		],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+	pallet_democracy::GenesisConfig::<Runtime>::default()
+		.assimilate_storage(&mut t)
+		.unwrap();
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.execute_with(|| {
+		next_block();
+		MsgQueue::set_para_id(para_id.into());
+	});
+	ext
+}
+
+pub fn next_block() {
+	System::set_block_number(System::block_number() + 1);
+	Scheduler::on_initialize(System::block_number());
+	Democracy::on_initialize(System::block_number());
+}
+
+pub fn fast_forward_to(n: u64) {
+	while System::block_number() < n {
+		next_block();
+	}
+}
+
+const SEED: u32 = 0;
+
+pub fn setup_environment(curve: Curve) -> Vec<u8> {
+	match curve {
+		Curve::Bn254 => {
+			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
+
+			// 1. Setup The Hasher Pallet.
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+			// 2. Initialize MerkleTree pallet.
+			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
+			// 3. Setup the VerifierPallet
+			//    but to do so, we need to have a VerifyingKey
+			let pk_bytes = include_bytes!(
+				"../../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key_uncompressed.bin"
+			);
+			let vk_bytes = include_bytes!(
+				"../../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin"
+			);
+
+			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
+
+			for account_id in [
+				account::<AccountId>("", 1, SEED),
+				account::<AccountId>("", 2, SEED),
+				account::<AccountId>("", 3, SEED),
+				account::<AccountId>("", 4, SEED),
+				account::<AccountId>("", 5, SEED),
+				account::<AccountId>("", 6, SEED),
+			] {
+				assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
+			}
+
+			// finally return the provingkey bytes
+			pk_bytes.to_vec()
+		},
+		Curve::Bls381 => {
+			unimplemented!()
+		},
+	}
+}
+
+pub fn setup_environment_withdraw(curve: Curve) -> Vec<u8> {
+	for account_id in [
+		account::<AccountId>("", 1, SEED),
+		account::<AccountId>("", 2, SEED),
+		account::<AccountId>("", 3, SEED),
+		account::<AccountId>("", 4, SEED),
+		account::<AccountId>("", 5, SEED),
+		account::<AccountId>("", 6, SEED),
+	] {
+		assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
+	}
+
+	match curve {
+		Curve::Bn254 => {
+			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
+
+			// 1. Setup The Hasher Pallet.
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+			// 2. Initialize MerkleTree pallet.
+			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
+			// 3. Setup the VerifierPallet
+			//    but to do so, we need to have a VerifyingKey
+			let pk_bytes = include_bytes!(
+				"../../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key_uncompressed.bin"
+			);
+			let vk_bytes = include_bytes!(
+				"../../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin"
+			);
+
+			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
+
+			// finally return the provingkey bytes
+			pk_bytes.to_vec()
+		},
+		Curve::Bls381 => {
+			unimplemented!()
+		},
+	}
+}
+
+// Governance System Tests
+pub fn aye(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
+	AccountVote::Standard {
+		vote: Vote { aye: true, conviction: Conviction::None },
+		balance: Balances::free_balance(&who),
+	}
+}
+
+pub fn nay(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
+	AccountVote::Standard {
+		vote: Vote { aye: false, conviction: Conviction::None },
+		balance: Balances::free_balance(&who),
+	}
+}
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -373,39 +516,6 @@ parameter_types! {
 	pub const MockZeroElement: Element = Element([0; 32]);
 }
 
-#[derive(
-	Debug,
-	Encode,
-	Decode,
-	Default,
-	Copy,
-	Clone,
-	PartialEq,
-	Eq,
-	scale_info::TypeInfo,
-	Serialize,
-	Deserialize,
-)]
-pub struct Element([u8; 32]);
-
-impl Element {
-	pub const fn zero() -> Self {
-		Element([0; 32])
-	}
-}
-
-impl ElementTrait for Element {
-	fn to_bytes(&self) -> &[u8] {
-		&self.0
-	}
-
-	fn from_bytes(input: &[u8]) -> Self {
-		let mut buf = [0u8; 32];
-		buf.copy_from_slice(input);
-		Self(buf)
-	}
-}
-
 impl pallet_mt::Config for Runtime {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
@@ -470,7 +580,7 @@ parameter_types! {
 	pub const ChainType: [u8; 2] = [2, 0];
 	// This identifier should equal the para ID.
 	// Note: this can cause issues if they do not match in production.
-	pub const ChainIdentifier: ChainId = 0;
+	pub const ChainIdentifier: ChainId = PARAID_B as u64;
 }
 
 impl pallet_linkable_tree::Config for Runtime {
@@ -546,15 +656,6 @@ parameter_types! {
 	pub const MaxProposals: u32 = 100;
 	pub static PreimageByteDeposit: u64 = 0;
 	pub static InstantAllowed: bool = false;
-}
-
-ord_parameter_types! {
-	pub const AccountOne: AccountId = sp_runtime::AccountId32::new([1u8; 32]);
-	pub const AccountTwo: AccountId = sp_runtime::AccountId32::new([2u8; 32]);
-	pub const AccountThree: AccountId = sp_runtime::AccountId32::new([3u8; 32]);
-	pub const AccountFour: AccountId = sp_runtime::AccountId32::new([4u8; 32]);
-	pub const AccountFive: AccountId = sp_runtime::AccountId32::new([5u8; 32]);
-	pub const AccountSix: AccountId = sp_runtime::AccountId32::new([6u8; 32]);
 }
 
 pub struct OneToFive;
