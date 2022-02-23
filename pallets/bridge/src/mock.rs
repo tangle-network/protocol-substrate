@@ -82,7 +82,7 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
-	pub const ChainIdentifier: u64 = 5;
+	pub const ChainId: u32 = 5;
 	pub const ChainType: [u8; 2] = [2, 0];
 	pub const ProposalLifetime: u64 = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
@@ -91,8 +91,8 @@ parameter_types! {
 impl Config for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
-	type ChainId = u64;
-	type ChainIdentifier = ChainIdentifier;
+	type ChainIdWithType = u64;
+	type ChainId = ChainId;
 	type ChainType = ChainType;
 	type Event = Event;
 	type Proposal = Call;
@@ -118,7 +118,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 }
 
 pub fn new_test_ext_initialized(
-	src_id: <Test as pallet::Config>::ChainId,
+	src_id: <Test as pallet::Config>::ChainIdWithType,
 	r_id: ResourceId,
 	resource: Vec<u8>,
 ) -> sp_io::TestExternalities {

@@ -7,7 +7,7 @@ use frame_support::{
 	assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin,
 };
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
-use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
+use webb_resource_id::{compute_chain_id_with_type, derive_resource_id};
 
 const TEST_THRESHOLD: u32 = 2;
 const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
@@ -61,7 +61,7 @@ fn setup_relayers(src_id: u64) {
 }
 
 fn relay_fee_update_proposal(
-	src_chain_id: u64,
+	src_id_with_type: u64,
 	resource_id: &[u8; 32],
 	prop_id: u64,
 	wrapping_fee_percent: u128,
@@ -78,21 +78,21 @@ fn relay_fee_update_proposal(
 	assert_ok!(Bridge::acknowledge_proposal(
 		Origin::signed(RELAYER_A),
 		prop_id,
-		src_chain_id,
+		src_id_with_type,
 		*resource_id,
 		Box::new(update_proposal.clone())
 	));
 	assert_ok!(Bridge::acknowledge_proposal(
 		Origin::signed(RELAYER_B),
 		prop_id,
-		src_chain_id,
+		src_id_with_type,
 		*resource_id,
 		Box::new(update_proposal)
 	));
 }
 
 fn relay_token_update_proposal(
-	src_chain_id: u64,
+	src_id_with_type: u64,
 	resource: Vec<u8>,
 	update_proposal: Call,
 	resource_id: &[u8; 32],
@@ -104,14 +104,14 @@ fn relay_token_update_proposal(
 	let result1 = Bridge::acknowledge_proposal(
 		Origin::signed(RELAYER_A),
 		prop_id,
-		src_chain_id,
+		src_id_with_type,
 		*resource_id,
 		Box::new(update_proposal.clone()),
 	);
 	let result2 = Bridge::acknowledge_proposal(
 		Origin::signed(RELAYER_B),
 		prop_id,
-		src_chain_id,
+		src_id_with_type,
 		*resource_id,
 		Box::new(update_proposal),
 	);
@@ -122,8 +122,8 @@ fn relay_token_update_proposal(
 #[test]
 fn should_update_fee() {
 	new_test_ext().execute_with(|| {
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_id_with_type, b"hash");
 		let prop_id = 1;
 
 		let existential_balance: u32 = 1000;
@@ -136,8 +136,8 @@ fn should_update_fee() {
 		.unwrap();
 
 		// create fee update proposal
-		setup_relayers(src_chain_id);
-		relay_fee_update_proposal(src_chain_id, &resource_id, prop_id, 5, pool_share_id);
+		setup_relayers(src_id_with_type);
+		relay_fee_update_proposal(src_id_with_type, &resource_id, prop_id, 5, pool_share_id);
 
 		assert_eq!(TokenWrapper::get_wrapping_fee(1000_u128, pool_share_id).unwrap(), 52);
 	})
@@ -147,10 +147,10 @@ fn should_update_fee() {
 fn should_succeed_add_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_id_with_type, b"hash");
 		let prop_id = 1;
-		setup_relayers(src_chain_id);
+		setup_relayers(src_id_with_type);
 
 		let existential_balance: u32 = 1000;
 
@@ -172,7 +172,7 @@ fn should_succeed_add_token() {
 			make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_ok!(relay_token_update_proposal(
-			src_chain_id,
+			src_id_with_type,
 			get_add_token_resource(),
 			update_proposal,
 			&resource_id,
@@ -188,10 +188,10 @@ fn should_succeed_add_token() {
 fn should_succeed_remove_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_id_with_type, b"hash");
 		let prop_id = 1;
-		setup_relayers(src_chain_id);
+		setup_relayers(src_id_with_type);
 
 		let existential_balance: u32 = 1000;
 
@@ -213,7 +213,7 @@ fn should_succeed_remove_token() {
 			make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_ok!(relay_token_update_proposal(
-			src_chain_id,
+			src_id_with_type,
 			get_add_token_resource(),
 			update_proposal,
 			&resource_id,
@@ -227,7 +227,7 @@ fn should_succeed_remove_token() {
 			make_remove_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_ok!(relay_token_update_proposal(
-			src_chain_id,
+			src_id_with_type,
 			get_remove_token_resource(),
 			update_proposal,
 			&resource_id,
@@ -243,10 +243,10 @@ fn should_succeed_remove_token() {
 fn should_fail_to_remove_token_not_in_pool() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_id_with_type, b"hash");
 		let prop_id = 1;
-		setup_relayers(src_chain_id);
+		setup_relayers(src_id_with_type);
 
 		let existential_balance: u32 = 1000;
 
@@ -269,7 +269,7 @@ fn should_fail_to_remove_token_not_in_pool() {
 
 		assert_err!(
 			relay_token_update_proposal(
-				src_chain_id,
+				src_id_with_type,
 				get_remove_token_resource(),
 				update_proposal,
 				&resource_id,
@@ -285,10 +285,10 @@ fn should_fail_to_remove_token_not_in_pool() {
 fn should_succeed_add_many_tokens() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_id_with_type, b"hash");
 		let prop_id = 1;
-		setup_relayers(src_chain_id);
+		setup_relayers(src_id_with_type);
 
 		let existential_balance: u32 = 1000;
 
@@ -324,7 +324,7 @@ fn should_succeed_add_many_tokens() {
 			make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_ok!(relay_token_update_proposal(
-			src_chain_id,
+			src_id_with_type,
 			get_add_token_resource(),
 			update_proposal,
 			&resource_id,
@@ -335,7 +335,7 @@ fn should_succeed_add_many_tokens() {
 			make_add_token_proposal(&resource_id, b"meme".to_vec(), second_token_id);
 
 		assert_ok!(relay_token_update_proposal(
-			src_chain_id,
+			src_id_with_type,
 			get_add_token_resource(),
 			update_proposal,
 			&resource_id,
@@ -346,7 +346,7 @@ fn should_succeed_add_many_tokens() {
 			make_add_token_proposal(&resource_id, b"meme".to_vec(), third_token_id);
 
 		assert_ok!(relay_token_update_proposal(
-			src_chain_id,
+			src_id_with_type,
 			get_add_token_resource(),
 			update_proposal,
 			&resource_id,
@@ -370,10 +370,10 @@ fn should_succeed_add_many_tokens() {
 fn should_fail_to_add_same_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_id_with_type, b"hash");
 		let prop_id = 1;
-		setup_relayers(src_chain_id);
+		setup_relayers(src_id_with_type);
 
 		let existential_balance: u32 = 1000;
 
@@ -395,7 +395,7 @@ fn should_fail_to_add_same_token() {
 			make_add_token_proposal(&resource_id, b"meme".to_vec(), first_token_id);
 
 		assert_ok!(relay_token_update_proposal(
-			src_chain_id,
+			src_id_with_type,
 			get_add_token_resource(),
 			update_proposal,
 			&resource_id,
@@ -410,7 +410,7 @@ fn should_fail_to_add_same_token() {
 
 		assert_err!(
 			relay_token_update_proposal(
-				src_chain_id,
+				src_id_with_type,
 				get_add_token_resource(),
 				update_proposal,
 				&resource_id,
@@ -426,10 +426,10 @@ fn should_fail_to_add_same_token() {
 fn should_fail_to_add_non_existent_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_id_with_type, b"hash");
 		let prop_id = 1;
-		setup_relayers(src_chain_id);
+		setup_relayers(src_id_with_type);
 
 		let existential_balance: u32 = 1000;
 
@@ -447,7 +447,7 @@ fn should_fail_to_add_non_existent_token() {
 
 		assert_err!(
 			relay_token_update_proposal(
-				src_chain_id,
+				src_id_with_type,
 				get_add_token_resource(),
 				update_proposal,
 				&resource_id,

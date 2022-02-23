@@ -21,7 +21,7 @@ use sp_runtime::{
 	Perbill,
 };
 use sp_std::{convert::TryFrom, prelude::*};
-use webb_primitives::{Amount, BlockNumber, ChainId};
+use webb_primitives::{Amount, BlockNumber, ChainIdWithType};
 
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
@@ -470,13 +470,13 @@ parameter_types! {
 	pub const ChainType: [u8; 2] = [2, 0];
 	// This identifier should equal the para ID.
 	// Note: this can cause issues if they do not match in production.
-	pub const ChainIdentifier: ChainId = 0;
+	pub const ChainId: ChainIdWithType = 0;
 }
 
 impl pallet_linkable_tree::Config for Runtime {
-	type ChainId = ChainId;
+	type ChainIdWithType = ChainIdWithType;
 	type ChainType = ChainType;
-	type ChainIdentifier = ChainIdentifier;
+	type ChainId = ChainId;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;

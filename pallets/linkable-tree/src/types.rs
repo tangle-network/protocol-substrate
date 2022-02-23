@@ -4,9 +4,9 @@ use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 
 #[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
-pub struct EdgeMetadata<ChainID, Element, LastLeafIndex> {
-	/// chain id
-	pub src_chain_id: ChainID,
+pub struct EdgeMetadata<ChainIdWithType, Element, LastLeafIndex> {
+	/// chain id with type
+	pub src_id_with_type: ChainIdWithType,
 	/// root of source chain anchor's native merkle tree
 	pub root: Element,
 	/// height of source chain anchor's native merkle tree

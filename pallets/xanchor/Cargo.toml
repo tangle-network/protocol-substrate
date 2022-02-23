@@ -29,6 +29,9 @@ cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branc
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.16", default-features = false }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.16", default-features = false }
 
+# TODO(appcypher): Adjust
+webb-resource-id = { default-features = false, git = "https://github.com/webb-tools/webb-rs.git", branch = "stephen/consolidate-utils" }
+
 [dev-dependencies]
 serde = { version = "1.0.119" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }

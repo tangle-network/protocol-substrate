@@ -172,13 +172,13 @@ impl pallet_token_wrapper::Config for Test {
 	type WeightInfo = ();
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
-pub type ChainId = u64;
+pub type ChainIdWithType = u64;
 pub type ProposalNonce = u32;
 
 parameter_types! {
 	pub const ProposalLifetime: u64 = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
-	pub const ChainIdentifier: u8 = 5;
+	pub const ChainId: u8 = 5;
 	pub const ChainType: [u8; 2] = [2, 0];
 }
 
@@ -186,8 +186,8 @@ type BridgeInstance = pallet_signature_bridge::Instance1;
 impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
+	type ChainIdWithType = ChainIdWithType;
 	type ChainId = ChainId;
-	type ChainIdentifier = ChainIdentifier;
 	type ChainType = ChainType;
 	type Event = Event;
 	type Proposal = Call;
@@ -236,14 +236,14 @@ pub fn assert_events(mut expected: Vec<Event>) {
 }
 
 pub fn new_test_ext_initialized(
-	src_id: <Test as pallet_signature_bridge::Config<BridgeInstance>>::ChainId,
+	src_id_with_type: <Test as pallet_signature_bridge::Config<BridgeInstance>>::ChainIdWithType,
 	r_id: ResourceId,
 	resource: Vec<u8>,
 ) -> sp_io::TestExternalities {
 	let mut t = new_test_ext();
 	t.execute_with(|| {
 		// Whitelist chain
-		assert_ok!(SignatureBridge::whitelist_chain(Origin::root(), src_id));
+		assert_ok!(SignatureBridge::whitelist_chain(Origin::root(), src_id_with_type));
 		// Set and check resource ID mapped to some junk data
 		assert_ok!(SignatureBridge::set_resource(Origin::root(), r_id, resource));
 		assert!(SignatureBridge::resource_exists(r_id));

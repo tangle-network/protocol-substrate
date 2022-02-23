@@ -309,7 +309,7 @@ pub struct AnchorConfigration<T: Config<I>, I: 'static>(
 impl<T: Config<I>, I: 'static> AnchorConfig for AnchorConfigration<T, I> {
 	type AccountId = T::AccountId;
 	type Balance = BalanceOf<T, I>;
-	type ChainId = T::ChainId;
+	type ChainIdWithType = T::ChainIdWithType;
 	type CurrencyId = CurrencyIdOf<T, I>;
 	type Element = T::Element;
 	type LeafIndex = T::LeafIndex;
@@ -448,20 +448,20 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 
 	fn add_edge(
 		id: T::TreeId,
-		src_chain_id: T::ChainId,
+		src_chain_id_with_type: T::ChainIdWithType,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
-		T::LinkableTree::add_edge(id, src_chain_id, root, latest_leaf_index)
+		T::LinkableTree::add_edge(id, src_chain_id_with_type, root, latest_leaf_index)
 	}
 
 	fn update_edge(
 		id: T::TreeId,
-		src_chain_id: T::ChainId,
+		src_chain_id_with_type: T::ChainIdWithType,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
-		T::LinkableTree::update_edge(id, src_chain_id, root, latest_leaf_index)
+		T::LinkableTree::update_edge(id, src_chain_id_with_type, root, latest_leaf_index)
 	}
 }
 
@@ -475,11 +475,11 @@ impl<T: Config<I>, I: 'static> AnchorInspector<AnchorConfigration<T, I>> for Pal
 		Ok(())
 	}
 
-	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
-		T::LinkableTree::has_edge(id, src_chain_id)
+	fn has_edge(id: T::TreeId, src_chain_id_with_type: T::ChainIdWithType) -> bool {
+		T::LinkableTree::has_edge(id, src_chain_id_with_type)
 	}
 
-	fn get_chain_id_type() -> T::ChainId {
+	fn get_chain_id_with_type() -> T::ChainIdWithType {
 		T::LinkableTree::get_chain_id_type()
 	}
 

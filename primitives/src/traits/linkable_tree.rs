@@ -5,7 +5,7 @@ use sp_std::vec::Vec;
 pub trait LinkableTreeConfig {
 	type LeafIndex;
 	type AccountId;
-	type ChainId;
+	type ChainIdWithType;
 	type TreeId;
 	type Element;
 }
@@ -26,14 +26,14 @@ pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 	/// Add an edge to this tree
 	fn add_edge(
 		id: C::TreeId,
-		src_chain_id: C::ChainId,
+		src_id_with_type: C::ChainIdWithType,
 		root: C::Element,
 		last_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this tree
 	fn update_edge(
 		id: C::TreeId,
-		src_chain_id: C::ChainId,
+		src_id_with_type: C::ChainIdWithType,
 		root: C::Element,
 		last_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
@@ -41,8 +41,8 @@ pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 
 /// Trait for inspecting tree state
 pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
-	fn get_chain_id() -> C::ChainId;
-	fn get_chain_id_type() -> C::ChainId;
+	fn get_chain_id() -> C::ChainIdWithType;
+	fn get_chain_id_type() -> C::ChainIdWithType;
 	fn get_chain_type() -> [u8; 2];
 	/// Checks if a merkle root is in a tree's cached history or returns
 	fn is_known_root(id: C::TreeId, root: C::Element) -> Result<bool, dispatch::DispatchError>;
@@ -56,7 +56,7 @@ pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 	/// `TreeDoesntExist`
 	fn is_known_neighbor_root(
 		id: C::TreeId,
-		src_chain_id: C::ChainId,
+		src_id_with_type: C::ChainIdWithType,
 		target: C::Element,
 	) -> Result<bool, dispatch::DispatchError>;
 	/// Checks if each root from passed root array is in tree's cached history
@@ -70,11 +70,11 @@ pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 	/// `InvalidNeighborWithdrawRoot`
 	fn ensure_known_neighbor_root(
 		id: C::TreeId,
-		src_chain_id: C::ChainId,
+		src_id_with_type: C::ChainIdWithType,
 		target: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Check if this linked tree has this edge
-	fn has_edge(id: C::TreeId, src_chain_id: C::ChainId) -> bool;
+	fn has_edge(id: C::TreeId, src_id_with_type: C::ChainIdWithType) -> bool;
 	/// Check if passed number of roots is the same as max allowed edges or
 	/// returns `InvalidMerkleRoots`
 	fn ensure_max_edges(id: C::TreeId, num_roots: usize) -> Result<(), dispatch::DispatchError>;

@@ -34,7 +34,7 @@
 //! ### Terminology
 //!
 //! * **EdgeList**: A map of trees and chain ids to their edge metadata.
-//!  
+//!
 //! ### Goals
 //!
 //! The Linkable-tree in Webb is designed to make the following possible:
@@ -83,9 +83,9 @@ use sp_std::prelude::*;
 use types::*;
 use webb_primitives::{
 	traits::{linkable_tree::*, merkle_tree::*},
-	utils::compute_chain_id_type,
 	ElementTrait,
 };
+use webb_resource_id::compute_chain_id_with_type;
 pub use weights::WeightInfo;
 
 pub use pallet::*;
@@ -107,8 +107,8 @@ pub mod pallet {
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// ChainID for anchor edges
-		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+		/// ChainIdWithType for anchor edges
+		type ChainIdWithType: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 
 		/// ChainID type for this chain
 		#[pallet::constant]
@@ -116,7 +116,7 @@ pub mod pallet {
 
 		// Getter of id of the current chain
 		#[pallet::constant]
-		type ChainIdentifier: Get<Self::ChainId>;
+		type ChainId: Get<Self::ChainIdWithType>;
 
 		/// The tree
 		type Tree: TreeInterface<Self::AccountId, Self::TreeId, Self::Element>
@@ -144,8 +144,8 @@ pub mod pallet {
 		Blake2_128Concat,
 		T::TreeId,
 		Blake2_128Concat,
-		T::ChainId,
-		EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
+		T::ChainIdWithType,
+		EdgeMetadata<T::ChainIdWithType, T::Element, T::LeafIndex>,
 		ValueQuery,
 	>;
 
@@ -153,7 +153,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn linkable_tree_has_edge)]
 	pub type LinkableTreeHasEdge<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, (T::TreeId, T::ChainId), bool, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, (T::TreeId, T::ChainIdWithType), bool, ValueQuery>;
 
 	/// The map of (tree, chain id) pairs to their latest recorded merkle root
 	#[pallet::storage]
@@ -161,7 +161,7 @@ pub mod pallet {
 	pub type NeighborRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		(T::TreeId, T::ChainId),
+		(T::TreeId, T::ChainIdWithType),
 		Blake2_128Concat,
 		T::RootIndex,
 		T::Element,
@@ -171,7 +171,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn curr_neighbor_root_index)]
 	pub type CurrentNeighborRootIndex<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, (T::TreeId, T::ChainId), T::RootIndex, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, (T::TreeId, T::ChainIdWithType), T::RootIndex, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -223,7 +223,7 @@ pub struct LinkableTreeConfigration<T: Config<I>, I: 'static>(
 
 impl<T: Config<I>, I: 'static> LinkableTreeConfig for LinkableTreeConfigration<T, I> {
 	type AccountId = T::AccountId;
-	type ChainId = T::ChainId;
+	type ChainIdWithType = T::ChainIdWithType;
 	type Element = T::Element;
 	type LeafIndex = T::LeafIndex;
 	type TreeId = T::TreeId;
@@ -248,13 +248,13 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 
 	fn add_edge(
 		id: T::TreeId,
-		src_chain_id: T::ChainId,
+		src_id_with_type: T::ChainIdWithType,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
 		// ensure edge doesn't exists
 		ensure!(
-			!EdgeList::<T, I>::contains_key(id, src_chain_id),
+			!EdgeList::<T, I>::contains_key(id, src_id_with_type),
 			Error::<T, I>::EdgeAlreadyExists
 		);
 		// ensure anchor isn't at maximum edges
@@ -262,33 +262,36 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		let curr_length = EdgeList::<T, I>::iter_prefix_values(id).into_iter().count();
 		ensure!(max_edges > curr_length as u32, Error::<T, I>::TooManyEdges);
 		// craft edge
-		let e_meta = EdgeMetadata { src_chain_id, root, latest_leaf_index };
+		let e_meta = EdgeMetadata { src_id_with_type, root, latest_leaf_index };
 		// update historical neighbor list for this edge's root
-		let neighbor_root_inx = CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id));
+		let neighbor_root_inx = CurrentNeighborRootIndex::<T, I>::get((id, src_id_with_type));
 		CurrentNeighborRootIndex::<T, I>::insert(
-			(id, src_chain_id),
+			(id, src_id_with_type),
 			neighbor_root_inx + T::RootIndex::one() % T::HistoryLength::get(),
 		);
-		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_inx, root);
+		NeighborRoots::<T, I>::insert((id, src_id_with_type), neighbor_root_inx, root);
 		// Append new edge to the end of the edge list for the given tree
-		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
+		EdgeList::<T, I>::insert(id, src_id_with_type, e_meta);
 		Ok(())
 	}
 
 	fn update_edge(
 		id: T::TreeId,
-		src_chain_id: T::ChainId,
+		src_id_with_type: T::ChainIdWithType,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
-		ensure!(EdgeList::<T, I>::contains_key(id, src_chain_id), Error::<T, I>::EdgeDoesntExists);
-		let e_meta = EdgeMetadata { src_chain_id, root, latest_leaf_index };
-		let neighbor_root_inx = (CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id)) +
+		ensure!(
+			EdgeList::<T, I>::contains_key(id, src_id_with_type),
+			Error::<T, I>::EdgeDoesntExists
+		);
+		let e_meta = EdgeMetadata { src_id_with_type, root, latest_leaf_index };
+		let neighbor_root_inx = (CurrentNeighborRootIndex::<T, I>::get((id, src_id_with_type)) +
 			T::RootIndex::one()) %
 			T::HistoryLength::get();
-		CurrentNeighborRootIndex::<T, I>::insert((id, src_chain_id), neighbor_root_inx);
-		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_inx, root);
-		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
+		CurrentNeighborRootIndex::<T, I>::insert((id, src_id_with_type), neighbor_root_inx);
+		NeighborRoots::<T, I>::insert((id, src_id_with_type), neighbor_root_inx, root);
+		EdgeList::<T, I>::insert(id, src_id_with_type, e_meta);
 		Ok(())
 	}
 }
@@ -296,13 +299,14 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T, I>>
 	for Pallet<T, I>
 {
-	fn get_chain_id() -> T::ChainId {
-		T::ChainIdentifier::get()
+	fn get_chain_id() -> T::ChainIdWithType {
+		T::ChainId::get()
 	}
 
-	fn get_chain_id_type() -> T::ChainId {
-		T::ChainId::try_from(compute_chain_id_type(T::ChainIdentifier::get(), T::ChainType::get()))
-			.unwrap_or_default()
+	fn get_chain_id_type() -> T::ChainIdWithType {
+		let chain_id = T::ChainId::get().try_into().unwrap_or_default();
+		let chain_type = T::ChainType::get().try_into().unwrap_or_default();
+		T::ChainIdWithType::try_from(compute_chain_id_with_type(chain_id, chain_type)).unwrap_or_default()
 	}
 
 	fn get_chain_type() -> [u8; 2] {
@@ -333,7 +337,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 
 	fn is_known_neighbor_root(
 		tree_id: T::TreeId,
-		src_chain_id: T::ChainId,
+		src_id_with_type: T::ChainIdWithType,
 		target_root: T::Element,
 	) -> Result<bool, DispatchError> {
 		if target_root.is_zero() {
@@ -348,9 +352,9 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 			}
 		};
 
-		let curr_root_inx = CurrentNeighborRootIndex::<T, I>::get((tree_id, src_chain_id));
+		let curr_root_inx = CurrentNeighborRootIndex::<T, I>::get((tree_id, src_id_with_type));
 		let mut historical_root =
-			NeighborRoots::<T, I>::get((tree_id, src_chain_id), curr_root_inx)
+			NeighborRoots::<T, I>::get((tree_id, src_id_with_type), curr_root_inx)
 				.unwrap_or_else(|| T::Element::from_bytes(&[0; 32]));
 		if target_root == historical_root {
 			return Ok(true)
@@ -359,7 +363,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		let mut i = get_next_inx(curr_root_inx);
 
 		while i != curr_root_inx {
-			historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), i)
+			historical_root = NeighborRoots::<T, I>::get((tree_id, src_id_with_type), i)
 				.unwrap_or_else(|| T::Element::from_bytes(&[0; 32]));
 			if target_root == historical_root {
 				return Ok(true)
@@ -375,8 +379,8 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		Ok(false)
 	}
 
-	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
-		EdgeList::<T, I>::contains_key(id, src_chain_id)
+	fn has_edge(id: T::TreeId, src_id_with_type: T::ChainIdWithType) -> bool {
+		EdgeList::<T, I>::contains_key(id, src_id_with_type)
 	}
 
 	fn ensure_max_edges(id: T::TreeId, num_roots: usize) -> Result<(), DispatchError> {
@@ -403,10 +407,10 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 
 	fn ensure_known_neighbor_root(
 		id: T::TreeId,
-		src_chain_id: T::ChainId,
+		src_id_with_type: T::ChainIdWithType,
 		target: T::Element,
 	) -> Result<(), DispatchError> {
-		let is_known = Self::is_known_neighbor_root(id, src_chain_id, target)?;
+		let is_known = Self::is_known_neighbor_root(id, src_id_with_type, target)?;
 		ensure!(is_known, Error::<T, I>::InvalidNeighborWithdrawRoot);
 		Ok(())
 	}

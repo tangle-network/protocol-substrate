@@ -7,8 +7,8 @@ pub trait DemocracyGovernanceDelegate<T: SystemConfig, Proposal, Balance> {
 
 #[cfg_attr(feature = "std", derive(Debug))]
 #[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
-pub struct LinkProposal<ChainId, TreeId> {
-	pub target_chain_id: ChainId,
+pub struct LinkProposal<ChainIdWithType, TreeId> {
+	pub target_chain_id_with_type: ChainIdWithType,
 	pub target_tree_id: Option<TreeId>,
 	pub local_tree_id: TreeId,
 }

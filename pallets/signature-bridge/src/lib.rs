@@ -66,7 +66,8 @@ use sp_runtime::{
 	RuntimeDebug,
 };
 use sp_std::prelude::*;
-use webb_primitives::{signing::SigningSystem, utils::compute_chain_id_type, ResourceId};
+use webb_primitives::{signing::SigningSystem, ResourceId};
+use webb_resource_id::compute_chain_id_with_type;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -97,8 +98,8 @@ pub mod pallet {
 			+ EncodeLike
 			+ Decode
 			+ GetDispatchInfo;
-		/// ChainID for anchor edges
-		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+		/// ChainIdWithType for anchor edges
+		type ChainIdWithType: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 		/// Proposal nonce type
 		type ProposalNonce: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 		/// Signature verification utility over public key infrastructure
@@ -107,7 +108,7 @@ pub mod pallet {
 		/// This must be unique and must not collide with existing IDs within a
 		/// set of bridged chains.
 		#[pallet::constant]
-		type ChainIdentifier: Get<Self::ChainId>;
+		type ChainId: Get<Self::ChainIdWithType>;
 		/// The chain type for this chain.
 		/// This is either a standalone Substrate chain, relay chain, or parachain
 		#[pallet::constant]
@@ -129,7 +130,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn chains)]
 	pub type ChainNonces<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_256, T::ChainId, T::ProposalNonce>;
+		StorageMap<_, Blake2_256, T::ChainIdWithType, T::ProposalNonce>;
 
 	/// Utilized by the bridge software to map resource IDs to actual methods
 	#[pallet::storage]
@@ -148,14 +149,14 @@ pub mod pallet {
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// Maintainer is set
 		MaintainerSet { old_maintainer: Vec<u8>, new_maintainer: Vec<u8> },
-		/// Chain now available for transfers (chain_id)
-		ChainWhitelisted { chain_id: T::ChainId },
+		/// Chain now available for transfers (chain_id_with_type)
+		ChainWhitelisted { chain_id_with_type: T::ChainIdWithType },
 		/// Proposal has been approved
-		ProposalApproved { chain_id: T::ChainId, proposal_nonce: T::ProposalNonce },
+		ProposalApproved { chain_id_with_type: T::ChainIdWithType, proposal_nonce: T::ProposalNonce },
 		/// Execution of call succeeded
-		ProposalSucceeded { chain_id: T::ChainId, proposal_nonce: T::ProposalNonce },
+		ProposalSucceeded { chain_id_with_type: T::ChainIdWithType, proposal_nonce: T::ProposalNonce },
 		/// Execution of call failed
-		ProposalFailed { chain_id: T::ChainId, proposal_nonce: T::ProposalNonce },
+		ProposalFailed { chain_id_with_type: T::ChainIdWithType, proposal_nonce: T::ProposalNonce },
 	}
 
 	// Errors inform users that something went wrong.
@@ -163,8 +164,8 @@ pub mod pallet {
 	pub enum Error<T, I = ()> {
 		/// Account does not have correct permissions
 		InvalidPermissions,
-		/// Provided chain Id is not valid
-		InvalidChainId,
+		/// Provided chain id with type is not valid
+		InvalidChainIdWithType,
 		/// Interactions with this chain is not permitted
 		ChainNotWhitelisted,
 		/// Chain has already been enabled
@@ -270,7 +271,10 @@ pub mod pallet {
 		/// - O(1) lookup and insert
 		/// # </weight>
 		#[pallet::weight(195_000_000)]
-		pub fn whitelist_chain(origin: OriginFor<T>, id: T::ChainId) -> DispatchResultWithPostInfo {
+		pub fn whitelist_chain(
+			origin: OriginFor<T>,
+			id: T::ChainIdWithType,
+		) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::whitelist(id)
 		}
@@ -302,7 +306,7 @@ pub mod pallet {
 		#[pallet::weight((call.get_dispatch_info().weight + 195_000_000, call.get_dispatch_info().class, Pays::Yes))]
 		pub fn execute_proposal(
 			origin: OriginFor<T>,
-			src_id: T::ChainId,
+			src_id: T::ChainIdWithType,
 			call: Box<<T as Config<I>>::Proposal>,
 			proposal_data: Vec<u8>,
 			signature: Vec<u8>,
@@ -336,8 +340,10 @@ pub mod pallet {
 
 			// Ensure this chain id matches the r_id
 			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
-			let this_chain_id_type =
-				compute_chain_id_type(T::ChainIdentifier::get(), T::ChainType::get());
+			let this_chain_id_type = compute_chain_id_with_type(
+				T::ChainId::get().try_into().unwrap_or_default(),
+				T::ChainType::get().try_into().unwrap_or_default(),
+			);
 
 			ensure!(
 				this_chain_id_type == execution_chain_id_type,
@@ -369,7 +375,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Checks if a chain exists as a whitelisted destination
-	pub fn chain_whitelisted(id: T::ChainId) -> bool {
+	pub fn chain_whitelisted(id: T::ChainIdWithType) -> bool {
 		Self::chains(id) != None
 	}
 
@@ -419,20 +425,20 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Whitelist a chain ID for transfer
-	pub fn whitelist(id: T::ChainId) -> DispatchResultWithPostInfo {
+	pub fn whitelist(info: T::ChainIdWithType) -> DispatchResultWithPostInfo {
 		// Cannot whitelist this chain
 		ensure!(
-			id != T::ChainId::try_from(compute_chain_id_type(
-				T::ChainIdentifier::get(),
-				T::ChainType::get()
+			info != T::ChainIdWithType::try_from(compute_chain_id_with_type(
+				T::ChainId::get().try_into().unwrap_or_default(),
+				T::ChainType::get().try_into().unwrap_or_default()
 			))
 			.unwrap_or_default(),
-			Error::<T, I>::InvalidChainId
+			Error::<T, I>::InvalidChainIdWithType
 		);
 		// Cannot whitelist with an existing entry
-		ensure!(!Self::chain_whitelisted(id), Error::<T, I>::ChainAlreadyWhitelisted);
-		ChainNonces::<T, I>::insert(&id, T::ProposalNonce::from(0u32));
-		Self::deposit_event(Event::ChainWhitelisted { chain_id: id });
+		ensure!(!Self::chain_whitelisted(info), Error::<T, I>::ChainAlreadyWhitelisted);
+		ChainNonces::<T, I>::insert(&info, T::ProposalNonce::from(0u32));
+		Self::deposit_event(Event::ChainWhitelisted { chain_id_with_type: info });
 		Ok(().into())
 	}
 
@@ -441,15 +447,21 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	#[allow(clippy::boxed_local)]
 	/// Execute the proposal and signals the result as an event
 	fn finalize_execution(
-		src_id: T::ChainId,
+		src_id_with_type: T::ChainIdWithType,
 		nonce: T::ProposalNonce,
 		call: Box<T::Proposal>,
 	) -> DispatchResultWithPostInfo {
-		Self::deposit_event(Event::ProposalApproved { chain_id: src_id, proposal_nonce: nonce });
+		Self::deposit_event(Event::ProposalApproved {
+			chain_id_with_type: src_id_with_type,
+			proposal_nonce: nonce,
+		});
 		call.dispatch(frame_system::RawOrigin::Signed(Self::account_id()).into())
 			.map(|_| ())
 			.map_err(|e| e.error)?;
-		Self::deposit_event(Event::ProposalSucceeded { chain_id: src_id, proposal_nonce: nonce });
+		Self::deposit_event(Event::ProposalSucceeded {
+			chain_id_with_type: src_id_with_type,
+			proposal_nonce: nonce,
+		});
 		// Increment the nonce once the proposal succeeds
 		ProposalNonce::<T, I>::put(nonce);
 		Ok(().into())

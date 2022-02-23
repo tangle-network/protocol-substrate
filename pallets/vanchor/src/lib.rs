@@ -317,7 +317,7 @@ impl<T: Config<I>, I: 'static> VAnchorConfig for VAnchorConfigration<T, I> {
 	type AccountId = T::AccountId;
 	type Amount = AmountOf<T, I>;
 	type Balance = BalanceOf<T, I>;
-	type ChainId = T::ChainId;
+	type ChainIdWithType = T::ChainIdWithType;
 	type CurrencyId = CurrencyIdOf<T, I>;
 	type Element = T::Element;
 	type LeafIndex = T::LeafIndex;
@@ -483,20 +483,20 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 
 	fn add_edge(
 		id: T::TreeId,
-		src_chain_id: T::ChainId,
+		src_id_with_type: T::ChainIdWithType,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
-		T::LinkableTree::add_edge(id, src_chain_id, root, latest_leaf_index)
+		T::LinkableTree::add_edge(id, src_id_with_type, root, latest_leaf_index)
 	}
 
 	fn update_edge(
 		id: T::TreeId,
-		src_chain_id: T::ChainId,
+		src_id_with_type: T::ChainIdWithType,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 	) -> Result<(), DispatchError> {
-		T::LinkableTree::update_edge(id, src_chain_id, root, latest_leaf_index)
+		T::LinkableTree::update_edge(id, src_id_with_type, root, latest_leaf_index)
 	}
 
 	fn set_max_deposit_amount(max_deposit_amount: BalanceOf<T, I>) -> Result<(), DispatchError> {
@@ -534,8 +534,8 @@ impl<T: Config<I>, I: 'static> VAnchorInspector<VAnchorConfigration<T, I>> for P
 		Ok(())
 	}
 
-	fn has_edge(id: T::TreeId, src_chain_id: T::ChainId) -> bool {
-		T::LinkableTree::has_edge(id, src_chain_id)
+	fn has_edge(id: T::TreeId, src_id_with_type: T::ChainIdWithType) -> bool {
+		T::LinkableTree::has_edge(id, src_id_with_type)
 	}
 }
 

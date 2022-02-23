@@ -39,6 +39,9 @@ frame-benchmarking = { default-features = false, git = "https://github.com/parit
 
 hex-literal = "0.3.4"
 
+# TODO(appcypher): Adjust
+webb-resource-id = { default-features = false, git = "https://github.com/webb-tools/webb-rs.git", branch = "stephen/consolidate-utils" }
+
 [dev-dependencies]
 serde = { version = "1.0.119" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }

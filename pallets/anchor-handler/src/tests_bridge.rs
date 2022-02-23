@@ -2,7 +2,7 @@ use crate::{mock_bridge::*, types::UpdateRecord, AnchorList, Counts, UpdateRecor
 use frame_support::assert_ok;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 use pallet_linkable_tree::types::EdgeMetadata;
-use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
+use webb_resource_id::{compute_chain_id_with_type, derive_resource_id};
 
 const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 100;
@@ -11,12 +11,12 @@ const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
 
 fn make_anchor_create_proposal(
 	deposit_size: Balance,
-	src_chain_id: ChainId,
+	src_id_with_type: ChainIdWithType,
 	resource_id: &[u8; 32],
 ) -> Call {
 	Call::AnchorHandler(crate::Call::execute_anchor_create_proposal {
 		deposit_size,
-		src_chain_id,
+		src_id_with_type,
 		r_id: *resource_id,
 		max_edges: TEST_MAX_EDGES,
 		tree_depth: TEST_TREE_DEPTH,
@@ -27,7 +27,7 @@ fn make_anchor_create_proposal(
 fn make_anchor_update_proposal(
 	resource_id: &[u8; 32],
 	anchor_metadata: EdgeMetadata<
-		ChainId,
+		ChainIdWithType,
 		<Test as pallet_mt::Config>::Element,
 		<Test as pallet_mt::Config>::LeafIndex,
 	>,
@@ -38,7 +38,7 @@ fn make_anchor_update_proposal(
 	})
 }
 
-fn setup_relayers(src_id: ChainId) {
+fn setup_relayers(src_id: ChainIdWithType) {
 	// set anchors threshold
 	assert_ok!(Bridge::set_threshold(Origin::root(), TEST_THRESHOLD,));
 	// add relayers
@@ -50,7 +50,7 @@ fn setup_relayers(src_id: ChainId) {
 	assert_ok!(Bridge::whitelist_chain(Origin::root(), src_id));
 }
 // helper function to create anchor using Anchor pallet call
-fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[u8; 32]) {
+fn mock_anchor_creation_using_pallet_call(src_id_with_type: ChainIdWithType, resource_id: &[u8; 32]) {
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
@@ -59,7 +59,7 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[
 	assert_ok!(Anchor::create(Origin::root(), deposit_size, TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 	// hack: insert an entry in AnchorsList with tree-id=0
 	AnchorList::<Test>::insert(resource_id, 0);
-	Counts::<Test>::insert(src_chain_id, 0);
+	Counts::<Test>::insert(src_id_with_type, 0);
 	// make sure Tree(with id=0) exists in `pallet_mt` storage
 	assert!(<pallet_mt::Trees<Test>>::contains_key(0));
 	// check that anchor has stored `TEST_MAX_EDGES` correctly
@@ -68,10 +68,10 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[
 
 // helper function to add relayers and then make a proposal
 fn relay_anchor_update_proposal(
-	src_chain_id: ChainId,
+	src_id_with_type: ChainIdWithType,
 	resource_id: &[u8; 32],
 	prop_id: u64,
-	edge_metadata: EdgeMetadata<ChainId, Element, <Test as pallet_mt::Config>::LeafIndex>,
+	edge_metadata: EdgeMetadata<ChainIdWithType, Element, <Test as pallet_mt::Config>::LeafIndex>,
 ) {
 	// create anchor update proposal
 	let resource = b"AnchorHandler.execute_anchor_update_proposal".to_vec();
@@ -82,14 +82,14 @@ fn relay_anchor_update_proposal(
 	assert_ok!(Bridge::acknowledge_proposal(
 		Origin::signed(RELAYER_A),
 		prop_id,
-		src_chain_id,
+		src_id_with_type,
 		*resource_id,
 		Box::new(update_proposal.clone())
 	));
 	assert_ok!(Bridge::acknowledge_proposal(
 		Origin::signed(RELAYER_B),
 		prop_id,
-		src_chain_id,
+		src_id_with_type,
 		*resource_id,
 		Box::new(update_proposal)
 	));
@@ -101,13 +101,14 @@ fn relay_anchor_update_proposal(
 // `pallet-bridge`
 fn anchor_create_proposal() {
 	new_test_ext().execute_with(|| {
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_id_with_type, b"hash");
 		let prop_id = 1;
-		setup_relayers(src_chain_id);
+		setup_relayers(src_id_with_type);
 		// make anchor create proposal
 		let deposit_size = 100;
-		let create_proposal = make_anchor_create_proposal(deposit_size, src_chain_id, &resource_id);
+		let create_proposal =
+			make_anchor_create_proposal(deposit_size, src_id_with_type, &resource_id);
 		let resource = b"AnchorHandler.execute_anchor_create_proposal".to_vec();
 		// set resource id
 		assert_ok!(Bridge::set_resource(Origin::root(), resource_id, resource.clone()));
@@ -120,19 +121,19 @@ fn anchor_create_proposal() {
 		assert_ok!(Bridge::acknowledge_proposal(
 			Origin::signed(RELAYER_A),
 			prop_id,
-			src_chain_id,
+			src_id_with_type,
 			resource_id,
 			Box::new(create_proposal.clone())
 		));
 		assert_ok!(Bridge::acknowledge_proposal(
 			Origin::signed(RELAYER_B),
 			prop_id,
-			src_chain_id,
+			src_id_with_type,
 			resource_id,
 			Box::new(create_proposal.clone())
 		));
 		// make sure `bridge_pallet` storage is expected
-		let prop = Bridge::votes(src_chain_id, (prop_id, create_proposal)).unwrap();
+		let prop = Bridge::votes(src_id_with_type, (prop_id, create_proposal)).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A, RELAYER_B],
 			votes_against: vec![],
@@ -156,18 +157,18 @@ fn anchor_create_proposal() {
 // `pallet-bridge`
 fn anchor_update_proposal_edge_add_success() {
 	new_test_ext().execute_with(|| {
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_id_with_type, b"hash");
 		let prop_id = 1;
 		// create anchor update proposal
-		setup_relayers(src_chain_id);
-		mock_anchor_creation_using_pallet_call(src_chain_id, &resource_id);
+		setup_relayers(src_id_with_type);
+		mock_anchor_creation_using_pallet_call(src_id_with_type, &resource_id);
 		let root = Element::from_bytes(&[1; 32]);
 		let latest_leaf_index = 5;
-		let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index };
-		assert_eq!(0, Counts::<Test>::get(src_chain_id));
-		relay_anchor_update_proposal(src_chain_id, &resource_id, prop_id, edge_metadata.clone());
-		assert_eq!(1, Counts::<Test>::get(src_chain_id));
+		let edge_metadata = EdgeMetadata { src_id_with_type, root, latest_leaf_index };
+		assert_eq!(0, Counts::<Test>::get(src_id_with_type));
+		relay_anchor_update_proposal(src_id_with_type, &resource_id, prop_id, edge_metadata.clone());
+		assert_eq!(1, Counts::<Test>::get(src_id_with_type));
 
 		// proposal should have been voted successfully
 		// the anchor-handler callback must have been called by bridge
@@ -184,12 +185,12 @@ fn anchor_update_proposal_edge_add_success() {
 		let expected_tree_id = 0;
 		assert_eq!(
 			edge_metadata,
-			<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_chain_id)
+			<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_id_with_type)
 		);
 
 		let expected_update_record =
 			UpdateRecord { tree_id: expected_tree_id, resource_id, edge_metadata };
-		assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_chain_id, 0));
+		assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_id_with_type, 0));
 	})
 }
 
@@ -202,17 +203,17 @@ fn anchor_update_proposal_edge_add_success() {
 // `pallet-anchor-handler` proposal through `pallet-bridge`
 fn anchor_update_proposal_edge_update_success() {
 	new_test_ext().execute_with(|| {
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let resource_id = derive_resource_id(src_id_with_type, b"hash");
 		let prop_id = 1;
-		setup_relayers(src_chain_id);
-		mock_anchor_creation_using_pallet_call(src_chain_id, &resource_id);
+		setup_relayers(src_id_with_type);
+		mock_anchor_creation_using_pallet_call(src_id_with_type, &resource_id);
 		let root = Element::from_bytes(&[1; 32]);
 		let latest_leaf_index = 5;
-		let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index };
-		assert_eq!(0, Counts::<Test>::get(src_chain_id));
-		relay_anchor_update_proposal(src_chain_id, &resource_id, prop_id, edge_metadata.clone());
-		assert_eq!(1, Counts::<Test>::get(src_chain_id));
+		let edge_metadata = EdgeMetadata { src_id_with_type, root, latest_leaf_index };
+		assert_eq!(0, Counts::<Test>::get(src_id_with_type));
+		relay_anchor_update_proposal(src_id_with_type, &resource_id, prop_id, edge_metadata.clone());
+		assert_eq!(1, Counts::<Test>::get(src_id_with_type));
 		// proposal should have been voted successfully
 		// the anchor-handler callback must have been called by bridge
 		// event must be emitted in callback should exist
@@ -228,22 +229,22 @@ fn anchor_update_proposal_edge_update_success() {
 		let expected_tree_id = 0;
 		assert_eq!(
 			edge_metadata,
-			<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_chain_id)
+			<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_id_with_type)
 		);
 		let expected_update_record =
 			UpdateRecord { tree_id: expected_tree_id, resource_id, edge_metadata };
-		assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_chain_id, 0));
+		assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_id_with_type, 0));
 
 		let root = Element::from_bytes(&[2; 32]);
 		let latest_leaf_index = 10;
-		let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index };
+		let edge_metadata = EdgeMetadata { src_id_with_type, root, latest_leaf_index };
 		relay_anchor_update_proposal(
-			src_chain_id,
+			src_id_with_type,
 			&resource_id,
 			prop_id + 1,
 			edge_metadata.clone(),
 		);
-		assert_eq!(2, Counts::<Test>::get(src_chain_id));
+		assert_eq!(2, Counts::<Test>::get(src_id_with_type));
 		// proposal should have been voted successfully
 		// the anchor-handler callback must have been called by bridge
 		// event must be emitted in callback should exist
@@ -257,10 +258,10 @@ fn anchor_update_proposal_edge_update_success() {
 		);
 		assert_eq!(
 			edge_metadata,
-			<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_chain_id)
+			<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_id_with_type)
 		);
 		let expected_update_record =
 			UpdateRecord { tree_id: expected_tree_id, resource_id, edge_metadata };
-		assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_chain_id, 1));
+		assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_id_with_type, 1));
 	})
 }

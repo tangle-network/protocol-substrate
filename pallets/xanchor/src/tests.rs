@@ -10,7 +10,7 @@ use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use pallet_anchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};
 use std::{convert::TryInto, path::Path};
-use webb_primitives::utils::derive_resource_id;
+use webb_resource_id::derive_resource_id;
 use xcm_simulator::TestExt;
 
 const SEED: u32 = 0;
@@ -197,8 +197,8 @@ fn should_link_two_anchors() {
 	// now we assume both of them are linked, let's check that.
 	ParaA::execute_with(|| {
 		let exists = crate::LinkedAnchors::<parachain::Runtime, _>::iter().any(
-			|(chain_id, tree_id, target_tree_id)| {
-				chain_id == u64::from(PARAID_B) &&
+			|(chain_id_with_type, tree_id, target_tree_id)| {
+				chain_id_with_type == u64::from(PARAID_B) &&
 					tree_id == para_a_tree_id &&
 					target_tree_id == para_b_tree_id
 			},
@@ -208,8 +208,8 @@ fn should_link_two_anchors() {
 
 	ParaB::execute_with(|| {
 		let exists = crate::LinkedAnchors::<parachain::Runtime, _>::iter().any(
-			|(chain_id, tree_id, target_tree_id)| {
-				chain_id == u64::from(PARAID_A) &&
+			|(chain_id_with_type, tree_id, target_tree_id)| {
+				chain_id_with_type == u64::from(PARAID_A) &&
 					tree_id == para_b_tree_id &&
 					target_tree_id == para_a_tree_id
 			},
@@ -243,14 +243,14 @@ fn should_bridge_anchors_using_xcm() {
 	});
 
 	ParaA::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
-		let r_id = derive_resource_id(converted_chain_id_bytes, &para_a_tree_id.encode());
+		let converted_chain_id_with_type_bytes = chain_id_with_type_to_bytes::<Runtime, _>(u64::from(PARAID_B));
+		let r_id = derive_resource_id(converted_chain_id_with_type_bytes, &para_a_tree_id.encode());
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
-		let r_id = derive_resource_id(converted_chain_id_bytes, &para_b_tree_id.encode());
+		let converted_chain_id_with_type_bytes = chain_id_with_type_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		let r_id = derive_resource_id(converted_chain_id_with_type_bytes, &para_b_tree_id.encode());
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
 	});
 
@@ -282,9 +282,9 @@ fn should_bridge_anchors_using_xcm() {
 	// we should expect that the edge for ParaA is there, and the merkle root equal
 	// to the one we got from ParaA.
 	ParaB::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
-		dbg!(converted_chain_id_bytes);
-		let edge = LinkableTree::edge_list(&para_b_tree_id, converted_chain_id_bytes);
+		let converted_chain_id_with_type_bytes = chain_id_with_type_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		dbg!(converted_chain_id_with_type_bytes);
+		let edge = LinkableTree::edge_list(&para_b_tree_id, converted_chain_id_with_type_bytes);
 		assert_eq!(edge.root, para_a_root);
 		assert_eq!(edge.latest_leaf_index, 1);
 	});
@@ -408,10 +408,10 @@ fn governance_system_works() {
 	ParaA::execute_with(|| {
 		// create a link proposal, saying that we (parachain A) want to link the anchor
 		// (local_tree_id) to the anchor (target_tree_id) located on Parachain B
-		// (target_chain_id).
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
+		// (target_chain_id_with_type).
+		let converted_chain_id_with_type_bytes = chain_id_with_type_to_bytes::<Runtime, _>(u64::from(PARAID_B));
 		let payload = LinkProposal {
-			target_chain_id: converted_chain_id_bytes,
+			target_chain_id_with_type: converted_chain_id_with_type_bytes,
 			target_tree_id: Some(para_b_tree_id),
 			local_tree_id: para_a_tree_id,
 		};
@@ -423,7 +423,7 @@ fn governance_system_works() {
 		));
 		// we should see this anchor link in the pending list
 		assert_eq!(
-			XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_a_tree_id),
+			XAnchor::pending_linked_anchors(converted_chain_id_with_type_bytes, para_a_tree_id),
 			Some(para_b_tree_id),
 		);
 
@@ -447,10 +447,10 @@ fn governance_system_works() {
 	// now we do the on-chain proposal checking on chain B.
 	ParaB::execute_with(|| {
 		// we should see the anchor in the pending list.
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
-		dbg!(converted_chain_id_bytes);
+		let converted_chain_id_with_type_bytes = chain_id_with_type_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		dbg!(converted_chain_id_with_type_bytes);
 		assert_eq!(
-			XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_b_tree_id),
+			XAnchor::pending_linked_anchors(converted_chain_id_with_type_bytes, para_b_tree_id),
 			Some(para_a_tree_id),
 		);
 		// start of 2 => next referendum scheduled.
@@ -468,9 +468,12 @@ fn governance_system_works() {
 		fast_forward_to(6);
 		// at this point the proposal should be enacted and the anchors should be linked
 		// on this chain.
-		assert_eq!(XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_b_tree_id), None,);
 		assert_eq!(
-			XAnchor::linked_anchors(converted_chain_id_bytes, para_b_tree_id),
+			XAnchor::pending_linked_anchors(converted_chain_id_with_type_bytes, para_b_tree_id),
+			None,
+		);
+		assert_eq!(
+			XAnchor::linked_anchors(converted_chain_id_with_type_bytes, para_b_tree_id),
 			para_a_tree_id
 		);
 	});
@@ -492,7 +495,7 @@ fn should_fail_to_create_proposal_if_the_anchor_does_not_exist() {
 	// creating a proposal for a non-existing anchor.
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id_with_type: PARAID_B.into(),
 			target_tree_id: Some(MerkleTree::next_tree_id()),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
@@ -536,7 +539,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 	// linked.
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id_with_type: PARAID_B.into(),
 			target_tree_id: Some(para_b_tree_id),
 			local_tree_id: para_a_tree_id,
 		};
@@ -574,7 +577,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 	// create a proposal on chain A.
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id_with_type: PARAID_B.into(),
 			target_tree_id: Some(para_b_tree_id),
 			local_tree_id: para_a_tree_id,
 		};
@@ -590,7 +593,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 	// fail.
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id_with_type: PARAID_B.into(),
 			target_tree_id: Some(para_b_tree_id),
 			local_tree_id: para_a_tree_id,
 		};
@@ -610,7 +613,7 @@ fn should_fail_to_call_send_link_anchor_message_as_signed_account() {
 	// on parachain A.
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id_with_type: PARAID_B.into(),
 			target_tree_id: Some(MerkleTree::next_tree_id()),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
@@ -630,7 +633,7 @@ fn should_fail_to_call_save_link_proposal_as_signed_account() {
 	// on parachain A.
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id_with_type: PARAID_B.into(),
 			target_tree_id: Some(MerkleTree::next_tree_id()),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
@@ -675,7 +678,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 	// now creating a proposal on chain A should fail since it is already linked.
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id_with_type: PARAID_B.into(),
 			target_tree_id: Some(para_b_tree_id),
 			local_tree_id: para_a_tree_id,
 		};
@@ -705,7 +708,7 @@ fn should_fail_to_call_handle_link_anchor_message_without_anchor_being_pending()
 	// on parachain A, since this anchor is not pending.
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id_with_type: PARAID_B.into(),
 			target_tree_id: Some(para_a_tree_id),
 			local_tree_id: 0,
 		};
@@ -729,7 +732,7 @@ fn should_fail_to_call_link_anchors_as_signed_account() {
 	// on parachain A.
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id_with_type: PARAID_B.into(),
 			target_tree_id: Some(MerkleTree::next_tree_id()),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
@@ -748,7 +751,7 @@ fn should_fail_to_call_handle_link_anchors_as_signed_account() {
 	// on parachain A.
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id_with_type: PARAID_B.into(),
 			target_tree_id: Some(MerkleTree::next_tree_id()),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
@@ -787,7 +790,7 @@ fn should_fail_to_call_update_as_signed_account() {
 	ParaA::execute_with(|| {
 		let r_id = derive_resource_id(PARAID_B.into(), &MerkleTree::next_tree_id().encode());
 		let edge_metadata = EdgeMetadata {
-			src_chain_id: PARAID_B.into(),
+			src_id_with_type: PARAID_B.into(),
 			root: Element::zero(),
 			latest_leaf_index: 0,
 		};

@@ -7,7 +7,7 @@ pub trait AnchorConfig {
 	type AccountId;
 	type Balance;
 	type CurrencyId;
-	type ChainId;
+	type ChainIdWithType;
 	type TreeId;
 	type Element;
 }
@@ -49,14 +49,14 @@ pub trait AnchorInterface<C: AnchorConfig> {
 	/// Add an edge to this tree
 	fn add_edge(
 		id: C::TreeId,
-		src_chain_id: C::ChainId,
+		src_id_with_type: C::ChainIdWithType,
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this tree
 	fn update_edge(
 		id: C::TreeId,
-		src_chain_id: C::ChainId,
+		src_id_with_type: C::ChainIdWithType,
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
@@ -73,8 +73,8 @@ pub trait AnchorInspector<C: AnchorConfig> {
 		nullifier: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Check if this linked tree has this edge (for backwards compatability)
-	fn has_edge(id: C::TreeId, src_chain_id: C::ChainId) -> bool;
+	fn has_edge(id: C::TreeId, src_id_with_type: C::ChainIdWithType) -> bool;
 	/// Compute the updated chain id type for this chain
-	fn get_chain_id_type() -> C::ChainId;
+	fn get_chain_id_with_type() -> C::ChainIdWithType;
 	fn get_chain_type() -> [u8; 2];
 }

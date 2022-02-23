@@ -18,7 +18,8 @@ use sp_core::{
 	ecdsa::{self, Signature},
 	keccak_256, Pair, Public,
 };
-use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
+use webb_resource_id::{compute_chain_id_with_type, derive_resource_id};
+
 const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
 
 // const SEED: String =
@@ -69,12 +70,17 @@ fn whitelist_chain() {
 		assert_noop!(
 			Bridge::whitelist_chain(
 				Origin::root(),
-				compute_chain_id_type(ChainIdentifier::get(), SUBSTRATE_CHAIN_TYPE)
+				compute_chain_id_with_type(
+					ChainIdentifier::get().try_into().unwrap_or_default(),
+					SUBSTRATE_CHAIN_TYPE
+				)
 			),
-			Error::<Test>::InvalidChainId
+			Error::<Test>::InvalidChainIdWithType
 		);
 
-		assert_events(vec![Event::Bridge(pallet_bridge::Event::ChainWhitelisted { chain_id: 0 })]);
+		assert_events(vec![Event::Bridge(pallet_bridge::Event::ChainWhitelisted {
+			chain_id_with_type: 0,
+		})]);
 	})
 }
 
@@ -93,8 +99,8 @@ fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u
 #[test]
 fn create_proposal_tests() {
 	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let this_chain_id = compute_chain_id_type(5u32, chain_type);
+	let src_id_with_type = compute_chain_id_with_type(1u32, chain_type);
+	let this_chain_id = compute_chain_id_with_type(5u32, chain_type);
 	let r_id = derive_resource_id(this_chain_id, b"remark");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
@@ -103,7 +109,7 @@ fn create_proposal_tests() {
 	)
 	.unwrap();
 
-	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
+	new_test_ext_initialized(src_id_with_type, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let call = make_proposal(vec![10]);
 		let call_encoded = call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
@@ -115,7 +121,7 @@ fn create_proposal_tests() {
 		assert_err!(
 			Bridge::execute_proposal(
 				Origin::signed(RELAYER_A),
-				src_id,
+				src_id_with_type,
 				Box::new(call.clone()),
 				prop_data.clone(),
 				sig.0.to_vec(),
@@ -128,7 +134,7 @@ fn create_proposal_tests() {
 		// Create proposal (& vote)
 		assert_ok!(Bridge::execute_proposal(
 			Origin::signed(RELAYER_A),
-			src_id,
+			src_id_with_type,
 			Box::new(call.clone()),
 			prop_data.clone(),
 			sig.0.to_vec(),
@@ -136,11 +142,11 @@ fn create_proposal_tests() {
 
 		assert_events(vec![
 			Event::Bridge(pallet_bridge::Event::ProposalApproved {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				proposal_nonce: u32::from_be_bytes(nonce),
 			}),
 			Event::Bridge(pallet_bridge::Event::ProposalSucceeded {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				proposal_nonce: u32::from_be_bytes(nonce),
 			}),
 		]);
@@ -151,7 +157,7 @@ fn create_proposal_tests() {
 #[test]
 fn should_fail_to_execute_proposal_with_same_nonce() {
 	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
+	let src_id_with_type = compute_chain_id_type(1u32, chain_type);
 	let this_chain_id = compute_chain_id_type(5u32, chain_type);
 	let r_id = derive_resource_id(this_chain_id, b"remark");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
@@ -161,7 +167,7 @@ fn should_fail_to_execute_proposal_with_same_nonce() {
 	)
 	.unwrap();
 
-	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
+	new_test_ext_initialized(src_id_with_type, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let call = make_proposal(vec![10]);
 		let call_encoded = call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
@@ -174,7 +180,7 @@ fn should_fail_to_execute_proposal_with_same_nonce() {
 		// Create proposal (& vote)
 		assert_ok!(Bridge::execute_proposal(
 			Origin::signed(RELAYER_A),
-			src_id,
+			src_id_with_type,
 			Box::new(call.clone()),
 			prop_data.clone(),
 			sig.0.to_vec(),
@@ -182,11 +188,11 @@ fn should_fail_to_execute_proposal_with_same_nonce() {
 
 		assert_events(vec![
 			Event::Bridge(pallet_bridge::Event::ProposalApproved {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				proposal_nonce: u32::from_be_bytes(nonce),
 			}),
 			Event::Bridge(pallet_bridge::Event::ProposalSucceeded {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				proposal_nonce: u32::from_be_bytes(nonce),
 			}),
 		]);
@@ -201,7 +207,7 @@ fn should_fail_to_execute_proposal_with_same_nonce() {
 		assert_err!(
 			Bridge::execute_proposal(
 				Origin::signed(RELAYER_A),
-				src_id,
+				src_id_with_type,
 				Box::new(call.clone()),
 				prop_data.clone(),
 				sig.0.to_vec(),
@@ -214,9 +220,9 @@ fn should_fail_to_execute_proposal_with_same_nonce() {
 #[test]
 fn should_fail_when_nonce_increments_by_more_than_one() {
 	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let this_chain_id = compute_chain_id_type(5u32, chain_type);
-	let r_id = derive_resource_id(this_chain_id, b"remark");
+	let src_id_with_type = compute_chain_id_with_type(1u32, chain_type);
+	let this_chain_id_with_type = compute_chain_id_with_type(5u32, chain_type);
+	let r_id = derive_resource_id(this_chain_id_with_type, b"remark");
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -224,7 +230,7 @@ fn should_fail_when_nonce_increments_by_more_than_one() {
 	)
 	.unwrap();
 
-	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
+	new_test_ext_initialized(src_id_with_type, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let call = make_proposal(vec![10]);
 		let call_encoded = call.encode();
 		let nonce = [0u8, 0u8, 0u8, 2u8];
@@ -235,7 +241,7 @@ fn should_fail_when_nonce_increments_by_more_than_one() {
 		assert_err!(
 			Bridge::execute_proposal(
 				Origin::signed(RELAYER_A),
-				src_id,
+				src_id_with_type,
 				Box::new(call.clone()),
 				prop_data.clone(),
 				sig.0.to_vec(),

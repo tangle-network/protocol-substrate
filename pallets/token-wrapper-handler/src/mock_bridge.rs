@@ -170,12 +170,12 @@ impl pallet_token_wrapper::Config for Test {
 	type WeightInfo = ();
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
-pub type ChainId = u64;
+pub type ChainIdWithType = u64;
 
 parameter_types! {
 	pub const ProposalLifetime: u64 = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
-	pub const ChainIdentifier: u8 = 5;
+	pub const ChainId: u8 = 5;
 	pub const ChainType: [u8; 2] = [2, 0];
 }
 
@@ -183,8 +183,8 @@ type BridgeInstance = pallet_bridge::Instance1;
 impl pallet_bridge::Config<BridgeInstance> for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
+	type ChainIdWithType = ChainIdWithType;
 	type ChainId = ChainId;
-	type ChainIdentifier = ChainIdentifier;
 	type ChainType = ChainType;
 	type Event = Event;
 	type Proposal = Call;

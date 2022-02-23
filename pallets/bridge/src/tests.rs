@@ -2,7 +2,7 @@
 
 use super::{
 	mock::{
-		assert_events, new_test_ext, Balances, Bridge, Call, ChainIdentifier, Event, Origin,
+		assert_events, new_test_ext, Balances, Bridge, Call, ChainId, Event, Origin,
 		ProposalLifetime, System, Test, ENDOWED_BALANCE, RELAYER_A, RELAYER_B, RELAYER_C,
 		TEST_THRESHOLD,
 	},
@@ -10,19 +10,19 @@ use super::{
 };
 use crate::mock::new_test_ext_initialized;
 use frame_support::{assert_noop, assert_ok};
-use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
+use webb_resource_id::{compute_chain_id_with_type, derive_resource_id};
 
 use crate::{self as pallet_bridge};
 const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [0x02, 0x00];
 
 #[test]
 fn derive_ids() {
-	let chain: u64 = 0x0200aabbccdd;
-	let id = [
+	let chain_id_with_type: u64 = 0x0200aabbccdd;
+	let tree_id = [
 		0x21, 0x60, 0x5f, 0x71, 0x84, 0x5f, 0x37, 0x2a, 0x9e, 0xd8, 0x42, 0x53, 0xd2, 0xd0, 0x24,
 		0xb7, 0xb1, 0x09, 0x99, 0xf4,
 	];
-	let r_id = derive_resource_id(chain, &id);
+	let r_id = derive_resource_id(chain_id_with_type, &tree_id);
 	let expected = [
 		0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x21, 0x60, 0x5f, 0x71, 0x84, 0x5f, 0x37, 0x2a, 0x9e, 0xd8,
 		0x42, 0x53, 0xd2, 0xd0, 0x24, 0xb7, 0xb1, 0x09, 0x99, 0xf4, 0x02, 0x00, 0xaa, 0xbb, 0xcc,
@@ -104,15 +104,18 @@ fn whitelist_chain() {
 		assert!(!Bridge::chain_whitelisted(0));
 
 		assert_ok!(Bridge::whitelist_chain(Origin::root(), 0));
+
 		assert_noop!(
 			Bridge::whitelist_chain(
 				Origin::root(),
-				compute_chain_id_type(ChainIdentifier::get(), SUBSTRATE_CHAIN_TYPE)
+				compute_chain_id_with_type(ChainId::get(), SUBSTRATE_CHAIN_TYPE)
 			),
 			Error::<Test>::InvalidChainId
 		);
 
-		assert_events(vec![Event::Bridge(pallet_bridge::Event::ChainWhitelisted { chain_id: 0 })]);
+		assert_events(vec![Event::Bridge(pallet_bridge::Event::ChainWhitelisted {
+			chain_id_with_type: 0,
+		})]);
 	})
 }
 
@@ -177,11 +180,10 @@ fn make_proposal(r: Vec<u8>) -> mock::Call {
 
 #[test]
 fn create_sucessful_proposal() {
-	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(src_id, b"remark");
+	let src_id_with_type = compute_chain_id_with_type(1u32, [2u8, 0u8]);
+	let r_id = derive_resource_id(src_id_with_type, b"remark");
 
-	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
+	new_test_ext_initialized(src_id_with_type, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let prop_id = 1;
 		let proposal = make_proposal(vec![10]);
 
@@ -189,11 +191,11 @@ fn create_sucessful_proposal() {
 		assert_ok!(Bridge::acknowledge_proposal(
 			Origin::signed(RELAYER_A),
 			prop_id,
-			src_id,
+			src_id_with_type,
 			r_id,
 			Box::new(proposal.clone())
 		));
-		let prop = Bridge::votes(src_id, (prop_id, proposal.clone())).unwrap();
+		let prop = Bridge::votes(src_id_with_type, (prop_id, proposal.clone())).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A],
 			votes_against: vec![],
@@ -206,11 +208,11 @@ fn create_sucessful_proposal() {
 		assert_ok!(Bridge::reject_proposal(
 			Origin::signed(RELAYER_B),
 			prop_id,
-			src_id,
+			src_id_with_type,
 			r_id,
 			Box::new(proposal.clone())
 		));
-		let prop = Bridge::votes(src_id, (prop_id, proposal.clone())).unwrap();
+		let prop = Bridge::votes(src_id_with_type, (prop_id, proposal.clone())).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A],
 			votes_against: vec![RELAYER_B],
@@ -223,11 +225,11 @@ fn create_sucessful_proposal() {
 		assert_ok!(Bridge::acknowledge_proposal(
 			Origin::signed(RELAYER_C),
 			prop_id,
-			src_id,
+			src_id_with_type,
 			r_id,
 			Box::new(proposal.clone())
 		));
-		let prop = Bridge::votes(src_id, (prop_id, proposal)).unwrap();
+		let prop = Bridge::votes(src_id_with_type, (prop_id, proposal)).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A, RELAYER_C],
 			votes_against: vec![RELAYER_B],
@@ -238,26 +240,26 @@ fn create_sucessful_proposal() {
 
 		assert_events(vec![
 			Event::Bridge(pallet_bridge::Event::VoteFor {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				deposit_nonce: prop_id,
 				who: RELAYER_A,
 			}),
 			Event::Bridge(pallet_bridge::Event::VoteAgainst {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				deposit_nonce: prop_id,
 				who: RELAYER_B,
 			}),
 			Event::Bridge(pallet_bridge::Event::VoteFor {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				deposit_nonce: prop_id,
 				who: RELAYER_C,
 			}),
 			Event::Bridge(pallet_bridge::Event::ProposalApproved {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				deposit_nonce: prop_id,
 			}),
 			Event::Bridge(pallet_bridge::Event::ProposalSucceeded {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				deposit_nonce: prop_id,
 			}),
 		]);
@@ -266,11 +268,10 @@ fn create_sucessful_proposal() {
 
 #[test]
 fn create_unsucessful_proposal() {
-	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(src_id, b"transfer");
+	let src_id_with_type = compute_chain_id_with_type(1u32, [2u8, 0u8]);
+	let r_id = derive_resource_id(src_id_with_type, b"transfer");
 
-	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
+	new_test_ext_initialized(src_id_with_type, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let prop_id = 1;
 		let proposal = make_proposal(vec![11]);
 
@@ -278,11 +279,11 @@ fn create_unsucessful_proposal() {
 		assert_ok!(Bridge::acknowledge_proposal(
 			Origin::signed(RELAYER_A),
 			prop_id,
-			src_id,
+			src_id_with_type,
 			r_id,
 			Box::new(proposal.clone())
 		));
-		let prop = Bridge::votes(src_id, (prop_id, proposal.clone())).unwrap();
+		let prop = Bridge::votes(src_id_with_type, (prop_id, proposal.clone())).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A],
 			votes_against: vec![],
@@ -295,11 +296,11 @@ fn create_unsucessful_proposal() {
 		assert_ok!(Bridge::reject_proposal(
 			Origin::signed(RELAYER_B),
 			prop_id,
-			src_id,
+			src_id_with_type,
 			r_id,
 			Box::new(proposal.clone())
 		));
-		let prop = Bridge::votes(src_id, (prop_id, proposal.clone())).unwrap();
+		let prop = Bridge::votes(src_id_with_type, (prop_id, proposal.clone())).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A],
 			votes_against: vec![RELAYER_B],
@@ -312,11 +313,11 @@ fn create_unsucessful_proposal() {
 		assert_ok!(Bridge::reject_proposal(
 			Origin::signed(RELAYER_C),
 			prop_id,
-			src_id,
+			src_id_with_type,
 			r_id,
 			Box::new(proposal.clone())
 		));
-		let prop = Bridge::votes(src_id, (prop_id, proposal)).unwrap();
+		let prop = Bridge::votes(src_id_with_type, (prop_id, proposal)).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A],
 			votes_against: vec![RELAYER_B, RELAYER_C],
@@ -330,22 +331,22 @@ fn create_unsucessful_proposal() {
 
 		assert_events(vec![
 			Event::Bridge(pallet_bridge::Event::VoteFor {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				deposit_nonce: prop_id,
 				who: RELAYER_A,
 			}),
 			Event::Bridge(pallet_bridge::Event::VoteAgainst {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				deposit_nonce: prop_id,
 				who: RELAYER_B,
 			}),
 			Event::Bridge(pallet_bridge::Event::VoteAgainst {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				deposit_nonce: prop_id,
 				who: RELAYER_C,
 			}),
 			Event::Bridge(pallet_bridge::Event::ProposalRejected {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				deposit_nonce: prop_id,
 			}),
 		]);
@@ -354,11 +355,10 @@ fn create_unsucessful_proposal() {
 
 #[test]
 fn execute_after_threshold_change() {
-	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(src_id, b"transfer");
+	let src_id_with_type = compute_chain_id_with_type(1u32, [2u8, 0u8]);
+	let r_id = derive_resource_id(src_id_with_type, b"transfer");
 
-	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
+	new_test_ext_initialized(src_id_with_type, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let prop_id = 1;
 		let proposal = make_proposal(vec![11]);
 
@@ -366,11 +366,11 @@ fn execute_after_threshold_change() {
 		assert_ok!(Bridge::acknowledge_proposal(
 			Origin::signed(RELAYER_A),
 			prop_id,
-			src_id,
+			src_id_with_type,
 			r_id,
 			Box::new(proposal.clone())
 		));
-		let prop = Bridge::votes(src_id, (prop_id, proposal.clone())).unwrap();
+		let prop = Bridge::votes(src_id_with_type, (prop_id, proposal.clone())).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A],
 			votes_against: vec![],
@@ -386,11 +386,11 @@ fn execute_after_threshold_change() {
 		assert_ok!(Bridge::eval_vote_state(
 			Origin::signed(RELAYER_A),
 			prop_id,
-			src_id,
+			src_id_with_type,
 			Box::new(proposal.clone())
 		));
 
-		let prop = Bridge::votes(src_id, (prop_id, proposal)).unwrap();
+		let prop = Bridge::votes(src_id_with_type, (prop_id, proposal)).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A],
 			votes_against: vec![],
@@ -404,17 +404,17 @@ fn execute_after_threshold_change() {
 
 		assert_events(vec![
 			Event::Bridge(pallet_bridge::Event::VoteFor {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				deposit_nonce: prop_id,
 				who: RELAYER_A,
 			}),
 			Event::Bridge(pallet_bridge::Event::RelayerThresholdChanged { new_threshold: 1 }),
 			Event::Bridge(pallet_bridge::Event::ProposalApproved {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				deposit_nonce: prop_id,
 			}),
 			Event::Bridge(pallet_bridge::Event::ProposalSucceeded {
-				chain_id: src_id,
+				chain_id_with_type: src_id_with_type,
 				deposit_nonce: prop_id,
 			}),
 		]);
@@ -423,11 +423,10 @@ fn execute_after_threshold_change() {
 
 #[test]
 fn proposal_expires() {
-	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(src_id, b"remark");
+	let src_id_with_type = compute_chain_id_with_type(1u32, [2u8, 0u8]);
+	let r_id = derive_resource_id(src_id_with_type, b"remark");
 
-	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
+	new_test_ext_initialized(src_id_with_type, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let prop_id = 1;
 		let proposal = make_proposal(vec![10]);
 
@@ -435,11 +434,11 @@ fn proposal_expires() {
 		assert_ok!(Bridge::acknowledge_proposal(
 			Origin::signed(RELAYER_A),
 			prop_id,
-			src_id,
+			src_id_with_type,
 			r_id,
 			Box::new(proposal.clone())
 		));
-		let prop = Bridge::votes(src_id, (prop_id, proposal.clone())).unwrap();
+		let prop = Bridge::votes(src_id_with_type, (prop_id, proposal.clone())).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A],
 			votes_against: vec![],
@@ -456,7 +455,7 @@ fn proposal_expires() {
 			Bridge::reject_proposal(
 				Origin::signed(RELAYER_B),
 				prop_id,
-				src_id,
+				src_id_with_type,
 				r_id,
 				Box::new(proposal.clone())
 			),
@@ -464,7 +463,7 @@ fn proposal_expires() {
 		);
 
 		// Proposal state should remain unchanged
-		let prop = Bridge::votes(src_id, (prop_id, proposal.clone())).unwrap();
+		let prop = Bridge::votes(src_id_with_type, (prop_id, proposal.clone())).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A],
 			votes_against: vec![],
@@ -478,12 +477,12 @@ fn proposal_expires() {
 			Bridge::eval_vote_state(
 				Origin::signed(RELAYER_C),
 				prop_id,
-				src_id,
+				src_id_with_type,
 				Box::new(proposal.clone())
 			),
 			Error::<Test>::ProposalExpired
 		);
-		let prop = Bridge::votes(src_id, (prop_id, proposal)).unwrap();
+		let prop = Bridge::votes(src_id_with_type, (prop_id, proposal)).unwrap();
 		let expected = ProposalVotes {
 			votes_for: vec![RELAYER_A],
 			votes_against: vec![],
@@ -493,7 +492,7 @@ fn proposal_expires() {
 		assert_eq!(prop, expected);
 
 		assert_events(vec![Event::Bridge(pallet_bridge::Event::VoteFor {
-			chain_id: src_id,
+			chain_id_with_type: src_id_with_type,
 			deposit_nonce: prop_id,
 			who: RELAYER_A,
 		})]);

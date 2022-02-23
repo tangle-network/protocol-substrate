@@ -5,9 +5,8 @@ use ark_crypto_primitives::commitment;
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_circuits::setup::common::setup_keys;
 use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
-use webb_primitives::{
-	merkle_tree::TreeInspector, utils::compute_chain_id_type, AccountId, ElementTrait,
-};
+use webb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
+use webb_resource_id::compute_chain_id_with_type;
 
 use codec::Encode;
 
@@ -166,7 +165,7 @@ fn anchor_works() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -184,7 +183,7 @@ fn anchor_works() {
 			relayer_bytes,
 			commitment_bytes,
 			pk_bytes,
-			src_chain_id,
+			src_id_with_type,
 			fee_value,
 			refund_value,
 		);
@@ -233,7 +232,7 @@ fn anchor_works_with_wasm_utils() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -252,7 +251,7 @@ fn anchor_works_with_wasm_utils() {
 				relayer_bytes,
 				commitment_bytes,
 				pk_bytes,
-				src_chain_id.into(),
+				src_id_with_type.into(),
 				fee_value,
 				refund_value,
 			);
@@ -301,7 +300,7 @@ fn double_spending_should_fail() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -319,7 +318,7 @@ fn double_spending_should_fail() {
 			relayer_bytes,
 			commitment_bytes,
 			pk_bytes,
-			src_chain_id,
+			src_id_with_type,
 			fee_value,
 			refund_value,
 		);
@@ -381,7 +380,7 @@ fn should_fail_when_invalid_merkle_roots() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -400,7 +399,7 @@ fn should_fail_when_invalid_merkle_roots() {
 				relayer_bytes,
 				commitment_bytes,
 				pk_bytes,
-				src_chain_id,
+				src_id_with_type,
 				fee_value,
 				refund_value,
 			);
@@ -446,7 +445,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -465,7 +464,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 				relayer_bytes,
 				commitment_bytes,
 				pk_bytes,
-				src_chain_id,
+				src_id_with_type,
 				fee_value,
 				refund_value,
 			);
@@ -507,7 +506,7 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -525,7 +524,7 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 			relayer_bytes,
 			commitment_bytes,
 			pk_bytes,
-			src_chain_id,
+			src_id_with_type,
 			fee_value,
 			refund_value,
 		);
@@ -565,7 +564,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -583,7 +582,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 			relayer_bytes,
 			commitment_bytes,
 			pk_bytes,
-			src_chain_id,
+			src_id_with_type,
 			fee_value,
 			refund_value,
 		);
@@ -624,7 +623,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 
 		// inputs
 		let tree_id = create_anchor(0);
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -642,7 +641,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 			relayer_bytes,
 			commitment_bytes,
 			pk_bytes,
-			src_chain_id,
+			src_id_with_type,
 			fee_value,
 			refund_value,
 		);
@@ -704,7 +703,7 @@ fn anchor_works_for_pool_tokens() {
 
 		// inputs
 		let tree_id = create_anchor(pool_share_id);
-		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
+		let src_id_with_type = compute_chain_id_with_type(1u32, SUBSTRATE_CHAIN_TYPE);
 		let sender_account_id = account::<AccountId>("", 1, SEED);
 		let recipient_account_id = account::<AccountId>("", 2, SEED);
 		let relayer_account_id = account::<AccountId>("", 0, SEED);
@@ -757,7 +756,7 @@ fn anchor_works_for_pool_tokens() {
 			relayer_bytes,
 			commitment_bytes,
 			pk_bytes,
-			src_chain_id,
+			src_id_with_type,
 			fee_value,
 			refund_value,
 		);

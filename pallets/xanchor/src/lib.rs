@@ -83,9 +83,9 @@ use pallet_linkable_tree::types::EdgeMetadata;
 use sp_std::prelude::*;
 use webb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
-	utils::{self, compute_chain_id_type},
 	ResourceId,
 };
+use webb_resource_id::{compute_chain_id_with_type, derive_resource_id, parse_resource_id};
 use xcm::latest::prelude::*;
 
 #[cfg(test)]
@@ -98,19 +98,20 @@ pub mod types;
 pub use pallet::*;
 use types::*;
 
-pub type ChainIdOf<T, I> = <T as pallet_linkable_tree::Config<I>>::ChainId;
+pub type ChainIdWithTypeOf<T, I> = <T as pallet_linkable_tree::Config<I>>::ChainIdWithType;
 pub type ElementOf<T, I> = <T as pallet_mt::Config<I>>::Element;
 pub type TreeIdOf<T, I> = <T as pallet_mt::Config<I>>::TreeId;
 pub type LeafIndexOf<T, I> = <T as pallet_mt::Config<I>>::LeafIndex;
-pub type EdgeMetadataOf<T, I> = EdgeMetadata<ChainIdOf<T, I>, ElementOf<T, I>, LeafIndexOf<T, I>>;
-pub type LinkProposalOf<T, I> = LinkProposal<ChainIdOf<T, I>, TreeIdOf<T, I>>;
+pub type EdgeMetadataOf<T, I> =
+	EdgeMetadata<ChainIdWithTypeOf<T, I>, ElementOf<T, I>, LeafIndexOf<T, I>>;
+pub type LinkProposalOf<T, I> = LinkProposal<ChainIdWithTypeOf<T, I>, TreeIdOf<T, I>>;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use frame_support::transactional;
 	use pallet_anchor::BalanceOf;
-	use webb_primitives::utils::{self, compute_chain_id_type};
+	use webb_primitives::utils;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -143,7 +144,7 @@ pub mod pallet {
 	}
 	/// The map of *eventually* linked anchors cross other chains.
 	///
-	/// * Key1: [T::ChainId] -> Other chain id (ParachainId).
+	/// * Key1: [T::ChainIdWithType] -> Other chain id (ParachainId).
 	/// * Key2: [T::TreeId] -> Local Anchor's tree id.
 	/// * Value: [Option<T::TreeId>] -> Other chain's Anchor's tree id (a la
 	/// `RemoteAnchor`) or empty, in case if we don't know yet the target tree
@@ -153,7 +154,7 @@ pub mod pallet {
 	pub type PendingLinkedAnchors<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		T::ChainId,
+		T::ChainIdWithType,
 		Blake2_128Concat,
 		T::TreeId,
 		Option<T::TreeId>,
@@ -162,7 +163,7 @@ pub mod pallet {
 
 	/// The map of linked anchors cross other chains.
 	///
-	/// * Key1: [T::ChainId] -> Other chain id (ParachainId).
+	/// * Key1: [T::ChainIdWithType] -> Other chain id (ParachainId).
 	/// * Key2: [T::TreeId] -> Local Anchor's tree id.
 	/// * Value: [T::TreeId] -> Other chain's Anchor's tree id (a la
 	/// `RemoteAnchor`).
@@ -171,7 +172,7 @@ pub mod pallet {
 	pub type LinkedAnchors<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		T::ChainId,
+		T::ChainIdWithType,
 		Blake2_128Concat,
 		T::TreeId,
 		T::TreeId,
@@ -231,7 +232,7 @@ pub mod pallet {
 			// Then we check if it is not linked to the other chain already.
 			ensure!(
 				!LinkedAnchors::<T, I>::contains_key(
-					payload.target_chain_id,
+					payload.target_chain_id_with_type,
 					payload.local_tree_id
 				),
 				Error::<T, I>::ResourceIsAlreadyAnchored
@@ -239,7 +240,7 @@ pub mod pallet {
 			// We double check again, if there is not pending link for this.
 			ensure!(
 				!PendingLinkedAnchors::<T, I>::contains_key(
-					payload.target_chain_id,
+					payload.target_chain_id_with_type,
 					payload.local_tree_id
 				),
 				Error::<T, I>::AnchorLinkIsAlreadyPending
@@ -247,10 +248,10 @@ pub mod pallet {
 			// TODO: Ensure the target chain ID has the updated chain ID type encoded in it.
 			// TODO: Ensure that the chain type in the target chain ID matches our chain type.
 			// TODO: Implement get_chain_type, should return [u8; 2]
-			// ensure!(get_chain_type(payload.target_chain_id) == T::Anchor::get_chain_type(),
+			// ensure!(get_chain_type(payload.target_chain_id_with_type) == T::Anchor::get_chain_type(),
 			// Error::<T, I>::InvalidChainType); Add the proposal to the pending link storage.
 			PendingLinkedAnchors::<T, I>::insert(
-				payload.target_chain_id,
+				payload.target_chain_id_with_type,
 				payload.local_tree_id,
 				payload.target_tree_id,
 			);
@@ -280,10 +281,10 @@ pub mod pallet {
 			// The proposal to link anchors on this chain has passed. We now need to
 			// signal the other chain to start a link proposal on that chain too.
 			// TODO: Ensure the the parachain target chain ID has the same chain type
-			let other_para_id = chain_id_to_para_id::<T, I>(payload.target_chain_id);
+			let other_para_id = chain_id_with_type_to_para_id::<T, I>(payload.target_chain_id_with_type);
 			let my_para_id = T::ParaId::get();
 			let payload = LinkProposal {
-				target_chain_id: para_id_to_chain_id::<T, I>(my_para_id),
+				target_chain_id_with_type: para_id_to_chain_id_with_type::<T, I>(my_para_id),
 				..payload
 			};
 			let save_link_proposal = Transact {
@@ -320,7 +321,7 @@ pub mod pallet {
 			payload: LinkProposalOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
-			let caller_chain_id = para_id_to_chain_id::<T, I>(para);
+			let caller_chain_id_with_type = para_id_to_chain_id_with_type::<T, I>(para);
 			// Now we are on the other chain (if you look at it from the caller point of view)
 			// We first check if the requested anchor exists (if any).
 			let my_tree_id = match payload.target_tree_id {
@@ -335,17 +336,17 @@ pub mod pallet {
 			};
 			// Next, we check if the anchor is not linked to the local chain already.
 			ensure!(
-				!LinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
+				!LinkedAnchors::<T, I>::contains_key(caller_chain_id_with_type, my_tree_id),
 				Error::<T, I>::ResourceIsAlreadyAnchored
 			);
 			// We double check again if there is not a pending link for this anchor/proposal.
 			ensure!(
-				!PendingLinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
+				!PendingLinkedAnchors::<T, I>::contains_key(caller_chain_id_with_type, my_tree_id),
 				Error::<T, I>::AnchorLinkIsAlreadyPending
 			);
 			// Otherwise we save the link proposal.
 			PendingLinkedAnchors::<T, I>::insert(
-				caller_chain_id,
+				caller_chain_id_with_type,
 				my_tree_id,
 				Some(payload.local_tree_id),
 			);
@@ -380,7 +381,7 @@ pub mod pallet {
 			};
 			// Double check that it is already in the pending link storage.
 			ensure!(
-				PendingLinkedAnchors::<T, I>::contains_key(payload.target_chain_id, my_tree_id),
+				PendingLinkedAnchors::<T, I>::contains_key(payload.target_chain_id_with_type, my_tree_id),
 				Error::<T, I>::AnchorLinkNotFound
 			);
 			// Finally, we create the on-chain proposal that when passed will link the
@@ -406,18 +407,18 @@ pub mod pallet {
 			// At this point both chains agress to link the anchors.
 			// so we link them locally, and also signal back to the other chain that
 			// requested the link that the link process is done.
-			let other_para_id = chain_id_to_para_id::<T, I>(payload.target_chain_id);
+			let other_para_id = chain_id_with_type_to_para_id::<T, I>(payload.target_chain_id_with_type);
 			ensure!(
 				PendingLinkedAnchors::<T, I>::contains_key(
-					payload.target_chain_id,
+					payload.target_chain_id_with_type,
 					payload.local_tree_id
 				),
 				Error::<T, I>::AnchorLinkNotFound,
 			);
 			// Now we can remove the pending linked anchor.
-			PendingLinkedAnchors::<T, I>::remove(payload.target_chain_id, payload.local_tree_id);
-			let r_id = utils::derive_resource_id(
-				payload.target_chain_id.try_into().unwrap_or_default(),
+			PendingLinkedAnchors::<T, I>::remove(payload.target_chain_id_with_type, payload.local_tree_id);
+			let r_id = derive_resource_id(
+				payload.target_chain_id_with_type.try_into().unwrap_or_default(),
 				&payload.local_tree_id.encode(),
 			);
 			// unwrap here is safe, since we are sure that it has the value of the tree id.
@@ -446,7 +447,7 @@ pub mod pallet {
 			payload: LinkProposalOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
-			let caller_chain_id = para_id_to_chain_id::<T, I>(para);
+			let caller_chain_id_with_type = para_id_to_chain_id_with_type::<T, I>(para);
 			// get the local tree id, it should be in the target_tree_id.
 			let my_tree_id = match payload.target_tree_id {
 				Some(tree_id) => {
@@ -459,13 +460,13 @@ pub mod pallet {
 			// started the link process. This means that we should find the anchor in the linked
 			// anchors list.
 			ensure!(
-				PendingLinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
+				PendingLinkedAnchors::<T, I>::contains_key(caller_chain_id_with_type, my_tree_id),
 				Error::<T, I>::AnchorLinkNotFound,
 			);
 			// Now we can remove the pending linked anchor.
-			PendingLinkedAnchors::<T, I>::remove(caller_chain_id, my_tree_id);
-			let r_id = utils::derive_resource_id(
-				caller_chain_id.try_into().unwrap_or_default(),
+			PendingLinkedAnchors::<T, I>::remove(caller_chain_id_with_type, my_tree_id);
+			let r_id = derive_resource_id(
+				caller_chain_id_with_type.try_into().unwrap_or_default(),
 				&my_tree_id.encode(),
 			);
 			let target_tree_id = payload.local_tree_id;
@@ -515,18 +516,19 @@ pub mod pallet {
 			metadata: EdgeMetadataOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
-			let caller_chain_id =
-				compute_chain_id_type(u32::from(para), T::Anchor::get_chain_type());
-			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
+			let caller_chain_id_with_type =
+				compute_chain_id_with_type(u32::from(para), T::Anchor::get_chain_type());
+			let (tree_id, r_chain_id_with_type) = parse_resource_id(r_id);
 			// double check that the caller is the same as the chain id of the resource
 			// also the the same from the metadata.
-			let src_chain_id: u64 = metadata.src_chain_id.try_into().unwrap_or_default();
-			let r_chain_id: u64 = r_chain_id.try_into().unwrap_or_default();
+			let src_id_with_type: u64 = metadata.src_id_with_type.try_into().unwrap_or_default();
+			let r_chain_id_with_type: u64 = r_chain_id_with_type.try_into().unwrap_or_default();
 			ensure!(
-				caller_chain_id == src_chain_id && caller_chain_id == r_chain_id,
+				caller_chain_id_with_type == src_id_with_type && caller_chain_id_with_type == r_chain_id_with_type,
 				Error::<T, I>::InvalidPermissions
 			);
 			// and finally, ensure that the anchor exists
+			let tree_id = T::TreeId::decode(&mut &tree_id[..]).unwrap_or_default();
 			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 			// now we can update the anchor
 			Self::update_anchor(tree_id, metadata)?;
@@ -540,8 +542,12 @@ pub mod pallet {
 			metadata: EdgeMetadataOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
-			ensure!(metadata.src_chain_id == chain_id, Error::<T, I>::InvalidPermissions);
+			let (tree_id, chain_id_with_type) = parse_resource_id(r_id);
+
+			let tree_id = T::TreeId::decode(&mut &tree_id[..]).unwrap_or_default();
+			let chain_id_with_type = T::ChainIdWithType::try_from(chain_id_with_type).unwrap_or_default();
+
+			ensure!(metadata.src_id_with_type == chain_id_with_type, Error::<T, I>::InvalidPermissions);
 			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 			Self::update_anchor(tree_id, metadata)?;
 			Ok(().into())
@@ -567,23 +573,25 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		target_tree_id: T::TreeId,
 	) -> DispatchResultWithPostInfo {
 		// extract the resource id information
-		let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
+		let (mut tree_id, mut chain_id_with_type) = parse_resource_id(r_id);
+		let tree_id = T::TreeId::decode(&mut &tree_id[..]).unwrap_or_default();
+		let chain_id_with_type = T::ChainIdWithType::try_from(chain_id_with_type).unwrap_or_default();
 		println!("register_new_resource_id");
 		println!("tree_id: {:?}", tree_id);
-		println!("chain_id: {:?}", chain_id);
+		println!("chain_id_with_type: {:?}", chain_id_with_type);
 		// and we need to also ensure that the anchor exists
 		ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 		// and not already anchored/linked
 		ensure!(
-			!LinkedAnchors::<T, I>::contains_key(chain_id, tree_id),
+			!LinkedAnchors::<T, I>::contains_key(chain_id_with_type, tree_id),
 			Error::<T, I>::ResourceIsAlreadyAnchored
 		);
 		// finally, register the resource id
-		LinkedAnchors::<T, I>::insert(chain_id, tree_id, target_tree_id);
+		LinkedAnchors::<T, I>::insert(chain_id_with_type, tree_id, target_tree_id);
 		// also, add the new edge to the anchor
 		Self::update_anchor(
 			tree_id,
-			EdgeMetadata { src_chain_id: chain_id, ..Default::default() },
+			EdgeMetadata { src_id_with_type: chain_id_with_type, ..Default::default() },
 		)?;
 		Ok(().into())
 	}
@@ -592,10 +600,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		tree_id: T::TreeId,
 		metadata: EdgeMetadataOf<T, I>,
 	) -> DispatchResultWithPostInfo {
-		if T::Anchor::has_edge(tree_id, metadata.src_chain_id) {
+		if T::Anchor::has_edge(tree_id, metadata.src_id_with_type) {
 			T::Anchor::update_edge(
 				tree_id,
-				metadata.src_chain_id,
+				metadata.src_id_with_type,
 				metadata.root,
 				metadata.latest_leaf_index,
 			)?;
@@ -605,7 +613,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		} else {
 			T::Anchor::add_edge(
 				tree_id,
-				metadata.src_chain_id,
+				metadata.src_id_with_type,
 				metadata.root,
 				metadata.latest_leaf_index,
 			)?;
@@ -641,8 +649,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let my_para_id = T::ParaId::get();
 		// and construct the metadata
 		let metadata = EdgeMetadata {
-			src_chain_id: para_id_to_chain_id::<T, I>(my_para_id),
-			//src_chain_id: my
+			src_id_with_type: para_id_to_chain_id_with_type::<T, I>(my_para_id),
+			//src_id_with_type: my
 			root,
 			latest_leaf_index,
 		};
@@ -657,18 +665,18 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// 5. and finally, dispatch the update call to other parachain.
 		for edge in edges {
 			// first, we get the target chain tree id
-			let other_chain_id = edge.src_chain_id;
-			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id, tree_id);
-			let my_chain_id = metadata.src_chain_id;
+			let other_chain_id_with_type = edge.src_id_with_type;
+			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id_with_type, tree_id);
+			let my_chain_id_with_type = metadata.src_id_with_type;
 
-			// target_tree_id + my_chain_id
+			// target_tree_id + my_chain_id_with_type
 			// TODO: Document this clearly
-			let r_id = utils::derive_resource_id(
-				my_chain_id.try_into().unwrap_or_default(),
+			let r_id = derive_resource_id(
+				my_chain_id_with_type.try_into().unwrap_or_default(),
 				&target_tree_id.encode(),
 			);
 
-			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
+			let other_para_id = chain_id_with_type_to_para_id::<T, I>(other_chain_id_with_type);
 			let update_edge = Transact {
 				// we should keep using the OriginKind::Native here
 				// as that is the only origin type that gives us the information about
@@ -713,26 +721,30 @@ impl<T: Config<I>, I: 'static> PostDepositHook<T, I> for Pallet<T, I> {
 }
 
 #[inline(always)]
-pub fn chain_id_to_para_id<T: Config<I>, I: 'static>(chain_id: T::ChainId) -> ParaId {
+pub fn chain_id_with_type_to_para_id<T: Config<I>, I: 'static>(chain_id_with_type: T::ChainIdWithType) -> ParaId {
 	// First convert chain ID into a u64
-	let chain_id_u64: u64 = chain_id.try_into().unwrap_or_default();
+	let chain_id_with_type_u64: u64 = chain_id_with_type.try_into().unwrap_or_default();
 	// Next convert into big-endian byte representation
-	let chain_id_bytes: [u8; 8] = chain_id_u64.to_be_bytes();
+	let chain_id_with_type_bytes: [u8; 8] = chain_id_with_type_u64.to_be_bytes();
 	// Create a 4-byte para id byte array
 	let mut para_id_bytes = [0u8; 4];
-	// Copy the last 4 bytes of the chain_id which contains the untyped chain id
-	para_id_bytes.copy_from_slice(&chain_id_bytes[4..8]);
+	// Copy the last 4 bytes of the chain_id_with_type which contains the untyped chain id
+	para_id_bytes.copy_from_slice(&chain_id_with_type_bytes[4..8]);
 	// Finally convert these bytes into a u32 and ParaId
 	ParaId::from(u32::from_be_bytes(para_id_bytes))
 }
 
 #[inline(always)]
-pub fn para_id_to_chain_id<T: Config<I>, I: 'static>(para_id: ParaId) -> T::ChainId {
-	T::ChainId::try_from(compute_chain_id_type(u32::from(para_id), T::Anchor::get_chain_type()))
-		.unwrap_or_default()
+pub fn para_id_to_chain_id_with_type<T: Config<I>, I: 'static>(para_id: ParaId) -> T::ChainIdWithType {
+	T::ChainIdWithType::try_from(compute_chain_id_with_type(
+		u32::from(para_id),
+		T::Anchor::get_chain_type(),
+	))
+	.unwrap_or_default()
 }
 
-pub fn chain_id_to_bytes<T: Config<I>, I: 'static>(chain_id: T::ChainId) -> T::ChainId {
-	T::ChainId::try_from(compute_chain_id_type(chain_id, T::Anchor::get_chain_type()))
-		.unwrap_or_default()
-}
+// pub fn chain_id_with_type_to_bytes<T: Config<I>, I: 'static>(chain_id_with_type: T::ChainId) ->
+// T::ChainIdWithType { 	let chain_id_with_type = T::ChainIdWithType::Get().try_into().unwrap_or_default();
+// 	T::ChainIdWithType::try_from(compute_chain_id_with_type(chain_id, T::Anchor::get_chain_type()))
+// 		.unwrap_or_default()
+// }

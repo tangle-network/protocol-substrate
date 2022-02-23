@@ -31,6 +31,9 @@ hex-literal = "0.3.4"
 #Optional dependencies
 frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16", optional = true}
 
+# TODO(appcypher): Adjust
+webb-resource-id = { default-features = false, git = "https://github.com/webb-tools/webb-rs.git", branch = "stephen/consolidate-utils" }
+
 [dev-dependencies]
 orml-currencies = {path = "../../open-runtime-module-library/currencies", default-features = false}
 orml-tokens = {path = "../../open-runtime-module-library/tokens", default-features = false}

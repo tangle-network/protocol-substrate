@@ -21,7 +21,7 @@ pub type AccountId = u64;
 pub type Balance = u128;
 pub type BlockNumber = u64;
 pub type CurrencyId = u32;
-pub type ChainId = u64;
+pub type ChainIdWithType = u64;
 /// Type for storing the id of an asset.
 pub type AssetId = u32;
 /// Signed version of Balance
@@ -234,7 +234,7 @@ parameter_types! {
 	pub const HistoryLength: u32 = 30;
 	// Substrate standalone chain ID type
 	pub const ChainType: [u8; 2] = [2, 0];
-	pub const ChainIdentifier: u32 = 5;
+	pub const ChainId: u32 = 5;
 }
 
 impl pallet_anchor::Config for Test {
@@ -249,9 +249,9 @@ impl pallet_anchor::Config for Test {
 }
 
 impl pallet_linkable_tree::Config for Test {
-	type ChainId = ChainId;
+	type ChainIdWithType = ChainIdWithType;
 	type ChainType = ChainType;
-	type ChainIdentifier = ChainIdentifier;
+	type ChainId = ChainId;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
@@ -269,8 +269,8 @@ type BridgeInstance = pallet_signature_bridge::Instance1;
 impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
+	type ChainIdWithType = ChainIdWithType;
 	type ChainId = ChainId;
-	type ChainIdentifier = ChainIdentifier;
 	type ChainType = ChainType;
 	type Event = Event;
 	type Proposal = Call;
@@ -342,7 +342,7 @@ pub fn assert_events(mut expected: Vec<Event>) {
 }
 
 pub fn new_test_ext_initialized(
-	src_id: <Test as pallet_signature_bridge::Config<BridgeInstance>>::ChainId,
+	src_id: <Test as pallet_signature_bridge::Config<BridgeInstance>>::ChainIdWithType,
 	r_id: ResourceId,
 	resource: Vec<u8>,
 ) -> sp_io::TestExternalities {

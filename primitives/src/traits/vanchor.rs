@@ -9,7 +9,7 @@ pub trait VAnchorConfig {
 	type Balance: Encode;
 	type Amount: Encode;
 	type CurrencyId;
-	type ChainId;
+	type ChainIdWithType;
 	type TreeId;
 	type Element: Encode;
 }
@@ -38,14 +38,14 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 	/// Add an edge to this tree
 	fn add_edge(
 		id: C::TreeId,
-		src_chain_id: C::ChainId,
+		src_id_with_type: C::ChainIdWithType,
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this tree
 	fn update_edge(
 		id: C::TreeId,
-		src_chain_id: C::ChainId,
+		src_id_with_type: C::ChainIdWithType,
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
 	) -> Result<(), dispatch::DispatchError>;
@@ -74,5 +74,5 @@ pub trait VAnchorInspector<C: VAnchorConfig> {
 		nullifier: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Check if this linked tree has this edge (for backwards compatability)
-	fn has_edge(id: C::TreeId, src_chain_id: C::ChainId) -> bool;
+	fn has_edge(id: C::TreeId, src_id_with_type: C::ChainIdWithType) -> bool;
 }

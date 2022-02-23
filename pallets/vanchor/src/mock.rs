@@ -34,7 +34,7 @@ pub type AssetId = u32;
 /// Signed version of Balance
 pub type Amount = i128;
 pub type CurrencyId = u32;
-pub type ChainId = u64;
+pub type ChainIdWithType = u64;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -195,13 +195,13 @@ parameter_types! {
 	pub const HistoryLength: u32 = 30;
 	// Substrate standalone chain ID type
 	pub const ChainType: [u8; 2] = [2, 0];
-	pub const ChainIdentifier: ChainId = 0;
+	pub const ChainId: ChainIdWithType = 0;
 }
 
 impl pallet_linkable_tree::Config for Test {
-	type ChainId = ChainId;
+	type ChainIdWithType = ChainIdWithType;
 	type ChainType = ChainType;
-	type ChainIdentifier = ChainIdentifier;
+	type ChainId = ChainId;
 	type Event = Event;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
