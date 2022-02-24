@@ -49,7 +49,7 @@ use ark_bn254::Fr as Bn254Fr;
 use frame_support::assert_ok;
 use frame_benchmarking::account;
 use xcm_executor::{Config, XcmExecutor};
-use super::{AccountOne, AccountTwo, AccountThree, AccountFour, AccountFive, AccountSix, para_account_id, PARAID_B, INITIAL_BALANCE, Element};
+use super::{AccountOne, AccountTwo, AccountThree, AccountFour, AccountFive, AccountSix, para_account_id, PARAID_B, INITIAL_BALANCE, Element, parachain_a};
 
 pub type Balance = u128;
 /// Type for storing the id of an asset.
@@ -261,20 +261,22 @@ pub type LocationToAccountId = (
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
+pub type CumulusOrigin = cumulus_pallet_xcm::Origin;
+
 pub type XcmOriginToCallOrigin = (
-	SovereignSignedViaLocation<LocationToAccountId, Origin>,
+	SovereignSignedViaLocation<parachain_a::LocationToAccountId, Origin>,
 	// Native converter for Relay-chain (Parent) location; will converts to a
 	// `Relay` origin when recognised.
 	RelayChainAsNative<RelayChainOrigin, Origin>,
 	// Native converter for sibling Parachains; will convert to a `SiblingPara`
 	// origin when recognised.
-	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
+	SiblingParachainAsNative<parachain_a::CumulusOrigin, Origin>,
 	// Superuser converter for the Relay-chain (Parent) location. This will
 	// allow it to issue a transaction from the Root origin.
 	ParentAsSuperuser<Origin>,
 	// Native signed account converter; this just converts an `AccountId32`
 	// origin into a normal `Origin::Signed` origin of the same 32-byte value.
-	SignedAccountId32AsNative<RelayNetwork, Origin>,
+	SignedAccountId32AsNative<parachain_a::RelayNetwork, Origin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm
 	// origin.
 	XcmPassthrough<Origin>,
