@@ -98,6 +98,7 @@ impl Config for Test {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = u32;
+	type MaintainerNonce = u32;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 }
 
