@@ -221,12 +221,8 @@ pub mod pallet {
 
 			// ensure parameter setter is the maintainer
 			ensure!(
-				T::SignatureVerifier::verify(
-					&Self::maintainer().encode()[..],
-					&message,
-					&signature
-				)
-				.unwrap_or(false),
+				T::SignatureVerifier::verify(&Self::maintainer(), &message, &signature)
+					.unwrap_or(false),
 				Error::<T, I>::InvalidPermissions
 			);
 			// set the new maintainer nonce

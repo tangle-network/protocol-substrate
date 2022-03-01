@@ -5295,6 +5295,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "hex-literal 0.3.4",
+ "libsecp256k1",
  "pallet-balances",
  "parity-scale-codec",
  "scale-info",

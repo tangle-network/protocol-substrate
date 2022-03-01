@@ -31,6 +31,9 @@ frame-benchmarking = { default-features = false, git = "https://github.com/parit
 webb-primitives = { path = "../../primitives", default-features = false }
 hex-literal = "0.3.4"
 
+[dev-dependencies]
+libsecp256k1 = "0.7.0"
+
 [features]
 default = ["std"]
 std = [
