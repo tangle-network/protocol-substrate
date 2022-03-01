@@ -174,6 +174,7 @@ impl pallet_token_wrapper::Config for Test {
 }
 pub type ChainId = u64;
 pub type ProposalNonce = u32;
+pub type MaintainerNonce = u32;
 
 parameter_types! {
 	pub const ProposalLifetime: u64 = 50;
@@ -193,6 +194,7 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
+	type MaintainerNonce = MaintainerNonce;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 }
 
