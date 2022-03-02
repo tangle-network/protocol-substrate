@@ -264,6 +264,7 @@ parameter_types! {
 }
 
 pub type ProposalNonce = u32;
+pub type MaintainerNonce = u32;
 
 type BridgeInstance = pallet_signature_bridge::Instance1;
 impl pallet_signature_bridge::Config<BridgeInstance> for Test {
@@ -276,6 +277,7 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
+	type MaintainerNonce = MaintainerNonce;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 }
 

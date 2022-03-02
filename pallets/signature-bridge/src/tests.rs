@@ -244,3 +244,34 @@ fn should_fail_when_nonce_increments_by_more_than_one() {
 		);
 	})
 }
+
+#[test]
+fn set_maintainer_should_work() {
+	let chain_type = [2, 0];
+	let src_id = compute_chain_id_type(1u32, chain_type);
+	let this_chain_id = compute_chain_id_type(5u32, chain_type);
+	let r_id = derive_resource_id(this_chain_id, b"remark");
+	let new_maintainer = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+
+	let pair = ecdsa::Pair::from_string(
+		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+		None,
+	)
+	.unwrap();
+	let old_maintainer =
+		libsecp256k1::PublicKey::parse_compressed(&pair.public().0).unwrap().serialize()[1..]
+			.to_vec();
+
+	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
+		Maintainer::<Test, _>::put(old_maintainer);
+		let mut message = vec![];
+		let nonce = 1u32.encode();
+		message.extend_from_slice(&nonce);
+		message.extend_from_slice(&new_maintainer);
+		let msg = keccak_256(&message);
+		let sig: Signature = pair.sign_prehashed(&msg).into();
+
+		// set the new maintainer
+		assert_ok!(Bridge::set_maintainer(Origin::signed(RELAYER_A), message, sig.encode()));
+	})
+}
