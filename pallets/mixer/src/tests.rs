@@ -1,4 +1,5 @@
-use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
+use arkworks_setups::common::setup_params;
+use arkworks_setups::Curve;
 use codec::Encode;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
@@ -14,7 +15,7 @@ const SEED: u32 = 0;
 
 fn hasher_params() -> Vec<u8> {
 	let curve = Curve::Bn254;
-	let params = setup_params_x5_3::<ark_bn254::Fr>(curve);
+	let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 	params.to_bytes()
 }
 
