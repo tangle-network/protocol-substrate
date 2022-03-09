@@ -352,7 +352,8 @@ impl<T: Config<I>, I: 'static>
 		arbitrary_data_bytes.extend_from_slice(&relayer_bytes);
 		arbitrary_data_bytes.extend_from_slice(&fee.encode());
 		arbitrary_data_bytes.extend_from_slice(&refund.encode());
-		let arbitrary_data = T::ArbitraryHasher::hash(&arbitrary_data_bytes, &[]).map_err(|_| Error::<T, I>::InvalidArbitraryData)?;
+		let arbitrary_data = T::ArbitraryHasher::hash(&arbitrary_data_bytes, &[])
+			.map_err(|_| Error::<T, I>::InvalidArbitraryData)?;
 
 		bytes.extend_from_slice(&nullifier_hash.encode());
 		bytes.extend_from_slice(&root.encode());

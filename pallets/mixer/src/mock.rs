@@ -16,7 +16,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 };
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
-use webb_primitives::{types::ElementTrait, AccountId, hashing::ethereum::Keccak256HasherBn254,};
+use webb_primitives::{hashing::ethereum::Keccak256HasherBn254, types::ElementTrait, AccountId};
 
 use frame_benchmarking::account;
 

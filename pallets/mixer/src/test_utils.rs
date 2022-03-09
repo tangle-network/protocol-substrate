@@ -1,9 +1,10 @@
-use arkworks_setups::r1cs::mixer::MixerR1CSProver;
-use arkworks_setups::MixerProver;
-use arkworks_setups::common::{Leaf, MixerProof};
-use arkworks_setups::Curve;
-use webb_primitives::ElementTrait;
 use ark_bn254::Bn254;
+use arkworks_setups::{
+	common::{Leaf, MixerProof},
+	r1cs::mixer::MixerR1CSProver,
+	Curve, MixerProver,
+};
+use webb_primitives::ElementTrait;
 
 // wasm-utils dependencies
 use wasm_utils::{
