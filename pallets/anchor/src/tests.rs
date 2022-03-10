@@ -3,8 +3,7 @@ use std::{convert::TryInto, path::Path};
 use ark_bn254::{Bn254, Fr as Bn254Fr};
 use ark_crypto_primitives::commitment;
 use ark_ff::{BigInteger, PrimeField};
-use arkworks_setups::common::setup_params;
-use arkworks_setups::Curve;
+use arkworks_setups::{common::setup_params, Curve};
 use webb_primitives::{
 	merkle_tree::TreeInspector, utils::compute_chain_id_type, AccountId, ElementTrait,
 };

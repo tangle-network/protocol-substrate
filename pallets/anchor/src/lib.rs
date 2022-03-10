@@ -75,11 +75,11 @@ use sp_runtime::traits::AccountIdConversion;
 use sp_std::prelude::*;
 use types::*;
 use webb_primitives::{
-	ElementTrait,
-	hasher::InstanceHasher,
 	anchor::{AnchorConfig, AnchorInspector, AnchorInterface},
+	hasher::InstanceHasher,
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
 	verifier::*,
+	ElementTrait,
 };
 pub use weights::WeightInfo;
 

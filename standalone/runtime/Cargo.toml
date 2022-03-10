@@ -28,6 +28,7 @@ webb-primitives = {path = "../../primitives", default-features = false, features
 orml-currencies = {path = "../../open-runtime-module-library/currencies", default-features = false}
 orml-tokens = {path = "../../open-runtime-module-library/tokens", default-features = false}
 orml-traits = {path = "../../open-runtime-module-library/traits", default-features = false}
+pallet-vanchor = {path = "../../pallets/vanchor", default-features = false}
 pallet-anchor = {path = "../../pallets/anchor", default-features = false}
 pallet-anchor-handler = {path = "../../pallets/anchor-handler", default-features = false}
 pallet-asset-registry = {path = "../../pallets/asset-registry", default-features = false}

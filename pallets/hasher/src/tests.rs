@@ -1,7 +1,7 @@
 use super::*;
 use crate::mock::*;
 use ark_ff::prelude::*;
-use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
+use arkworks_setups::{common::setup_params, Curve};
 use frame_support::{assert_err, assert_ok};
 use sp_core::bytes;
 
@@ -20,7 +20,7 @@ fn should_initialize_parameters() {
 	type Fr = ark_bn254::Fr;
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
-		let params = setup_params_x5_3::<Fr>(curve);
+		let params = setup_params::<Fr>(curve, 5, 3);
 		let res = DefaultPalletHasher::force_set_parameters(Origin::root(), params.to_bytes());
 		assert_ok!(res);
 	});
@@ -31,7 +31,7 @@ fn should_output_correct_hash() {
 	type Fr = ark_bn254::Fr;
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
-		let params = setup_params_x5_3::<Fr>(curve);
+		let params = setup_params::<Fr>(curve, 5, 3);
 		let res = DefaultPalletHasher::force_set_parameters(Origin::root(), params.to_bytes());
 		assert_ok!(res);
 		let left = Fr::one().into_repr().to_bytes_le(); // one

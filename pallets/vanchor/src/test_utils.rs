@@ -77,7 +77,8 @@ pub fn setup_zk_circuit(
 	let leaf1 = in_utxos[1].commitment.into_repr().to_bytes_le();
 
 	let leaves: Vec<Vec<u8>> = vec![leaf0, leaf1];
-	let leaves_f: Vec<Bn254Fr> = leaves.iter().map(|x| Bn254Fr::from_le_bytes_mod_order(&x)).collect();
+	let leaves_f: Vec<Bn254Fr> =
+		leaves.iter().map(|x| Bn254Fr::from_le_bytes_mod_order(&x)).collect();
 
 	let mut in_leaves: BTreeMap<u64, Vec<Vec<u8>>> = BTreeMap::new();
 	in_leaves.insert(chain_id, leaves);
@@ -112,9 +113,14 @@ pub fn setup_zk_circuit(
 		pk_bytes.clone(),
 		DEFAULT_LEAF,
 		rng,
-	).unwrap();
+	)
+	.unwrap();
 
-	let pub_ins = vanchor_proof.public_inputs_raw.iter().map(|x| Bn254Fr::from_le_bytes_mod_order(x)).collect();
+	let pub_ins = vanchor_proof
+		.public_inputs_raw
+		.iter()
+		.map(|x| Bn254Fr::from_le_bytes_mod_order(x))
+		.collect();
 
 	(vanchor_proof.proof, pub_ins)
 }

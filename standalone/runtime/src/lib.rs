@@ -85,7 +85,11 @@ use frame_system::{
 use frame_support::traits::Nothing;
 use orml_currencies::BasicCurrencyAdapter;
 use webb_primitives::{
-	hashing::{ArkworksPoseidonHasherBls381, ArkworksPoseidonHasherBn254},
+	field_ops::arkworks::{ArkworksIntoFieldBls381, ArkworksIntoFieldBn254},
+	hashing::{
+		ethereum::{Keccak256HasherBls381, Keccak256HasherBn254},
+		ArkworksPoseidonHasherBls381, ArkworksPoseidonHasherBn254,
+	},
 	types::ElementTrait,
 	verifying::{ArkworksVerifierBls381, ArkworksVerifierBn254},
 	Amount, ChainId,
@@ -1153,6 +1157,20 @@ impl pallet_verifier::Config<pallet_verifier::Instance4> for Runtime {
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
+impl pallet_verifier::Config<pallet_verifier::Instance5> for Runtime {
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Verifier = ArkworksVerifierBn254;
+	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
+}
+
+impl pallet_verifier::Config<pallet_verifier::Instance6> for Runtime {
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Verifier = ArkworksVerifierBls381;
+	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
+}
+
 impl pallet_asset_registry::Config for Runtime {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
@@ -1197,6 +1215,7 @@ impl pallet_mixer::Config<pallet_mixer::Instance1> for Runtime {
 	type PalletId = MixerPalletId;
 	type Tree = MerkleTreeBn254;
 	type Verifier = MixerVerifierBn254;
+	type ArbitraryHasher = Keccak256HasherBn254;
 	type WeightInfo = pallet_mixer::weights::WebbWeight<Runtime>;
 }
 
@@ -1207,6 +1226,7 @@ impl pallet_mixer::Config<pallet_mixer::Instance2> for Runtime {
 	type PalletId = MixerPalletId;
 	type Tree = MerkleTreeBls381;
 	type Verifier = MixerVerifierBls381;
+	type ArbitraryHasher = Keccak256HasherBls381;
 	type WeightInfo = pallet_mixer::weights::WebbWeight<Runtime>;
 }
 
@@ -1246,6 +1266,7 @@ impl pallet_anchor::Config<pallet_anchor::Instance1> for Runtime {
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = ();
 	type Verifier = AnchorVerifierBn254;
+	type ArbitraryHasher = Keccak256HasherBn254;
 	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }
 
@@ -1257,6 +1278,7 @@ impl pallet_anchor::Config<pallet_anchor::Instance2> for Runtime {
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = ();
 	type Verifier = AnchorVerifierBls381;
+	type ArbitraryHasher = Keccak256HasherBls381;
 	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
 }
 
@@ -1270,6 +1292,40 @@ impl pallet_anchor_handler::Config<pallet_anchor_handler::Instance2> for Runtime
 	type Anchor = AnchorBls381;
 	type BridgeOrigin = pallet_bridge::EnsureBridge<Runtime, BridgeInstance>;
 	type Event = Event;
+}
+
+parameter_types! {
+	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
+	pub const MaxFee: Balance = Balance::MAX - 1;
+	pub const MaxExtAmount: Balance = Balance::MAX - 1;
+}
+
+impl pallet_vanchor::Config<pallet_vanchor::Instance1> for Runtime {
+	type Event = Event;
+	type PalletId = VAnchorPalletId;
+	type LinkableTree = LinkableTreeBn254;
+	type Verifier2x2 = VAnchorVerifier2x2Bn254;
+	type EthereumHasher = Keccak256HasherBn254;
+	type IntoField = ArkworksIntoFieldBn254;
+	type Currency = Currencies;
+	type MaxFee = MaxFee;
+	type MaxExtAmount = MaxExtAmount;
+	type PostDepositHook = ();
+	type NativeCurrencyId = NativeCurrencyId;
+}
+
+impl pallet_vanchor::Config<pallet_vanchor::Instance2> for Runtime {
+	type Event = Event;
+	type PalletId = VAnchorPalletId;
+	type LinkableTree = LinkableTreeBls381;
+	type Verifier2x2 = VAnchorVerifier2x2Bls381;
+	type EthereumHasher = Keccak256HasherBls381;
+	type IntoField = ArkworksIntoFieldBls381;
+	type Currency = Currencies;
+	type MaxFee = MaxFee;
+	type MaxExtAmount = MaxExtAmount;
+	type PostDepositHook = ();
+	type NativeCurrencyId = NativeCurrencyId;
 }
 
 parameter_types! {
@@ -1366,6 +1422,10 @@ construct_runtime!(
 		AnchorVerifierBn254: pallet_verifier::<Instance3>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		AnchorVerifierBls381: pallet_verifier::<Instance4>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
+		// VAnchor Verifier 2x2
+		VAnchorVerifier2x2Bn254: pallet_verifier::<Instance5>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		VAnchorVerifier2x2Bls381: pallet_verifier::<Instance6>::{Pallet, Call, Storage, Event<T>, Config<T>},
+
 		// Merkle Tree
 		MerkleTreeBn254: pallet_mt::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		MerkleTreeBls381: pallet_mt::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
@@ -1385,6 +1445,10 @@ construct_runtime!(
 		// Anchor Handler
 		AnchorHandlerBn254: pallet_anchor_handler::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		AnchorHandlerBls381: pallet_anchor_handler::<Instance2>::{Pallet, Call, Storage, Event<T>},
+
+		// VAnchor
+		VAnchorBn254: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		VAnchorBls381: pallet_vanchor::<Instance2>::{Pallet, Call, Storage, Event<T>},
 
 		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 	}
@@ -1651,6 +1715,8 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_mt, MerkleTreeBls381);
 			list_benchmark!(list, extra, pallet_linkable_tree, LinkableTreeBn254);
 			list_benchmark!(list, extra, pallet_linkable_tree, LinkableTreeBls381);
+			list_benchmark!(list, extra, pallet_vanchor, VAnchorBn254);
+			list_benchmark!(list, extra, pallet_vanchor, VAnchorBls381);
 			list_benchmark!(list, extra, pallet_anchor, AnchorBn254);
 			list_benchmark!(list, extra, pallet_anchor, AnchorBls381);
 			list_benchmark!(list, extra, pallet_mixer, MixerBn254);
@@ -1695,6 +1761,8 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_mt, MerkleTreeBls381);
 			add_benchmark!(params, batches, pallet_linkable_tree, LinkableTreeBn254);
 			add_benchmark!(params, batches, pallet_linkable_tree, LinkableTreeBls381);
+			add_benchmark!(params, batches, pallet_vanchor, VAnchorBn254);
+			add_benchmark!(params, batches, pallet_vanchor, VAnchorBls381);
 			add_benchmark!(params, batches, pallet_anchor, AnchorBn254);
 			add_benchmark!(params, batches, pallet_anchor, AnchorBls381);
 			add_benchmark!(params, batches, pallet_mixer, MixerBn254);

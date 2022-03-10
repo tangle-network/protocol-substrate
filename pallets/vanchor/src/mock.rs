@@ -293,6 +293,8 @@ impl pallet_token_wrapper::Config for Test {
 
 parameter_types! {
 	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
+	pub const MaxFee: Balance = 5;
+	pub const MaxExtAmount: Balance = 21;
 }
 
 impl pallet_vanchor::Config for Test {
@@ -303,6 +305,8 @@ impl pallet_vanchor::Config for Test {
 	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = VAnchorPalletId;
+	type MaxFee = MaxFee;
+	type MaxExtAmount = MaxExtAmount;
 	type PostDepositHook = ();
 	type Verifier2x2 = VerifierPallet;
 }

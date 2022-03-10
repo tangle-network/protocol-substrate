@@ -1,7 +1,7 @@
 use crate::{
 	mock::*,
 	test_utils::{deconstruct_public_inputs_el, setup_utxos, setup_zk_circuit},
-	Error, MaxDepositAmount, MaxExtAmount, MaxFee, MinWithdrawAmount,
+	Error, MaxDepositAmount, MinWithdrawAmount,
 };
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_setups::{common::setup_params, utxo::Utxo, Curve};
@@ -66,10 +66,8 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>) {
 	assert_ok!(Balances::set_balance(Origin::root(), bigger_transactor, BIGGER_DEFAULT_BALANCE, 0));
 
 	// set configurable storage
-	assert_ok!(VAnchor::set_max_fee(Origin::root(), 5));
 	assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 10));
 	assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 3));
-	assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 21));
 
 	// finally return the provingkey bytes
 	(pk_bytes, vk_bytes)
@@ -839,7 +837,7 @@ fn should_not_be_able_to_exceed_external_amount() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, _) = setup_environment();
 		let tree_id = create_vanchor(0);
-		
+
 		let transactor = get_account(BIGGER_TRANSACTOR_ACCOUNT_ID);
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
@@ -1021,27 +1019,5 @@ fn set_get_min_withdraw_amount() {
 
 		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 5));
 		assert_eq!(MinWithdrawAmount::<Test>::get(), 5);
-	})
-}
-
-#[test]
-fn set_get_max_ext_amount() {
-	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 2));
-		assert_eq!(MaxExtAmount::<Test>::get(), 2);
-
-		assert_ok!(VAnchor::set_max_ext_amount(Origin::root(), 5));
-		assert_eq!(MaxExtAmount::<Test>::get(), 5);
-	})
-}
-
-#[test]
-fn set_get_max_fee() {
-	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_max_fee(Origin::root(), 2));
-		assert_eq!(MaxFee::<Test>::get(), 2);
-
-		assert_ok!(VAnchor::set_max_fee(Origin::root(), 5));
-		assert_eq!(MaxFee::<Test>::get(), 5);
 	})
 }

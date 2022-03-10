@@ -16,8 +16,8 @@ use sp_runtime::{
 	Permill,
 };
 pub use webb_primitives::{
-	hashing::ethereum::Keccak256HasherBn254,
 	hasher::{HasherModule, InstanceHasher},
+	hashing::ethereum::Keccak256HasherBn254,
 	types::ElementTrait,
 	AccountId,
 };
