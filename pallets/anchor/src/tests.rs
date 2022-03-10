@@ -3,8 +3,8 @@ use std::{convert::TryInto, path::Path};
 use ark_bn254::{Bn254, Fr as Bn254Fr};
 use ark_crypto_primitives::commitment;
 use ark_ff::{BigInteger, PrimeField};
-use arkworks_circuits::setup::common::setup_keys;
-use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
+use arkworks_setups::common::setup_params;
+use arkworks_setups::Curve;
 use webb_primitives::{
 	merkle_tree::TreeInspector, utils::compute_chain_id_type, AccountId, ElementTrait,
 };
@@ -36,7 +36,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 
 	match curve {
 		Curve::Bn254 => {
-			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
+			let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
 
 			// 1. Setup The Hasher Pallet.
 			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
@@ -479,6 +479,9 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
 		assert_eq!(root_elements[0], tree_root);
 
+		// TODO: Think about this test more, since it does not give predictable results
+		// Sometimes it throws rust memory allocation error
+		// After the circuits are change, the error message has potential to change
 		proof_bytes[1] = proof_bytes[1] % 128 + 1;
 
 		assert_err!(
@@ -494,7 +497,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 				refund_value.into(),
 				commitment_element
 			),
-			crate::Error::<Test, _>::InvalidWithdrawProof
+			pallet_verifier::Error::<Test, _>::VerifyError,
 		);
 	});
 }

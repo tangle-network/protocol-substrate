@@ -16,6 +16,7 @@ use sp_runtime::{
 	Permill,
 };
 pub use webb_primitives::{
+	hashing::ethereum::Keccak256HasherBn254,
 	hasher::{HasherModule, InstanceHasher},
 	types::ElementTrait,
 	AccountId,
@@ -301,6 +302,7 @@ impl pallet_anchor::Config for Test {
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = ();
 	type Verifier = VerifierPallet;
+	type ArbitraryHasher = Keccak256HasherBn254;
 	type WeightInfo = ();
 }
 
