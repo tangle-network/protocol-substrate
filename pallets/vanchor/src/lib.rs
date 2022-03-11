@@ -229,6 +229,28 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
 
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+		pub phantom: (PhantomData<T>, PhantomData<I>),
+		pub max_deposit_amount: BalanceOf<T, I>,
+		pub min_withdraw_amount: BalanceOf<T, I>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+		fn default() -> Self {
+			Self { phantom: Default::default(), max_deposit_amount: BalanceOf::<T, I>::default(), min_withdraw_amount: BalanceOf::<T, I>::default() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+		fn build(&self) {
+			MaxDepositAmount::<T, I>::put(self.max_deposit_amount);
+			MinWithdrawAmount::<T, I>::put(self.min_withdraw_amount);
+		}
+	}
+
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]

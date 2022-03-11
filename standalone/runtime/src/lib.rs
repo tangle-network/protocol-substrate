@@ -1447,7 +1447,7 @@ construct_runtime!(
 		AnchorHandlerBls381: pallet_anchor_handler::<Instance2>::{Pallet, Call, Storage, Event<T>},
 
 		// VAnchor
-		VAnchorBn254: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		VAnchorBn254: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 		VAnchorBls381: pallet_vanchor::<Instance2>::{Pallet, Call, Storage, Event<T>},
 
 		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},

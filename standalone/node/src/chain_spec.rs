@@ -18,7 +18,7 @@ use webb_runtime::{
 	HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config,
 	MerkleTreeBn254Config, MixerBn254Config, MixerVerifierBls381Config, MixerVerifierBn254Config,
 	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VAnchorVerifier2x2Bls381Config,
-	VAnchorVerifier2x2Bn254Config,
+	VAnchorVerifier2x2Bn254Config, VAnchorBn254Config
 };
 
 // ImOnline consensus authority.
@@ -335,6 +335,11 @@ fn testnet_genesis(
 		},
 		v_anchor_verifier_2x_2_bls_381: VAnchorVerifier2x2Bls381Config {
 			parameters: None,
+			phantom: Default::default(),
+		},
+		v_anchor_bn_254: VAnchorBn254Config {
+			max_deposit_amount: 0,
+			min_withdraw_amount: 1_000_000 * UNITS,
 			phantom: Default::default(),
 		},
 		merkle_tree_bn_254: MerkleTreeBn254Config {
