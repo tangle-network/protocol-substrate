@@ -6,13 +6,12 @@ use webb_runtime::runtime_types::{sp_runtime::DispatchError, webb_standalone_run
 
 use ark_ff::{BigInteger, PrimeField};
 
-use arkworks_setups::common::Leaf;
-use arkworks_setups::AnchorProver;
-use arkworks_setups::r1cs::anchor::AnchorR1CSProver;
-use arkworks_setups::MixerProver;
-use arkworks_setups::r1cs::mixer::MixerR1CSProver;
 pub use arkworks_setups::common::{prove, prove_unchecked, verify_unchecked_raw};
-use arkworks_setups::Curve;
+use arkworks_setups::{
+	common::Leaf,
+	r1cs::{anchor::AnchorR1CSProver, mixer::MixerR1CSProver},
+	AnchorProver, Curve, MixerProver,
+};
 
 // wasm-utils dependencies
 use ark_std::{rand::thread_rng, UniformRand};
@@ -21,8 +20,7 @@ use wasm_utils::{
 	types::{Backend, Curve as WasmCurve},
 };
 
-use ark_bn254::Fr as Bn254Fr;
-use ark_bn254::Bn254;
+use ark_bn254::{Bn254, Fr as Bn254Fr};
 
 const TREE_DEPTH: usize = 30;
 const ANCHOR_CT: usize = 2;
@@ -58,7 +56,8 @@ pub fn setup_anchor_leaf(chain_id: u64) -> (Element, Element, Element, Element) 
 	let secret = Bn254Fr::rand(rng).into_repr().to_bytes_le();
 	let nullifier = Bn254Fr::rand(rng).into_repr().to_bytes_le();
 	let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes, .. } =
-		AnchorProver_Bn254_30_2::create_leaf_with_privates(curve, chain_id, secret, nullifier).unwrap();
+		AnchorProver_Bn254_30_2::create_leaf_with_privates(curve, chain_id, secret, nullifier)
+			.unwrap();
 
 	let leaf_array: [u8; 32] = leaf_bytes.try_into().unwrap();
 	let leaf_element = Element(leaf_array);

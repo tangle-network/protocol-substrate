@@ -17,8 +17,8 @@ use webb_runtime::{
 	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig,
 	HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config,
 	MerkleTreeBn254Config, MixerBn254Config, MixerVerifierBls381Config, MixerVerifierBn254Config,
-	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VAnchorVerifier2x2Bls381Config,
-	VAnchorVerifier2x2Bn254Config, VAnchorBn254Config
+	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VAnchorBn254Config,
+	VAnchorVerifier2x2Bls381Config, VAnchorVerifier2x2Bn254Config,
 };
 
 // ImOnline consensus authority.

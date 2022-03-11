@@ -239,7 +239,11 @@ pub mod pallet {
 	#[cfg(feature = "std")]
 	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
 		fn default() -> Self {
-			Self { phantom: Default::default(), max_deposit_amount: BalanceOf::<T, I>::default(), min_withdraw_amount: BalanceOf::<T, I>::default() }
+			Self {
+				phantom: Default::default(),
+				max_deposit_amount: BalanceOf::<T, I>::default(),
+				min_withdraw_amount: BalanceOf::<T, I>::default(),
+			}
 		}
 	}
 
