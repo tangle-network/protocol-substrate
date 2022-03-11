@@ -447,17 +447,7 @@ dependencies = [
 [[package]]
 name = "arkworks-native-gadgets"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes#5ab704e90b130a2f034b94e4b29039fa1fc32c40"
-dependencies = [
- "ark-crypto-primitives",
- "ark-ff",
- "ark-std",
-]
-
-[[package]]
-name = "arkworks-native-gadgets"
-version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets#9ba1dd677ee3266a83555464a69688d5783a861f"
+source = "git+https://github.com/webb-tools/arkworks-gadgets#7a0071e86dffff7a3ed5850730a98688f37d450f"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
@@ -467,59 +457,33 @@ dependencies = [
 [[package]]
 name = "arkworks-r1cs-circuits"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes#5ab704e90b130a2f034b94e4b29039fa1fc32c40"
+source = "git+https://github.com/webb-tools/arkworks-gadgets#7a0071e86dffff7a3ed5850730a98688f37d450f"
 dependencies = [
  "ark-ff",
  "ark-r1cs-std",
  "ark-relations",
  "ark-std",
- "arkworks-native-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
- "arkworks-r1cs-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
-]
-
-[[package]]
-name = "arkworks-r1cs-circuits"
-version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets#9ba1dd677ee3266a83555464a69688d5783a861f"
-dependencies = [
- "ark-ff",
- "ark-r1cs-std",
- "ark-relations",
- "ark-std",
- "arkworks-native-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets)",
- "arkworks-r1cs-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets)",
+ "arkworks-native-gadgets",
+ "arkworks-r1cs-gadgets",
 ]
 
 [[package]]
 name = "arkworks-r1cs-gadgets"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes#5ab704e90b130a2f034b94e4b29039fa1fc32c40"
+source = "git+https://github.com/webb-tools/arkworks-gadgets#7a0071e86dffff7a3ed5850730a98688f37d450f"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
  "ark-r1cs-std",
  "ark-relations",
  "ark-std",
- "arkworks-native-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
-]
-
-[[package]]
-name = "arkworks-r1cs-gadgets"
-version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets#9ba1dd677ee3266a83555464a69688d5783a861f"
-dependencies = [
- "ark-crypto-primitives",
- "ark-ff",
- "ark-r1cs-std",
- "ark-relations",
- "ark-std",
- "arkworks-native-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets)",
+ "arkworks-native-gadgets",
 ]
 
 [[package]]
 name = "arkworks-setups"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes#5ab704e90b130a2f034b94e4b29039fa1fc32c40"
+source = "git+https://github.com/webb-tools/arkworks-gadgets#7a0071e86dffff7a3ed5850730a98688f37d450f"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ec",
@@ -529,31 +493,10 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
- "arkworks-r1cs-circuits 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
- "arkworks-r1cs-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
- "arkworks-utils 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
- "parity-scale-codec 2.3.1",
- "tiny-keccak",
-]
-
-[[package]]
-name = "arkworks-setups"
-version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets#9ba1dd677ee3266a83555464a69688d5783a861f"
-dependencies = [
- "ark-crypto-primitives",
- "ark-ec",
- "ark-ff",
- "ark-groth16",
- "ark-r1cs-std",
- "ark-relations",
- "ark-serialize",
- "ark-std",
- "arkworks-native-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets)",
- "arkworks-r1cs-circuits 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets)",
- "arkworks-r1cs-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets)",
- "arkworks-utils 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets)",
+ "arkworks-native-gadgets",
+ "arkworks-r1cs-circuits",
+ "arkworks-r1cs-gadgets",
+ "arkworks-utils 0.5.0",
  "parity-scale-codec 2.3.1",
  "tiny-keccak",
 ]
@@ -587,17 +530,7 @@ dependencies = [
 [[package]]
 name = "arkworks-utils"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes#5ab704e90b130a2f034b94e4b29039fa1fc32c40"
-dependencies = [
- "ark-ff",
- "ark-std",
- "hex",
-]
-
-[[package]]
-name = "arkworks-utils"
-version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets#9ba1dd677ee3266a83555464a69688d5783a861f"
+source = "git+https://github.com/webb-tools/arkworks-gadgets#7a0071e86dffff7a3ed5850730a98688f37d450f"
 dependencies = [
  "ark-ff",
  "ark-std",
@@ -4677,9 +4610,9 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
- "arkworks-r1cs-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
- "arkworks-setups 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
+ "arkworks-native-gadgets",
+ "arkworks-r1cs-gadgets",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5080,7 +5013,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-setups 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5174,7 +5107,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-setups 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5242,7 +5175,7 @@ dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
  "ark-std",
- "arkworks-setups 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5647,9 +5580,9 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
- "arkworks-r1cs-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
- "arkworks-setups 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
+ "arkworks-native-gadgets",
+ "arkworks-r1cs-gadgets",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5723,7 +5656,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-setups 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/public-inputs-fixes)",
+ "arkworks-setups",
  "cumulus-pallet-xcm",
  "cumulus-primitives-core",
  "frame-benchmarking",
@@ -10728,9 +10661,9 @@ dependencies = [
  "ark-ff",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets)",
- "arkworks-r1cs-gadgets 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets)",
- "arkworks-setups 0.5.0 (git+https://github.com/webb-tools/arkworks-gadgets)",
+ "arkworks-native-gadgets",
+ "arkworks-r1cs-gadgets",
+ "arkworks-setups",
  "console_error_panic_hook",
  "getrandom 0.2.5",
  "hex",
