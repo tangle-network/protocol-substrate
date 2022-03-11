@@ -1,4 +1,3 @@
-use arkworks_circuits::setup::common::Leaf;
 use core::fmt::Debug;
 use subxt::{DefaultConfig, Event, TransactionProgress};
 
@@ -6,12 +5,14 @@ use webb_client::webb_runtime;
 use webb_runtime::runtime_types::{sp_runtime::DispatchError, webb_standalone_runtime::Element};
 
 use ark_ff::{BigInteger, PrimeField};
-pub use arkworks_circuits::setup::{
-	anchor,
-	common::{prove, prove_unchecked, verify_unchecked_raw},
-	mixer,
-};
-use arkworks_utils::utils::common::Curve;
+
+use arkworks_setups::common::Leaf;
+use arkworks_setups::AnchorProver;
+use arkworks_setups::r1cs::anchor::AnchorR1CSProver;
+use arkworks_setups::MixerProver;
+use arkworks_setups::r1cs::mixer::MixerR1CSProver;
+pub use arkworks_setups::common::{prove, prove_unchecked, verify_unchecked_raw};
+use arkworks_setups::Curve;
 
 // wasm-utils dependencies
 use ark_std::{rand::thread_rng, UniformRand};
@@ -21,18 +22,20 @@ use wasm_utils::{
 };
 
 use ark_bn254::Fr as Bn254Fr;
+use ark_bn254::Bn254;
+
+const TREE_DEPTH: usize = 30;
+const ANCHOR_CT: usize = 2;
+type AnchorProver_Bn254_30_2 = AnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT>;
+type MixerProver_Bn254_30 = MixerR1CSProver<Bn254, TREE_DEPTH>;
 
 pub fn setup_mixer_leaf() -> (Element, Element, Element, Element) {
 	let rng = &mut thread_rng();
+	let curve = Curve::Bn254;
 	let secret = Bn254Fr::rand(rng).into_repr().to_bytes_le();
 	let nullifier = Bn254Fr::rand(rng).into_repr().to_bytes_le();
-	let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes } =
-		mixer::setup_leaf_with_privates_raw_x5_5::<Bn254Fr>(
-			Curve::Bn254,
-			secret.clone(),
-			nullifier.clone(),
-		)
-		.unwrap();
+	let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes, .. } =
+		MixerProver_Bn254_30::create_leaf_with_privates(curve, secret, nullifier).unwrap();
 
 	let leaf_array: [u8; 32] = leaf_bytes.try_into().unwrap();
 	let leaf_element = Element(leaf_array);
@@ -49,18 +52,13 @@ pub fn setup_mixer_leaf() -> (Element, Element, Element, Element) {
 	(leaf_element, secret_element, nullifier_element, nullifier_hash_element)
 }
 
-pub fn setup_anchor_leaf(chain_id: u128) -> (Element, Element, Element, Element) {
+pub fn setup_anchor_leaf(chain_id: u64) -> (Element, Element, Element, Element) {
 	let rng = &mut thread_rng();
+	let curve = Curve::Bn254;
 	let secret = Bn254Fr::rand(rng).into_repr().to_bytes_le();
 	let nullifier = Bn254Fr::rand(rng).into_repr().to_bytes_le();
-	let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes } =
-		anchor::setup_leaf_with_privates_raw_x5_4::<Bn254Fr>(
-			Curve::Bn254,
-			secret.clone(),
-			nullifier.clone(),
-			chain_id,
-		)
-		.unwrap();
+	let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes, .. } =
+		AnchorProver_Bn254_30_2::create_leaf_with_privates(curve, chain_id, secret, nullifier).unwrap();
 
 	let leaf_array: [u8; 32] = leaf_bytes.try_into().unwrap();
 	let leaf_element = Element(leaf_array);
@@ -96,7 +94,7 @@ pub fn setup_mixer_circuit(
 		width: 5,
 		curve: WasmCurve::Bn254,
 		backend: Backend::Arkworks,
-		secrets: secret,
+		secret,
 		nullifier,
 		recipient: recipient_bytes,
 		relayer: relayer_bytes,
@@ -120,7 +118,7 @@ pub fn setup_anchor_circuit(
 	roots: Vec<Vec<u8>>,
 	leaves: Vec<Vec<u8>>,
 	leaf_index: u64,
-	chain_id: u128,
+	chain_id: u64,
 	secret: Vec<u8>,
 	nullifier: Vec<u8>,
 	recipient_bytes: Vec<u8>,
@@ -134,12 +132,12 @@ pub fn setup_anchor_circuit(
 	Element, // root
 ) {
 	let commitment: [u8; 32] = commitment_bytes.try_into().unwrap();
-	let mixer_proof_input = AnchorProofInput {
+	let anchor_proof_input = AnchorProofInput {
 		exponentiation: 5,
 		width: 4,
 		curve: WasmCurve::Bn254,
 		backend: Backend::Arkworks,
-		secrets: secret,
+		secret,
 		nullifier,
 		recipient: recipient_bytes,
 		relayer: relayer_bytes,
@@ -150,9 +148,9 @@ pub fn setup_anchor_circuit(
 		leaves,
 		leaf_index,
 		roots,
-		commitment,
+		refresh_commitment: commitment,
 	};
-	let js_proof_inputs = JsProofInput { inner: ProofInput::Anchor(mixer_proof_input) };
+	let js_proof_inputs = JsProofInput { inner: ProofInput::Anchor(anchor_proof_input) };
 	let proof = generate_proof_js(js_proof_inputs).unwrap();
 
 	let root_array: [u8; 32] = proof.root.try_into().unwrap();
