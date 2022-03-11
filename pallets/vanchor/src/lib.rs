@@ -234,6 +234,7 @@ pub mod pallet {
 		pub phantom: (PhantomData<T>, PhantomData<I>),
 		pub max_deposit_amount: BalanceOf<T, I>,
 		pub min_withdraw_amount: BalanceOf<T, I>,
+		pub vanchors: Vec<(CurrencyIdOf<T, I>, u32)>,
 	}
 
 	#[cfg(feature = "std")]
@@ -243,6 +244,7 @@ pub mod pallet {
 				phantom: Default::default(),
 				max_deposit_amount: BalanceOf::<T, I>::default(),
 				min_withdraw_amount: BalanceOf::<T, I>::default(),
+				vanchors: Vec::new()
 			}
 		}
 	}
@@ -252,6 +254,16 @@ pub mod pallet {
 		fn build(&self) {
 			MaxDepositAmount::<T, I>::put(self.max_deposit_amount);
 			MinWithdrawAmount::<T, I>::put(self.min_withdraw_amount);
+
+			self.vanchors.iter().for_each(|(asset_id, max_edges)| {
+				let _ = <Pallet<T, I> as VAnchorInterface<_>>::create(
+					None,
+					30,
+					*max_edges,
+					asset_id.clone(),
+				)
+				.map_err(|_| panic!("Failed to create vanchor"));
+			});
 		}
 	}
 

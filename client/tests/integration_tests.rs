@@ -1,16 +1,18 @@
+use wasm_utils::ANCHOR_COUNT;
 use webb_client::{self, client, webb_runtime};
-use webb_runtime::runtime_types::webb_standalone_runtime::Element;
 
 use sp_keyring::AccountKeyring;
 use subxt::{DefaultConfig, DefaultExtra, PairSigner};
 
 mod utils;
 
+use utils::*;
 use codec::Encode;
-use utils::{
-	expect_event, setup_anchor_circuit, setup_anchor_leaf, setup_mixer_circuit, setup_mixer_leaf,
-	truncate_and_pad, verify_unchecked_raw,
-};
+use webb_primitives::hashing::ethereum::keccak_256;
+use webb_primitives::utils::compute_chain_id_type;
+
+use ark_ff::PrimeField;
+use ark_ff::BigInteger;
 
 #[tokio::test]
 async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
@@ -41,7 +43,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let mt_storage = api.storage().merkle_tree_bn254();
 
 	let tree_id = 0;
-	let deposit_tx = mixer.deposit(tree_id, leaf);
+	let deposit_tx = mixer.deposit(tree_id, leaf.into());
 	let mut deposit_res = deposit_tx.sign_and_submit_then_watch(&signer).await?;
 
 	expect_event::<webb_runtime::mixer_bn254::events::Deposit>(&mut deposit_res).await?;
@@ -97,7 +99,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 
 	// Do the withdraw
 	let withdraw_tx =
-		mixer.withdraw(tree_id, proof_bytes, root, nullifier_hash, recipient, relayer, fee, refund);
+		mixer.withdraw(tree_id, proof_bytes, root.into(), nullifier_hash.into(), recipient, relayer, fee, refund);
 	let mut withdraw_res = withdraw_tx.sign_and_submit_then_watch(&signer).await?;
 
 	expect_event::<webb_runtime::mixer_bn254::events::Withdraw>(&mut withdraw_res).await?;
@@ -136,7 +138,7 @@ async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 	let mt_storage = api.storage().merkle_tree_bn254();
 
 	let tree_id = 4;
-	let deposit_tx = anchor.deposit(tree_id, leaf);
+	let deposit_tx = anchor.deposit(tree_id, leaf.into());
 	let mut deposit_res = deposit_tx.sign_and_submit_then_watch(&signer).await?;
 
 	expect_event::<webb_runtime::anchor_bn254::events::Deposit>(&mut deposit_res).await?;
@@ -156,7 +158,7 @@ async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 	println!("Leaf count: {:?}", leaf_count);
 
 	let zero_root = Element([0u8; 32]);
-	let root_elemets = vec![chain_root, zero_root];
+	let root_elemets = vec![chain_root, zero_root.into()];
 	let roots: Vec<Vec<u8>> = root_elemets.iter().map(|x| x.0.to_vec()).collect();
 
 	let (proof_bytes, root) = setup_anchor_circuit(
@@ -201,16 +203,104 @@ async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 		tree_id,
 		proof_bytes,
 		root_elemets,
-		nullifier_hash,
+		nullifier_hash.into(),
 		recipient,
 		relayer,
 		fee,
 		refund,
-		commitment,
+		commitment.into(),
 	);
 	let mut withdraw_res = withdraw_tx.sign_and_submit_then_watch(&signer).await?;
 
 	expect_event::<webb_runtime::anchor_bn254::events::Withdraw>(&mut withdraw_res).await?;
+
+	Ok(())
+}
+
+#[tokio::test]
+async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
+	let api = client().await?;
+
+	let signer = PairSigner::<DefaultConfig, DefaultExtra<DefaultConfig>, _>::new(
+		AccountKeyring::Alice.pair(),
+	);
+
+	let pk_bytes = include_bytes!(
+		"../../protocol-substrate-fixtures/vanchor/bn254/x5/proving_key_uncompressed.bin"
+	);
+	let vk_bytes = include_bytes!(
+		"../../protocol-substrate-fixtures/vanchor/bn254/x5/verifying_key_uncompressed.bin"
+	);
+
+	let transactor = AccountKeyring::Alice.to_account_id();
+	let recipient = AccountKeyring::Bob.to_account_id();
+	let relayer = AccountKeyring::Bob.to_account_id();
+
+	let ext_amount = 10i128;
+	let fee = 0u128;
+	let public_amount = 10i128;
+
+	let chain_type = [2, 0];
+	let chain_id = compute_chain_id_type(0u32, chain_type);
+	let in_chain_ids = [chain_id; 2];
+	let in_amounts = [0, 0];
+	let in_indices = [0, 1];
+	let out_chain_ids = [chain_id; 2];
+
+	let amount = 10;
+	let out_amounts = [amount, 0];
+
+	let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
+	// We are adding indecies to out utxos, since they will be used as an input utxos in next
+	// transaction
+	let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
+
+	let output1: [u8; 32] = out_utxos[0].commitment.into_repr().to_bytes_le().try_into().unwrap();
+	let output2: [u8; 32] = out_utxos[1].commitment.into_repr().to_bytes_le().try_into().unwrap();
+	let ext_data = ExtData::new(
+		recipient.clone(),
+		relayer.clone(),
+		ext_amount,
+		fee,
+		Element(output1),
+		Element(output2),
+	);
+
+	let ext_data_hash = keccak_256(&ext_data.encode_abi());
+
+	let custom_roots = Some([[0u8; 32]; ANCHOR_COUNT].map(|x| x.to_vec()));
+	let (proof, public_inputs) = setup_vanchor_circuit(
+		public_amount,
+		chain_id,
+		ext_data_hash.to_vec(),
+		in_utxos,
+		out_utxos.clone(),
+		custom_roots,
+		pk_bytes.to_vec(),
+	);
+
+	// Deconstructing public inputs
+	let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+		deconstruct_vanchor_pi_el(&public_inputs);
+
+	// Constructing proof data
+	let proof_data =
+		ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+	// mixer = 0..4
+	// anchor = 4..8
+	// vanchor = 8
+	let tree_id = 8;
+	// Get the anchor transaction API
+	let vanchor = api.tx().v_anchor_bn254();
+	// Get the anchor storage API
+	let mt_storage = api.storage().merkle_tree_bn254();
+
+	let transact_tx = vanchor.transact(
+		tree_id,
+		proof_data,
+		ext_data,
+	);
 
 	Ok(())
 }

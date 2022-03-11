@@ -1770,7 +1770,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_verifier, MixerVerifierBn254);
 			add_benchmark!(params, batches, pallet_verifier, MixerVerifierBls381);
 			add_benchmark!(params, batches, pallet_verifier, AnchorVerifierBls381);
-			add_benchmark!(params, batches, pallet_verifier, AnchorMixerVerifierBn254);
+			add_benchmark!(params, batches, pallet_verifier, AnchorVerifierBn254);
 			add_benchmark!(params, batches, pallet_token_wrapper, TokenWrapper);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
