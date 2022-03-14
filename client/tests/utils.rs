@@ -1,24 +1,26 @@
-use core::fmt::Debug;
 use ark_std::collections::BTreeMap;
+use core::fmt::Debug;
 use subxt::{DefaultConfig, Event, TransactionProgress};
 
+use subxt::sp_runtime::AccountId32;
 use webb_client::webb_runtime;
-use webb_runtime::runtime_types::{sp_runtime::DispatchError, webb_standalone_runtime::Element as WebbElement};
-// use webb_runtime::runtime_types::webb_primitives::types::vanchor::ExtData as WebbExtData;
-// use webb_runtime::runtime_types::webb_primitives::types::vanchor::ProofData as WebbProofData;
-use webb_runtime::runtime_types::webb_primitives::types::vanchor::ProofData;
+use webb_runtime::runtime_types::{
+	sp_runtime::DispatchError,
+	webb_primitives::types::vanchor::{ExtData as WebbExtData, ProofData as WebbProofData},
+	webb_standalone_runtime::Element as WebbElement,
+};
 
 use ark_ff::{BigInteger, PrimeField};
 
-pub use arkworks_setups::common::{prove, prove_unchecked, verify_unchecked_raw, setup_tree_and_create_path};
 use arkworks_native_gadgets::poseidon::Poseidon;
+pub use arkworks_setups::common::{
+	prove, prove_unchecked, setup_tree_and_create_path, verify_unchecked_raw,
+};
 use arkworks_setups::{
-	common::Leaf,
-	common::setup_params,
-	r1cs::{anchor::AnchorR1CSProver, mixer::MixerR1CSProver},
-	r1cs::vanchor::VAnchorR1CSProver,
+	common::{setup_params, Leaf},
+	r1cs::{anchor::AnchorR1CSProver, mixer::MixerR1CSProver, vanchor::VAnchorR1CSProver},
 	utxo::Utxo,
-	AnchorProver, Curve, MixerProver, VAnchorProver
+	AnchorProver, Curve, MixerProver, VAnchorProver,
 };
 use webb_primitives::types::{ElementTrait, IntoAbiToken, Token};
 
@@ -30,22 +32,12 @@ use wasm_utils::{
 };
 
 use ark_bn254::{Bn254, Fr as Bn254Fr};
-use codec::{Encode, Decode};
-use serde::{Serialize, Deserialize};
+use codec::{Decode, Encode};
 use scale_info::TypeInfo;
+use serde::{Deserialize, Serialize};
 
 #[derive(
-	Debug,
-	Encode,
-	Decode,
-	Default,
-	Copy,
-	Clone,
-	PartialEq,
-	Eq,
-	TypeInfo,
-	Serialize,
-	Deserialize,
+	Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, TypeInfo, Serialize, Deserialize,
 )]
 pub struct Element(pub [u8; 32]);
 
@@ -98,7 +90,7 @@ impl Into<WebbProofData<WebbElement>> for ProofData<Element> {
 			roots: self.roots.iter().map(|x| x.clone().into()).collect(),
 			input_nullifiers: self.input_nullifiers.iter().map(|x| x.clone().into()).collect(),
 			output_commitments: self.output_commitments.iter().map(|x| x.clone().into()).collect(),
-			ext_data_hash: self.ext_data_hash.into()
+			ext_data_hash: self.ext_data_hash.into(),
 		}
 	}
 }
@@ -143,6 +135,21 @@ impl<I: Encode, A: Encode, B: Encode, E: Encode> IntoAbiToken for ExtData<I, A, 
 		ext_data_args.push(encrypted_output1);
 		ext_data_args.push(encrypted_output2);
 		Token::Tuple(ext_data_args)
+	}
+}
+
+impl Into<WebbExtData<AccountId32, i128, u128, WebbElement>>
+	for ExtData<AccountId32, i128, u128, Element>
+{
+	fn into(self) -> WebbExtData<AccountId32, i128, u128, WebbElement> {
+		WebbExtData {
+			recipient: self.recipient.clone(),
+			relayer: self.relayer.clone(),
+			ext_amount: self.ext_amount,
+			fee: self.fee,
+			encrypted_output1: self.encrypted_output1.into(),
+			encrypted_output2: self.encrypted_output2.into(),
+		}
 	}
 }
 

@@ -244,7 +244,7 @@ pub mod pallet {
 				phantom: Default::default(),
 				max_deposit_amount: BalanceOf::<T, I>::default(),
 				min_withdraw_amount: BalanceOf::<T, I>::default(),
-				vanchors: Vec::new()
+				vanchors: Vec::new(),
 			}
 		}
 	}

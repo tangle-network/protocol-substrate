@@ -6,13 +6,11 @@ use subxt::{DefaultConfig, DefaultExtra, PairSigner};
 
 mod utils;
 
-use utils::*;
 use codec::Encode;
-use webb_primitives::hashing::ethereum::keccak_256;
-use webb_primitives::utils::compute_chain_id_type;
+use utils::*;
+use webb_primitives::{hashing::ethereum::keccak_256, utils::compute_chain_id_type, IntoAbiToken};
 
-use ark_ff::PrimeField;
-use ark_ff::BigInteger;
+use ark_ff::{BigInteger, PrimeField};
 
 #[tokio::test]
 async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
@@ -98,8 +96,16 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	// assert!(res, "Invalid proof");
 
 	// Do the withdraw
-	let withdraw_tx =
-		mixer.withdraw(tree_id, proof_bytes, root.into(), nullifier_hash.into(), recipient, relayer, fee, refund);
+	let withdraw_tx = mixer.withdraw(
+		tree_id,
+		proof_bytes,
+		root.into(),
+		nullifier_hash.into(),
+		recipient,
+		relayer,
+		fee,
+		refund,
+	);
 	let mut withdraw_res = withdraw_tx.sign_and_submit_then_watch(&signer).await?;
 
 	expect_event::<webb_runtime::mixer_bn254::events::Withdraw>(&mut withdraw_res).await?;
@@ -296,11 +302,7 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	// Get the anchor storage API
 	let mt_storage = api.storage().merkle_tree_bn254();
 
-	let transact_tx = vanchor.transact(
-		tree_id,
-		proof_data,
-		ext_data,
-	);
+	let transact_tx = vanchor.transact(tree_id, proof_data.into(), ext_data.into());
 
 	Ok(())
 }
