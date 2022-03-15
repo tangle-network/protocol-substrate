@@ -324,21 +324,18 @@ pub fn setup_vanchor_circuit(
 	in_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
 	out_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
 	custom_roots: Option<[Vec<u8>; ANCHOR_CT]>,
+	leaves: Vec<Vec<u8>>,
 	pk_bytes: Vec<u8>,
 ) -> (Vec<u8>, Vec<Bn254Fr>) {
 	let curve = Curve::Bn254;
 	let rng = &mut thread_rng();
 
-	let leaf0 = in_utxos[0].commitment.into_repr().to_bytes_le();
-	let leaf1 = in_utxos[1].commitment.into_repr().to_bytes_le();
-
-	let leaves: Vec<Vec<u8>> = vec![leaf0, leaf1];
 	let leaves_f: Vec<Bn254Fr> =
 		leaves.iter().map(|x| Bn254Fr::from_le_bytes_mod_order(&x)).collect();
 
 	let mut in_leaves: BTreeMap<u64, Vec<Vec<u8>>> = BTreeMap::new();
 	in_leaves.insert(chain_id, leaves);
-	let in_indices = [0, 1];
+	let in_indices = [in_utxos[0].get_index().unwrap(), in_utxos[1].get_index().unwrap()];
 
 	// This allows us to pass zero roots for initial transaction
 	let in_root_set = if custom_roots.is_some() {

@@ -337,12 +337,6 @@ fn testnet_genesis(
 			parameters: None,
 			phantom: Default::default(),
 		},
-		v_anchor_bn_254: VAnchorBn254Config {
-			max_deposit_amount: 0,
-			min_withdraw_amount: 1_000_000 * UNITS,
-			vanchors: vec![(0, 2)],
-			phantom: Default::default(),
-		},
 		merkle_tree_bn_254: MerkleTreeBn254Config {
 			phantom: Default::default(),
 			default_hashes: None,
@@ -356,6 +350,12 @@ fn testnet_genesis(
 		},
 		anchor_bn_254: AnchorBn254Config {
 			anchors: vec![(0, 10 * UNITS, 2), (0, 100 * UNITS, 2), (0, 1000 * UNITS, 2)],
+		},
+		v_anchor_bn_254: VAnchorBn254Config {
+			max_deposit_amount: 1_000_000 * UNITS,
+			min_withdraw_amount: 0,
+			vanchors: vec![(0, 2)],
+			phantom: Default::default(),
 		},
 	}
 }
