@@ -25,7 +25,7 @@ ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "cu
 ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ], optional = true }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 ark-groth16 = { version = "^0.3.0", default-features = false }
-tracing = { version = "0.1", default-features = false, features = [ "attributes" ], optional = true }
+# tracing = { version = "0.1", default-features = false, features = [ "attributes" ], optional = true }
 
 blake2 = { version = "0.9", default-features = false }
 digest = { version = "0.9", default-features = false }
