@@ -52,11 +52,12 @@ pub fn setup_zk_circuit(
 
 			let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
 			let poseidon3 = Poseidon::new(params3);
-			let (tree, _) = setup_tree_and_create_path::<
-				Bn254Fr,
-				Poseidon<Bn254Fr>,
-				TREE_DEPTH,
-			>(&poseidon3, &leaves_f, index, &DEFAULT_LEAF)
+			let (tree, _) = setup_tree_and_create_path::<Bn254Fr, Poseidon<Bn254Fr>, TREE_DEPTH>(
+				&poseidon3,
+				&leaves_f,
+				index,
+				&DEFAULT_LEAF,
+			)
 			.unwrap();
 			let roots_f = [tree.root(); ANCHOR_CT];
 			let roots_raw = roots_f.map(|x| x.into_repr().to_bytes_le());
@@ -130,11 +131,12 @@ pub fn setup_wasm_utils_zk_circuit(
 			let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
 			let poseidon3 = Poseidon::new(params3);
 
-			let (tree, _) = setup_tree_and_create_path::<
-				Bn254Fr,
-				Poseidon<Bn254Fr>,
-				TREE_DEPTH,
-			>(&poseidon3, &leaves_f, index, &DEFAULT_LEAF)
+			let (tree, _) = setup_tree_and_create_path::<Bn254Fr, Poseidon<Bn254Fr>, TREE_DEPTH>(
+				&poseidon3,
+				&leaves_f,
+				index,
+				&DEFAULT_LEAF,
+			)
 			.unwrap();
 			let roots_f = [tree.root(); ANCHOR_CT];
 			let roots_raw = roots_f.map(|x| x.into_repr().to_bytes_le());
