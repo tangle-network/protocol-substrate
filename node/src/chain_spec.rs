@@ -1,4 +1,5 @@
-use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
+use arkworks_setups::Curve;
+use arkworks_setups::common::setup_params;
 use common::{AccountId, AuraId, Signature};
 use webb_runtime::{
 	wasm_binary_unwrap, AssetRegistryConfig, AuraConfig, BalancesConfig, CouncilConfig,

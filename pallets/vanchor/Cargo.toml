@@ -53,7 +53,6 @@ ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve"
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 arkworks-setups = { version = "0.5.0", features = ["r1cs"], git = "https://github.com/webb-tools/arkworks-gadgets" }
 arkworks-native-gadgets = { version = "0.5.0", git = "https://github.com/webb-tools/arkworks-gadgets" }
-arkworks-r1cs-gadgets = { version = "0.5.0", git = "https://github.com/webb-tools/arkworks-gadgets" }
 
 [features]
 default = ["std"]

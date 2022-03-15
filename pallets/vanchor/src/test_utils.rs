@@ -3,7 +3,6 @@ use std::collections::BTreeMap;
 use ark_ff::{BigInteger, PrimeField};
 use ark_std::{rand::thread_rng, vec::Vec};
 use arkworks_native_gadgets::poseidon::Poseidon;
-use arkworks_r1cs_gadgets::poseidon::PoseidonGadget;
 use arkworks_setups::{
 	common::{prove_unchecked, setup_params, setup_tree_and_create_path},
 	r1cs::vanchor::VAnchorR1CSProver,
@@ -90,8 +89,8 @@ pub fn setup_zk_circuit(
 	} else {
 		let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
 		let poseidon3 = Poseidon::new(params3);
-		let (tree, _) = setup_tree_and_create_path::<Bn254Fr, PoseidonGadget<Bn254Fr>, TREE_DEPTH>(
-			poseidon3,
+		let (tree, _) = setup_tree_and_create_path::<Bn254Fr, Poseidon<Bn254Fr>, TREE_DEPTH>(
+			&poseidon3,
 			&leaves_f,
 			0,
 			&DEFAULT_LEAF,
