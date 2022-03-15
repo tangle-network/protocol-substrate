@@ -76,8 +76,10 @@ use sp_std::prelude::*;
 use types::*;
 use webb_primitives::{
 	anchor::{AnchorConfig, AnchorInspector, AnchorInterface},
+	hasher::InstanceHasher,
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
 	verifier::*,
+	ElementTrait,
 };
 pub use weights::WeightInfo;
 
@@ -118,6 +120,9 @@ pub mod pallet {
 
 		/// The verifier
 		type Verifier: VerifierModule;
+
+		/// Arbitrary data hasher
+		type ArbitraryHasher: InstanceHasher;
 
 		/// Currency type for taking deposits
 		type Currency: MultiCurrency<Self::AccountId>;
@@ -186,6 +191,8 @@ pub mod pallet {
 		InvalidWithdrawProof,
 		/// Mixer not found.
 		NoAnchorFound,
+		// Invalid arbitrary data passed
+		InvalidArbitraryData,
 		/// Invalid nullifier that is already used
 		/// (this error is returned when a nullifier is used twice)
 		AlreadyRevealedNullifier,
@@ -404,16 +411,22 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		let refund_bytes = refund.using_encoded(element_encoder);
 		let chain_id_type_bytes =
 			T::LinkableTree::get_chain_id_type().using_encoded(element_encoder);
-		bytes.extend_from_slice(&chain_id_type_bytes);
+
+		let mut arbitrary_data_bytes = Vec::new();
+		arbitrary_data_bytes.extend_from_slice(&recipient_bytes);
+		arbitrary_data_bytes.extend_from_slice(&relayer_bytes);
+		arbitrary_data_bytes.extend_from_slice(&fee.encode());
+		arbitrary_data_bytes.extend_from_slice(&refund.encode());
+		arbitrary_data_bytes.extend_from_slice(&commitment.to_bytes());
+		let arbitrary_data = T::ArbitraryHasher::hash(&arbitrary_data_bytes, &[])
+			.map_err(|_| Error::<T, I>::InvalidArbitraryData)?;
+
 		bytes.extend_from_slice(&nullifier_hash.encode());
+		bytes.extend_from_slice(&arbitrary_data);
+		bytes.extend_from_slice(&chain_id_type_bytes);
 		for root in &roots {
 			bytes.extend_from_slice(&root.encode());
 		}
-		bytes.extend_from_slice(&recipient_bytes);
-		bytes.extend_from_slice(&relayer_bytes);
-		bytes.extend_from_slice(&fee_bytes);
-		bytes.extend_from_slice(&refund_bytes);
-		bytes.extend_from_slice(&commitment.encode());
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 		// withdraw or refresh depending on the refresh commitment value

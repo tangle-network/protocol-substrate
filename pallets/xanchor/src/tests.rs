@@ -3,7 +3,7 @@ use super::{
 	*,
 };
 use ark_bn254::Fr as Bn254Fr;
-use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_4, Curve};
+use arkworks_setups::{common::setup_params, Curve};
 use codec::Encode;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
@@ -21,7 +21,7 @@ const DEPOSIT_SIZE: u128 = 10_000;
 fn setup_environment(curve: Curve) -> Vec<u8> {
 	match curve {
 		Curve::Bn254 => {
-			let params3 = setup_params_x5_3::<Bn254Fr>(curve);
+			let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
 
 			// 1. Setup The Hasher Pallet.
 			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));

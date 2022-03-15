@@ -4,6 +4,7 @@ use super::*;
 use crate as pallet_mt;
 use sp_core::H256;
 
+use arkworks_setups::{common::setup_params, Curve};
 use frame_support::{parameter_types, traits::GenesisBuild};
 use frame_system as system;
 use serde::{Deserialize, Serialize};
@@ -13,8 +14,6 @@ use sp_runtime::{
 };
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
 use webb_primitives::AccountId;
-
-use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -160,7 +159,7 @@ impl Config for Test {
 
 pub fn hasher_params() -> Vec<u8> {
 	let curve = Curve::Bn254;
-	let params = setup_params_x5_3::<ark_bn254::Fr>(curve);
+	let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 	params.to_bytes()
 }
 

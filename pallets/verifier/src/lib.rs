@@ -164,6 +164,7 @@ impl<T: Config<I>, I: 'static> VerifierModule for Pallet<T, I> {
 			Ok(verified) => Ok(verified),
 			Err(e) => {
 				log::info!("{:?}", e);
+				// println!("{:?}", e);
 				// TODO: Handle properly
 				ensure!(false, Error::<T, I>::VerifyError);
 				Ok(false)

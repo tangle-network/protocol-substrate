@@ -17,7 +17,8 @@ use webb_runtime::{
 	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig,
 	HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config,
 	MerkleTreeBn254Config, MixerBn254Config, MixerVerifierBls381Config, MixerVerifierBn254Config,
-	SessionConfig, StakerStatus, StakingConfig, SudoConfig,
+	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VAnchorVerifier2x2Bls381Config,
+	VAnchorVerifier2x2Bn254Config,
 };
 
 // ImOnline consensus authority.
@@ -216,6 +217,14 @@ fn testnet_genesis(
 		vk_bytes.to_vec()
 	};
 
+	log::info!("Verifier params for vanchor");
+	let vanchor_verifier_bn254_params = {
+		let vk_bytes = include_bytes!(
+			"../../../protocol-substrate-fixtures/vanchor/bn254/x5/verifying_key.bin"
+		);
+		vk_bytes.to_vec()
+	};
+
 	let mut endowed_accounts: Vec<AccountId> = endowed_accounts;
 	// endow all authorities and nominators.
 	initial_authorities
@@ -317,6 +326,14 @@ fn testnet_genesis(
 			phantom: Default::default(),
 		},
 		anchor_verifier_bls_381: AnchorVerifierBls381Config {
+			parameters: None,
+			phantom: Default::default(),
+		},
+		v_anchor_verifier_2x_2_bn_254: VAnchorVerifier2x2Bn254Config {
+			parameters: Some(vanchor_verifier_bn254_params),
+			phantom: Default::default(),
+		},
+		v_anchor_verifier_2x_2_bls_381: VAnchorVerifier2x2Bls381Config {
 			parameters: None,
 			phantom: Default::default(),
 		},

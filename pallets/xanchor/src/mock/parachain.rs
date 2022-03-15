@@ -30,6 +30,7 @@ use polkadot_parachain::primitives::{
 };
 pub use webb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
+	hashing::ethereum::Keccak256HasherBn254,
 	types::ElementTrait,
 	AccountId,
 };
@@ -491,6 +492,7 @@ impl pallet_anchor::Config for Runtime {
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = XAnchor;
 	type Verifier = VerifierPallet;
+	type ArbitraryHasher = Keccak256HasherBn254;
 	type WeightInfo = ();
 }
 
