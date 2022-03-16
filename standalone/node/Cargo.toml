@@ -103,8 +103,8 @@ sc-authority-discovery = { git = "https://github.com/paritytech/substrate", bran
 sp-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 
 arkworks-setups = { version = "0.5.0", features = ["r1cs"], git = "https://github.com/webb-tools/arkworks-gadgets", default-features = false }
-ark-std = { version = "^0.3.0" }
-ark-serialize = { version = "^0.3.0" }
+ark-std = { version = "^0.3.0", default-features = false }
+ark-serialize = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 
