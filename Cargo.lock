@@ -347,7 +347,7 @@ dependencies = [
 [[package]]
 name = "arkworks-native-gadgets"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/utxo-set-index#db28a3118c9fe46e1afed79ce789a91c47f5b894"
+source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/utxo-set-index#512c6c1576e65c090834d67b52c764bb346fea7a"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
@@ -357,7 +357,7 @@ dependencies = [
 [[package]]
 name = "arkworks-native-gadgets"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets#85673bf47e56e518e82d1bfb1b3ff4554489f4b3"
+source = "git+https://github.com/webb-tools/arkworks-gadgets#6887bc3a8319c2994b65fe44d74b0e3c53fd0d2e"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
@@ -367,7 +367,7 @@ dependencies = [
 [[package]]
 name = "arkworks-r1cs-circuits"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/utxo-set-index#db28a3118c9fe46e1afed79ce789a91c47f5b894"
+source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/utxo-set-index#512c6c1576e65c090834d67b52c764bb346fea7a"
 dependencies = [
  "ark-ff",
  "ark-r1cs-std",
@@ -380,7 +380,7 @@ dependencies = [
 [[package]]
 name = "arkworks-r1cs-circuits"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets#85673bf47e56e518e82d1bfb1b3ff4554489f4b3"
+source = "git+https://github.com/webb-tools/arkworks-gadgets#6887bc3a8319c2994b65fe44d74b0e3c53fd0d2e"
 dependencies = [
  "ark-ff",
  "ark-r1cs-std",
@@ -393,7 +393,7 @@ dependencies = [
 [[package]]
 name = "arkworks-r1cs-gadgets"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/utxo-set-index#db28a3118c9fe46e1afed79ce789a91c47f5b894"
+source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/utxo-set-index#512c6c1576e65c090834d67b52c764bb346fea7a"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
@@ -406,7 +406,7 @@ dependencies = [
 [[package]]
 name = "arkworks-r1cs-gadgets"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets#85673bf47e56e518e82d1bfb1b3ff4554489f4b3"
+source = "git+https://github.com/webb-tools/arkworks-gadgets#6887bc3a8319c2994b65fe44d74b0e3c53fd0d2e"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
@@ -419,7 +419,7 @@ dependencies = [
 [[package]]
 name = "arkworks-setups"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/utxo-set-index#db28a3118c9fe46e1afed79ce789a91c47f5b894"
+source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/utxo-set-index#512c6c1576e65c090834d67b52c764bb346fea7a"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ec",
@@ -440,7 +440,7 @@ dependencies = [
 [[package]]
 name = "arkworks-setups"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets#85673bf47e56e518e82d1bfb1b3ff4554489f4b3"
+source = "git+https://github.com/webb-tools/arkworks-gadgets#6887bc3a8319c2994b65fe44d74b0e3c53fd0d2e"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ec",
@@ -461,7 +461,7 @@ dependencies = [
 [[package]]
 name = "arkworks-utils"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/utxo-set-index#db28a3118c9fe46e1afed79ce789a91c47f5b894"
+source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=filip/utxo-set-index#512c6c1576e65c090834d67b52c764bb346fea7a"
 dependencies = [
  "ark-ff",
  "ark-std",
@@ -471,7 +471,7 @@ dependencies = [
 [[package]]
 name = "arkworks-utils"
 version = "0.5.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets#85673bf47e56e518e82d1bfb1b3ff4554489f4b3"
+source = "git+https://github.com/webb-tools/arkworks-gadgets#6887bc3a8319c2994b65fe44d74b0e3c53fd0d2e"
 dependencies = [
  "ark-ff",
  "ark-std",
@@ -1787,9 +1787,9 @@ dependencies = [
 
 [[package]]
 name = "dyn-clone"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee2626afccd7561a06cf1367e2950c4718ea04565e20fb5029b6c7d8ad09abcf"
+checksum = "21e50f3adc76d6a43f5ed73b698a87d0760ca74617f60f7c3b879003536fdd28"
 
 [[package]]
 name = "ed25519"
