@@ -44,6 +44,7 @@ jobs:
               -p pallet-anchor-handler \
               -p pallet-signature-bridge \
               -p pallet-anchor \
+              -p pallet-vanchor \
               -p pallet-mixer \
               -p pallet-linkable-tree \
               -p pallet-mt \
