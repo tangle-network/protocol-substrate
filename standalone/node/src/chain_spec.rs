@@ -1,4 +1,4 @@
-use arkworks_utils::utils::common::{setup_params_x5_3, Curve};
+use arkworks_setups::{common::setup_params, Curve};
 use common::{AccountId, BabeId, Balance, Signature};
 
 use itertools::Itertools;
@@ -17,8 +17,8 @@ use webb_runtime::{
 	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig,
 	HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config,
 	MerkleTreeBn254Config, MixerBn254Config, MixerVerifierBls381Config, MixerVerifierBn254Config,
-	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VAnchorVerifier2x2Bls381Config,
-	VAnchorVerifier2x2Bn254Config,
+	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VAnchorBn254Config,
+	VAnchorVerifier2x2Bls381Config, VAnchorVerifier2x2Bn254Config,
 };
 
 // ImOnline consensus authority.
@@ -197,10 +197,10 @@ fn testnet_genesis(
 	let curve_bn254 = Curve::Bn254;
 	let curve_bls381 = Curve::Bls381;
 	log::info!("Bn254 x5 w3 params");
-	let bn254_x5_3_params = setup_params_x5_3::<ark_bn254::Fr>(curve_bn254);
+	let bn254_x5_3_params = setup_params::<ark_bn254::Fr>(curve_bn254, 5, 3);
 
 	log::info!("BLS381 x5 w3 params");
-	let bls381_x5_3_params = setup_params_x5_3::<ark_bls12_381::Fr>(curve_bls381);
+	let bls381_x5_3_params = setup_params::<ark_bls12_381::Fr>(curve_bls381, 5, 3);
 
 	log::info!("Verifier params for mixer");
 	let mixer_verifier_bn254_params = {
@@ -350,6 +350,12 @@ fn testnet_genesis(
 		},
 		anchor_bn_254: AnchorBn254Config {
 			anchors: vec![(0, 10 * UNITS, 2), (0, 100 * UNITS, 2), (0, 1000 * UNITS, 2)],
+		},
+		v_anchor_bn_254: VAnchorBn254Config {
+			max_deposit_amount: 1_000_000 * UNITS,
+			min_withdraw_amount: 0,
+			vanchors: vec![(0, 2)],
+			phantom: Default::default(),
 		},
 	}
 }

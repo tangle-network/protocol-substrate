@@ -1,16 +1,20 @@
 use crate::*;
-use ark_crypto_primitives::{Error, CRH as CRHTrait};
+use ark_crypto_primitives::Error;
 use ark_ff::{BigInteger, PrimeField};
-use arkworks_gadgets::poseidon::CRH;
-use arkworks_utils::poseidon::PoseidonParameters;
+use arkworks_native_gadgets::{
+	poseidon::{FieldHasher, Poseidon, PoseidonParameters},
+	to_field_elements,
+};
 use sp_std::{marker::PhantomData, vec::Vec};
 
 pub struct ArkworksPoseidonHasher<F: PrimeField>(PhantomData<F>);
 
 impl<F: PrimeField> InstanceHasher for ArkworksPoseidonHasher<F> {
 	fn hash(input: &[u8], param_bytes: &[u8]) -> Result<Vec<u8>, Error> {
+		let els = to_field_elements(input)?;
 		let params = PoseidonParameters::<F>::from_bytes(param_bytes)?;
-		let output: F = <CRH<F> as CRHTrait>::evaluate(&params, input)?;
+		let poseidon = Poseidon::new(params);
+		let output: F = poseidon.hash(&els)?;
 		let value = output.into_repr().to_bytes_le();
 		Ok(value)
 	}

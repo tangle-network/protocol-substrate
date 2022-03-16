@@ -25,14 +25,12 @@ ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "cu
 ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ], optional = true }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 ark-groth16 = { version = "^0.3.0", default-features = false }
-tracing = { version = "0.1", default-features = false, features = [ "attributes" ], optional = true }
 
 blake2 = { version = "0.9", default-features = false }
 digest = { version = "0.9", default-features = false }
 
 ark-crypto-primitives = { version = "^0.3.0", default-features = false }
-arkworks-gadgets = { version = "0.4.16", default-features = false, optional = true }
-arkworks-utils = { version = "0.4.16", default-features = false, optional = true }
+arkworks-native-gadgets = { version = "0.5.0", git = "https://github.com/webb-tools/arkworks-gadgets", branch = "filip/utxo-set-index", default-features = false, optional = true }
 
 codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "2.2.0" }
 
@@ -60,15 +58,13 @@ field_ops = [
 	"ark-bn254",
 ]
 hashing = [
-	"arkworks-gadgets",
-	"arkworks-utils",
+	"arkworks-native-gadgets",
 	"ark-bls12-381",
 	"ark-bls12-377",
 	"ark-bn254",
 ]
 verifying = [
-	"arkworks-gadgets",
-	"arkworks-utils",
+	"arkworks-native-gadgets",
 	"ark-bls12-381",
 	"ark-bls12-377",
 	"ark-bn254",

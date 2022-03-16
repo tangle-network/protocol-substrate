@@ -35,7 +35,7 @@ impl<E: ElementTrait> ProofData<E> {
 	}
 }
 
-#[derive(Clone, Encode, Decode, Debug, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, Default, Debug, Clone, Eq, PartialEq, Copy, TypeInfo)]
 pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode, Element: Encode> {
 	pub recipient: AccountId,
 	pub relayer: AccountId,
@@ -60,6 +60,7 @@ impl<I: Encode, A: Encode, B: Encode, E: Encode> ExtData<I, A, B, E> {
 
 impl<I: Encode, A: Encode, B: Encode, E: Encode> IntoAbiToken for ExtData<I, A, B, E> {
 	fn into_abi(&self) -> Token {
+		// TODO: Make sure the encodings match the solidity side
 		let recipient = Token::Bytes(self.recipient.encode());
 		let ext_amount = Token::Bytes(self.ext_amount.encode());
 		let relayer = Token::Bytes(self.relayer.encode());

@@ -39,7 +39,7 @@ ark-serialize = { version = "^0.3.0", default-features = false, features = [ "de
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ] }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-arkworks-setups = { version = "0.5.0", features = ["r1cs"], git = "https://github.com/webb-tools/arkworks-gadgets" } # just for testing we will include everything.
+arkworks-setups = { version = "0.5.0", features = ["r1cs"], git = "https://github.com/webb-tools/arkworks-gadgets" }
 
 [features]
 default = ["std"]

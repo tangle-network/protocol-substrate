@@ -3,7 +3,7 @@ use ark_crypto_primitives::{Error, SNARK};
 use ark_ec::PairingEngine;
 use ark_groth16::{Groth16, Proof, VerifyingKey};
 use ark_serialize::CanonicalDeserialize;
-use arkworks_utils::utils::to_field_elements;
+use arkworks_native_gadgets::to_field_elements;
 use sp_std::marker::PhantomData;
 pub struct ArkworksVerifierGroth16<E: PairingEngine>(PhantomData<E>);
 

@@ -11,10 +11,14 @@ subxt = { version = "0.17.0" }
 codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = ["derive", "full", "bit-vec"] }
 
 [dev-dependencies]
+serde = { version = "1.0.119" }
 sp-keyring = "5.0.0"
 hex = "0.4"
-wasm-utils = { version = "0.1.1" }
+tokio = { version = "1.17.0", features = ["full"] }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.16" }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 
+# arkworks related deps
 ark-bls12-377 = {version = "^0.3.0", default-features = false, features = ["curve", "r1cs"]}
 ark-bls12-381 = {version = "^0.3.0", default-features = false, features = ["curve"]}
 ark-bn254 = {version = "^0.3.0", default-features = false, features = ["curve"]}
@@ -25,8 +29,8 @@ ark-relations = {version = "^0.3.0", default-features = false}
 ark-serialize = {version = "^0.3.0", default-features = false, features = ["derive"]}
 ark-std = {version = "^0.3.0", default-features = false}
 
-arkworks-gadgets  = { version = "0.4.19", default-features = false }
-arkworks-circuits = { version = "0.4.19", default-features = false }
-arkworks-utils    = { version = "0.4.19", features = ["default_poseidon", "default_mimc"], default-features = false }
-
-tokio = { version = "1.17.0", features = ["full"] }
+# webb deps
+wasm-utils = { version = "0.1.3", git = "https://github.com/webb-tools/webb.js", branch = "filip/update-to-0.5.0-arkworks-setup" }
+webb-primitives = { path = "../primitives", features = ["hashing", "verifying", "field_ops"] }
+arkworks-setups = { version = "0.5.0", features = ["r1cs"], git = "https://github.com/webb-tools/arkworks-gadgets", branch = "filip/utxo-set-index", default-features = false }
+arkworks-native-gadgets = { version = "0.5.0", git = "https://github.com/webb-tools/arkworks-gadgets", branch = "filip/utxo-set-index", default-features = false }
