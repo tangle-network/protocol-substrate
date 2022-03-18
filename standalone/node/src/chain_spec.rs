@@ -12,6 +12,7 @@ use sp_runtime::{
 	Perbill,
 };
 use webb_runtime::{
+	Element,
 	constants::currency::*, wasm_binary_unwrap, AnchorBn254Config, AnchorVerifierBls381Config,
 	AnchorVerifierBn254Config, AssetRegistryConfig, AuthorityDiscoveryConfig, BabeConfig, Block,
 	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig,
@@ -195,12 +196,9 @@ fn testnet_genesis(
 	root_key: AccountId,
 ) -> GenesisConfig {
 	let curve_bn254 = Curve::Bn254;
-	let curve_bls381 = Curve::Bls381;
+
 	log::info!("Bn254 x5 w3 params");
 	let bn254_x5_3_params = setup_params::<ark_bn254::Fr>(curve_bn254, 5, 3);
-
-	log::info!("BLS381 x5 w3 params");
-	let bls381_x5_3_params = setup_params::<ark_bls12_381::Fr>(curve_bls381, 5, 3);
 
 	log::info!("Verifier params for mixer");
 	let mixer_verifier_bn254_params = {
@@ -310,7 +308,7 @@ fn testnet_genesis(
 			phantom: Default::default(),
 		},
 		hasher_bls_381: HasherBls381Config {
-			parameters: Some(bls381_x5_3_params.to_bytes()),
+			parameters: None,
 			phantom: Default::default(),
 		},
 		mixer_verifier_bn_254: MixerVerifierBn254Config {
@@ -343,7 +341,9 @@ fn testnet_genesis(
 		},
 		merkle_tree_bls_381: MerkleTreeBls381Config {
 			phantom: Default::default(),
-			default_hashes: None,
+			// A hack to avoid runtime error
+			// TODO: Handle default hashes properly
+			default_hashes: Some(vec![Element::default()]),
 		},
 		mixer_bn_254: MixerBn254Config {
 			mixers: vec![(0, 10 * UNITS), (0, 100 * UNITS), (0, 1000 * UNITS)],
