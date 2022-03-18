@@ -12,11 +12,12 @@ use sp_runtime::{
 	Perbill,
 };
 use webb_runtime::{
-	constants::currency::*, wasm_binary_unwrap, AnchorBn254Config,
-	AnchorVerifierBn254Config, AssetRegistryConfig, AuthorityDiscoveryConfig, BabeConfig, Block,
-	CouncilConfig, DemocracyConfig, ElectionsConfig, Element, GenesisConfig, GrandpaConfig, HasherBn254Config, ImOnlineConfig, IndicesConfig,
-	MerkleTreeBn254Config, MixerBn254Config, MixerVerifierBn254Config,
-	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VAnchorBn254Config, VAnchorVerifier2x2Bn254Config,
+	constants::currency::*, wasm_binary_unwrap, AnchorBn254Config, AnchorVerifierBn254Config,
+	AssetRegistryConfig, AuthorityDiscoveryConfig, BabeConfig, Block, CouncilConfig,
+	DemocracyConfig, ElectionsConfig, Element, GenesisConfig, GrandpaConfig, HasherBn254Config,
+	ImOnlineConfig, IndicesConfig, MerkleTreeBn254Config, MixerBn254Config,
+	MixerVerifierBn254Config, SessionConfig, StakerStatus, StakingConfig, SudoConfig,
+	VAnchorBn254Config, VAnchorVerifier2x2Bn254Config,
 };
 
 // ImOnline consensus authority.
