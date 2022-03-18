@@ -12,10 +12,9 @@ use sp_runtime::{
 	Perbill,
 };
 use webb_runtime::{
-	Element,
 	constants::currency::*, wasm_binary_unwrap, AnchorBn254Config, AnchorVerifierBls381Config,
 	AnchorVerifierBn254Config, AssetRegistryConfig, AuthorityDiscoveryConfig, BabeConfig, Block,
-	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig,
+	CouncilConfig, DemocracyConfig, ElectionsConfig, Element, GenesisConfig, GrandpaConfig,
 	HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config,
 	MerkleTreeBn254Config, MixerBn254Config, MixerVerifierBls381Config, MixerVerifierBn254Config,
 	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VAnchorBn254Config,
@@ -307,10 +306,7 @@ fn testnet_genesis(
 			parameters: Some(bn254_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		hasher_bls_381: HasherBls381Config {
-			parameters: None,
-			phantom: Default::default(),
-		},
+		hasher_bls_381: HasherBls381Config { parameters: None, phantom: Default::default() },
 		mixer_verifier_bn_254: MixerVerifierBn254Config {
 			parameters: Some(mixer_verifier_bn254_params),
 			phantom: Default::default(),
