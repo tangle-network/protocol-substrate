@@ -12,13 +12,11 @@ use sp_runtime::{
 	Perbill,
 };
 use webb_runtime::{
-	constants::currency::*, wasm_binary_unwrap, AnchorBn254Config, AnchorVerifierBls381Config,
+	constants::currency::*, wasm_binary_unwrap, AnchorBn254Config,
 	AnchorVerifierBn254Config, AssetRegistryConfig, AuthorityDiscoveryConfig, BabeConfig, Block,
-	CouncilConfig, DemocracyConfig, ElectionsConfig, Element, GenesisConfig, GrandpaConfig,
-	HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config,
-	MerkleTreeBn254Config, MixerBn254Config, MixerVerifierBls381Config, MixerVerifierBn254Config,
-	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VAnchorBn254Config,
-	VAnchorVerifier2x2Bls381Config, VAnchorVerifier2x2Bn254Config,
+	CouncilConfig, DemocracyConfig, ElectionsConfig, Element, GenesisConfig, GrandpaConfig, HasherBn254Config, ImOnlineConfig, IndicesConfig,
+	MerkleTreeBn254Config, MixerBn254Config, MixerVerifierBn254Config,
+	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VAnchorBn254Config, VAnchorVerifier2x2Bn254Config,
 };
 
 // ImOnline consensus authority.
@@ -306,40 +304,21 @@ fn testnet_genesis(
 			parameters: Some(bn254_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		hasher_bls_381: HasherBls381Config { parameters: None, phantom: Default::default() },
 		mixer_verifier_bn_254: MixerVerifierBn254Config {
 			parameters: Some(mixer_verifier_bn254_params),
-			phantom: Default::default(),
-		},
-		mixer_verifier_bls_381: MixerVerifierBls381Config {
-			parameters: None,
 			phantom: Default::default(),
 		},
 		anchor_verifier_bn_254: AnchorVerifierBn254Config {
 			parameters: Some(anchor_verifier_bn254_params),
 			phantom: Default::default(),
 		},
-		anchor_verifier_bls_381: AnchorVerifierBls381Config {
-			parameters: None,
-			phantom: Default::default(),
-		},
 		v_anchor_verifier_2x_2_bn_254: VAnchorVerifier2x2Bn254Config {
 			parameters: Some(vanchor_verifier_bn254_params),
-			phantom: Default::default(),
-		},
-		v_anchor_verifier_2x_2_bls_381: VAnchorVerifier2x2Bls381Config {
-			parameters: None,
 			phantom: Default::default(),
 		},
 		merkle_tree_bn_254: MerkleTreeBn254Config {
 			phantom: Default::default(),
 			default_hashes: None,
-		},
-		merkle_tree_bls_381: MerkleTreeBls381Config {
-			phantom: Default::default(),
-			// A hack to avoid runtime error
-			// TODO: Handle default hashes properly
-			default_hashes: Some(vec![Element::default()]),
 		},
 		mixer_bn_254: MixerBn254Config {
 			mixers: vec![(0, 10 * UNITS), (0, 100 * UNITS), (0, 1000 * UNITS)],
