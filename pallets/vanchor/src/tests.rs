@@ -402,6 +402,7 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 }
 
 #[test]
+#[cfg(not(tarpaulin))]
 fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, _) = setup_environment();
@@ -488,6 +489,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 }
 
 #[test]
+#[cfg(not(tarpaulin))]
 fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, _) = setup_environment();

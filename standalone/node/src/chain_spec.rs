@@ -12,13 +12,12 @@ use sp_runtime::{
 	Perbill,
 };
 use webb_runtime::{
-	constants::currency::*, wasm_binary_unwrap, AnchorBn254Config, AnchorVerifierBls381Config,
-	AnchorVerifierBn254Config, AssetRegistryConfig, AuthorityDiscoveryConfig, BabeConfig, Block,
-	CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig,
-	HasherBls381Config, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBls381Config,
-	MerkleTreeBn254Config, MixerBn254Config, MixerVerifierBls381Config, MixerVerifierBn254Config,
-	SessionConfig, StakerStatus, StakingConfig, SudoConfig, VAnchorBn254Config,
-	VAnchorVerifier2x2Bls381Config, VAnchorVerifier2x2Bn254Config,
+	constants::currency::*, wasm_binary_unwrap, AnchorBn254Config, AnchorVerifierBn254Config,
+	AssetRegistryConfig, AuthorityDiscoveryConfig, BabeConfig, Block, CouncilConfig,
+	DemocracyConfig, ElectionsConfig, Element, GenesisConfig, GrandpaConfig, HasherBn254Config,
+	ImOnlineConfig, IndicesConfig, MerkleTreeBn254Config, MixerBn254Config,
+	MixerVerifierBn254Config, SessionConfig, StakerStatus, StakingConfig, SudoConfig,
+	VAnchorBn254Config, VAnchorVerifier2x2Bn254Config,
 };
 
 // ImOnline consensus authority.
@@ -195,12 +194,9 @@ fn testnet_genesis(
 	root_key: AccountId,
 ) -> GenesisConfig {
 	let curve_bn254 = Curve::Bn254;
-	let curve_bls381 = Curve::Bls381;
+
 	log::info!("Bn254 x5 w3 params");
 	let bn254_x5_3_params = setup_params::<ark_bn254::Fr>(curve_bn254, 5, 3);
-
-	log::info!("BLS381 x5 w3 params");
-	let bls381_x5_3_params = setup_params::<ark_bls12_381::Fr>(curve_bls381, 5, 3);
 
 	log::info!("Verifier params for mixer");
 	let mixer_verifier_bn254_params = {
@@ -309,39 +305,19 @@ fn testnet_genesis(
 			parameters: Some(bn254_x5_3_params.to_bytes()),
 			phantom: Default::default(),
 		},
-		hasher_bls_381: HasherBls381Config {
-			parameters: Some(bls381_x5_3_params.to_bytes()),
-			phantom: Default::default(),
-		},
 		mixer_verifier_bn_254: MixerVerifierBn254Config {
 			parameters: Some(mixer_verifier_bn254_params),
-			phantom: Default::default(),
-		},
-		mixer_verifier_bls_381: MixerVerifierBls381Config {
-			parameters: None,
 			phantom: Default::default(),
 		},
 		anchor_verifier_bn_254: AnchorVerifierBn254Config {
 			parameters: Some(anchor_verifier_bn254_params),
 			phantom: Default::default(),
 		},
-		anchor_verifier_bls_381: AnchorVerifierBls381Config {
-			parameters: None,
-			phantom: Default::default(),
-		},
 		v_anchor_verifier_2x_2_bn_254: VAnchorVerifier2x2Bn254Config {
 			parameters: Some(vanchor_verifier_bn254_params),
 			phantom: Default::default(),
 		},
-		v_anchor_verifier_2x_2_bls_381: VAnchorVerifier2x2Bls381Config {
-			parameters: None,
-			phantom: Default::default(),
-		},
 		merkle_tree_bn_254: MerkleTreeBn254Config {
-			phantom: Default::default(),
-			default_hashes: None,
-		},
-		merkle_tree_bls_381: MerkleTreeBls381Config {
 			phantom: Default::default(),
 			default_hashes: None,
 		},

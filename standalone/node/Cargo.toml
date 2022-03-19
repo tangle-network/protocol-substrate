@@ -102,7 +102,7 @@ pallet-im-online = { git = "https://github.com/paritytech/substrate", branch = "
 sc-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 sp-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 
-arkworks-setups = { version = "0.5.0", features = ["r1cs"], git = "https://github.com/webb-tools/arkworks-gadgets", default-features = false }
+arkworks-setups = { version = "0.5.3", features = ["r1cs"], default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }

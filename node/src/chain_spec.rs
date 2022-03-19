@@ -251,12 +251,9 @@ fn testnet_genesis(
 	id: ParaId,
 ) -> GenesisConfig {
 	let curve_bn254 = Curve::Bn254;
-	let curve_bls381 = Curve::Bls381;
+
 	log::info!("Bn254 x5 w3 params");
 	let bn254_x5_3_params = setup_params::<ark_bn254::Fr>(curve_bn254, 5, 3);
-
-	log::info!("BLS381 x5 w3 params");
-	let bls381_x5_3_params = setup_params::<ark_bls12_381::Fr>(curve_bls381, 5, 3);
 
 	log::info!("Verifier params");
 	let verifier_params = {
@@ -303,7 +300,7 @@ fn testnet_genesis(
 			phantom: Default::default(),
 		},
 		hasher_bls_381: HasherBls381Config {
-			parameters: Some(bls381_x5_3_params.to_bytes()),
+			parameters: None,
 			phantom: Default::default(),
 		},
 		verifier_bn_254: VerifierBn254Config {

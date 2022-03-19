@@ -102,7 +102,7 @@ pub fn setup_wasm_utils_zk_circuit(
 
 			let mixer_proof_input = MixerProofInput {
 				exponentiation: 5,
-				width: 5,
+				width: 3,
 				curve: WasmCurve::Bn254,
 				backend: Backend::Arkworks,
 				secret: secret.to_vec(),

@@ -30,7 +30,7 @@ ark-serialize = {version = "^0.3.0", default-features = false, features = ["deri
 ark-std = {version = "^0.3.0", default-features = false}
 
 # webb deps
-wasm-utils = { version = "0.1.3", git = "https://github.com/webb-tools/webb.js", branch = "filip/update-to-0.5.0-arkworks-setup" }
+wasm-utils = { version = "0.1.3" }
 webb-primitives = { path = "../primitives", features = ["hashing", "verifying", "field_ops"] }
-arkworks-setups = { version = "0.5.0", features = ["r1cs"], git = "https://github.com/webb-tools/arkworks-gadgets", branch = "filip/utxo-set-index", default-features = false }
-arkworks-native-gadgets = { version = "0.5.0", git = "https://github.com/webb-tools/arkworks-gadgets", branch = "filip/utxo-set-index", default-features = false }
+arkworks-setups = { version = "0.5.3", features = ["r1cs"], default-features = false }
+arkworks-native-gadgets = { version = "0.5.3", default-features = false }
