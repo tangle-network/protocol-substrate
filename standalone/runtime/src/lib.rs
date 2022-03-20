@@ -59,6 +59,8 @@ pub use pallet_staking::StakerStatus;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+use pallet_election_provider_multi_phase::NoFallback;
+
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
@@ -398,8 +400,6 @@ impl pallet_staking::BenchmarkingConfig for StakingBenchmarkingConfig {
 }
 
 impl pallet_staking::Config for Runtime {
-	const MAX_NOMINATIONS: u32 = MAX_NOMINATIONS;
-
 	type BenchmarkingConfig = StakingBenchmarkingConfig;
 	type BondingDuration = BondingDuration;
 	type Currency = Balances;
@@ -429,6 +429,7 @@ impl pallet_staking::Config for Runtime {
 	// number of nominators.
 	type SortedListProvider = BagsList;
 	type UnixTime = Timestamp;
+	type MaxNominations = MaxNominations;
 	type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
 }
 
@@ -548,6 +549,7 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 	>;
 	type UnsignedPhase = UnsignedPhase;
 	type VoterSnapshotPerBlock = VoterSnapshotPerBlock;
+	type GovernanceFallback = NoFallback<Self>;
 	type WeightInfo = pallet_election_provider_multi_phase::weights::SubstrateWeight<Self>;
 }
 
