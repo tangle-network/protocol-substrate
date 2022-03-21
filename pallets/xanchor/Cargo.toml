@@ -50,7 +50,7 @@ ark-serialize = { version = "^0.3.0", default-features = false, features = [ "de
 ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-arkworks-setups = { version = "0.5.3", features = ["r1cs"] }
+arkworks-setups = { version = "1.0.0", features = ["r1cs"] }
 
 webb-primitives = { path = "../../primitives" }
 
