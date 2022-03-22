@@ -924,13 +924,6 @@ impl pallet_bridge::Config<BridgeInstance> for Runtime {
 	type ProposalLifetime = ProposalLifetime;
 }
 
-impl pallet_hello::Config for Runtime {
-	type Call = Call;
-	type Event = Event;
-	type Origin = Origin;
-	type XcmSender = XcmRouter;
-}
-
 parameter_types! {
 	pub const CouncilMotionDuration: BlockNumber = 5 * DAYS;
 	pub const CouncilMaxProposals: u32 = 100;
@@ -1115,7 +1108,6 @@ construct_runtime!(
 
 		// Bridge
 		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		HelloXcm: pallet_hello::{Pallet, Call, Storage, Event<T>},
 
 		Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>}
 	}

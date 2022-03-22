@@ -38,7 +38,6 @@ pallet-anchor = { path = "../pallets/anchor", default-features = false }
 pallet-anchor-handler = { path = "../pallets/anchor-handler", default-features = false }
 pallet-asset-registry = { path = "../pallets/asset-registry", default-features = false }
 pallet-bridge = { path = "../pallets/bridge", default-features = false }
-pallet-hello = { path = "../pallets/hello", default-features = false }
 pallet-mixer = { path = "../pallets/mixer", default-features = false }
 pallet-token-wrapper = { path = "../pallets/token-wrapper", default-features = false }
 
