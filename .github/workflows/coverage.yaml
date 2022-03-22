@@ -38,7 +38,6 @@ jobs:
         run: |
           git submodule update --init && \
           SKIP_WASM_BUILD=1 cargo +nightly tarpaulin --out Xml \
-              -p webb-standalone-runtime \
               -p pallet-token-wrapper-handler \
               -p pallet-token-wrapper \
               -p pallet-anchor-handler \
