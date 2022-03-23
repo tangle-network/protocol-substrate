@@ -47,9 +47,10 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>) {
 		"../../../protocol-substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
-	let vk_bytes =
-		include_bytes!("../../../protocol-substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin")
-			.to_vec();
+	let vk_bytes = include_bytes!(
+		"../../../protocol-substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin"
+	)
+	.to_vec();
 
 	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.clone()));
 
