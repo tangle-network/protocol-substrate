@@ -136,10 +136,10 @@ async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 	);
 
 	let pk_bytes = include_bytes!(
-		"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/proving_key_uncompressed.bin"
+		"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/2/proving_key_uncompressed.bin"
 	);
 	let vk_bytes = include_bytes!(
-		"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key_uncompressed.bin"
+		"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/2/verifying_key_uncompressed.bin"
 	);
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();
@@ -326,10 +326,10 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	);
 
 	let pk_bytes = include_bytes!(
-		"../../protocol-substrate-fixtures/vanchor/bn254/x5/proving_key_uncompressed.bin"
+		"../../protocol-substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
 	);
 	let vk_bytes = include_bytes!(
-		"../../protocol-substrate-fixtures/vanchor/bn254/x5/verifying_key_uncompressed.bin"
+		"../../protocol-substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key_uncompressed.bin"
 	);
 
 	let params4 = setup_params::<Bn254Fr>(Curve::Bn254, 5, 4);
