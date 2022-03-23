@@ -208,7 +208,7 @@ fn testnet_genesis(
 	log::info!("Verifier params for anchor");
 	let anchor_verifier_bn254_params = {
 		let vk_bytes = include_bytes!(
-			"../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/verifying_key.bin"
+			"../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/2/verifying_key.bin"
 		);
 		vk_bytes.to_vec()
 	};
@@ -216,7 +216,7 @@ fn testnet_genesis(
 	log::info!("Verifier params for vanchor");
 	let vanchor_verifier_bn254_params = {
 		let vk_bytes = include_bytes!(
-			"../../../protocol-substrate-fixtures/vanchor/bn254/x5/verifying_key.bin"
+			"../../../protocol-substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin"
 		);
 		vk_bytes.to_vec()
 	};
