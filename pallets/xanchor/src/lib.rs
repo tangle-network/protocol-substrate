@@ -593,6 +593,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		metadata: EdgeMetadataOf<T, I>,
 	) -> DispatchResultWithPostInfo {
 		if T::Anchor::has_edge(tree_id, metadata.src_chain_id) {
+			println!("updating edge of tree id {:?} and src chain id {:?}", tree_id, metadata.src_chain_id);
 			T::Anchor::update_edge(
 				tree_id,
 				metadata.src_chain_id,
@@ -603,6 +604,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			Self::deposit_event(Event::AnchorEdgeAdded);
 			Self::deposit_event(Event::AnchorEdgeUpdated);
 		} else {
+			println!("adding edge of tree id {:?}  and src chain id {:?}", tree_id, metadata.src_chain_id);
 			T::Anchor::add_edge(
 				tree_id,
 				metadata.src_chain_id,
