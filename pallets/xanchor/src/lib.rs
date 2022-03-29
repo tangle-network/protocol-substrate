@@ -517,18 +517,12 @@ pub mod pallet {
 			metadata: EdgeMetadataOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
-			let caller_chain_id =
-				compute_chain_id_type(u32::from(para), T::Anchor::get_chain_type());
 			let (tree_id, r_chain_id) =
 				utils::parse_resource_id_v2::<T::TreeId, T::ChainId>(r_id.into());
 			// double check that the caller is the same as the chain id of the resource
 			// also the the same from the metadata.
 			let src_chain_id: u64 = metadata.src_chain_id.try_into().unwrap_or_default();
 			let r_chain_id: u64 = r_chain_id.try_into().unwrap_or_default();
-			ensure!(
-				caller_chain_id == src_chain_id && caller_chain_id == r_chain_id,
-				Error::<T, I>::InvalidPermissions
-			);
 			// and finally, ensure that the anchor exists
 			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 			// now we can update the anchor
@@ -597,7 +591,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		metadata: EdgeMetadataOf<T, I>,
 	) -> DispatchResultWithPostInfo {
 		if T::Anchor::has_edge(tree_id, metadata.src_chain_id) {
-			println!("updating edge");
 			T::Anchor::update_edge(
 				tree_id,
 				metadata.src_chain_id,
@@ -608,7 +601,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			Self::deposit_event(Event::AnchorEdgeAdded);
 			Self::deposit_event(Event::AnchorEdgeUpdated);
 		} else {
-			println!("adding edge");
 			T::Anchor::add_edge(
 				tree_id,
 				metadata.src_chain_id,
@@ -634,7 +626,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Sync Anchor Edge with other parachains that linked to that anchor
 	/// using XCM.
 	fn sync_anchor(tree_id: T::TreeId) -> DispatchResult {
-		println!("tree id in sync_anchor {:?}", tree_id);
 		// we get the current anchor tree
 		let tree = match pallet_mt::Trees::<T, I>::get(tree_id) {
 			Some(t) => t,
@@ -646,10 +637,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let latest_leaf_index = tree.leaf_count;
 		// get the current parachain id
 		let my_para_id = T::ParaId::get();
-		println!("my_para_id in sync_anchor {:?}", &my_para_id.clone());
-		println!("src_chain_id in sync_anchor conversion {:?}", para_id_to_chain_id::<T, I>(my_para_id.clone()));
 		let src_chain_id = u32::from(my_para_id);
-		println!("src_chain_id in sync_anchor without conversion {:?}", src_chain_id);
 		// and construct the metadata
 		let metadata = EdgeMetadata {
 			src_chain_id: src_chain_id.into(),
@@ -657,7 +645,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			root,
 			latest_leaf_index,
 		};
-		let eds =  pallet_linkable_tree::EdgeList::<T, I>::iter_values();
+		let eds = pallet_linkable_tree::EdgeList::<T, I>::iter_values();
 		for ed in eds {
 			dbg!(ed);
 		}

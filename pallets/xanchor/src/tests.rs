@@ -10,9 +10,11 @@ use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use pallet_anchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};
 use std::{convert::TryInto, path::Path};
-use webb_primitives::utils::{derive_resource_id, derive_resource_id_v2};
+use webb_primitives::{
+	utils::{derive_resource_id, derive_resource_id_v2},
+	webb_proposals::TypedChainId,
+};
 use xcm_simulator::TestExt;
-use webb_primitives::webb_proposals::TypedChainId;
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
@@ -248,15 +250,12 @@ fn should_bridge_anchors_using_xcm() {
 	});
 
 	ParaA::execute_with(|| {
-		//let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
-		//println!("chain id bytes for B, {:?}", converted_chain_id_bytes);
 		let r_id = derive_resource_id_v2(PARAID_B, para_a_tree_id).into();
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
-		//let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
-		let r_id = derive_resource_id_v2(		PARAID_A, para_b_tree_id).into();
+		let r_id = derive_resource_id_v2(PARAID_A, para_b_tree_id).into();
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
 	});
 
