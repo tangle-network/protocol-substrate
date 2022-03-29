@@ -597,6 +597,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		metadata: EdgeMetadataOf<T, I>,
 	) -> DispatchResultWithPostInfo {
 		if T::Anchor::has_edge(tree_id, metadata.src_chain_id) {
+			println!("updating edge");
 			T::Anchor::update_edge(
 				tree_id,
 				metadata.src_chain_id,
@@ -607,6 +608,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			Self::deposit_event(Event::AnchorEdgeAdded);
 			Self::deposit_event(Event::AnchorEdgeUpdated);
 		} else {
+			println!("adding edge");
 			T::Anchor::add_edge(
 				tree_id,
 				metadata.src_chain_id,
@@ -632,6 +634,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Sync Anchor Edge with other parachains that linked to that anchor
 	/// using XCM.
 	fn sync_anchor(tree_id: T::TreeId) -> DispatchResult {
+		println!("tree id in sync_anchor {:?}", tree_id);
 		// we get the current anchor tree
 		let tree = match pallet_mt::Trees::<T, I>::get(tree_id) {
 			Some(t) => t,
@@ -643,13 +646,21 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let latest_leaf_index = tree.leaf_count;
 		// get the current parachain id
 		let my_para_id = T::ParaId::get();
+		println!("my_para_id in sync_anchor {:?}", &my_para_id.clone());
+		println!("src_chain_id in sync_anchor conversion {:?}", para_id_to_chain_id::<T, I>(my_para_id.clone()));
+		let src_chain_id = u32::from(my_para_id);
+		println!("src_chain_id in sync_anchor without conversion {:?}", src_chain_id);
 		// and construct the metadata
 		let metadata = EdgeMetadata {
-			src_chain_id: para_id_to_chain_id::<T, I>(my_para_id),
+			src_chain_id: src_chain_id.into(),
 			//src_chain_id: my
 			root,
 			latest_leaf_index,
 		};
+		let eds =  pallet_linkable_tree::EdgeList::<T, I>::iter_values();
+		for ed in eds {
+			dbg!(ed);
+		}
 		// now we need an iterator for all the edges connected to this anchor
 		let edges = pallet_linkable_tree::EdgeList::<T, I>::iter_prefix_values(tree_id);
 		// for each edge we do the following:

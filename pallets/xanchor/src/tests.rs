@@ -12,6 +12,7 @@ use pallet_democracy::{AccountVote, Conviction, Vote};
 use std::{convert::TryInto, path::Path};
 use webb_primitives::utils::{derive_resource_id, derive_resource_id_v2};
 use xcm_simulator::TestExt;
+use webb_primitives::webb_proposals::TypedChainId;
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
@@ -247,14 +248,15 @@ fn should_bridge_anchors_using_xcm() {
 	});
 
 	ParaA::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
+		//let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
+		//println!("chain id bytes for B, {:?}", converted_chain_id_bytes);
 		let r_id = derive_resource_id_v2(PARAID_B, para_a_tree_id).into();
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
-		let r_id = derive_resource_id_v2(PARAID_A, para_b_tree_id).into();
+		//let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		let r_id = derive_resource_id_v2(		PARAID_A, para_b_tree_id).into();
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
 	});
 
@@ -286,9 +288,11 @@ fn should_bridge_anchors_using_xcm() {
 	// we should expect that the edge for ParaA is there, and the merkle root equal
 	// to the one we got from ParaA.
 	ParaB::execute_with(|| {
-		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
-		dbg!(converted_chain_id_bytes);
-		let edge = LinkableTree::edge_list(&para_b_tree_id, converted_chain_id_bytes);
+		//let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
+		//dbg!(converted_chain_id_bytes);
+		let chain_id: <Runtime as pallet_linkable_tree::Config>::ChainId = PARAID_A.into();
+		dbg!(chain_id);
+		let edge = LinkableTree::edge_list(&para_b_tree_id, chain_id);
 		assert_eq!(edge.root, para_a_root);
 		assert_eq!(edge.latest_leaf_index, 1);
 	});
