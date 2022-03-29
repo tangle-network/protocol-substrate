@@ -287,8 +287,6 @@ fn should_bridge_anchors_using_xcm() {
 	// we should expect that the edge for ParaA is there, and the merkle root equal
 	// to the one we got from ParaA.
 	ParaB::execute_with(|| {
-		//let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
-		//dbg!(converted_chain_id_bytes);
 		let chain_id: <Runtime as pallet_linkable_tree::Config>::ChainId = PARAID_A.into();
 		dbg!(chain_id);
 		let edge = LinkableTree::edge_list(&para_b_tree_id, chain_id);
