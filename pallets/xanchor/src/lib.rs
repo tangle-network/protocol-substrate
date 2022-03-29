@@ -110,7 +110,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::transactional;
 	use pallet_anchor::BalanceOf;
-	use webb_primitives::utils::{self, compute_chain_id_type};
+	use webb_primitives::utils::{self, compute_chain_id_type, derive_resource_id_v2};
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -416,10 +416,11 @@ pub mod pallet {
 			);
 			// Now we can remove the pending linked anchor.
 			PendingLinkedAnchors::<T, I>::remove(payload.target_chain_id, payload.local_tree_id);
-			let r_id = utils::derive_resource_id(
+			let r_id = utils::derive_resource_id_v2(
 				payload.target_chain_id.try_into().unwrap_or_default(),
-				&payload.local_tree_id.encode(),
-			);
+				payload.local_tree_id.try_into().unwrap_or_default(),
+			)
+			.into();
 			// unwrap here is safe, since we are sure that it has the value of the tree id.
 			let target_tree_id = payload.target_tree_id.unwrap();
 			// We are now ready to link the anchor locally.
@@ -464,10 +465,11 @@ pub mod pallet {
 			);
 			// Now we can remove the pending linked anchor.
 			PendingLinkedAnchors::<T, I>::remove(caller_chain_id, my_tree_id);
-			let r_id = utils::derive_resource_id(
+			let r_id = utils::derive_resource_id_v2(
 				caller_chain_id.try_into().unwrap_or_default(),
-				&my_tree_id.encode(),
-			);
+				my_tree_id.try_into().unwrap_or_default(),
+			)
+			.into();
 			let target_tree_id = payload.local_tree_id;
 			// We are now ready to link them locally.
 			Self::register_new_resource_id(r_id, target_tree_id)?;
@@ -517,7 +519,8 @@ pub mod pallet {
 			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
 			let caller_chain_id =
 				compute_chain_id_type(u32::from(para), T::Anchor::get_chain_type());
-			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
+			let (tree_id, r_chain_id) =
+				utils::parse_resource_id_v2::<T::TreeId, T::ChainId>(r_id.into());
 			// double check that the caller is the same as the chain id of the resource
 			// also the the same from the metadata.
 			let src_chain_id: u64 = metadata.src_chain_id.try_into().unwrap_or_default();
@@ -540,7 +543,8 @@ pub mod pallet {
 			metadata: EdgeMetadataOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
+			let (tree_id, chain_id) =
+				utils::parse_resource_id_v2::<T::TreeId, T::ChainId>(r_id.into());
 			ensure!(metadata.src_chain_id == chain_id, Error::<T, I>::InvalidPermissions);
 			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 			Self::update_anchor(tree_id, metadata)?;
@@ -567,7 +571,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		target_tree_id: T::TreeId,
 	) -> DispatchResultWithPostInfo {
 		// extract the resource id information
-		let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
+		let (tree_id, chain_id) = utils::parse_resource_id_v2::<T::TreeId, T::ChainId>(r_id.into());
 		println!("register_new_resource_id");
 		println!("tree_id: {:?}", tree_id);
 		println!("chain_id: {:?}", chain_id);
@@ -663,10 +667,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 			// target_tree_id + my_chain_id
 			// TODO: Document this clearly
-			let r_id = utils::derive_resource_id(
-				my_chain_id.try_into().unwrap_or_default(),
-				&target_tree_id.encode(),
-			);
+			let r_id = utils::derive_resource_id_v2(
+				other_chain_id.try_into().unwrap_or_default(),
+				target_tree_id.try_into().unwrap_or_default(),
+			)
+			.into();
 
 			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
 			let update_edge = Transact {

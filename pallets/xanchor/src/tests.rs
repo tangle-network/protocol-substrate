@@ -10,7 +10,7 @@ use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use pallet_anchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};
 use std::{convert::TryInto, path::Path};
-use webb_primitives::utils::derive_resource_id;
+use webb_primitives::utils::{derive_resource_id, derive_resource_id_v2};
 use xcm_simulator::TestExt;
 
 const SEED: u32 = 0;
@@ -179,7 +179,9 @@ fn should_link_two_anchors() {
 	ParaA::execute_with(|| {
 		// the resource id reads as following
 		// we need to link para_a_tree_id to another anchor defined on ParaB
-		let r_id = derive_resource_id(PARAID_B.into(), &para_a_tree_id.encode());
+		let r_id =
+			derive_resource_id_v2(PARAID_B.into(), para_a_tree_id.try_into().unwrap_or_default())
+				.into();
 		// then, on the call here, we tell it which tree we are going to link to.
 		// (para_b_tree_id).
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
@@ -188,7 +190,9 @@ fn should_link_two_anchors() {
 	// the caller is one of the Parachain A operators.
 	ParaB::execute_with(|| {
 		// we need to link para_b_tree_id to another anchor defined on ParaA
-		let r_id = derive_resource_id(PARAID_A.into(), &para_b_tree_id.encode());
+		let r_id =
+			derive_resource_id_v2(PARAID_A.into(), para_b_tree_id.try_into().unwrap_or_default())
+				.into();
 		// then, when we are sending the call we tell it which tree we are going to link
 		// to. (para_a_tree_id).
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
@@ -244,13 +248,13 @@ fn should_bridge_anchors_using_xcm() {
 
 	ParaA::execute_with(|| {
 		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
-		let r_id = derive_resource_id(converted_chain_id_bytes, &para_a_tree_id.encode());
+		let r_id = derive_resource_id_v2(PARAID_B, para_a_tree_id).into();
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
 		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_A));
-		let r_id = derive_resource_id(converted_chain_id_bytes, &para_b_tree_id.encode());
+		let r_id = derive_resource_id_v2(PARAID_A, para_b_tree_id).into();
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
 	});
 
@@ -528,7 +532,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 
 	// force link them.
 	ParaA::execute_with(|| {
-		let r_id = derive_resource_id(PARAID_B.into(), &para_a_tree_id.encode());
+		let r_id = derive_resource_id_v2(PARAID_B.into(), para_a_tree_id).into();
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
@@ -667,7 +671,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 
 	// force link them.
 	ParaA::execute_with(|| {
-		let r_id = derive_resource_id(PARAID_B.into(), &para_a_tree_id.encode());
+		let r_id = derive_resource_id_v2(PARAID_B.into(), para_a_tree_id).into();
 		println!("r_id: {:?}", r_id);
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});

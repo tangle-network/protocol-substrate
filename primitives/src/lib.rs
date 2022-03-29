@@ -24,3 +24,5 @@ pub use types::*;
 pub use verifier::*;
 
 pub use runtime::*;
+
+pub use webb_proposals;

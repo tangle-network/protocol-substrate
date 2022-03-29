@@ -2,6 +2,7 @@ use codec::{Decode, Encode};
 use scale_info::prelude::fmt::Debug;
 use sp_runtime::traits::AtLeast32Bit;
 use sp_std::vec::Vec;
+use webb_proposals::{TargetSystem, TypedChainId};
 
 use crate::types::ResourceId;
 
@@ -71,6 +72,30 @@ pub fn element_encoder(v: &[u8]) -> [u8; 32] {
 	let mut output = [0u8; 32];
 	output.iter_mut().zip(v).for_each(|(b1, b2)| *b1 = *b2);
 	output
+}
+
+pub fn derive_resource_id_v2(chain_id: u32, tree_id: u32) -> webb_proposals::ResourceId {
+	let target_system = TargetSystem::TreeId(tree_id);
+	let typed_chain_id = TypedChainId::Substrate(chain_id);
+
+	let resource_id = webb_proposals::ResourceId::new(target_system, typed_chain_id);
+	resource_id
+}
+
+pub fn parse_resource_id_v2<TreeId, ChainId>(
+	resource_id: webb_proposals::ResourceId,
+) -> (TreeId, ChainId)
+where
+	TreeId: Encode + Decode + AtLeast32Bit + Default + Copy,
+	ChainId: Encode + Decode + AtLeast32Bit + Default + Copy,
+{
+	let target_system = resource_id.target_system().to_bytes();
+	let typed_chain_id = resource_id.typed_chain_id();
+
+	let tree_id = TreeId::decode(&mut target_system.as_slice()).unwrap();
+	let chain_id = typed_chain_id.chain_id().into();
+
+	(tree_id, chain_id)
 }
 
 #[cfg(test)]
