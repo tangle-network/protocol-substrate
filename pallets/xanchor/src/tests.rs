@@ -365,8 +365,28 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 		// it should fail.
 		let tree_id = MerkleTree::next_tree_id();
 		let r_id = derive_resource_id_v2(PARAID_B.into(), tree_id).into();
+
+		let function_signature = FunctionSignature::new([0; 4]);
+		let latest_leaf_index_u32: u32 = 1;
+		let nonce = Nonce::new(latest_leaf_index_u32);
+
+		let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
+		let typed_chain_id = TypedChainId::Substrate(PARAID_B.into());
+
+		let mut merkle_root = [0; 32];
+
+		let anchor_update_proposal = AnchorUpdateProposal::new(
+			proposal_header,
+			typed_chain_id,
+			latest_leaf_index_u32,
+			merkle_root,
+		);
+
 		assert_err!(
-			XAnchor::update(Origin::signed(parachain::AccountTwo::get()), r_id, Default::default()),
+			XAnchor::update(
+				Origin::signed(parachain::AccountTwo::get()),
+				anchor_update_proposal.into_bytes()
+			),
 			frame_support::error::BadOrigin,
 		);
 	});
@@ -791,13 +811,33 @@ fn should_fail_to_call_update_as_signed_account() {
 	// on parachain A.
 	ParaA::execute_with(|| {
 		let r_id = derive_resource_id_v2(PARAID_B.into(), MerkleTree::next_tree_id()).into();
-		let edge_metadata = EdgeMetadata {
+		/*let edge_metadata = EdgeMetadata {
 			src_chain_id: PARAID_B.into(),
 			root: Element::zero(),
 			latest_leaf_index: 0,
-		};
+		};*/
+
+		let function_signature = FunctionSignature::new([0; 4]);
+		let latest_leaf_index_u32: u32 = 0;
+		let nonce = Nonce::new(latest_leaf_index_u32);
+
+		let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
+		let typed_chain_id = TypedChainId::Substrate(PARAID_B.into());
+
+		let mut merkle_root = [0; 32];
+
+		let anchor_update_proposal = AnchorUpdateProposal::new(
+			proposal_header,
+			typed_chain_id,
+			latest_leaf_index_u32,
+			merkle_root,
+		);
+
 		assert_err!(
-			XAnchor::update(Origin::signed(AccountThree::get()), r_id, edge_metadata),
+			XAnchor::update(
+				Origin::signed(AccountThree::get()),
+				anchor_update_proposal.into_bytes()
+			),
 			frame_support::error::BadOrigin,
 		);
 	});

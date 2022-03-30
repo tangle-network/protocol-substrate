@@ -84,7 +84,8 @@ use sp_std::prelude::*;
 use webb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
 	utils::{self, compute_chain_id_type},
-	ResourceId,
+	webb_proposals::{AnchorUpdateProposal, ProposalHeader, TypedChainId},
+	ElementTrait, ResourceId,
 };
 use xcm::latest::prelude::*;
 
@@ -97,6 +98,7 @@ mod tests;
 pub mod types;
 pub use pallet::*;
 use types::*;
+use webb_primitives::webb_proposals::{FunctionSignature, Nonce};
 
 pub type ChainIdOf<T, I> = <T as pallet_linkable_tree::Config<I>>::ChainId;
 pub type ElementOf<T, I> = <T as pallet_mt::Config<I>>::Element;
@@ -514,16 +516,24 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn update(
 			origin: OriginFor<T>,
-			r_id: ResourceId,
-			metadata: EdgeMetadataOf<T, I>,
+			anchor_update_proposal_bytes: [u8; 82],
 		) -> DispatchResultWithPostInfo {
-			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
-			let (tree_id, r_chain_id) =
-				utils::parse_resource_id_v2::<T::TreeId, T::ChainId>(r_id.into());
-			// double check that the caller is the same as the chain id of the resource
-			// also the the same from the metadata.
-			let src_chain_id: u64 = metadata.src_chain_id.try_into().unwrap_or_default();
-			let r_chain_id: u64 = r_chain_id.try_into().unwrap_or_default();
+			ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
+
+			let anchor_update_proposal = AnchorUpdateProposal::from(anchor_update_proposal_bytes);
+
+			let (tree_id, r_chain_id) = utils::parse_resource_id_v2::<T::TreeId, T::ChainId>(
+				anchor_update_proposal.header().resource_id(),
+			);
+
+			//construct the metadata
+			let metadata = EdgeMetadata {
+				src_chain_id: r_chain_id,
+				//src_chain_id: my
+				root: ElementOf::<T, I>::from_bytes(anchor_update_proposal.merkle_root()),
+				latest_leaf_index: anchor_update_proposal.latest_leaf_index().into(),
+			};
+
 			// and finally, ensure that the anchor exists
 			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 			// now we can update the anchor
@@ -639,13 +649,29 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// get the current parachain id
 		let my_para_id = T::ParaId::get();
 		let src_chain_id = u32::from(my_para_id);
-		// and construct the metadata
-		let metadata = EdgeMetadata {
-			src_chain_id: src_chain_id.into(),
-			//src_chain_id: my
-			root,
-			latest_leaf_index,
-		};
+
+		// construct resource id
+		let resource_id =
+			utils::derive_resource_id_v2(src_chain_id, tree_id.try_into().unwrap_or_default());
+
+		let function_signature = FunctionSignature::new([0; 4]);
+		let latest_leaf_index_u32: u32 = latest_leaf_index.try_into().unwrap_or_default();
+		let nonce = Nonce::new(latest_leaf_index_u32);
+
+		// construct proposal header
+		let proposal_header = ProposalHeader::new(resource_id, function_signature, nonce);
+		let typed_chain_id = TypedChainId::Substrate(src_chain_id);
+
+		let mut merkle_root = [0; 32];
+		merkle_root.copy_from_slice(root.to_bytes());
+
+		let anchor_update_proposal = AnchorUpdateProposal::new(
+			proposal_header,
+			typed_chain_id,
+			latest_leaf_index_u32,
+			merkle_root,
+		);
+
 		// now we need an iterator for all the edges connected to this anchor
 		let edges = pallet_linkable_tree::EdgeList::<T, I>::iter_prefix_values(tree_id);
 		// for each edge we do the following:
@@ -659,7 +685,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			// first, we get the target chain tree id
 			let other_chain_id = edge.src_chain_id;
 			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id, tree_id);
-			let my_chain_id = metadata.src_chain_id;
+			let my_chain_id = src_chain_id;
 
 			// target_tree_id + my_chain_id
 			// TODO: Document this clearly
@@ -677,8 +703,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				origin_type: OriginKind::Native,
 				require_weight_at_most: 1_000_000_000,
 				call: <T as Config<I>>::Call::from(Call::<T, I>::update {
-					metadata: metadata.clone(),
-					r_id,
+					anchor_update_proposal_bytes: anchor_update_proposal.into_bytes(),
 				})
 				.encode()
 				.into(),
