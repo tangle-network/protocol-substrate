@@ -510,6 +510,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		// anchorupdateProposal
 		#[pallet::weight(0)]
 		pub fn update(
 			origin: OriginFor<T>,
@@ -645,10 +646,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			root,
 			latest_leaf_index,
 		};
-		let eds = pallet_linkable_tree::EdgeList::<T, I>::iter_values();
-		for ed in eds {
-			dbg!(ed);
-		}
 		// now we need an iterator for all the edges connected to this anchor
 		let edges = pallet_linkable_tree::EdgeList::<T, I>::iter_prefix_values(tree_id);
 		// for each edge we do the following:
