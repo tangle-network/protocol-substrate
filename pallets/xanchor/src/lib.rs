@@ -112,7 +112,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::transactional;
 	use pallet_anchor::BalanceOf;
-	use webb_primitives::utils::{self, compute_chain_id_type, derive_resource_id_v2};
+	use webb_primitives::utils::{self, compute_chain_id_type, derive_resource_id};
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -418,7 +418,7 @@ pub mod pallet {
 			);
 			// Now we can remove the pending linked anchor.
 			PendingLinkedAnchors::<T, I>::remove(payload.target_chain_id, payload.local_tree_id);
-			let r_id = utils::derive_resource_id_v2(
+			let r_id = utils::derive_resource_id(
 				payload.target_chain_id.try_into().unwrap_or_default(),
 				payload.local_tree_id.try_into().unwrap_or_default(),
 			)
@@ -467,7 +467,7 @@ pub mod pallet {
 			);
 			// Now we can remove the pending linked anchor.
 			PendingLinkedAnchors::<T, I>::remove(caller_chain_id, my_tree_id);
-			let r_id = utils::derive_resource_id_v2(
+			let r_id = utils::derive_resource_id(
 				caller_chain_id.try_into().unwrap_or_default(),
 				my_tree_id.try_into().unwrap_or_default(),
 			)
@@ -522,7 +522,7 @@ pub mod pallet {
 
 			let anchor_update_proposal = AnchorUpdateProposal::from(anchor_update_proposal_bytes);
 
-			let (tree_id, r_chain_id) = utils::parse_resource_id_v2::<T::TreeId, T::ChainId>(
+			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(
 				anchor_update_proposal.header().resource_id(),
 			);
 
@@ -549,7 +549,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			let (tree_id, chain_id) =
-				utils::parse_resource_id_v2::<T::TreeId, T::ChainId>(r_id.into());
+				utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id.into());
 			ensure!(metadata.src_chain_id == chain_id, Error::<T, I>::InvalidPermissions);
 			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 			Self::update_anchor(tree_id, metadata)?;
@@ -576,7 +576,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		target_tree_id: T::TreeId,
 	) -> DispatchResultWithPostInfo {
 		// extract the resource id information
-		let (tree_id, chain_id) = utils::parse_resource_id_v2::<T::TreeId, T::ChainId>(r_id.into());
+		let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id.into());
 		println!("register_new_resource_id");
 		println!("tree_id: {:?}", tree_id);
 		println!("chain_id: {:?}", chain_id);
@@ -652,7 +652,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 		// construct resource id
 		let resource_id =
-			utils::derive_resource_id_v2(src_chain_id, tree_id.try_into().unwrap_or_default());
+			utils::derive_resource_id(src_chain_id, tree_id.try_into().unwrap_or_default());
 
 		let function_signature = FunctionSignature::new([0; 4]);
 		let latest_leaf_index_u32: u32 = latest_leaf_index.try_into().unwrap_or_default();
@@ -689,7 +689,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 			// target_tree_id + my_chain_id
 			// TODO: Document this clearly
-			let r_id = utils::derive_resource_id_v2(
+			let r_id = utils::derive_resource_id(
 				other_chain_id.try_into().unwrap_or_default(),
 				target_tree_id.try_into().unwrap_or_default(),
 			)

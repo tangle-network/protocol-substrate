@@ -40,7 +40,7 @@ pub fn element_encoder(v: &[u8]) -> [u8; 32] {
 }
 
 /// gets the chain id and tree id to derive resource id
-pub fn derive_resource_id_v2(chain_id: u32, tree_id: u32) -> ResourceId {
+pub fn derive_resource_id(chain_id: u32, tree_id: u32) -> ResourceId {
 	let target_system = TargetSystem::TreeId(tree_id);
 	let typed_chain_id = TypedChainId::Substrate(chain_id);
 
@@ -49,7 +49,7 @@ pub fn derive_resource_id_v2(chain_id: u32, tree_id: u32) -> ResourceId {
 }
 
 /// Gets the resource id and parses it to tree id and chain id
-pub fn parse_resource_id_v2<TreeId, ChainId>(
+pub fn parse_resource_id<TreeId, ChainId>(
 	resource_id: webb_proposals::ResourceId,
 ) -> (TreeId, ChainId)
 where
@@ -76,8 +76,8 @@ mod tests {
 		let tree_id = 0u32;
 		let chain_id = 2000u32;
 		let updated_chain_id: u64 = compute_chain_id_type(chain_id, [2, 0]);
-		let resource_id = derive_resource_id_v2(chain_id, tree_id);
-		let (tree_id2, chain_id2): (u32, u64) = parse_resource_id_v2(resource_id);
+		let resource_id = derive_resource_id(chain_id, tree_id);
+		let (tree_id2, chain_id2): (u32, u64) = parse_resource_id(resource_id);
 		assert_eq!(chain_id as u64, chain_id2);
 		assert_eq!(tree_id, tree_id2);
 	}

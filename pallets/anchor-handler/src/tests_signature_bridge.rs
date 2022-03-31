@@ -15,7 +15,7 @@ use sp_core::{
 
 use webb_primitives::{
 	signing::SigningSystem,
-	utils::{compute_chain_id_type, derive_resource_id_v2},
+	utils::{compute_chain_id_type, derive_resource_id},
 	ResourceId,
 };
 
@@ -83,7 +83,7 @@ fn should_create_anchor_with_sig_succeed() {
 	let src_id = src_id_u32 as u64;
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = this_chain_id_u32 as u64;
-	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
+	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -141,7 +141,7 @@ fn should_add_anchor_edge_with_sig_succeed() {
 	let src_id = src_id_u32 as u64;
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = this_chain_id_u32 as u64;
-	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
+	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -217,7 +217,7 @@ fn should_update_anchor_edge_with_sig_succeed() {
 	let src_id = src_id_u32 as u64;
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = this_chain_id_u32 as u64;
-	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
+	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -327,7 +327,7 @@ fn should_fail_to_whitelist_chain_already_whitelisted() {
 	let src_id = src_id_u32 as u64;
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = this_chain_id_u32 as u64;
-	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
+	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -353,7 +353,7 @@ fn should_fail_to_whitelist_this_chain() {
 	let src_id = src_id_u32 as u64;
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = this_chain_id_u32 as u64;
-	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
+	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -382,7 +382,7 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 	let src_id = src_id_u32 as u64;
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = this_chain_id_u32 as u64;
-	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
+	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -427,7 +427,7 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 	let src_id = src_id_u32 as u64;
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = this_chain_id_u32 as u64;
-	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
+	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -440,7 +440,7 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
 			let deposit_size = 100;
-			let non_existent_r_id = derive_resource_id_v2(this_chain_id_u32, 1).into();
+			let non_existent_r_id = derive_resource_id(this_chain_id_u32, 1).into();
 			let anchor_create_call =
 				make_anchor_create_proposal(deposit_size, src_id, &non_existent_r_id);
 			let anchor_create_call_encoded = anchor_create_call.encode();
@@ -475,7 +475,7 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 	let src_id = src_id_u32 as u64;
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = this_chain_id_u32 as u64;
-	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
+	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );

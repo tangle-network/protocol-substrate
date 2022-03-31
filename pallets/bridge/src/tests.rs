@@ -10,7 +10,7 @@ use super::{
 };
 use crate::mock::new_test_ext_initialized;
 use frame_support::{assert_noop, assert_ok};
-use webb_primitives::utils::{compute_chain_id_type, derive_resource_id_v2};
+use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
 
 use crate::{self as pallet_bridge};
 const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [0x02, 0x00];
@@ -19,7 +19,7 @@ const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [0x02, 0x00];
 fn derive_ids() {
 	let chain: u64 = 0x0200aabbccdd;
 	let id = 1;
-	let r_id: [u8; 32] = derive_resource_id_v2(chain as u32, id).into();
+	let r_id: [u8; 32] = derive_resource_id(chain as u32, id).into();
 	let expected = [
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 170,
 		187, 204, 221,
@@ -175,7 +175,7 @@ fn make_proposal(r: Vec<u8>) -> mock::Call {
 fn create_sucessful_proposal() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id_v2(1u32, 1u32).into();
+	let r_id = derive_resource_id(1u32, 1u32).into();
 
 	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let prop_id = 1;
@@ -264,7 +264,7 @@ fn create_sucessful_proposal() {
 fn create_unsucessful_proposal() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id_v2(1u32, 1u32).into();
+	let r_id = derive_resource_id(1u32, 1u32).into();
 
 	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let prop_id = 1;
@@ -352,7 +352,7 @@ fn create_unsucessful_proposal() {
 fn execute_after_threshold_change() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id_v2(1u32, 1u32).into();
+	let r_id = derive_resource_id(1u32, 1u32).into();
 
 	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let prop_id = 1;
@@ -421,7 +421,7 @@ fn execute_after_threshold_change() {
 fn proposal_expires() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id_v2(1u32, 1u32).into();
+	let r_id = derive_resource_id(1u32, 1u32).into();
 
 	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let prop_id = 1;
