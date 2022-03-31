@@ -10,10 +10,7 @@ use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use pallet_anchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};
 use std::{convert::TryInto, path::Path};
-use webb_primitives::{
-	utils::{derive_resource_id, derive_resource_id_v2},
-	webb_proposals::TypedChainId,
-};
+use webb_primitives::{utils::derive_resource_id_v2, webb_proposals::TypedChainId};
 use xcm_simulator::TestExt;
 
 const SEED: u32 = 0;

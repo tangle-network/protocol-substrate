@@ -15,7 +15,7 @@ use sp_core::{
 
 use webb_primitives::{
 	signing::SigningSystem,
-	utils::{compute_chain_id_type, derive_resource_id, derive_resource_id_v2},
+	utils::{compute_chain_id_type, derive_resource_id_v2},
 	ResourceId,
 };
 
@@ -440,8 +440,7 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
 			let deposit_size = 100;
-			let non_existent_r_id =
-				derive_resource_id(this_chain_id, b"execute_anchor_crate_proposal");
+			let non_existent_r_id = derive_resource_id_v2(this_chain_id_u32, 1).into();
 			let anchor_create_call =
 				make_anchor_create_proposal(deposit_size, src_id, &non_existent_r_id);
 			let anchor_create_call_encoded = anchor_create_call.encode();
