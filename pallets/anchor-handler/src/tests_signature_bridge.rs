@@ -15,7 +15,7 @@ use sp_core::{
 
 use webb_primitives::{
 	signing::SigningSystem,
-	utils::{compute_chain_id_type, derive_resource_id},
+	utils::{compute_chain_id_type, derive_resource_id, derive_resource_id_v2},
 	ResourceId,
 };
 
@@ -79,10 +79,11 @@ fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u
 
 #[test]
 fn should_create_anchor_with_sig_succeed() {
-	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let this_chain_id = compute_chain_id_type(5u32, chain_type);
-	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_create_proposal");
+	let src_id_u32 = 1u32;
+	let src_id = src_id_u32 as u64;
+	let this_chain_id_u32 = 5u32;
+	let this_chain_id = this_chain_id_u32 as u64;
+	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -136,10 +137,11 @@ fn should_create_anchor_with_sig_succeed() {
 // `pallet-signature-bridge`
 #[test]
 fn should_add_anchor_edge_with_sig_succeed() {
-	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let this_chain_id = compute_chain_id_type(5u32, chain_type);
-	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_update_proposal");
+	let src_id_u32 = 1u32;
+	let src_id = src_id_u32 as u64;
+	let this_chain_id_u32 = 5u32;
+	let this_chain_id = this_chain_id_u32 as u64;
+	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -211,10 +213,11 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 // `pallet-anchor-handler` proposal through `pallet-signature-bridge`
 #[test]
 fn should_update_anchor_edge_with_sig_succeed() {
-	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let this_chain_id = compute_chain_id_type(5u32, chain_type);
-	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_update_proposal");
+	let src_id_u32 = 1u32;
+	let src_id = src_id_u32 as u64;
+	let this_chain_id_u32 = 5u32;
+	let this_chain_id = this_chain_id_u32 as u64;
+	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -320,10 +323,11 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 #[test]
 fn should_fail_to_whitelist_chain_already_whitelisted() {
-	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let this_chain_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_create_proposal");
+	let src_id_u32 = 1u32;
+	let src_id = src_id_u32 as u64;
+	let this_chain_id_u32 = 5u32;
+	let this_chain_id = this_chain_id_u32 as u64;
+	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -345,9 +349,11 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 #[test]
 fn should_fail_to_whitelist_this_chain() {
 	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let this_chain_id = compute_chain_id_type(5u32, chain_type);
-	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_create_proposal");
+	let src_id_u32 = 1u32;
+	let src_id = src_id_u32 as u64;
+	let this_chain_id_u32 = 5u32;
+	let this_chain_id = this_chain_id_u32 as u64;
+	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -372,9 +378,11 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 #[test]
 fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let this_chain_id = compute_chain_id_type(5u32, chain_type);
-	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_create_proposal");
+	let src_id_u32 = 1u32;
+	let src_id = src_id_u32 as u64;
+	let this_chain_id_u32 = 5u32;
+	let this_chain_id = this_chain_id_u32 as u64;
+	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -415,10 +423,11 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 #[test]
 fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
-	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let this_chain_id = compute_chain_id_type(5u32, chain_type);
-	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_create_proposal");
+	let src_id_u32 = 1u32;
+	let src_id = src_id_u32 as u64;
+	let this_chain_id_u32 = 5u32;
+	let this_chain_id = this_chain_id_u32 as u64;
+	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -463,10 +472,11 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 #[test]
 fn should_fail_to_verify_proposal_with_tampered_signature() {
-	let chain_type = [2, 0];
-	let src_id = compute_chain_id_type(1u32, chain_type);
-	let this_chain_id = compute_chain_id_type(5u32, chain_type);
-	let r_id = derive_resource_id(this_chain_id, b"execute_anchor_create_proposal");
+	let src_id_u32 = 1u32;
+	let src_id = src_id_u32 as u64;
+	let this_chain_id_u32 = 5u32;
+	let this_chain_id = this_chain_id_u32 as u64;
+	let r_id = derive_resource_id_v2(this_chain_id_u32, 5).into();
 	let public_uncompressed =
 hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -492,7 +502,8 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 			));
 			assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
 			let mut tampered_sig = sig.0.to_vec().clone();
-			for x in &mut tampered_sig {
+			dbg!(tampered_sig.clone());
+			for x in &mut tampered_sig[2..5] {
 				*x += 1;
 			}
 
