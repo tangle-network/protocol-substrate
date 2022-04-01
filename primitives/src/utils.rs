@@ -41,11 +41,8 @@ pub fn element_encoder(v: &[u8]) -> [u8; 32] {
 
 /// gets the chain id and tree id to derive resource id
 pub fn derive_resource_id(chain_id: u32, tree_id: u32) -> ResourceId {
-	//println!("tree_id in derive_resource_id{:?}", tree_id);
 	let target_system = TargetSystem::TreeId(tree_id);
 	let typed_chain_id = TypedChainId::Substrate(chain_id);
-
-	//	println!("target_system in derive_resource_id{:?}", target_system);
 
 	let resource_id = webb_proposals::ResourceId::new(target_system, typed_chain_id);
 	resource_id
@@ -65,17 +62,12 @@ where
 		TargetSystem::TreeId(tree_id) => tree_id,
 		_ => 0,
 	};
-
-	//println!("target_system {:?}", resource_id.target_system());
-	//println!("target_system tree id {:?}", tree_id_u32);
-
-	//let tree_id = TreeId::try_from(&mut target_system.as_slice()).unwrap();
 	let tree_id = TreeId::try_from(tree_id_u32).unwrap_or_default();
-	//println!("typed chain id in util {:?}", typed_chain_id.chain_id());
+
 	// returns the underlying chain id
 	// the underlying chain id will be used to get the actual chain id(Substrate)
 	let chain_id = ChainId::try_from(typed_chain_id.underlying_chain_id()).unwrap_or_default();
-	//println!("chain id in util {:?}", chain_id);
+
 	(tree_id, chain_id)
 }
 
@@ -91,12 +83,16 @@ where
 	ChainId::try_from(typed_chain_id).unwrap_or_default()
 }
 
+/// takes an input of the underlying chain id(u32) and
+/// gets the actual chain id(Substrate) which is in u64
 pub fn get_typed_chain_id_in_u64(chain_id: u32) -> u64 {
 	let typed_chain_id = TypedChainId::Substrate(chain_id).chain_id();
 
 	typed_chain_id
 }
 
+/// gets the underlying chain id(u32) from the
+/// actual chain id(Substrate) which is in u64
 pub fn get_underlying_chain_id(typed_chain_id: u64) -> u32 {
 	let bytes = typed_chain_id.to_be_bytes();
 	let mut underlying_chain_id_bytes = [0u8; 4];

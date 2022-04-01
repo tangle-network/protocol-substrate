@@ -520,13 +520,14 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
 
+			// get the anchor update proposal struct from the bytes
 			let anchor_update_proposal = AnchorUpdateProposal::from(anchor_update_proposal_bytes);
 
 			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(
 				anchor_update_proposal.header().resource_id().into(),
 			);
 
-			///TODO: verify that the chain id and the one from the parsed resource id matches
+
 			let my_para_id = T::ParaId::get();
 			let my_chain_id =
 				utils::get_typed_chain_id_in_u64(my_para_id.try_into().unwrap_or_default());
@@ -535,13 +536,10 @@ pub mod pallet {
 				T::ChainId::try_from(anchor_update_proposal.src_chain().chain_id())
 					.unwrap_or_default();
 
-			/*println!("chain_id from para_id here is {:?}", my_chain_id);
-			println!("chain_id from caller here is {:?}", caller_chain_id);
-			println!("r_chain_id from caller here is {:?}", T::ChainId::try_from(utils::get_typed_chain_id(r_chain_id)));
-			*/
-
 			let typed_chain_id_of_caller: u64 =
 				utils::get_typed_chain_id_in_u64(r_chain_id.try_into().unwrap_or_default());
+
+			// verify that the chain id and the one from the parsed resource id matches
 			ensure!(my_chain_id == typed_chain_id_of_caller, Error::<T, I>::InvalidPermissions);
 
 			//construct the metadata
@@ -568,7 +566,8 @@ pub mod pallet {
 			ensure_root(origin)?;
 			let (tree_id, chain_id) =
 				utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id.into());
-			ensure!(metadata.src_chain_id == chain_id, Error::<T, I>::InvalidPermissions);
+			let typed_chain_id = utils::get_typed_chain_id(chain_id);
+			ensure!(metadata.src_chain_id == typed_chain_id, Error::<T, I>::InvalidPermissions);
 			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 			Self::update_anchor(tree_id, metadata)?;
 			Ok(().into())
@@ -595,6 +594,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> DispatchResultWithPostInfo {
 		// extract the resource id information
 		let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id.into());
+		// use the typed_chain_id which is in u64
 		let typed_chain_id = utils::get_typed_chain_id(chain_id);
 		println!("register_new_resource_id");
 		println!("tree_id: {:?}", tree_id);
@@ -620,10 +620,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		tree_id: T::TreeId,
 		metadata: EdgeMetadataOf<T, I>,
 	) -> DispatchResultWithPostInfo {
-		println!("inside update anchor");
 		if T::Anchor::has_edge(tree_id, metadata.src_chain_id) {
-			println!("inside update edge");
-			println!("metadata root {:?}", metadata.root);
 			T::Anchor::update_edge(
 				tree_id,
 				metadata.src_chain_id,
@@ -634,7 +631,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			Self::deposit_event(Event::AnchorEdgeAdded);
 			Self::deposit_event(Event::AnchorEdgeUpdated);
 		} else {
-			println!("inside add edge");
 			T::Anchor::add_edge(
 				tree_id,
 				metadata.src_chain_id,
@@ -698,28 +694,17 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id, tree_id);
 			let my_chain_id = src_chain_id;
 
-			let other: u32 =
+			let other_chain_underlying_chain_id: u32 =
 				utils::get_underlying_chain_id(other_chain_id.try_into().unwrap_or_default());
 			let tree: u32 = target_tree_id.try_into().unwrap_or_default();
-			println!("other_chain_id from sync_anchor here is {:?}", other);
-			println!("target_tree_id from sync_anchor here is {:?}", tree);
-			//println!("converted chain id from sync_anchor here is {:?}",
-			// TypedChainId::Substrate(other).underlying_chain_id());
 
 			let r_id =
-				utils::derive_resource_id(other, target_tree_id.try_into().unwrap_or_default());
+				utils::derive_resource_id(other_chain_underlying_chain_id, target_tree_id.try_into().unwrap_or_default());
 
-			// target_tree_id + my_chain_id
-			// TODO: Document this clearly
-
-			let (tree_id, r_chain_id) =
-				utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id.into());
-
-			println!("r_chain_id from sync_anchor here is {:?}", r_chain_id);
-			println!("tree_id from sync_anchor here is {:?}", tree_id);
-
+			// construct the proposal header
 			let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
 
+			// construct the anchor update proposal
 			let anchor_update_proposal = AnchorUpdateProposal::new(
 				proposal_header,
 				typed_src_chain_id,
