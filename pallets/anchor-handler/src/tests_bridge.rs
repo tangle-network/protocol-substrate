@@ -2,7 +2,9 @@ use crate::{mock_bridge::*, types::UpdateRecord, AnchorList, Counts, UpdateRecor
 use frame_support::assert_ok;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 use pallet_linkable_tree::types::EdgeMetadata;
-use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
+use webb_primitives::utils::{
+	compute_chain_id_type, derive_resource_id, get_typed_chain_id_in_u64,
+};
 
 const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 100;
@@ -102,10 +104,10 @@ fn relay_anchor_update_proposal(
 fn anchor_create_proposal() {
 	new_test_ext().execute_with(|| {
 		let src_chain_id_u32 = 1u32;
-		let src_chain_id = src_chain_id_u32 as u64;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1u32).into();
+		let src_chain_id = get_typed_chain_id_in_u64(src_chain_id_u32);
 		let prop_id = 1;
-		setup_relayers(src_chain_id as u64);
+		setup_relayers(src_chain_id);
 		// make anchor create proposal
 		let deposit_size = 100;
 		let create_proposal = make_anchor_create_proposal(deposit_size, src_chain_id, &resource_id);
@@ -158,8 +160,8 @@ fn anchor_create_proposal() {
 fn anchor_update_proposal_edge_add_success() {
 	new_test_ext().execute_with(|| {
 		let src_chain_id_u32 = 1u32;
-		let src_chain_id = src_chain_id_u32 as u64;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1).into();
+		let src_chain_id = get_typed_chain_id_in_u64(src_chain_id_u32);
 		let prop_id = 1;
 		// create anchor update proposal
 		setup_relayers(src_chain_id);
@@ -207,6 +209,7 @@ fn anchor_update_proposal_edge_update_success() {
 		let src_chain_id_u32 = 1u32;
 		let src_chain_id = src_chain_id_u32 as u64;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1u32).into();
+		let src_chain_id = get_typed_chain_id_in_u64(src_chain_id_u32);
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 		mock_anchor_creation_using_pallet_call(src_chain_id, &resource_id);
