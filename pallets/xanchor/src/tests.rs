@@ -412,7 +412,7 @@ fn governance_system_works() {
 		let converted_chain_id_bytes = chain_id_to_bytes::<Runtime, _>(u64::from(PARAID_B));
 		let payload = LinkProposal {
 			target_chain_id: converted_chain_id_bytes,
-			target_tree_id: Some(para_b_tree_id),
+			target_tree_id: para_b_tree_id,
 			local_tree_id: para_a_tree_id,
 		};
 		let value = 100;
@@ -424,7 +424,7 @@ fn governance_system_works() {
 		// we should see this anchor link in the pending list
 		assert_eq!(
 			XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_a_tree_id),
-			Some(para_b_tree_id),
+			para_b_tree_id,
 		);
 
 		// start of 2 => next referendum scheduled.
@@ -451,7 +451,7 @@ fn governance_system_works() {
 		dbg!(converted_chain_id_bytes);
 		assert_eq!(
 			XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_b_tree_id),
-			Some(para_a_tree_id),
+			para_a_tree_id,
 		);
 		// start of 2 => next referendum scheduled.
 		fast_forward_to(2);
@@ -468,7 +468,7 @@ fn governance_system_works() {
 		fast_forward_to(6);
 		// at this point the proposal should be enacted and the anchors should be linked
 		// on this chain.
-		assert_eq!(XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_b_tree_id), None,);
+		assert_eq!(XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_b_tree_id), 0);
 		assert_eq!(
 			XAnchor::linked_anchors(converted_chain_id_bytes, para_b_tree_id),
 			para_a_tree_id
@@ -477,7 +477,7 @@ fn governance_system_works() {
 
 	// on chain A we should find them linked too.
 	ParaA::execute_with(|| {
-		assert_eq!(XAnchor::pending_linked_anchors(u64::from(PARAID_B), para_a_tree_id), None);
+		assert_eq!(XAnchor::pending_linked_anchors(u64::from(PARAID_B), para_a_tree_id), 0);
 		assert_eq!(XAnchor::linked_anchors(u64::from(PARAID_B), para_a_tree_id), para_b_tree_id);
 	});
 
@@ -493,7 +493,7 @@ fn should_fail_to_create_proposal_if_the_anchor_does_not_exist() {
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(MerkleTree::next_tree_id()),
+			target_tree_id: MerkleTree::next_tree_id(),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		let value = 100;
@@ -537,7 +537,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(para_b_tree_id),
+			target_tree_id: para_b_tree_id,
 			local_tree_id: para_a_tree_id,
 		};
 		let value = 100;
@@ -575,7 +575,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(para_b_tree_id),
+			target_tree_id: para_b_tree_id,
 			local_tree_id: para_a_tree_id,
 		};
 		let value = 100;
@@ -591,7 +591,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(para_b_tree_id),
+			target_tree_id: para_b_tree_id,
 			local_tree_id: para_a_tree_id,
 		};
 		let value = 100;
@@ -611,7 +611,7 @@ fn should_fail_to_call_send_link_anchor_message_as_signed_account() {
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(MerkleTree::next_tree_id()),
+			target_tree_id: MerkleTree::next_tree_id(),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		let value = 100;
@@ -631,7 +631,7 @@ fn should_fail_to_call_save_link_proposal_as_signed_account() {
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(MerkleTree::next_tree_id()),
+			target_tree_id: MerkleTree::next_tree_id(),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		assert_err!(
@@ -676,7 +676,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(para_b_tree_id),
+			target_tree_id: para_b_tree_id,
 			local_tree_id: para_a_tree_id,
 		};
 		println!("Payload {:?}", payload);
@@ -706,7 +706,7 @@ fn should_fail_to_call_handle_link_anchor_message_without_anchor_being_pending()
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(para_a_tree_id),
+			target_tree_id: para_a_tree_id,
 			local_tree_id: 0,
 		};
 		let value = 100;
@@ -730,7 +730,7 @@ fn should_fail_to_call_link_anchors_as_signed_account() {
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(MerkleTree::next_tree_id()),
+			target_tree_id: MerkleTree::next_tree_id(),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		assert_err!(
@@ -749,7 +749,7 @@ fn should_fail_to_call_handle_link_anchors_as_signed_account() {
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(MerkleTree::next_tree_id()),
+			target_tree_id: MerkleTree::next_tree_id(),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		assert_err!(
