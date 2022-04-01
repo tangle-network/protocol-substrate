@@ -523,12 +523,30 @@ pub mod pallet {
 			let anchor_update_proposal = AnchorUpdateProposal::from(anchor_update_proposal_bytes);
 
 			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(
-				anchor_update_proposal.header().resource_id(),
+				anchor_update_proposal.header().resource_id().into(),
 			);
+
+			///TODO: verify that the chain id and the one from the parsed resource id matches
+			let my_para_id = T::ParaId::get();
+			let my_chain_id =
+				utils::get_typed_chain_id_in_u64(my_para_id.try_into().unwrap_or_default());
+
+			let caller_chain_id =
+				T::ChainId::try_from(anchor_update_proposal.src_chain().chain_id())
+					.unwrap_or_default();
+
+			/*println!("chain_id from para_id here is {:?}", my_chain_id);
+			println!("chain_id from caller here is {:?}", caller_chain_id);
+			println!("r_chain_id from caller here is {:?}", T::ChainId::try_from(utils::get_typed_chain_id(r_chain_id)));
+			*/
+
+			let typed_chain_id_of_caller: u64 =
+				utils::get_typed_chain_id_in_u64(r_chain_id.try_into().unwrap_or_default());
+			ensure!(my_chain_id == typed_chain_id_of_caller, Error::<T, I>::InvalidPermissions);
 
 			//construct the metadata
 			let metadata = EdgeMetadata {
-				src_chain_id: r_chain_id,
+				src_chain_id: caller_chain_id,
 				//src_chain_id: my
 				root: ElementOf::<T, I>::from_bytes(anchor_update_proposal.merkle_root()),
 				latest_leaf_index: anchor_update_proposal.latest_leaf_index().into(),
@@ -577,22 +595,23 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> DispatchResultWithPostInfo {
 		// extract the resource id information
 		let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id.into());
+		let typed_chain_id = utils::get_typed_chain_id(chain_id);
 		println!("register_new_resource_id");
 		println!("tree_id: {:?}", tree_id);
-		println!("chain_id: {:?}", chain_id);
+		println!("chain_id: {:?}", typed_chain_id);
 		// and we need to also ensure that the anchor exists
 		ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 		// and not already anchored/linked
 		ensure!(
-			!LinkedAnchors::<T, I>::contains_key(chain_id, tree_id),
+			!LinkedAnchors::<T, I>::contains_key(typed_chain_id, tree_id),
 			Error::<T, I>::ResourceIsAlreadyAnchored
 		);
 		// finally, register the resource id
-		LinkedAnchors::<T, I>::insert(chain_id, tree_id, target_tree_id);
+		LinkedAnchors::<T, I>::insert(typed_chain_id, tree_id, target_tree_id);
 		// also, add the new edge to the anchor
 		Self::update_anchor(
 			tree_id,
-			EdgeMetadata { src_chain_id: chain_id, ..Default::default() },
+			EdgeMetadata { src_chain_id: typed_chain_id, ..Default::default() },
 		)?;
 		Ok(().into())
 	}
@@ -601,7 +620,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		tree_id: T::TreeId,
 		metadata: EdgeMetadataOf<T, I>,
 	) -> DispatchResultWithPostInfo {
+		println!("inside update anchor");
 		if T::Anchor::has_edge(tree_id, metadata.src_chain_id) {
+			println!("inside update edge");
+			println!("metadata root {:?}", metadata.root);
 			T::Anchor::update_edge(
 				tree_id,
 				metadata.src_chain_id,
@@ -612,6 +634,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			Self::deposit_event(Event::AnchorEdgeAdded);
 			Self::deposit_event(Event::AnchorEdgeUpdated);
 		} else {
+			println!("inside add edge");
 			T::Anchor::add_edge(
 				tree_id,
 				metadata.src_chain_id,
@@ -650,27 +673,15 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let my_para_id = T::ParaId::get();
 		let src_chain_id = u32::from(my_para_id);
 
-		// construct resource id
-		let resource_id =
-			utils::derive_resource_id(src_chain_id, tree_id.try_into().unwrap_or_default());
-
 		let function_signature = FunctionSignature::new([0; 4]);
 		let latest_leaf_index_u32: u32 = latest_leaf_index.try_into().unwrap_or_default();
 		let nonce = Nonce::new(latest_leaf_index_u32);
 
-		// construct proposal header
-		let proposal_header = ProposalHeader::new(resource_id, function_signature, nonce);
-		let typed_chain_id = TypedChainId::Substrate(src_chain_id);
+		let typed_src_chain_id = TypedChainId::Substrate(src_chain_id);
+		println!("typed_src_chain_id {:?}", typed_src_chain_id.chain_id());
 
 		let mut merkle_root = [0; 32];
 		merkle_root.copy_from_slice(root.to_bytes());
-
-		let anchor_update_proposal = AnchorUpdateProposal::new(
-			proposal_header,
-			typed_chain_id,
-			latest_leaf_index_u32,
-			merkle_root,
-		);
 
 		// now we need an iterator for all the edges connected to this anchor
 		let edges = pallet_linkable_tree::EdgeList::<T, I>::iter_prefix_values(tree_id);
@@ -687,13 +698,34 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id, tree_id);
 			let my_chain_id = src_chain_id;
 
+			let other: u32 =
+				utils::get_underlying_chain_id(other_chain_id.try_into().unwrap_or_default());
+			let tree: u32 = target_tree_id.try_into().unwrap_or_default();
+			println!("other_chain_id from sync_anchor here is {:?}", other);
+			println!("target_tree_id from sync_anchor here is {:?}", tree);
+			//println!("converted chain id from sync_anchor here is {:?}",
+			// TypedChainId::Substrate(other).underlying_chain_id());
+
+			let r_id =
+				utils::derive_resource_id(other, target_tree_id.try_into().unwrap_or_default());
+
 			// target_tree_id + my_chain_id
 			// TODO: Document this clearly
-			let r_id = utils::derive_resource_id(
-				other_chain_id.try_into().unwrap_or_default(),
-				target_tree_id.try_into().unwrap_or_default(),
-			)
-			.into();
+
+			let (tree_id, r_chain_id) =
+				utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id.into());
+
+			println!("r_chain_id from sync_anchor here is {:?}", r_chain_id);
+			println!("tree_id from sync_anchor here is {:?}", tree_id);
+
+			let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
+
+			let anchor_update_proposal = AnchorUpdateProposal::new(
+				proposal_header,
+				typed_src_chain_id,
+				latest_leaf_index_u32,
+				merkle_root,
+			);
 
 			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
 			let update_edge = Transact {
@@ -715,13 +747,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				Ok(()) => {
 					Self::deposit_event(Event::RemoteAnchorEdgeUpdated {
 						para_id: other_para_id,
-						resource_id: r_id,
+						resource_id: r_id.into(),
 					});
 				},
 				Err(e) => {
 					Self::deposit_event(Event::RemoteAnchorEdgeUpdateFailed {
 						para_id: other_para_id,
-						resource_id: r_id,
+						resource_id: r_id.into(),
 						error: e,
 					});
 				},

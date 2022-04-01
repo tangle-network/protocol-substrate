@@ -10,7 +10,10 @@ use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use pallet_anchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};
 use std::{convert::TryInto, path::Path};
-use webb_primitives::{utils::derive_resource_id, webb_proposals::TypedChainId};
+use webb_primitives::{
+	utils::{derive_resource_id, get_typed_chain_id, get_typed_chain_id_in_u64},
+	webb_proposals::TypedChainId,
+};
 use xcm_simulator::TestExt;
 
 const SEED: u32 = 0;
@@ -202,7 +205,7 @@ fn should_link_two_anchors() {
 	ParaA::execute_with(|| {
 		let exists = crate::LinkedAnchors::<parachain::Runtime, _>::iter().any(
 			|(chain_id, tree_id, target_tree_id)| {
-				chain_id == u64::from(PARAID_B) &&
+				chain_id == get_typed_chain_id_in_u64(PARAID_B.into()) &&
 					tree_id == para_a_tree_id &&
 					target_tree_id == para_b_tree_id
 			},
@@ -213,7 +216,7 @@ fn should_link_two_anchors() {
 	ParaB::execute_with(|| {
 		let exists = crate::LinkedAnchors::<parachain::Runtime, _>::iter().any(
 			|(chain_id, tree_id, target_tree_id)| {
-				chain_id == u64::from(PARAID_A) &&
+				chain_id == get_typed_chain_id_in_u64(PARAID_A.into()) &&
 					tree_id == para_b_tree_id &&
 					target_tree_id == para_a_tree_id
 			},
@@ -285,8 +288,9 @@ fn should_bridge_anchors_using_xcm() {
 	// to the one we got from ParaA.
 	ParaB::execute_with(|| {
 		let chain_id: <Runtime as pallet_linkable_tree::Config>::ChainId = PARAID_A.into();
-		dbg!(chain_id);
-		let edge = LinkableTree::edge_list(&para_b_tree_id, chain_id);
+		println!("chain id in test is: {:?}", get_typed_chain_id(chain_id));
+		println!("chain id in test is: {:?}", get_typed_chain_id(chain_id));
+		let edge = LinkableTree::edge_list(&para_b_tree_id, get_typed_chain_id(chain_id));
 		assert_eq!(edge.root, para_a_root);
 		assert_eq!(edge.latest_leaf_index, 1);
 	});
@@ -558,7 +562,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 	// linked.
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id: get_typed_chain_id(PARAID_B.into()),
 			target_tree_id: Some(para_b_tree_id),
 			local_tree_id: para_a_tree_id,
 		};
@@ -697,7 +701,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 	// now creating a proposal on chain A should fail since it is already linked.
 	ParaA::execute_with(|| {
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
+			target_chain_id: get_typed_chain_id(PARAID_B.into()),
 			target_tree_id: Some(para_b_tree_id),
 			local_tree_id: para_a_tree_id,
 		};
