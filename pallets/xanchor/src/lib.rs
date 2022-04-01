@@ -527,7 +527,6 @@ pub mod pallet {
 				anchor_update_proposal.header().resource_id().into(),
 			);
 
-
 			let my_para_id = T::ParaId::get();
 			let my_chain_id =
 				utils::get_typed_chain_id_in_u64(my_para_id.try_into().unwrap_or_default());
@@ -698,8 +697,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				utils::get_underlying_chain_id(other_chain_id.try_into().unwrap_or_default());
 			let tree: u32 = target_tree_id.try_into().unwrap_or_default();
 
-			let r_id =
-				utils::derive_resource_id(other_chain_underlying_chain_id, target_tree_id.try_into().unwrap_or_default());
+			let r_id = utils::derive_resource_id(
+				other_chain_underlying_chain_id,
+				target_tree_id.try_into().unwrap_or_default(),
+			);
 
 			// construct the proposal header
 			let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
