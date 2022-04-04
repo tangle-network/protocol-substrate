@@ -189,7 +189,7 @@ docker run --security-opt seccomp=unconfined cov
 
 ## Contributing
 
-Interested in contributing to the Webb Relayer Network? Thank you so much for your interest! We are always appreciative for contributions from the open-source community!  
+Interested in contributing to protocol-substrate? Thank you so much for your interest! We are always appreciative for contributions from the open-source community!  
 
 If you have a contribution in mind, please check out our [Contribution Guide](./.github/CONTRIBUTING.md) for information on how to do so. We are excited for your first contribution!
 
@@ -197,6 +197,4 @@ If you have a contribution in mind, please check out our [Contribution Guide](./
 
 Licensed under <a href="LICENSE">Apache 2.0 license</a>.
 
-Unless you explicitly state otherwise, any contribution intentionally submitted
-for inclusion in this crate by you, as defined in the Apache 2.0 license, shall
-be licensed as above, without any additional terms or conditions.
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this crate by you, as defined in the Apache 2.0 license, shall be licensed as above, without any additional terms or conditions.
