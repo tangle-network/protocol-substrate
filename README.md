@@ -33,7 +33,7 @@
 
 <h2 id="start"> Getting Started  🎉 </h2>
 
-For additional information, please refer to the [Webb Protocol-Substrate Rust Docs](docs.webb.tools/protocol_substrate/) 📝
+For additional information, please refer to the [Webb Protocol-Substrate Rust Docs](docs.webb.tools/protocol-substrate/) 📝
 
 ### Pallet layout
 
