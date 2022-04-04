@@ -403,11 +403,11 @@ pub mod pallet {
 			PendingLinkedAnchors::<T, I>::remove(payload.target_chain_id, payload.local_tree_id);
 			let r_id = utils::derive_resource_id(
 				payload.target_chain_id.try_into().unwrap_or_default(),
-				payload.local_tree_id.encode(),
+				payload.local_tree_id.try_into().unwrap_or_default(),
 			)
 			.into();
 			// unwrap here is safe, since we are sure that it has the value of the tree id.
-			let target_tree_id = payload.target_tree_id.unwrap();
+			let target_tree_id = payload.target_tree_id.try_into().unwrap_or_default();
 			// We are now ready to link the anchor locally.
 			Self::register_new_resource_id(r_id, target_tree_id)?;
 			// Next, we signal back to the other chain that the link process is done.
@@ -447,7 +447,7 @@ pub mod pallet {
 			PendingLinkedAnchors::<T, I>::remove(caller_chain_id, my_tree_id);
 			let r_id = utils::derive_resource_id(
 				caller_chain_id.try_into().unwrap_or_default(),
-				my_tree_id.encode(),
+				my_tree_id.try_into().unwrap_or_default(),
 			)
 			.into();
 			let target_tree_id = payload.local_tree_id;
@@ -650,7 +650,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let nonce = Nonce::new(latest_leaf_index_u32);
 
 		let typed_src_chain_id = TypedChainId::Substrate(src_chain_id);
-		println!("typed_src_chain_id {:?}", typed_src_chain_id.chain_id());
 
 		let mut merkle_root = [0; 32];
 		merkle_root.copy_from_slice(root.to_bytes());

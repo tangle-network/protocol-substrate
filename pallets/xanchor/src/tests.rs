@@ -288,8 +288,6 @@ fn should_bridge_anchors_using_xcm() {
 	// to the one we got from ParaA.
 	ParaB::execute_with(|| {
 		let chain_id: <Runtime as pallet_linkable_tree::Config>::ChainId = PARAID_A.into();
-		println!("chain id in test is: {:?}", get_typed_chain_id(chain_id));
-		println!("chain id in test is: {:?}", get_typed_chain_id(chain_id));
 		let edge = LinkableTree::edge_list(&para_b_tree_id, get_typed_chain_id(chain_id));
 		assert_eq!(edge.root, para_a_root);
 		assert_eq!(edge.latest_leaf_index, 1);
@@ -694,7 +692,6 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 	// force link them.
 	ParaA::execute_with(|| {
 		let r_id = derive_resource_id(PARAID_B.into(), para_a_tree_id).into();
-		println!("r_id: {:?}", r_id);
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
