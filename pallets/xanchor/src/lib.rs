@@ -158,7 +158,7 @@ pub mod pallet {
 		T::ChainId,
 		Blake2_128Concat,
 		T::TreeId,
-		Option<T::TreeId>,
+		T::TreeId,
 		ValueQuery,
 	>;
 
@@ -325,16 +325,8 @@ pub mod pallet {
 			let caller_chain_id = para_id_to_chain_id::<T, I>(para);
 			// Now we are on the other chain (if you look at it from the caller point of view)
 			// We first check if the requested anchor exists (if any).
-			let my_tree_id = match payload.target_tree_id {
-				Some(tree_id) => {
-					ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
-					tree_id
-				},
-				// TODO: Create an anchor if the caller does not provide one.
-				// TODO: Create a record of the newly created tree and the caller chain ID.
-				// TODO: Identify if we need to encode more metadata
-				None => todo!("create an anchor if the caller does not provide one"),
-			};
+			let my_tree_id = payload.target_tree_id;
+			ensure!(Self::anchor_exists(my_tree_id), Error::<T, I>::AnchorNotFound);
 			// Next, we check if the anchor is not linked to the local chain already.
 			ensure!(
 				!LinkedAnchors::<T, I>::contains_key(caller_chain_id, my_tree_id),
@@ -349,7 +341,7 @@ pub mod pallet {
 			PendingLinkedAnchors::<T, I>::insert(
 				caller_chain_id,
 				my_tree_id,
-				Some(payload.local_tree_id),
+				payload.local_tree_id,
 			);
 			Ok(().into())
 		}
@@ -369,17 +361,8 @@ pub mod pallet {
 			// TODO: Should the following line be here?
 			// TODO: let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
 			let _caller = ensure_signed(origin.clone())?;
-			let my_tree_id = match payload.target_tree_id {
-				Some(tree_id) => {
-					ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
-					tree_id
-				},
-				// TODO: Create an anchor if the caller does not provide one.
-				// TODO: Identify if there is a bug if both the `save_link_proposal` and
-				// `handle_link_anchor_message` create trees. TODO: Find the record of the newly
-				// created tree and the caller chain ID from the `save_link_proposal`
-				None => todo!("create an anchor if the caller does not provide one"),
-			};
+			let my_tree_id = payload.target_tree_id;
+			ensure!(Self::anchor_exists(my_tree_id), Error::<T, I>::AnchorNotFound);
 			// Double check that it is already in the pending link storage.
 			ensure!(
 				PendingLinkedAnchors::<T, I>::contains_key(payload.target_chain_id, my_tree_id),
@@ -388,7 +371,7 @@ pub mod pallet {
 			// Finally, we create the on-chain proposal that when passed will link the
 			// anchors locally and send back to the other chain the completed link proposal.
 			let payload = LinkProposal {
-				target_tree_id: Some(payload.local_tree_id),
+				target_tree_id: payload.local_tree_id,
 				local_tree_id: my_tree_id,
 				..payload
 			};
@@ -420,7 +403,7 @@ pub mod pallet {
 			PendingLinkedAnchors::<T, I>::remove(payload.target_chain_id, payload.local_tree_id);
 			let r_id = utils::derive_resource_id(
 				payload.target_chain_id.try_into().unwrap_or_default(),
-				payload.local_tree_id.try_into().unwrap_or_default(),
+				payload.local_tree_id.encode(),
 			)
 			.into();
 			// unwrap here is safe, since we are sure that it has the value of the tree id.
@@ -451,13 +434,8 @@ pub mod pallet {
 			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
 			let caller_chain_id = para_id_to_chain_id::<T, I>(para);
 			// get the local tree id, it should be in the target_tree_id.
-			let my_tree_id = match payload.target_tree_id {
-				Some(tree_id) => {
-					ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
-					tree_id
-				},
-				None => return Err(Error::<T, I>::AnchorNotFound.into()),
-			};
+			let my_tree_id = payload.target_tree_id;
+			ensure!(Self::anchor_exists(my_tree_id), Error::<T, I>::AnchorNotFound);
 			// If we are here, on this chain, that means this chain is the one who
 			// started the link process. This means that we should find the anchor in the linked
 			// anchors list.
@@ -469,7 +447,7 @@ pub mod pallet {
 			PendingLinkedAnchors::<T, I>::remove(caller_chain_id, my_tree_id);
 			let r_id = utils::derive_resource_id(
 				caller_chain_id.try_into().unwrap_or_default(),
-				my_tree_id.try_into().unwrap_or_default(),
+				my_tree_id.encode(),
 			)
 			.into();
 			let target_tree_id = payload.local_tree_id;
@@ -512,7 +490,6 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		// anchorupdateProposal
 		#[pallet::weight(0)]
 		pub fn update(
 			origin: OriginFor<T>,
