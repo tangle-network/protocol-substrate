@@ -37,6 +37,8 @@ codec = { default-features = false, features = ["derive", "max-encoded-len"], pa
 ethabi = { version = "15.0.0", default-features = false }
 hex-literal = { version = "0.3.4", default-features = false }
 
+webb-proposals = { version = "0.2.1", default-features = false }
+
 [features]
 default = ["std", "hashing", "verifying", "field_ops"]
 std = [
@@ -50,7 +52,8 @@ std = [
 	"ark-ff/std",
 	"ark-ec/std",
 	"ark-std/std",
-	"ark-relations/std"
+	"ark-relations/std",
+	"webb-proposals/std"
 ]
 field_ops = [
 	"ark-bls12-381",

@@ -123,7 +123,7 @@ fn relay_token_update_proposal(
 fn should_update_fee() {
 	new_test_ext().execute_with(|| {
 		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let resource_id = derive_resource_id(1u32, 1u32).into();
 		let prop_id = 1;
 
 		let existential_balance: u32 = 1000;
@@ -148,7 +148,7 @@ fn should_succeed_add_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
 		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let resource_id = derive_resource_id(1u32, 1u32).into();
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 
@@ -189,7 +189,7 @@ fn should_succeed_remove_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
 		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let resource_id = derive_resource_id(1u32, 1u32).into();
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 
@@ -244,7 +244,7 @@ fn should_fail_to_remove_token_not_in_pool() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
 		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let resource_id = derive_resource_id(1u32, 1u32).into();
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 
@@ -286,7 +286,7 @@ fn should_succeed_add_many_tokens() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
 		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let resource_id = derive_resource_id(1u32, 1u32).into();
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 
@@ -371,7 +371,7 @@ fn should_fail_to_add_same_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
 		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let resource_id = derive_resource_id(1u32, 1u32).into();
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 
@@ -427,7 +427,7 @@ fn should_fail_to_add_non_existent_token() {
 	new_test_ext().execute_with(|| {
 		// Setup necessary relayers/bridge functionality
 		let src_chain_id = compute_chain_id_type(1u32, SUBSTRATE_CHAIN_TYPE);
-		let resource_id = derive_resource_id(src_chain_id, b"hash");
+		let resource_id = derive_resource_id(1u32, 1u32).into();
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 
