@@ -12,8 +12,8 @@ use sp_runtime::{
 	testing::Header,
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 };
+pub use webb_primitives::{hashing::ethereum::Keccak256HasherBn254, ElementTrait, InstanceHasher};
 use webb_primitives::{verifying::ArkworksVerifierBn254, ResourceId};
-pub use webb_primitives::{ElementTrait, InstanceHasher};
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -245,6 +245,7 @@ impl pallet_anchor::Config for Test {
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = ();
 	type Verifier = VerifierPallet;
+	type ArbitraryHasher = Keccak256HasherBn254;
 	type WeightInfo = ();
 }
 
@@ -264,6 +265,7 @@ parameter_types! {
 }
 
 pub type ProposalNonce = u32;
+pub type MaintainerNonce = u32;
 
 type BridgeInstance = pallet_signature_bridge::Instance1;
 impl pallet_signature_bridge::Config<BridgeInstance> for Test {
@@ -276,6 +278,7 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
+	type MaintainerNonce = MaintainerNonce;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 }
 

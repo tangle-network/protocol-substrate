@@ -3,6 +3,8 @@ use super::{
 	*,
 };
 
+use ark_bn254::Fr as Bn254Fr;
+use arkworks_setups::{common::setup_params, Curve};
 use codec::Encode;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok};
@@ -10,12 +12,66 @@ use pallet_anchor::truncate_and_pad;
 use webb_primitives::utils::derive_resource_id;
 use webb_primitives::merkle_tree::TreeInspector;
 use arkworks_utils::utils::common::Curve;
+use frame_support::{assert_err, assert_ok, traits::OnInitialize};
+use pallet_anchor::BalanceOf;
+use pallet_democracy::{AccountVote, Conviction, Vote};
+use std::{convert::TryInto, path::Path};
+use webb_primitives::{
+	utils::{derive_resource_id, get_typed_chain_id, get_typed_chain_id_in_u64},
+	webb_proposals::TypedChainId,
+};
 use xcm_simulator::TestExt;
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
 const M: usize = 2;
 const DEPOSIT_SIZE: u128 = 10_000;
+
+fn setup_environment(curve: Curve) -> Vec<u8> {
+	match curve {
+		Curve::Bn254 => {
+			let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
+
+			// 1. Setup The Hasher Pallet.
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+			// 2. Initialize MerkleTree pallet.
+			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
+			// 3. Setup the VerifierPallet
+			//    but to do so, we need to have a VerifyingKey
+			let (pk_bytes, vk_bytes) = (
+				std::fs::read(
+					"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/2/proving_key.bin",
+				)
+				.expect("Unable to read file")
+				.to_vec(),
+				std::fs::read(
+					"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/2/verifying_key.bin",
+				)
+				.expect("Unable to read file")
+				.to_vec(),
+			);
+
+			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
+
+			for account_id in [
+				account::<AccountId>("", 1, SEED),
+				account::<AccountId>("", 2, SEED),
+				account::<AccountId>("", 3, SEED),
+				account::<AccountId>("", 4, SEED),
+				account::<AccountId>("", 5, SEED),
+				account::<AccountId>("", 6, SEED),
+			] {
+				assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
+			}
+
+			// finally return the provingkey bytes
+			pk_bytes.to_vec()
+		},
+		Curve::Bls381 => {
+			unimplemented!()
+		},
+	}
+}
 
 // sanity check that XCM is working
 #[test]
@@ -135,7 +191,9 @@ fn should_link_two_anchors() {
 		use parachain_a::{XAnchor, Origin};
 		// the resource id reads as following
 		// we need to link para_a_tree_id to another anchor defined on ParaB
-		let r_id = derive_resource_id(PARAID_B.into(), &para_a_tree_id.encode());
+		let r_id =
+			derive_resource_id(PARAID_B.into(), para_a_tree_id.try_into().unwrap_or_default())
+				.into();
 		// then, on the call here, we tell it which tree we are going to link to.
 		// (para_b_tree_id).
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
@@ -145,7 +203,9 @@ fn should_link_two_anchors() {
 	ParaB::execute_with(|| {
 		use parachain_b::{XAnchor, Origin};
 		// we need to link para_b_tree_id to another anchor defined on ParaA
-		let r_id = derive_resource_id(PARAID_A.into(), &para_b_tree_id.encode());
+		let r_id =
+			derive_resource_id(PARAID_A.into(), para_b_tree_id.try_into().unwrap_or_default())
+				.into();
 		// then, when we are sending the call we tell it which tree we are going to link
 		// to. (para_a_tree_id).
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
@@ -156,7 +216,7 @@ fn should_link_two_anchors() {
 		use parachain_a::Runtime;
 		let exists = crate::LinkedAnchors::<Runtime, _>::iter().any(
 			|(chain_id, tree_id, target_tree_id)| {
-				chain_id == u64::from(PARAID_B) &&
+				chain_id == get_typed_chain_id_in_u64(PARAID_B.into()) &&
 					tree_id == para_a_tree_id &&
 					target_tree_id == para_b_tree_id
 			},
@@ -168,7 +228,7 @@ fn should_link_two_anchors() {
 		use parachain_b::Runtime;
 		let exists = crate::LinkedAnchors::<Runtime, _>::iter().any(
 			|(chain_id, tree_id, target_tree_id)| {
-				chain_id == u64::from(PARAID_A) &&
+				chain_id == get_typed_chain_id_in_u64(PARAID_A.into()) &&
 					tree_id == para_b_tree_id &&
 					target_tree_id == para_a_tree_id
 			},
@@ -248,11 +308,8 @@ fn should_bridge_anchors_using_xcm() {
 	// we should expect that the edge for ParaA is there, and the merkle root equal
 	// to the one we got from ParaA.
 	ParaB::execute_with(|| {
-		use parachain_b::{Runtime, LinkableTree};
-		let converted_chain_id_bytes =
-			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
-		dbg!(converted_chain_id_bytes);
-		let edge = LinkableTree::edge_list(&para_b_tree_id, converted_chain_id_bytes);
+		let chain_id: <Runtime as pallet_linkable_tree::Config>::ChainId = PARAID_A.into();
+		let edge = LinkableTree::edge_list(&para_b_tree_id, get_typed_chain_id(chain_id));
 		assert_eq!(edge.root, para_a_root);
 		assert_eq!(edge.latest_leaf_index, 1);
 	});
@@ -266,7 +323,7 @@ fn should_fail_to_register_resource_id_if_not_the_democracy() {
 	ParaA::execute_with(|| {
 		use parachain_a::{MerkleTree, XAnchor, Origin};
 		let tree_id = MerkleTree::next_tree_id();
-		let r_id = derive_resource_id(PARAID_B.into(), &tree_id.encode());
+		let r_id = derive_resource_id(PARAID_B.into(), tree_id).into();
 		let target_tree_id = 1;
 		assert_err!(
 			XAnchor::register_resource_id(
@@ -287,7 +344,7 @@ fn should_fail_to_register_resource_id_when_anchor_does_not_exist() {
 		use parachain_a::{MerkleTree, XAnchor, Origin, Runtime};
 		// anchor/tree does not exist.
 		let tree_id = MerkleTree::next_tree_id();
-		let r_id = derive_resource_id(PARAID_B.into(), &tree_id.encode());
+		let r_id = derive_resource_id(PARAID_B.into(), tree_id).into();
 		let target_tree_id = 1;
 		assert_err!(
 			XAnchor::register_resource_id(Origin::root(), r_id, target_tree_id),
@@ -310,7 +367,7 @@ fn should_fail_to_link_anchor_if_it_is_already_anchored() {
 		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		// next we start to register the resource id.
 		let tree_id = MerkleTree::next_tree_id() - 1;
-		let r_id = derive_resource_id(PARAID_B.into(), &tree_id.encode());
+		let r_id = derive_resource_id(PARAID_B.into(), tree_id).into();
 		let target_tree_id = 1;
 		assert_ok!(XAnchor::register_resource_id(Origin::root(), r_id, target_tree_id));
 		// now we try to link the anchor again, should error.
@@ -331,9 +388,29 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 		// try to update the edges, from a normal account!
 		// it should fail.
 		let tree_id = MerkleTree::next_tree_id();
-		let r_id = derive_resource_id(PARAID_B.into(), &tree_id.encode());
+		let r_id = derive_resource_id(PARAID_B.into(), tree_id).into();
+
+		let function_signature = FunctionSignature::new([0; 4]);
+		let latest_leaf_index_u32: u32 = 1;
+		let nonce = Nonce::new(latest_leaf_index_u32);
+
+		let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
+		let typed_chain_id = TypedChainId::Substrate(PARAID_B.into());
+
+		let mut merkle_root = [0; 32];
+
+		let anchor_update_proposal = AnchorUpdateProposal::new(
+			proposal_header,
+			typed_chain_id,
+			latest_leaf_index_u32,
+			merkle_root,
+		);
+
 		assert_err!(
-			XAnchor::update(Origin::signed(AccountTwo::get()), r_id, Default::default()),
+			XAnchor::update(
+				Origin::signed(parachain::AccountTwo::get()),
+				anchor_update_proposal.into_bytes()
+			),
 			frame_support::error::BadOrigin,
 		);
 	});
@@ -373,7 +450,7 @@ fn governance_system_works() {
 			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_B));
 		let payload = LinkProposal {
 			target_chain_id: converted_chain_id_bytes,
-			target_tree_id: Some(para_b_tree_id),
+			target_tree_id: para_b_tree_id,
 			local_tree_id: para_a_tree_id,
 		};
 		let value = 100;
@@ -385,7 +462,7 @@ fn governance_system_works() {
 		// we should see this anchor link in the pending list
 		assert_eq!(
 			XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_a_tree_id),
-			Some(para_b_tree_id),
+			para_b_tree_id,
 		);
 
 		// start of 2 => next referendum scheduled.
@@ -414,7 +491,7 @@ fn governance_system_works() {
 		dbg!(converted_chain_id_bytes);
 		assert_eq!(
 			XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_b_tree_id),
-			Some(para_a_tree_id),
+			para_a_tree_id,
 		);
 		// start of 2 => next referendum scheduled.
 		fast_forward_to(2);
@@ -432,7 +509,7 @@ fn governance_system_works() {
 		fast_forward_to(6);
 		// at this point the proposal should be enacted and the anchors should be linked
 		// on this chain.
-		assert_eq!(XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_b_tree_id), None,);
+		assert_eq!(XAnchor::pending_linked_anchors(converted_chain_id_bytes, para_b_tree_id), 0);
 		assert_eq!(
 			XAnchor::linked_anchors(converted_chain_id_bytes, para_b_tree_id),
 			para_a_tree_id
@@ -441,8 +518,7 @@ fn governance_system_works() {
 
 	// on chain A we should find them linked too.
 	ParaA::execute_with(|| {
-		use parachain_a::XAnchor;
-		assert_eq!(XAnchor::pending_linked_anchors(u64::from(PARAID_B), para_a_tree_id), None);
+		assert_eq!(XAnchor::pending_linked_anchors(u64::from(PARAID_B), para_a_tree_id), 0);
 		assert_eq!(XAnchor::linked_anchors(u64::from(PARAID_B), para_a_tree_id), para_b_tree_id);
 	});
 
@@ -459,7 +535,7 @@ fn should_fail_to_create_proposal_if_the_anchor_does_not_exist() {
 		use parachain_a::{XAnchor, MerkleTree, Runtime, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(MerkleTree::next_tree_id()),
+			target_tree_id: MerkleTree::next_tree_id(),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		let value = 100;
@@ -496,8 +572,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 
 	// force link them.
 	ParaA::execute_with(|| {
-		use parachain_a::{XAnchor, Origin};
-		let r_id = derive_resource_id(PARAID_B.into(), &para_a_tree_id.encode());
+		let r_id = derive_resource_id(PARAID_B.into(), para_a_tree_id).into();
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
@@ -506,8 +581,8 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 	ParaA::execute_with(|| {
 		use parachain_a::{XAnchor, Runtime, Origin};
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(para_b_tree_id),
+			target_chain_id: get_typed_chain_id(PARAID_B.into()),
+			target_tree_id: para_b_tree_id,
 			local_tree_id: para_a_tree_id,
 		};
 		let value = 100;
@@ -548,7 +623,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 		use parachain_a::{XAnchor, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(para_b_tree_id),
+			target_tree_id: para_b_tree_id,
 			local_tree_id: para_a_tree_id,
 		};
 		let value = 100;
@@ -565,7 +640,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 		use parachain_a::{XAnchor, Origin, Runtime};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(para_b_tree_id),
+			target_tree_id: para_b_tree_id,
 			local_tree_id: para_a_tree_id,
 		};
 		let value = 100;
@@ -586,7 +661,7 @@ fn should_fail_to_call_send_link_anchor_message_as_signed_account() {
 		use parachain_a::{XAnchor, MerkleTree, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(MerkleTree::next_tree_id()),
+			target_tree_id: MerkleTree::next_tree_id(),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		let value = 100;
@@ -607,7 +682,7 @@ fn should_fail_to_call_save_link_proposal_as_signed_account() {
 		use parachain_a::{XAnchor, MerkleTree, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(MerkleTree::next_tree_id()),
+			target_tree_id: MerkleTree::next_tree_id(),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		assert_err!(
@@ -645,9 +720,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 
 	// force link them.
 	ParaA::execute_with(|| {
-		use parachain_a::{XAnchor, Origin};
-		let r_id = derive_resource_id(PARAID_B.into(), &para_a_tree_id.encode());
-		println!("r_id: {:?}", r_id);
+		let r_id = derive_resource_id(PARAID_B.into(), para_a_tree_id).into();
 		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
 	});
 
@@ -655,8 +728,8 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 	ParaA::execute_with(|| {
 		use parachain_a::{XAnchor, Runtime, Origin};
 		let payload = LinkProposal {
-			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(para_b_tree_id),
+			target_chain_id: get_typed_chain_id(PARAID_B.into()),
+			target_tree_id: para_b_tree_id,
 			local_tree_id: para_a_tree_id,
 		};
 		println!("Payload {:?}", payload);
@@ -688,7 +761,7 @@ fn should_fail_to_call_handle_link_anchor_message_without_anchor_being_pending()
 		use parachain_a::{XAnchor, Runtime, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(para_a_tree_id),
+			target_tree_id: para_a_tree_id,
 			local_tree_id: 0,
 		};
 		let value = 100;
@@ -713,7 +786,7 @@ fn should_fail_to_call_link_anchors_as_signed_account() {
 		use parachain_a::{XAnchor, MerkleTree, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(MerkleTree::next_tree_id()),
+			target_tree_id: MerkleTree::next_tree_id(),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		assert_err!(
@@ -733,7 +806,7 @@ fn should_fail_to_call_handle_link_anchors_as_signed_account() {
 		use parachain_a::{XAnchor, MerkleTree, Origin};
 		let payload = LinkProposal {
 			target_chain_id: PARAID_B.into(),
-			target_tree_id: Some(MerkleTree::next_tree_id()),
+			target_tree_id: MerkleTree::next_tree_id(),
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		assert_err!(
@@ -750,8 +823,7 @@ fn should_fail_to_call_register_resource_id_as_signed_account() {
 	// calling register_resource_id as signed account should fail.
 	// on parachain A.
 	ParaA::execute_with(|| {
-		use parachain_a::{XAnchor, MerkleTree, Origin};
-		let r_id = derive_resource_id(PARAID_B.into(), &MerkleTree::next_tree_id().encode());
+		let r_id = derive_resource_id(PARAID_B.into(), MerkleTree::next_tree_id()).into();
 		assert_err!(
 			XAnchor::register_resource_id(
 				Origin::signed(AccountThree::get()),
@@ -770,15 +842,34 @@ fn should_fail_to_call_update_as_signed_account() {
 	// calling update as signed account should fail.
 	// on parachain A.
 	ParaA::execute_with(|| {
-		use parachain_a::{XAnchor, MerkleTree, Origin};
-		let r_id = derive_resource_id(PARAID_B.into(), &MerkleTree::next_tree_id().encode());
-		let edge_metadata = EdgeMetadata {
+		let r_id = derive_resource_id(PARAID_B.into(), MerkleTree::next_tree_id()).into();
+		/*let edge_metadata = EdgeMetadata {
 			src_chain_id: PARAID_B.into(),
 			root: Element::zero(),
 			latest_leaf_index: 0,
-		};
+		};*/
+
+		let function_signature = FunctionSignature::new([0; 4]);
+		let latest_leaf_index_u32: u32 = 0;
+		let nonce = Nonce::new(latest_leaf_index_u32);
+
+		let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
+		let typed_chain_id = TypedChainId::Substrate(PARAID_B.into());
+
+		let mut merkle_root = [0; 32];
+
+		let anchor_update_proposal = AnchorUpdateProposal::new(
+			proposal_header,
+			typed_chain_id,
+			latest_leaf_index_u32,
+			merkle_root,
+		);
+
 		assert_err!(
-			XAnchor::update(Origin::signed(AccountThree::get()), r_id, edge_metadata),
+			XAnchor::update(
+				Origin::signed(AccountThree::get()),
+				anchor_update_proposal.into_bytes()
+			),
 			frame_support::error::BadOrigin,
 		);
 	});

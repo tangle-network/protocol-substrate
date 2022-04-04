@@ -89,7 +89,9 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, PalletId};
+	use frame_support::{
+		dispatch::DispatchResultWithPostInfo, pallet_prelude::*, traits::tokens::Balance, PalletId,
+	};
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
@@ -124,6 +126,12 @@ pub mod pallet {
 
 		type PostDepositHook: PostDepositHook<Self, I>;
 
+		/// Max external amount
+		type MaxExtAmount: Get<BalanceOf<Self, I>>;
+
+		/// Max fee amount
+		type MaxFee: Get<BalanceOf<Self, I>>;
+
 		/// Native currency id
 		#[pallet::constant]
 		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
@@ -138,15 +146,6 @@ pub mod pallet {
 	#[pallet::getter(fn min_withdraw_amount)]
 	pub type MinWithdrawAmount<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, BalanceOf<T, I>, ValueQuery>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn max_ext_amount)]
-	pub type MaxExtAmount<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, BalanceOf<T, I>, ValueQuery>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn max_fee)]
-	pub type MaxFee<T: Config<I>, I: 'static = ()> = StorageValue<_, BalanceOf<T, I>, ValueQuery>;
 
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
@@ -200,14 +199,6 @@ pub mod pallet {
 		MinWithdrawAmountChanged {
 			min_withdraw_amount: BalanceOf<T, I>,
 		},
-
-		MaxExtAmountChanged {
-			max_ext_amount: BalanceOf<T, I>,
-		},
-
-		MaxFeeChanged {
-			max_fee: BalanceOf<T, I>,
-		},
 	}
 
 	#[pallet::error]
@@ -237,6 +228,44 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+		pub phantom: (PhantomData<T>, PhantomData<I>),
+		pub max_deposit_amount: BalanceOf<T, I>,
+		pub min_withdraw_amount: BalanceOf<T, I>,
+		pub vanchors: Vec<(CurrencyIdOf<T, I>, u32)>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+		fn default() -> Self {
+			Self {
+				phantom: Default::default(),
+				max_deposit_amount: BalanceOf::<T, I>::default(),
+				min_withdraw_amount: BalanceOf::<T, I>::default(),
+				vanchors: Vec::new(),
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+		fn build(&self) {
+			MaxDepositAmount::<T, I>::put(self.max_deposit_amount);
+			MinWithdrawAmount::<T, I>::put(self.min_withdraw_amount);
+
+			self.vanchors.iter().for_each(|(asset_id, max_edges)| {
+				let _ = <Pallet<T, I> as VAnchorInterface<_>>::create(
+					None,
+					30,
+					*max_edges,
+					asset_id.clone(),
+				)
+				.map_err(|_| panic!("Failed to create vanchor"));
+			});
+		}
+	}
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
@@ -283,26 +312,6 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			<Self as VAnchorInterface<_>>::set_min_withdraw_amount(min_withdraw_amount)?;
-			Ok(().into())
-		}
-
-		#[pallet::weight(0)]
-		pub fn set_max_ext_amount(
-			origin: OriginFor<T>,
-			max_ext_amount: BalanceOf<T, I>,
-		) -> DispatchResultWithPostInfo {
-			ensure_root(origin)?;
-			<Self as VAnchorInterface<_>>::set_max_ext_amount(max_ext_amount)?;
-			Ok(().into())
-		}
-
-		#[pallet::weight(0)]
-		pub fn set_max_fee(
-			origin: OriginFor<T>,
-			max_fee: BalanceOf<T, I>,
-		) -> DispatchResultWithPostInfo {
-			ensure_root(origin)?;
-			<Self as VAnchorInterface<_>>::set_max_fee(max_fee)?;
 			Ok(().into())
 		}
 	}
@@ -366,13 +375,13 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		);
 
 		// Making sure that public amount and fee are correct
-		ensure!(ext_data.fee < MaxFee::<T, I>::get(), Error::<T, I>::InvalidFee);
+		ensure!(ext_data.fee < T::MaxFee::get(), Error::<T, I>::InvalidFee);
 		let ext_amount_unsigned: BalanceOf<T, I> = ext_data
 			.ext_amount
 			.abs()
 			.try_into()
 			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
-		ensure!(ext_amount_unsigned < MaxExtAmount::<T, I>::get(), Error::<T, I>::InvalidExtAmount);
+		ensure!(ext_amount_unsigned < T::MaxExtAmount::get(), Error::<T, I>::InvalidExtAmount);
 
 		// Public amounnt can also be negative, in which
 		// case it would wrap around the field, so we should check if FIELD_SIZE -
@@ -508,18 +517,6 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 	fn set_min_withdraw_amount(min_withdraw_amount: BalanceOf<T, I>) -> Result<(), DispatchError> {
 		MinWithdrawAmount::<T, I>::put(min_withdraw_amount);
 		Self::deposit_event(Event::MinWithdrawAmountChanged { min_withdraw_amount });
-		Ok(())
-	}
-
-	fn set_max_ext_amount(max_ext_amount: BalanceOf<T, I>) -> Result<(), DispatchError> {
-		MaxExtAmount::<T, I>::put(max_ext_amount);
-		Self::deposit_event(Event::MaxExtAmountChanged { max_ext_amount });
-		Ok(())
-	}
-
-	fn set_max_fee(max_fee: BalanceOf<T, I>) -> Result<(), DispatchError> {
-		MaxFee::<T, I>::put(max_fee);
-		Self::deposit_event(Event::MaxFeeChanged { max_fee });
 		Ok(())
 	}
 }

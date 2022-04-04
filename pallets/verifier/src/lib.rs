@@ -162,7 +162,9 @@ impl<T: Config<I>, I: 'static> VerifierModule for Pallet<T, I> {
 		ensure!(!params.is_empty(), Error::<T, I>::ParametersNotInitialized);
 		match T::Verifier::verify(public_inp_bytes, proof, &params) {
 			Ok(verified) => Ok(verified),
-			Err(_) => {
+			Err(e) => {
+				log::info!("{:?}", e);
+				// println!("{:?}", e);
 				// TODO: Handle properly
 				ensure!(false, Error::<T, I>::VerifyError);
 				Ok(false)

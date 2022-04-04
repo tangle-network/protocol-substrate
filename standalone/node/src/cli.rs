@@ -14,19 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
 
-use sc_cli::RunCmd;
-use structopt::StructOpt;
-
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
 	#[clap(subcommand)]
 	pub subcommand: Option<Subcommand>,
 
+	#[allow(missing_docs)]
 	#[clap(flatten)]
-	pub run: RunCmd,
+	pub run: sc_cli::RunCmd,
 }
 
-#[derive(Debug, clap::Subcommand)]
+#[derive(Debug, clap::Parser)]
 pub enum Subcommand {
 	/// Key management cli utilities
 	#[clap(subcommand)]

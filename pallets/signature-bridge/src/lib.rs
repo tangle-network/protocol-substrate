@@ -101,6 +101,9 @@ pub mod pallet {
 		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 		/// Proposal nonce type
 		type ProposalNonce: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+		/// Maintainer nonce type
+		type MaintainerNonce: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+
 		/// Signature verification utility over public key infrastructure
 		type SignatureVerifier: SigningSystem;
 		/// The identifier for this chain.
@@ -141,6 +144,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ProposalNonce<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, T::ProposalNonce, ValueQuery>;
+
+	#[pallet::storage]
+	pub type MaintainerNonce<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::MaintainerNonce, ValueQuery>;
 
 	// Pallets use events to inform users when important changes are made.
 	#[pallet::event]
@@ -196,25 +203,37 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn set_maintainer(
 			origin: OriginFor<T>,
-			new_maintainer: Vec<u8>,
+			// message contains the nonce as the first 4 bytes and the laste bytes of the message
+			// is the new_maintainer
+			message: Vec<u8>,
 			signature: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let _origin = ensure_signed(origin)?;
 			let old_maintainer = <Maintainer<T, I>>::get();
+			let maintainer_nonce = MaintainerNonce::<T, I>::get();
+			let nonce = maintainer_nonce + 1u32.into();
+			// nonce should be the first 4 bytes of this message
+			let nonce_from_maintainer = T::MaintainerNonce::decode(&mut &message[..4])
+				.map_err(|_| Error::<T, I>::InvalidNonce)?;
+
+			// Nonce should increment by 1
+			ensure!(nonce_from_maintainer == nonce, Error::<T, I>::InvalidNonce);
+
 			// ensure parameter setter is the maintainer
 			ensure!(
-				T::SignatureVerifier::verify(
-					&Self::maintainer().encode()[..],
-					&new_maintainer.encode()[..],
-					&signature
-				)
-				.unwrap_or(false),
+				T::SignatureVerifier::verify(&Self::maintainer(), &message, &signature)
+					.unwrap_or(false),
 				Error::<T, I>::InvalidPermissions
 			);
+			// set the new maintainer nonce
+			MaintainerNonce::<T, I>::put(&nonce);
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
-				*maintainer = new_maintainer.clone();
-				Self::deposit_event(Event::MaintainerSet { old_maintainer, new_maintainer });
+				*maintainer = message[4..].to_vec();
+				Self::deposit_event(Event::MaintainerSet {
+					old_maintainer,
+					new_maintainer: message,
+				});
 				Ok(().into())
 			})
 		}

@@ -76,8 +76,10 @@ use sp_std::prelude::*;
 use types::*;
 use webb_primitives::{
 	anchor::{AnchorConfig, AnchorInspector, AnchorInterface},
+	hasher::InstanceHasher,
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
 	verifier::*,
+	ElementTrait,
 };
 pub use weights::WeightInfo;
 
@@ -118,6 +120,9 @@ pub mod pallet {
 
 		/// The verifier
 		type Verifier: VerifierModule;
+
+		/// Arbitrary data hasher
+		type ArbitraryHasher: InstanceHasher;
 
 		/// Currency type for taking deposits
 		type Currency: MultiCurrency<Self::AccountId>;
@@ -184,9 +189,40 @@ pub mod pallet {
 		InvalidWithdrawProof,
 		/// Mixer not found.
 		NoAnchorFound,
+		// Invalid arbitrary data passed
+		InvalidArbitraryData,
 		/// Invalid nullifier that is already used
 		/// (this error is returned when a nullifier is used twice)
 		AlreadyRevealedNullifier,
+	}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+		// (asset_id, deposit_size, max_edges)
+		pub anchors: Vec<(CurrencyIdOf<T, I>, BalanceOf<T, I>, u32)>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+		fn default() -> Self {
+			GenesisConfig::<T, I> { anchors: Vec::new() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+		fn build(&self) {
+			self.anchors.iter().for_each(|(asset_id, deposit_size, max_edges)| {
+				let _ = <Pallet<T, I> as AnchorInterface<_>>::create(
+					None,
+					deposit_size.clone(),
+					30,
+					*max_edges,
+					asset_id.clone(),
+				)
+				.map_err(|_| panic!("Failed to create anchor"));
+			})
+		}
 	}
 
 	#[pallet::hooks]
@@ -379,15 +415,22 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		// println!("on chain recipient: {:?}", recipient);
 		// println!("on chain relayer: {:?}", relayer);
 		bytes.extend_from_slice(&chain_id_type_bytes);
+
+		let mut arbitrary_data_bytes = Vec::new();
+		arbitrary_data_bytes.extend_from_slice(&recipient_bytes);
+		arbitrary_data_bytes.extend_from_slice(&relayer_bytes);
+		arbitrary_data_bytes.extend_from_slice(&fee.encode());
+		arbitrary_data_bytes.extend_from_slice(&refund.encode());
+		arbitrary_data_bytes.extend_from_slice(&commitment.to_bytes());
+		let arbitrary_data = T::ArbitraryHasher::hash(&arbitrary_data_bytes, &[])
+			.map_err(|_| Error::<T, I>::InvalidArbitraryData)?;
+
 		bytes.extend_from_slice(&nullifier_hash.encode());
+		bytes.extend_from_slice(&arbitrary_data);
+		bytes.extend_from_slice(&chain_id_type_bytes);
 		for root in &roots {
 			bytes.extend_from_slice(&root.encode());
 		}
-		bytes.extend_from_slice(&recipient_bytes);
-		bytes.extend_from_slice(&relayer_bytes);
-		bytes.extend_from_slice(&fee_bytes);
-		bytes.extend_from_slice(&refund_bytes);
-		bytes.extend_from_slice(&commitment.encode());
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 		// withdraw or refresh depending on the refresh commitment value

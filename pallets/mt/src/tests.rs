@@ -1,4 +1,4 @@
-use arkworks_gadgets::prelude::ark_ff::{BigInteger, Field, PrimeField};
+use ark_ff::{BigInteger, Field, PrimeField};
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use sp_runtime::ModuleError;
 use sp_std::vec;

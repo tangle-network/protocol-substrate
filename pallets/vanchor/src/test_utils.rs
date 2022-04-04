@@ -1,11 +1,13 @@
+use std::collections::BTreeMap;
+
 use ark_ff::{BigInteger, PrimeField};
 use ark_std::{rand::thread_rng, vec::Vec};
-use arkworks_circuits::setup::{
-	common::prove_unchecked,
-	vanchor::{Utxo, VAnchorProverBn2542x2},
-};
-use arkworks_utils::utils::common::{
-	setup_params_x5_2, setup_params_x5_3, setup_params_x5_4, setup_params_x5_5, Curve,
+use arkworks_native_gadgets::poseidon::Poseidon;
+use arkworks_setups::{
+	common::{prove_unchecked, setup_params, setup_tree_and_create_path},
+	r1cs::vanchor::VAnchorR1CSProver,
+	utxo::Utxo,
+	Curve, VAnchorProver,
 };
 use webb_primitives::ElementTrait;
 
@@ -15,36 +17,43 @@ type Bn254Fr = ark_bn254::Fr;
 type Bn254 = ark_bn254::Bn254;
 
 const TREE_DEPTH: usize = 30;
-const M: usize = 2;
-const N: usize = 2;
+const ANCHOR_CT: usize = 2;
+const NUM_UTXOS: usize = 2;
+const DEFAULT_LEAF: [u8; 32] = [0u8; 32];
+type VAnchorProver_Bn254_30_2x2 =
+	VAnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, NUM_UTXOS>;
 
 pub fn setup_utxos(
 	// Transaction inputs
-	chain_ids: [u64; N],
-	amounts: [u128; N],
-	indices: Option<[u64; N]>,
-) -> [Utxo<Bn254Fr>; N] {
+	chain_ids: [u64; NUM_UTXOS],
+	amounts: [u128; NUM_UTXOS],
+	indices: Option<[u64; NUM_UTXOS]>,
+) -> [Utxo<Bn254Fr>; NUM_UTXOS] {
+	let curve = Curve::Bn254;
 	let rng = &mut thread_rng();
-
-	let params2 = setup_params_x5_2::<Bn254Fr>(Curve::Bn254);
-	let params3 = setup_params_x5_3::<Bn254Fr>(Curve::Bn254);
-	let params4 = setup_params_x5_4::<Bn254Fr>(Curve::Bn254);
-	let params5 = setup_params_x5_5::<Bn254Fr>(Curve::Bn254);
-
-	let prover = VAnchorProverBn2542x2::new(params2, params3, params4, params5);
 	// Input Utxos
-	let chain_id1 = Bn254Fr::from(chain_ids[0]);
-	let chain_id2 = Bn254Fr::from(chain_ids[1]);
-	let amount1 = Bn254Fr::from(amounts[0]);
-	let amount2 = Bn254Fr::from(amounts[1]);
-	let indices: [Option<Bn254Fr>; N] = if indices.is_some() {
+	let indices: [Option<u64>; NUM_UTXOS] = if indices.is_some() {
 		let ind_unw = indices.unwrap();
-		ind_unw.map(|x| Some(Bn254Fr::from(x)))
+		ind_unw.map(|x| Some(x))
 	} else {
-		[None; N]
+		[None; NUM_UTXOS]
 	};
-	let utxo1 = prover.new_utxo(chain_id1, amount1, indices[0], None, None, rng).unwrap();
-	let utxo2 = prover.new_utxo(chain_id2, amount2, indices[1], None, None, rng).unwrap();
+	let utxo1 = VAnchorProver_Bn254_30_2x2::create_random_utxo(
+		curve,
+		chain_ids[0],
+		amounts[0],
+		indices[0],
+		rng,
+	)
+	.unwrap();
+	let utxo2 = VAnchorProver_Bn254_30_2x2::create_random_utxo(
+		curve,
+		chain_ids[1],
+		amounts[1],
+		indices[1],
+		rng,
+	)
+	.unwrap();
 	let in_utxos = [utxo1, utxo2];
 
 	in_utxos
@@ -53,58 +62,66 @@ pub fn setup_utxos(
 pub fn setup_zk_circuit(
 	// Metadata inputs
 	public_amount: i128,
+	chain_id: u64,
 	ext_data_hash: Vec<u8>,
-	in_utxos: [Utxo<Bn254Fr>; N],
-	out_utxos: [Utxo<Bn254Fr>; N],
-	custom_roots: Option<[Vec<u8>; M]>,
-	pk_bytes: &Vec<u8>,
+	in_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
+	out_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
+	custom_roots: Option<[Vec<u8>; ANCHOR_CT]>,
+	pk_bytes: Vec<u8>,
 ) -> (Vec<u8>, Vec<Bn254Fr>) {
+	let curve = Curve::Bn254;
 	let rng = &mut thread_rng();
 
-	let params2 = setup_params_x5_2::<Bn254Fr>(Curve::Bn254);
-	let params3 = setup_params_x5_3::<Bn254Fr>(Curve::Bn254);
-	let params4 = setup_params_x5_4::<Bn254Fr>(Curve::Bn254);
-	let params5 = setup_params_x5_5::<Bn254Fr>(Curve::Bn254);
+	let leaf0 = in_utxos[0].commitment.into_repr().to_bytes_le();
+	let leaf1 = in_utxos[1].commitment.into_repr().to_bytes_le();
 
-	let prover = VAnchorProverBn2542x2::new(params2, params3, params4, params5);
+	let leaves: Vec<Vec<u8>> = vec![leaf0, leaf1];
+	let leaves_f: Vec<Bn254Fr> =
+		leaves.iter().map(|x| Bn254Fr::from_le_bytes_mod_order(&x)).collect();
 
-	// Make a proof now
-	let public_amount = Bn254Fr::from(public_amount);
-
-	let leaf0 = in_utxos[0].commitment;
-	let leaf1 = in_utxos[1].commitment;
-
-	let leaves = vec![leaf0, leaf1];
-
-	let in_leaves = [leaves.clone(), leaves.clone()];
+	let mut in_leaves: BTreeMap<u64, Vec<Vec<u8>>> = BTreeMap::new();
+	in_leaves.insert(chain_id, leaves);
 	let in_indices = [0, 1];
 
 	// This allows us to pass zero roots for initial transaction
 	let in_root_set = if custom_roots.is_some() {
-		let custom_roots_bytes = custom_roots.unwrap();
-		custom_roots_bytes.map(|x| Bn254Fr::from_le_bytes_mod_order(&x))
+		custom_roots.unwrap()
 	} else {
-		let (_, root) = prover.setup_tree(&leaves, 0).unwrap();
-		[root; M]
-	};
-
-	let ext_data_hash_f = Bn254Fr::from_le_bytes_mod_order(&ext_data_hash);
-
-	let (circuit, .., pub_ins) = prover
-		.setup_circuit_with_utxos(
-			public_amount,
-			ext_data_hash_f,
-			in_root_set,
-			in_indices,
-			in_leaves,
-			in_utxos,
-			out_utxos,
+		let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
+		let poseidon3 = Poseidon::new(params3);
+		let (tree, _) = setup_tree_and_create_path::<Bn254Fr, Poseidon<Bn254Fr>, TREE_DEPTH>(
+			&poseidon3,
+			&leaves_f,
+			0,
+			&DEFAULT_LEAF,
 		)
 		.unwrap();
+		[(); ANCHOR_CT].map(|_| tree.root().into_repr().to_bytes_le())
+	};
 
-	let proof = prove_unchecked::<Bn254, _, _>(circuit, pk_bytes, rng).unwrap();
+	let vanchor_proof = VAnchorProver_Bn254_30_2x2::create_proof(
+		curve,
+		chain_id,
+		public_amount,
+		ext_data_hash,
+		in_root_set,
+		in_indices,
+		in_leaves,
+		in_utxos,
+		out_utxos,
+		pk_bytes.clone(),
+		DEFAULT_LEAF,
+		rng,
+	)
+	.unwrap();
 
-	(proof, pub_ins)
+	let pub_ins = vanchor_proof
+		.public_inputs_raw
+		.iter()
+		.map(|x| Bn254Fr::from_le_bytes_mod_order(x))
+		.collect();
+
+	(vanchor_proof.proof, pub_ins)
 }
 
 pub fn deconstruct_public_inputs(

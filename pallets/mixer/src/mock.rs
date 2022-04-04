@@ -16,7 +16,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 };
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
-use webb_primitives::{types::ElementTrait, AccountId};
+use webb_primitives::{hashing::ethereum::Keccak256HasherBn254, types::ElementTrait, AccountId};
 
 use frame_benchmarking::account;
 
@@ -230,6 +230,7 @@ impl Config for Test {
 	type PalletId = MixerPalletId;
 	type Tree = MerkleTree;
 	type Verifier = VerifierPallet;
+	type ArbitraryHasher = Keccak256HasherBn254;
 	type WeightInfo = ();
 }
 

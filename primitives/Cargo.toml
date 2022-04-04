@@ -8,12 +8,12 @@ edition = "2018"
 
 [dependencies]
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
 
 # Arkworks
 ark-ff = { version = "^0.3.0", default-features = false }
@@ -25,20 +25,19 @@ ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "cu
 ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ], optional = true }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 ark-groth16 = { version = "^0.3.0", default-features = false }
-tracing = { version = "0.1", default-features = false, features = [ "attributes" ], optional = true }
 
 blake2 = { version = "0.9", default-features = false }
 digest = { version = "0.9", default-features = false }
 
 ark-crypto-primitives = { version = "^0.3.0", default-features = false }
-arkworks-gadgets = { version = "0.4.16", default-features = false, optional = true }
-arkworks-utils = { version = "0.4.16", default-features = false, optional = true }
+arkworks-native-gadgets = { version = "1.0.0", default-features = false, optional = true }
 
 codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "2.2.0" }
 
 ethabi = { version = "15.0.0", default-features = false }
 hex-literal = { version = "0.3.4", default-features = false }
-tiny-keccak = { version = "2.0.2", default-features = false }
+
+webb-proposals = { version = "0.2.1", default-features = false }
 
 [features]
 default = ["std", "hashing", "verifying", "field_ops"]
@@ -53,7 +52,8 @@ std = [
 	"ark-ff/std",
 	"ark-ec/std",
 	"ark-std/std",
-	"ark-relations/std"
+	"ark-relations/std",
+	"webb-proposals/std"
 ]
 field_ops = [
 	"ark-bls12-381",
@@ -61,15 +61,13 @@ field_ops = [
 	"ark-bn254",
 ]
 hashing = [
-	"arkworks-gadgets",
-	"arkworks-utils",
+	"arkworks-native-gadgets",
 	"ark-bls12-381",
 	"ark-bls12-377",
 	"ark-bn254",
 ]
 verifying = [
-	"arkworks-gadgets",
-	"arkworks-utils",
+	"arkworks-native-gadgets",
 	"ark-bls12-381",
 	"ark-bls12-377",
 	"ark-bn254",

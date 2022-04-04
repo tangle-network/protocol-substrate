@@ -17,6 +17,7 @@ use sp_runtime::{
 };
 pub use webb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
+	hashing::ethereum::Keccak256HasherBn254,
 	types::ElementTrait,
 	AccountId,
 };
@@ -301,6 +302,7 @@ impl pallet_anchor::Config for Test {
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = ();
 	type Verifier = VerifierPallet;
+	type ArbitraryHasher = Keccak256HasherBn254;
 	type WeightInfo = ();
 }
 

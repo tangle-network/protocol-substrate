@@ -9,6 +9,6 @@ pub trait DemocracyGovernanceDelegate<T: SystemConfig, Proposal, Balance> {
 #[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
 pub struct LinkProposal<ChainId, TreeId> {
 	pub target_chain_id: ChainId,
-	pub target_tree_id: Option<TreeId>,
+	pub target_tree_id: TreeId,
 	pub local_tree_id: TreeId,
 }

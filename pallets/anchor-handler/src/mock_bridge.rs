@@ -13,7 +13,7 @@ use sp_runtime::{
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 };
 use webb_primitives::verifying::ArkworksVerifierBn254;
-pub use webb_primitives::{ElementTrait, InstanceHasher};
+pub use webb_primitives::{hashing::ethereum::Keccak256HasherBn254, ElementTrait, InstanceHasher};
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -245,6 +245,7 @@ impl pallet_anchor::Config for Test {
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = ();
 	type Verifier = VerifierPallet;
+	type ArbitraryHasher = Keccak256HasherBn254;
 	type WeightInfo = ();
 }
 

@@ -57,10 +57,6 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 	fn set_min_withdraw_amount(
 		min_withdraw_amount: C::Balance,
 	) -> Result<(), dispatch::DispatchError>;
-
-	fn set_max_ext_amount(max_ext_amount: C::Balance) -> Result<(), dispatch::DispatchError>;
-
-	fn set_max_fee(max_fee: C::Balance) -> Result<(), dispatch::DispatchError>;
 }
 
 /// Anchor trait for inspecting tree state
