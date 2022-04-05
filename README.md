@@ -34,7 +34,7 @@
 
 <h2 id="start"> Getting Started  🎉 </h2>
 
-For additional information, please refer to the [Webb Protocol-Substrate Rust Docs](docs.webb.tools/protocol-substrate/) 📝
+For additional information, please refer to the [Webb Protocol-Substrate Rust Docs](docs.webb.tools/protocol-substrate/) 📝. Have feedback on how to improve protocol-substrate? Or have a specific question to ask? Checkout the [Anchor Protocol Feedback Discussion](https://github.com/webb-tools/feedback/discussions/categories/anchor-protocol) 💬.
 
 ### Pallet layout
 
