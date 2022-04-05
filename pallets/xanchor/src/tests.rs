@@ -4,14 +4,12 @@ use super::{
 };
 
 use ark_bn254::Fr as Bn254Fr;
-use arkworks_setups::{common::setup_params, Curve};
+use arkworks_setups::{common::setup_params};
+use arkworks_utils::utils::common::Curve;
 use codec::Encode;
 use frame_benchmarking::account;
-use frame_support::{assert_err, assert_ok};
 use pallet_anchor::truncate_and_pad;
-use webb_primitives::utils::derive_resource_id;
 use webb_primitives::merkle_tree::TreeInspector;
-use arkworks_utils::utils::common::Curve;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use pallet_anchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};
@@ -21,6 +19,16 @@ use webb_primitives::{
 	webb_proposals::TypedChainId,
 };
 use xcm_simulator::TestExt;
+use tests::parachain_a::HasherPallet;
+use tests::parachain_a::Origin;
+use tests::parachain_a::MerkleTree;
+use tests::parachain_a::VerifierPallet;
+use tests::parachain_a::Balances;
+use tests::parachain_a::Runtime;
+use tests::parachain_a::LinkableTree;
+use tests::AccountTwo;
+use tests::parachain_a::XAnchor;
+
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
@@ -267,16 +275,16 @@ fn should_bridge_anchors_using_xcm() {
 		use parachain_a::{Runtime, XAnchor, Origin};
 		let converted_chain_id =
 			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_B));
-		let r_id = derive_resource_id(converted_chain_id, &para_a_tree_id.encode());
-		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
+		let r_id = derive_resource_id(PARAID_B, para_a_tree_id.into());
+		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id.into(), para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
 		use parachain_b::{Runtime, XAnchor, Origin};
 		let converted_chain_id =
 			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
-		let r_id = derive_resource_id(converted_chain_id, &para_b_tree_id.encode());
-		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
+		let r_id = derive_resource_id(PARAID_B, para_b_tree_id.into());
+		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id.into(), para_a_tree_id));
 	});
 
 	// now we do a deposit on one chain (ParaA) for example
@@ -408,7 +416,7 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 
 		assert_err!(
 			XAnchor::update(
-				Origin::signed(parachain::AccountTwo::get()),
+				Origin::signed(AccountTwo::get()),
 				anchor_update_proposal.into_bytes()
 			),
 			frame_support::error::BadOrigin,
@@ -915,18 +923,18 @@ fn test_cross_chain_withdrawal() {
 		dbg!(para_b_tree_id);
 		let converted_chain_id_bytes =
 			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_B));
-		let r_id = derive_resource_id(converted_chain_id_bytes, &para_a_tree_id.encode());
+		let r_id = derive_resource_id(PARAID_B, para_a_tree_id.into());
 		src_chain_id_a = converted_chain_id_bytes;
-		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
+		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id.into(), para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
 		use parachain_b::{XAnchor, Runtime, Origin};
 		let converted_chain_id_bytes =
 			compute_chain_id_with_internal_type::<Runtime, _>(u64::from(PARAID_A));
-		let r_id = derive_resource_id(converted_chain_id_bytes, &para_b_tree_id.encode());
+		let r_id = derive_resource_id(PARAID_A, para_b_tree_id.into());
 		src_chain_id_b = converted_chain_id_bytes.clone();
-		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
+		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id.into(), para_a_tree_id));
 	});
 
 	let recipient_account_id = account::<AccountId>("", 2, SEED);

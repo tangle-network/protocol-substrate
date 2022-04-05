@@ -3,6 +3,7 @@ use ark_ff::{BigInteger, PrimeField};
 use arkworks_circuits::setup::anchor::{
 	setup_leaf_with_privates_raw_x5_4, setup_leaf_x5_4, setup_proof_x5_4, AnchorProverSetup,
 };
+use arkworks_circuits::setup::common::Leaf;
 
 use arkworks_utils::utils::common::{setup_params_x5_3, setup_params_x5_4, Curve};
 use webb_primitives::ElementTrait;
@@ -39,6 +40,10 @@ pub fn setup_leaf(curve: Curve, chain_id: u128) -> (
 		Curve::Bn254 => {
 			let (secret, nullifier, leaf, nullifier_hash) =
 				setup_leaf_x5_4::<Bn254Fr, _>(Curve::Bn254, chain_id.into(), rng).unwrap();
+
+			let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes, .. } =
+				AnchorR1CSProver_Bn254_30_2::create_random_leaf(Curve::Bn254, chain_id.into(), rng)
+					.unwrap();
 
 			let secret_element = Element::from_bytes(&secret);
 			let nullifier_element = Element::from_bytes(&nullifier);
@@ -106,7 +111,7 @@ pub fn setup_wasm_utils_zk_circuit(
 	relayer_bytes: Vec<u8>,
 	commitment_bytes: [u8; 32],
 	pk_bytes: Vec<u8>,
-	src_chain_id: u128,
+	src_chain_id: u64,
 	fee_value: u128,
 	refund_value: u128,
 ) -> (
@@ -125,7 +130,7 @@ pub fn setup_wasm_utils_zk_circuit(
 				curve,
 				secret.clone(),
 				nullifier.clone(),
-				src_chain_id,
+				src_chain_id as u128,
 			)
 			.unwrap();
 
@@ -145,7 +150,7 @@ pub fn setup_wasm_utils_zk_circuit(
 				width: 4,
 				curve: WasmCurve::Bn254,
 				backend: Backend::Arkworks,
-				secrets: secret,
+				secret: secret,
 				nullifier,
 				recipient: recipient_bytes,
 				relayer: relayer_bytes,
@@ -156,7 +161,7 @@ pub fn setup_wasm_utils_zk_circuit(
 				leaves,
 				leaf_index: index,
 				roots: roots_raw.to_vec(),
-				commitment: commitment_bytes,
+				refresh_commitment: commitment_bytes,
 			};
 			let js_proof_inputs = JsProofInput { inner: ProofInput::Anchor(mixer_proof_input) };
 			let proof = generate_proof_js(js_proof_inputs).unwrap();

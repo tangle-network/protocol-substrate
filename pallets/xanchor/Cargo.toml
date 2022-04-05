@@ -51,6 +51,9 @@ ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 arkworks-setups = { version = "1.0.0", features = ["r1cs"] }
+arkworks-gadgets  = { version = "0.4.19", default-features = false }
+arkworks-circuits = { version = "0.4.19", default-features = false }
+arkworks-utils    = { version = "0.4.19", features = ["default_poseidon", "default_mimc"], default-features = false }
 
 webb-primitives = { path = "../../primitives" }
 

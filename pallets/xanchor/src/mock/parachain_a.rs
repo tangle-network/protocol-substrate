@@ -50,6 +50,11 @@ use frame_support::assert_ok;
 use frame_benchmarking::account;
 use super::{AccountOne, AccountTwo, AccountThree, AccountFour, AccountFive, AccountSix, para_account_id, PARAID_A, INITIAL_BALANCE, Element, parachain_b};
 
+use ark_bn254::Fr as Bn254;
+use webb_primitives::hashing::ethereum::Keccak256Hasher;
+
+pub type Keccak256HasherBn254 = Keccak256Hasher<Bn254>;
+
 pub type Balance = u128;
 /// Type for storing the id of an asset.
 pub type OrmlAssetId = u32;
@@ -605,6 +610,7 @@ impl pallet_anchor::Config for Runtime {
 	type PostDepositHook = XAnchor;
 	type Verifier = VerifierPallet;
 	type WeightInfo = ();
+	type ArbitraryHasher = Keccak256HasherBn254;
 }
 
 impl pallet_xanchor::Config for Runtime {

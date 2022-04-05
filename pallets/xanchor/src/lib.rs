@@ -569,7 +569,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		target_tree_id: T::TreeId,
 	) -> DispatchResultWithPostInfo {
 		// extract the resource id information
-		let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
+		let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id.into());
 		// println!("register_new_resource_id");
 		// println!("tree_id: {:?}", tree_id);
 		// println!("chain_id: {:?}", chain_id);

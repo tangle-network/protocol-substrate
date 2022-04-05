@@ -175,6 +175,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ark-ed-on-bls12-381"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43b7ada17db3854f5994e74e60b18e10e818594935ee7e1d329800c117b32970"
+dependencies = [
+ "ark-bls12-381",
+ "ark-ec",
+ "ark-ff",
+ "ark-r1cs-std",
+ "ark-std",
+]
+
+[[package]]
 name = "ark-ed-on-bn254"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -243,6 +256,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ark-marlin"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "caa8510faa8e64f0a6841ee4b58efe2d56f7a80d86fa0ce9891bbb3aa20166d9"
+dependencies = [
+ "ark-ff",
+ "ark-poly",
+ "ark-poly-commit",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "derivative",
+ "digest 0.9.0",
+ "rand_chacha 0.3.1",
+]
+
+[[package]]
 name = "ark-nonnative-field"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -271,6 +301,22 @@ dependencies = [
  "ark-std",
  "derivative",
  "hashbrown 0.11.2",
+]
+
+[[package]]
+name = "ark-poly-commit"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a71ddfa72bad1446cab7bbecb6018dbbdc9abcbc3a0065483ae5186ad2a64dcd"
+dependencies = [
+ "ark-ec",
+ "ark-ff",
+ "ark-poly",
+ "ark-serialize",
+ "ark-std",
+ "derivative",
+ "digest 0.9.0",
+ "tracing",
 ]
 
 [[package]]
@@ -342,6 +388,60 @@ checksum = "1df2c09229cbc5a028b1d70e00fdb2acee28b1055dfb5ca73eea49c5a25c4e7c"
 dependencies = [
  "num-traits",
  "rand 0.8.5",
+]
+
+[[package]]
+name = "arkworks-circuits"
+version = "0.4.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3aad1c195186cf813ad8c181a54824cfa8bee5eb9944547d0bbf4b7669b43373"
+dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ed-on-bls12-381",
+ "ark-ed-on-bn254",
+ "ark-ff",
+ "ark-groth16",
+ "ark-marlin",
+ "ark-poly",
+ "ark-poly-commit",
+ "ark-r1cs-std",
+ "ark-relations",
+ "ark-serialize",
+ "ark-snark",
+ "ark-std",
+ "arkworks-gadgets",
+ "arkworks-utils 0.4.20",
+ "blake2",
+ "digest 0.9.0",
+ "ethabi",
+ "hex-literal 0.3.4",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "arkworks-gadgets"
+version = "0.4.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f435b68de474d92a784cfdeba94cc29c402e8bec410076852fbbc6ab70c80319"
+dependencies = [
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ff",
+ "ark-groth16",
+ "ark-marlin",
+ "ark-poly",
+ "ark-poly-commit",
+ "ark-r1cs-std",
+ "ark-relations",
+ "ark-serialize",
+ "ark-snark",
+ "ark-std",
+ "arkworks-utils 0.4.20",
+ "blake2",
+ "digest 0.9.0",
 ]
 
 [[package]]
@@ -464,6 +564,32 @@ dependencies = [
  "arkworks-utils 1.0.0",
  "parity-scale-codec 2.3.1",
  "tiny-keccak",
+]
+
+[[package]]
+name = "arkworks-utils"
+version = "0.4.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "807e1d62300dca91c9286c859ce79e916821381b62dac91a140b15a9b4cdd735"
+dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ed-on-bls12-381",
+ "ark-ed-on-bn254",
+ "ark-ff",
+ "ark-groth16",
+ "ark-marlin",
+ "ark-poly",
+ "ark-poly-commit",
+ "ark-r1cs-std",
+ "ark-relations",
+ "ark-serialize",
+ "ark-snark",
+ "ark-std",
+ "blake2",
+ "digest 0.9.0",
 ]
 
 [[package]]
@@ -5632,12 +5758,16 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
+ "arkworks-circuits",
+ "arkworks-gadgets",
  "arkworks-setups 1.0.0",
+ "arkworks-utils 0.4.20",
  "cumulus-pallet-xcm",
  "cumulus-primitives-core",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex",
  "orml-currencies",
  "orml-tokens",
  "orml-traits",
@@ -5663,6 +5793,7 @@ dependencies = [
  "sp-io 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
  "sp-runtime 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
+ "wasm-utils",
  "webb-primitives",
  "xcm",
  "xcm-builder",
