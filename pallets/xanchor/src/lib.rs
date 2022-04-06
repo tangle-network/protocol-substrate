@@ -94,8 +94,12 @@ mod mock;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod test_util;
 
 pub mod types;
+
+
 pub use pallet::*;
 use types::*;
 use webb_primitives::webb_proposals::{FunctionSignature, Nonce};

@@ -15,11 +15,54 @@ use webb_primitives::{
 	webb_proposals::TypedChainId,
 };
 use xcm_simulator::TestExt;
+use crate::test_util::*;
+use webb_primitives::merkle_tree::TreeInspector;
+
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
 const M: usize = 2;
 const DEPOSIT_SIZE: u128 = 10_000;
+
+fn setup_environment_for_withdrawal(curve: Curve) -> Vec<u8> {
+	for account_id in [
+		account::<AccountId>("", 1, SEED),
+		account::<AccountId>("", 2, SEED),
+		account::<AccountId>("", 3, SEED),
+		account::<AccountId>("", 4, SEED),
+		account::<AccountId>("", 5, SEED),
+		account::<AccountId>("", 6, SEED),
+	] {
+		assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
+	}
+
+	match curve {
+		Curve::Bn254 => {
+			let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
+
+			// 1. Setup The Hasher Pallet.
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+			// 2. Initialize MerkleTree pallet.
+			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
+			// 3. Setup the VerifierPallet
+			//    but to do so, we need to have a VerifyingKey
+			let pk_bytes = include_bytes!(
+				"../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/2/proving_key_uncompressed.bin"
+			);
+			let vk_bytes = include_bytes!(
+				"../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/2/verifying_key.bin"
+			);
+
+			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
+
+			// finally return the provingkey bytes
+			pk_bytes.to_vec()
+		},
+		Curve::Bls381 => {
+			unimplemented!()
+		},
+	}
+}
 
 fn setup_environment(curve: Curve) -> Vec<u8> {
 	match curve {
@@ -839,4 +882,148 @@ fn should_fail_to_call_update_as_signed_account() {
 			frame_support::error::BadOrigin,
 		);
 	});
+}
+
+
+#[test]
+fn test_cross_chain_withdrawal() {
+	MockNet::reset();
+	let curve = Curve::Bn254;
+	let mut pk_bytes = Vec::new();
+
+	let mut para_a_tree_id = 0;
+	let mut para_b_tree_id = 0;
+
+	ParaA::execute_with(|| {
+		pk_bytes = setup_environment_for_withdrawal(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		para_a_tree_id = MerkleTree::next_tree_id() - 1;
+	});
+
+	ParaB::execute_with(|| {
+		setup_environment_for_withdrawal(Curve::Bn254);
+		let max_edges = M as _;
+		let depth = TREE_DEPTH as u8;
+		let asset_id = 0;
+		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		para_b_tree_id = MerkleTree::next_tree_id() - 1;
+	});
+
+	ParaA::execute_with(|| {
+		let r_id = derive_resource_id(PARAID_B, para_a_tree_id).into();
+		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
+	});
+
+	ParaB::execute_with(|| {
+		let r_id = derive_resource_id(PARAID_A, para_b_tree_id).into();
+		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
+	});
+
+	// now we do a deposit on one chain (ParaA) for example
+	// and check the edges on the other chain (ParaB).
+	let mut para_a_root = Element::from_bytes(&[0u8; 32]);
+
+	let (secret, nullifier, leaf, nullifier_hash) = setup_leaf(Curve::Bn254, get_typed_chain_id(PARAID_A.into()));
+
+	let mut root_elements = [Element::zero(); M];
+
+	ParaA::execute_with(|| {
+		let account_id = parachain::AccountOne::get();
+		//let leaf = Element::from_bytes(&[1u8; 32]);
+		// check the balance before the deposit.
+		let balance_before = Balances::free_balance(account_id.clone());
+		// and we do the deposit
+		assert_ok!(Anchor::deposit_and_update_linked_anchors(
+			Origin::signed(account_id.clone()),
+			para_a_tree_id,
+			leaf
+		));
+		// now we check the balance after the deposit.
+		let balance_after = Balances::free_balance(account_id);
+		// the balance should be less now with `deposit_size`
+		assert_eq!(balance_after, balance_before - DEPOSIT_SIZE);
+		// now we need also to check if the state got updated.
+		let tree = MerkleTree::trees(para_a_tree_id).unwrap();
+		assert_eq!(tree.leaf_count, 1);
+		para_a_root = tree.root;
+		root_elements[1] = tree.root;
+	});
+
+	// ok now we go to ParaB and check the edges.
+	// we should expect that the edge for ParaA is there, and the merkle root equal
+	// to the one we got from ParaA.
+	ParaB::execute_with(|| {
+		let chain_id: <Runtime as pallet_linkable_tree::Config>::ChainId = PARAID_A.into();
+		let edge = LinkableTree::edge_list(&para_b_tree_id, get_typed_chain_id(chain_id));
+		assert_eq!(edge.root, root_elements[1]);
+		assert_eq!(edge.latest_leaf_index, 1);
+
+
+		// inputs
+		let src_chain_id = get_typed_chain_id(chain_id);
+		let sender_account_id =  parachain::AccountOne::get();
+		let recipient_account_id = account::<AccountId>("", 2, SEED);
+		let relayer_account_id = account::<AccountId>("", 0, SEED);
+		let fee_value = 0;
+		let refund_value = 0;
+
+		let recipient_bytes = truncate_and_pad(&recipient_account_id.encode()[..]);
+		let relayer_bytes = truncate_and_pad(&relayer_account_id.encode()[..]);
+		let commitment_bytes = vec![0u8; 32];
+		let commitment_element = Element::from_bytes(&commitment_bytes);
+
+		// Set the first element of `roots` set to be the merkle tree root on `ParaB`.
+		let tree_root = MerkleTree::get_root(para_b_tree_id).unwrap();
+		let tree_root_a = MerkleTree::get_root(para_a_tree_id).unwrap();
+		println!("tree_root b is {:?}", tree_root);
+		println!("tree_root a is {:?}", tree_root_a);
+		println!("para_a_root a is {:?}", para_a_root);
+
+		//let roots: [Vec<u8>; 2] = [tree_root.to_vec(), para_a_root.to_vec()];
+
+		//roots[0] = tree_root;
+		//roots[1] = para_a_root;
+
+		//println!("root is {:?}", roots);
+
+		let (proof_bytes, mut root_elements, nullifier_hash_element) = setup_zk_circuit(
+			curve,
+			recipient_bytes,
+			relayer_bytes,
+			commitment_bytes,
+			pk_bytes,
+			src_chain_id,
+			secret, nullifier, nullifier_hash, vec![leaf],  root_elements,
+			fee_value,
+			refund_value,
+		);
+
+		println!("root_elements is {:?}", root_elements);
+
+
+
+		assert_ok!(Anchor::withdraw(
+			Origin::signed(sender_account_id),
+			para_b_tree_id,
+			proof_bytes,
+			root_elements.to_vec(),
+			nullifier_hash,
+			recipient_account_id.clone(),
+			relayer_account_id,
+			fee_value.into(),
+			refund_value.into(),
+			commitment_element,
+		));
+
+
+	});
+}
+
+pub fn truncate_and_pad(t: &[u8]) -> Vec<u8> {
+	let mut truncated_bytes = t[..20].to_vec();
+	truncated_bytes.extend_from_slice(&[0u8; 12]);
+	truncated_bytes
 }

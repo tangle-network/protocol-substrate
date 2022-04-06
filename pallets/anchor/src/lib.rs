@@ -427,6 +427,9 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		for root in &roots {
 			bytes.extend_from_slice(&root.encode());
 		}
+		println!("proof here is {:?}", proof_bytes);
+		println!("bytes here is {:?}", bytes);
+
 		let result = <T as pallet::Config<I>>::Verifier::verify(&bytes, proof_bytes)?;
 		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
 		// withdraw or refresh depending on the refresh commitment value
