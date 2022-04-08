@@ -928,7 +928,7 @@ fn test_cross_chain_withdrawal() {
 
 	let (secret, nullifier, leaf, nullifier_hash) = setup_leaf(Curve::Bn254, get_typed_chain_id(PARAID_A.into()));
 
-	let mut root_elements = [Element::zero(); M];
+	let mut roots = [Element::zero(); M];
 
 	ParaA::execute_with(|| {
 		let account_id = parachain::AccountOne::get();
@@ -949,7 +949,7 @@ fn test_cross_chain_withdrawal() {
 		let tree = MerkleTree::trees(para_a_tree_id).unwrap();
 		assert_eq!(tree.leaf_count, 1);
 		para_a_root = tree.root;
-		root_elements[1] = tree.root;
+		roots[1] = tree.root;
 	});
 
 	// ok now we go to ParaB and check the edges.
@@ -958,7 +958,7 @@ fn test_cross_chain_withdrawal() {
 	ParaB::execute_with(|| {
 		let chain_id: <Runtime as pallet_linkable_tree::Config>::ChainId = PARAID_A.into();
 		let edge = LinkableTree::edge_list(&para_b_tree_id, get_typed_chain_id(chain_id));
-		assert_eq!(edge.root, root_elements[1]);
+		assert_eq!(edge.root, roots[1]);
 		assert_eq!(edge.latest_leaf_index, 1);
 
 
@@ -996,12 +996,13 @@ fn test_cross_chain_withdrawal() {
 			commitment_bytes,
 			pk_bytes,
 			src_chain_id,
-			secret, nullifier, nullifier_hash, vec![leaf],  root_elements,
+			secret, nullifier, nullifier_hash, vec![leaf],  roots,
 			fee_value,
 			refund_value,
 		);
 
 		println!("root_elements is {:?}", root_elements);
+		println!("roots is {:?}", roots);
 
 
 

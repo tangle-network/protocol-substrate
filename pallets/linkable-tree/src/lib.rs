@@ -389,7 +389,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		id: T::TreeId,
 		roots: &Vec<T::Element>,
 	) -> Result<(), DispatchError> {
-		println!("id is {:?} roots is {:?}", id, roots);
+		//println!("id is {:?} roots is {:?}", id, roots);
 		if roots.len() > 1 {
 			// Get edges and corresponding chain IDs for the anchor
 			let edges = EdgeList::<T, I>::iter_prefix(id).into_iter().collect::<Vec<_>>();
