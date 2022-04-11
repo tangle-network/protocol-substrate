@@ -926,7 +926,7 @@ fn test_cross_chain_withdrawal() {
 	// and check the edges on the other chain (ParaB).
 	let mut para_a_root = Element::from_bytes(&[0u8; 32]);
 
-	let (secret, nullifier, leaf, nullifier_hash) = setup_leaf(Curve::Bn254, get_typed_chain_id(PARAID_A.into()));
+	let (secret, nullifier, leaf, nullifier_hash) = setup_leaf(Curve::Bn254, get_typed_chain_id(PARAID_B.into()));
 
 	let mut roots = [Element::zero(); M];
 
@@ -958,8 +958,8 @@ fn test_cross_chain_withdrawal() {
 	ParaB::execute_with(|| {
 		let chain_id: <Runtime as pallet_linkable_tree::Config>::ChainId = PARAID_A.into();
 		let edge = LinkableTree::edge_list(&para_b_tree_id, get_typed_chain_id(chain_id));
-		assert_eq!(edge.root, roots[1]);
-		assert_eq!(edge.latest_leaf_index, 1);
+		//assert_eq!(edge.root, roots[1]);
+		//assert_eq!(edge.latest_leaf_index, 1);
 
 
 		// inputs
@@ -988,8 +988,9 @@ fn test_cross_chain_withdrawal() {
 		//roots[1] = para_a_root;
 
 		//println!("root is {:?}", roots);
-
-		let (proof_bytes, mut root_elements, nullifier_hash_element) = setup_zk_circuit(
+		let res	 = setup_2_anchors_proof(get_typed_chain_id_in_u64(PARAID_A), get_typed_chain_id_in_u64(PARAID_B), roots);
+		println!("proof 2 anchors result is: {:?}", res);
+		/*let (proof_bytes, mut root_elements, nullifier_hash_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
 			relayer_bytes,
@@ -1017,7 +1018,7 @@ fn test_cross_chain_withdrawal() {
 			fee_value.into(),
 			refund_value.into(),
 			commitment_element,
-		));
+		));*/
 
 
 	});

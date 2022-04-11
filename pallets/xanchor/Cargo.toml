@@ -54,6 +54,8 @@ ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "cu
 arkworks-setups = { version = "1.0.0", features = ["r1cs"] }
 wasm-utils = { version = "0.1.3" }
 arkworks-native-gadgets = { version = "1.0.0", default-features = false }
+arkworks-r1cs-circuits = { version = "1.0.0", default-features = false }
+arkworks-r1cs-gadgets = { version = "1.0.0", default-features = false }
 
 webb-primitives = { path = "../../primitives" }
 

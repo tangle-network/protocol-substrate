@@ -5633,6 +5633,8 @@ dependencies = [
  "ark-serialize",
  "ark-std",
  "arkworks-native-gadgets 1.0.0",
+ "arkworks-r1cs-circuits 1.0.0",
+ "arkworks-r1cs-gadgets 1.0.0",
  "arkworks-setups 1.0.0",
  "cumulus-pallet-xcm",
  "cumulus-primitives-core",
