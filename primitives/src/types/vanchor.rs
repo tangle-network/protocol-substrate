@@ -13,6 +13,7 @@ pub struct VAnchorMetadata<AccountId, AssetId> {
 }
 
 #[derive(Clone, Encode, Decode, Debug, Eq, PartialEq, TypeInfo)]
+#[cfg_attr(feature = "std", derive(sp_runtime::Deserialize, sp_runtime::Serialize))]
 pub struct ProofData<E> {
 	pub proof: Vec<u8>,
 	pub public_amount: E,
@@ -36,6 +37,7 @@ impl<E: ElementTrait> ProofData<E> {
 }
 
 #[derive(Encode, Decode, Default, Debug, Clone, Eq, PartialEq, Copy, TypeInfo)]
+#[cfg_attr(feature = "std", derive(sp_runtime::Deserialize, sp_runtime::Serialize))]
 pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode, Element: Encode> {
 	pub recipient: AccountId,
 	pub relayer: AccountId,

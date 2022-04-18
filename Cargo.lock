@@ -10808,6 +10808,7 @@ dependencies = [
  "hex-literal 0.3.4",
  "parity-scale-codec 2.3.1",
  "scale-info 1.0.0",
+ "serde",
  "sp-core 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
  "sp-io 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
  "sp-runtime 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
