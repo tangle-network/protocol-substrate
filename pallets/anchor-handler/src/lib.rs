@@ -210,14 +210,18 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> DispatchResultWithPostInfo {
 		let tree_id =
 			AnchorList::<T, I>::try_get(r_id).map_err(|_| Error::<T, I>::AnchorHandlerNotFound)?;
-		let (src_chain_id, merkle_root, block_height) =
-			(anchor_metadata.src_chain_id, anchor_metadata.root, anchor_metadata.latest_leaf_index);
+		let (src_chain_id, merkle_root, latest_leaf_index, target) = (
+			anchor_metadata.src_chain_id,
+			anchor_metadata.root,
+			anchor_metadata.latest_leaf_index,
+			anchor_metadata.target,
+		);
 
 		if T::Anchor::has_edge(tree_id, src_chain_id) {
-			T::Anchor::update_edge(tree_id, src_chain_id, merkle_root, block_height)?;
+			T::Anchor::update_edge(tree_id, src_chain_id, merkle_root, latest_leaf_index, target)?;
 			Self::deposit_event(Event::AnchorEdgeUpdated);
 		} else {
-			T::Anchor::add_edge(tree_id, src_chain_id, merkle_root, block_height)?;
+			T::Anchor::add_edge(tree_id, src_chain_id, merkle_root, latest_leaf_index, target)?;
 			Self::deposit_event(Event::AnchorEdgeAdded);
 		}
 		let nonce = Counts::<T, I>::try_get(src_chain_id)

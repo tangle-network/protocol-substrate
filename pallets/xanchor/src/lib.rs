@@ -524,6 +524,7 @@ pub mod pallet {
 				//src_chain_id: my
 				root: ElementOf::<T, I>::from_bytes(anchor_update_proposal.merkle_root()),
 				latest_leaf_index: anchor_update_proposal.latest_leaf_index().into(),
+				target: ElementOf::<T, I>::from_bytes(&tree_id.encode()),
 			};
 
 			// and finally, ensure that the anchor exists
@@ -602,6 +603,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				metadata.src_chain_id,
 				metadata.root,
 				metadata.latest_leaf_index,
+				metadata.target,
 			)?;
 
 			Self::deposit_event(Event::AnchorEdgeAdded);
@@ -612,6 +614,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				metadata.src_chain_id,
 				metadata.root,
 				metadata.latest_leaf_index,
+				metadata.target,
 			)?;
 
 			Self::deposit_event(Event::AnchorEdgeAdded);

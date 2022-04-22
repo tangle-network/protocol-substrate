@@ -147,7 +147,13 @@ impl ElementTrait for Element {
 
 	fn from_bytes(input: &[u8]) -> Self {
 		let mut buf = [0u8; 32];
-		buf.copy_from_slice(input);
+		let input_length = input.len();
+		if input_length > 32 {
+			buf.copy_from_slice(input);
+		} else {
+			buf[0..input_length].copy_from_slice(input);
+		};
+
 		Self(buf)
 	}
 }

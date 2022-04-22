@@ -41,6 +41,7 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		src_chain_id: C::ChainId,
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
+		target: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this tree
 	fn update_edge(
@@ -48,6 +49,7 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		src_chain_id: C::ChainId,
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
+		target: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
 
 	fn set_max_deposit_amount(

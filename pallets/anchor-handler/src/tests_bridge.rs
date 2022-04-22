@@ -168,7 +168,9 @@ fn anchor_update_proposal_edge_add_success() {
 		mock_anchor_creation_using_pallet_call(src_chain_id, &resource_id);
 		let root = Element::from_bytes(&[1; 32]);
 		let latest_leaf_index = 5;
-		let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index };
+		let expected_tree_id = 0u32;
+		let target = Element::from_bytes(&expected_tree_id.to_le_bytes());
+		let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
 		assert_eq!(0, Counts::<Test>::get(src_chain_id));
 		relay_anchor_update_proposal(src_chain_id, &resource_id, prop_id, edge_metadata.clone());
 		assert_eq!(1, Counts::<Test>::get(src_chain_id));
@@ -215,7 +217,9 @@ fn anchor_update_proposal_edge_update_success() {
 		mock_anchor_creation_using_pallet_call(src_chain_id, &resource_id);
 		let root = Element::from_bytes(&[1; 32]);
 		let latest_leaf_index = 5;
-		let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index };
+		let expected_tree_id = 0u32;
+		let target = Element::from_bytes(&expected_tree_id.to_le_bytes());
+		let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
 		assert_eq!(0, Counts::<Test>::get(src_chain_id));
 		relay_anchor_update_proposal(src_chain_id, &resource_id, prop_id, edge_metadata.clone());
 		assert_eq!(1, Counts::<Test>::get(src_chain_id));
@@ -242,7 +246,7 @@ fn anchor_update_proposal_edge_update_success() {
 
 		let root = Element::from_bytes(&[2; 32]);
 		let latest_leaf_index = 10;
-		let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index };
+		let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
 		relay_anchor_update_proposal(
 			src_chain_id,
 			&resource_id,

@@ -495,8 +495,9 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		src_chain_id: T::ChainId,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
+		target: T::Element,
 	) -> Result<(), DispatchError> {
-		T::LinkableTree::add_edge(id, src_chain_id, root, latest_leaf_index)
+		T::LinkableTree::add_edge(id, src_chain_id, root, latest_leaf_index, target)
 	}
 
 	fn update_edge(
@@ -504,8 +505,9 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		src_chain_id: T::ChainId,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
+		target: T::Element,
 	) -> Result<(), DispatchError> {
-		T::LinkableTree::update_edge(id, src_chain_id, root, latest_leaf_index)
+		T::LinkableTree::update_edge(id, src_chain_id, root, latest_leaf_index, target)
 	}
 
 	fn set_max_deposit_amount(max_deposit_amount: BalanceOf<T, I>) -> Result<(), DispatchError> {

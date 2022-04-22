@@ -52,11 +52,13 @@ fn should_be_able_to_add_neighbors_and_check_history() {
 		let height = 1;
 		let neighbor_index_before: u32 =
 			LinkableTree::curr_neighbor_root_index((tree_id, src_chain_id));
+		let target = Element::from_bytes(&tree_id.to_le_bytes());
 		assert_ok!(<LinkableTree as LinkableTreeInterface<_>>::add_edge(
 			tree_id,
 			src_chain_id,
 			root,
 			height,
+			target,
 		));
 		let neighbor_index_after: u32 =
 			LinkableTree::curr_neighbor_root_index((tree_id, src_chain_id));
@@ -67,11 +69,13 @@ fn should_be_able_to_add_neighbors_and_check_history() {
 
 			let val = thread_rng().gen::<[u8; 32]>();
 			let elt = Element::from_bytes(&val);
+			let target = Element::from_bytes(&tree_id.to_le_bytes());
 			assert_ok!(<LinkableTree as LinkableTreeInterface<_>>::update_edge(
 				tree_id,
 				src_chain_id,
 				elt,
 				height,
+				target
 			));
 
 			assert!(LinkableTree::is_known_neighbor_root(tree_id, src_chain_id, elt).unwrap(),);

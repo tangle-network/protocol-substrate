@@ -52,6 +52,7 @@ pub trait AnchorInterface<C: AnchorConfig> {
 		src_chain_id: C::ChainId,
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
+		target: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this tree
 	fn update_edge(
@@ -59,6 +60,7 @@ pub trait AnchorInterface<C: AnchorConfig> {
 		src_chain_id: C::ChainId,
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
+		target: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
 }
 
