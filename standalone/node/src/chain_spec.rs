@@ -251,9 +251,14 @@ fn testnet_genesis(
 	GenesisConfig {
 		system: webb_runtime::SystemConfig { code: wasm_binary_unwrap().to_vec() },
 		asset_registry: AssetRegistryConfig {
-			asset_names: vec![],
+			asset_names: vec![
+				(b"TEST".to_vec(), 1),
+			],
 			native_asset_name: b"WEBB".to_vec(),
 			native_existential_deposit: webb_runtime::constants::currency::EXISTENTIAL_DEPOSIT,
+		},
+		tokens: webb_runtime::TokensConfig {
+			balances: unique.iter().cloned().map(|k| (k, 1, ENDOWMENT)).collect(),
 		},
 		balances: webb_runtime::BalancesConfig {
 			balances: unique.iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
@@ -322,7 +327,7 @@ fn testnet_genesis(
 			default_hashes: None,
 		},
 		mixer_bn_254: MixerBn254Config {
-			mixers: vec![(0, 10 * UNITS), (0, 100 * UNITS), (0, 1000 * UNITS)],
+			mixers: vec![(0, 10 * UNITS), (0, 100 * UNITS), (0, 1000 * UNITS), (1, 10 * UNITS), (1, 100 * UNITS)],
 		},
 		anchor_bn_254: AnchorBn254Config {
 			anchors: vec![(0, 10 * UNITS, 2), (0, 100 * UNITS, 2), (0, 1000 * UNITS, 2)],

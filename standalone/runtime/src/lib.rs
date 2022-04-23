@@ -1308,7 +1308,7 @@ construct_runtime!(
 
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>, Config<T>},
 		Currencies: orml_currencies::{Pallet, Call, Event<T>},
-		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
+		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>, Config<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Storage, Call, Event<T>},
 
 		// Mixer Verifier
