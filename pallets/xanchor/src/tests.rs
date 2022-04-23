@@ -373,7 +373,7 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 		let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
 		let typed_chain_id = TypedChainId::Substrate(PARAID_B.into());
 
-		let mut merkle_root = [0; 32];
+		let merkle_root = [0; 32];
 
 		let anchor_update_proposal = AnchorUpdateProposal::new(
 			proposal_header,
