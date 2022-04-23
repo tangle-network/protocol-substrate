@@ -363,6 +363,7 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 		// try to update the edges, from a normal account!
 		// it should fail.
 		let tree_id = MerkleTree::next_tree_id();
+		let target_system = webb_proposals::TargetSystem::new_tree_id(tree_id);
 		let r_id = derive_resource_id(PARAID_B.into(), tree_id).into();
 
 		let function_signature = FunctionSignature::new([0; 4]);
@@ -379,6 +380,7 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 			typed_chain_id,
 			latest_leaf_index_u32,
 			merkle_root,
+			target_system.into_fixed_bytes(),
 		);
 
 		assert_err!(
@@ -808,7 +810,10 @@ fn should_fail_to_call_update_as_signed_account() {
 	// calling update as signed account should fail.
 	// on parachain A.
 	ParaA::execute_with(|| {
-		let r_id = derive_resource_id(PARAID_B.into(), MerkleTree::next_tree_id()).into();
+		let tree_id = MerkleTree::next_tree_id();
+		let target_system =
+			webb_proposals::TargetSystem::new_tree_id(tree_id.try_into().unwrap_or_default());
+		let r_id = derive_resource_id(PARAID_B.into(), tree_id).into();
 		/*let edge_metadata = EdgeMetadata {
 			src_chain_id: PARAID_B.into(),
 			root: Element::zero(),
@@ -829,6 +834,7 @@ fn should_fail_to_call_update_as_signed_account() {
 			typed_chain_id,
 			latest_leaf_index_u32,
 			merkle_root,
+			target_system.into_fixed_bytes(),
 		);
 
 		assert_err!(
