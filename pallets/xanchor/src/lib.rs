@@ -493,7 +493,7 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn update(
 			origin: OriginFor<T>,
-			anchor_update_proposal_bytes: [u8; 82],
+			anchor_update_proposal_bytes: [u8; 114],
 		) -> DispatchResultWithPostInfo {
 			ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
 
@@ -644,6 +644,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let root = tree.root;
 		// and the latest leaf index
 		let latest_leaf_index = tree.leaf_count;
+		// and the target system
+		let target_system =
+			webb_proposals::TargetSystem::new_tree_id(tree_id.try_into().unwrap_or_default());
 		// get the current parachain id
 		let my_para_id = T::ParaId::get();
 		let src_chain_id = u32::from(my_para_id);
@@ -690,6 +693,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				typed_src_chain_id,
 				latest_leaf_index_u32,
 				merkle_root,
+				target_system.into_fixed_bytes(),
 			);
 
 			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
