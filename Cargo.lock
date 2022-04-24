@@ -5664,6 +5664,7 @@ dependencies = [
  "sp-runtime 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
  "webb-primitives",
+ "webb-proposals",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -10817,10 +10818,11 @@ dependencies = [
 
 [[package]]
 name = "webb-proposals"
-version = "0.2.1"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c6bd361a7bbeb70489139c7a34a41d23b26190f29aab5c94bcee30685992687"
+checksum = "989a673b719232a23f49327db2f2d816f5241ad4ad6b54cc6e45e896bd3c3e5b"
 dependencies = [
+ "num-traits",
  "parity-scale-codec 2.3.1",
  "scale-info 1.0.0",
 ]

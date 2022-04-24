@@ -158,7 +158,9 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 			let root = Element::from_bytes(&[1; 32]);
 			let latest_leaf_index = 5;
-			let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index };
+			let target = Element::from_bytes(&[0u8; 32]);
+			let edge_metadata =
+				EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
 			assert_eq!(0, Counts::<Test>::get(src_id));
 
 			let anchor_update_call = make_anchor_update_proposal(&r_id, edge_metadata.clone());
@@ -233,7 +235,9 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 			let root = Element::from_bytes(&[1; 32]);
 			let latest_leaf_index = 5;
-			let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index };
+			let target = Element::from_bytes(&[0u8; 32]);
+			let edge_metadata =
+				EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
 			assert_eq!(0, Counts::<Test>::get(src_id));
 
 			let anchor_update_call = make_anchor_update_proposal(&r_id, edge_metadata.clone());
@@ -282,7 +286,9 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 			// Update Edge
 			let root = Element::from_bytes(&[2; 32]);
 			let latest_leaf_index = 10;
-			let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index };
+			let target = Element::from_bytes(&[0u8; 32]);
+			let edge_metadata =
+				EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
 
 			let anchor_update_call = make_anchor_update_proposal(&r_id, edge_metadata.clone());
 			let anchor_update_call_encoded = anchor_update_call.encode();

@@ -29,6 +29,7 @@ pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 		src_chain_id: C::ChainId,
 		root: C::Element,
 		last_leaf_index: C::LeafIndex,
+		target: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this tree
 	fn update_edge(
@@ -36,6 +37,7 @@ pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 		src_chain_id: C::ChainId,
 		root: C::Element,
 		last_leaf_index: C::LeafIndex,
+		target: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
 }
 

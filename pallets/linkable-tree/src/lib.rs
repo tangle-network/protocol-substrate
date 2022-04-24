@@ -251,6 +251,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		src_chain_id: T::ChainId,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
+		target: T::Element,
 	) -> Result<(), DispatchError> {
 		// ensure edge doesn't exists
 		ensure!(
@@ -262,7 +263,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		let curr_length = EdgeList::<T, I>::iter_prefix_values(id).into_iter().count();
 		ensure!(max_edges > curr_length as u32, Error::<T, I>::TooManyEdges);
 		// craft edge
-		let e_meta = EdgeMetadata { src_chain_id, root, latest_leaf_index };
+		let e_meta = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
 		// update historical neighbor list for this edge's root
 		let neighbor_root_inx = CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id));
 		CurrentNeighborRootIndex::<T, I>::insert(
@@ -280,9 +281,10 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		src_chain_id: T::ChainId,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
+		target: T::Element,
 	) -> Result<(), DispatchError> {
 		ensure!(EdgeList::<T, I>::contains_key(id, src_chain_id), Error::<T, I>::EdgeDoesntExists);
-		let e_meta = EdgeMetadata { src_chain_id, root, latest_leaf_index };
+		let e_meta = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
 		let neighbor_root_inx = (CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id)) +
 			T::RootIndex::one()) %
 			T::HistoryLength::get();

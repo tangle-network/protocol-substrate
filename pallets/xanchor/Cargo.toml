@@ -22,6 +22,7 @@ pallet-anchor = { path = "../anchor", default-features = false }
 orml-traits = { path = "../../open-runtime-module-library/traits", default-features = false }
 webb-primitives = { path = "../../primitives", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
+webb-proposals = { version = "0.2.4", default-features = false }
 
 # XCM dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.17", default-features = false }
@@ -82,6 +83,7 @@ std = [
 	"webb-primitives/std",
 	"pallet-asset-registry/std",
 	"frame-benchmarking/std",
+	"webb-proposals/std",
 ]
 
 runtime-benchmarks = [
