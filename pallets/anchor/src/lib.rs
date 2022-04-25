@@ -189,7 +189,7 @@ pub mod pallet {
 		UnknownRoot,
 		/// Invalid withdraw proof
 		InvalidWithdrawProof,
-		/// Mixer not found.
+		/// Anchor not found.
 		NoAnchorFound,
 		// Invalid arbitrary data passed
 		InvalidArbitraryData,
