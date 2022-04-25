@@ -34,7 +34,7 @@
 //! ### Terminology
 //!
 //! * **EdgeList**: A map of trees and chain ids to their edge metadata.
-//!  
+//!
 //! ### Goals
 //!
 //! The Linkable-tree in Webb is designed to make the following possible:
@@ -401,6 +401,28 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 			}
 		}
 		Ok(())
+	}
+
+	fn get_latest_neighbour_edges(id: T::TreeId, chain_id: T::ChainId)  {
+		let edges = EdgeList::<T, I>::iter_prefix(id).into_iter().collect::<Vec<_>>();
+
+		let mut new_edges :Vec<EdgeMetadata<_,_,_>> = Vec::new();
+
+		let max_edges: u32 = Self::max_edges(id);
+
+		for i in 0..max_edges {
+			if edges.len() >  (i + 1).try_into().unwrap() {
+				new_edges.push(EdgeList::<T, I>::get(id, chain_id));
+			} else {
+				let root = T::Element::from_vec([0u8; 32].encode());
+				let latest_leaf_index =  T::LeafIndex::zero();
+				let src_chain_id = T::ChainId::zero();
+				let target = T::Element::from_vec([0u8; 32].encode());
+
+				let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
+				new_edges.push(EdgeMetadata { src_chain_id, root, latest_leaf_index, target });
+			}
+		}
 	}
 
 	fn ensure_known_neighbor_root(

@@ -68,6 +68,8 @@ pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 		id: C::TreeId,
 		roots: &Vec<C::Element>,
 	) -> Result<(), dispatch::DispatchError>;
+
+	fn get_latest_neighbour_edges(id: C::TreeId, chain_id:  C::ChainId);
 	/// Checks if a merkle root is in a tree's cached history or returns
 	/// `InvalidNeighborWithdrawRoot`
 	fn ensure_known_neighbor_root(
