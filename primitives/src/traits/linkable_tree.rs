@@ -10,6 +10,9 @@ pub trait LinkableTreeConfig {
 	type Element;
 }
 
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
+
 /// LinkableTree trait definition to be used in other pallets
 pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 	// Creates a new linkable tree
@@ -69,7 +72,6 @@ pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 		roots: &Vec<C::Element>,
 	) -> Result<(), dispatch::DispatchError>;
 
-	fn get_latest_neighbour_edges(id: C::TreeId, chain_id:  C::ChainId);
 	/// Checks if a merkle root is in a tree's cached history or returns
 	/// `InvalidNeighborWithdrawRoot`
 	fn ensure_known_neighbor_root(

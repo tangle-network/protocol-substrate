@@ -244,7 +244,7 @@ fn anchor_works_with_wasm_utils() {
 		let commitment_bytes = [0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
-		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) =
+		let (proof_bytes, mut root_elements, nullifier_hash_element, leaf_element) =
 			setup_wasm_utils_zk_circuit(
 				curve,
 				recipient_bytes,
@@ -265,6 +265,10 @@ fn anchor_works_with_wasm_utils() {
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
 		// sanity check.
 		assert_eq!(root_elements[0], tree_root);
+
+		root_elements[0] = commitment_element;
+
+		dbg!(root_elements.clone());
 
 		let balance_before = Balances::free_balance(recipient_account_id.clone());
 		// fire the call.
