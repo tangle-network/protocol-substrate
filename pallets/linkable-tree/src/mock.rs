@@ -5,7 +5,7 @@ use crate as pallet_linkable_tree;
 use codec::{Decode, Encode};
 use sp_core::H256;
 
-use frame_support::parameter_types;
+use frame_support::{parameter_types, traits::ConstU8};
 use frame_system as system;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
@@ -175,6 +175,7 @@ impl pallet_mt::Config for Test {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type DefaultMerkleRootIndex = ConstU8<30>;
 	type WeightInfo = ();
 }
 

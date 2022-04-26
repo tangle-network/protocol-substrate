@@ -12,7 +12,7 @@ use constants::{currency::*, time::*};
 pub mod impls;
 mod voter_bags;
 mod weights;
-use frame_support::traits::EnsureOneOf;
+use frame_support::traits::{ConstU8, EnsureOneOf};
 use impls::Author;
 use sp_api::impl_runtime_apis;
 use sp_core::{
@@ -65,7 +65,6 @@ use pallet_election_provider_multi_phase::NoFallback;
 use serde::{Deserialize, Serialize};
 
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_benchmarking::frame_support::traits::ConstU8;
 use frame_support::{
 	construct_runtime,
 	pallet_prelude::ConstU32,

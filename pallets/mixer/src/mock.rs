@@ -3,7 +3,7 @@
 use super::*;
 use crate as pallet_mixer;
 use codec::Decode;
-use frame_support::traits::GenesisBuild;
+use frame_support::traits::{ConstU8, GenesisBuild};
 use sp_core::H256;
 use webb_primitives::verifying::ArkworksVerifierBn254;
 
@@ -172,6 +172,7 @@ impl pallet_mt::Config for Test {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type DefaultMerkleRootIndex = ConstU8<30>;
 	type WeightInfo = ();
 }
 
