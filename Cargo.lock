@@ -5157,6 +5157,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-benchmarking",
+ "hex",
  "pallet-balances",
  "pallet-hasher",
  "parity-scale-codec 2.3.1",

@@ -26,6 +26,7 @@ pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 		id: C::TreeId,
 		leaf: C::Element,
 	) -> Result<C::Element, dispatch::DispatchError>;
+	fn zero_root(i: u8) -> Result<[u8; 32],dispatch::DispatchError>;
 	/// Add an edge to this tree
 	fn add_edge(
 		id: C::TreeId,

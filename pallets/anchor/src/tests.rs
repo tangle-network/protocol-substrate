@@ -265,11 +265,6 @@ fn anchor_works_with_wasm_utils() {
 		let tree_root = MerkleTree::get_root(tree_id).unwrap();
 		// sanity check.
 		assert_eq!(root_elements[0], tree_root);
-
-		root_elements[0] = commitment_element;
-
-		dbg!(root_elements.clone());
-
 		let balance_before = Balances::free_balance(recipient_account_id.clone());
 		// fire the call.
 		assert_ok!(Anchor::withdraw(

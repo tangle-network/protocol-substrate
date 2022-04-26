@@ -246,6 +246,10 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		T::Tree::insert_in_order(id, leaf)
 	}
 
+	fn zero_root(i: u8) -> Result<[u8; 32],DispatchError> {
+		T::Tree::zero_root(i)
+	}
+
 	fn add_edge(
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
@@ -338,6 +342,12 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		src_chain_id: T::ChainId,
 		target_root: T::Element,
 	) -> Result<bool, DispatchError> {
+		println!("target_root is {:?}", target_root);
+		println!("zero root is {:?}",  T::Element::from_vec(Self::zero_root(30).unwrap().encode()));
+		if target_root == T::Element::from_vec(Self::zero_root(30).unwrap().encode()) {
+			return Ok(true)
+		}
+
 		if target_root.is_zero() {
 			return Ok(false)
 		}
@@ -354,10 +364,12 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		let mut historical_root =
 			NeighborRoots::<T, I>::get((tree_id, src_chain_id), curr_root_inx)
 				.unwrap_or_else(|| T::Element::from_bytes(&[0; 32]));
+		println!("historical root is {:?}", historical_root);
 		if target_root == historical_root {
 			return Ok(true)
 		}
 
+		println!("current root index {:?}", curr_root_inx);
 		let mut i = get_next_inx(curr_root_inx);
 
 		while i != curr_root_inx {
@@ -373,6 +385,8 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 
 			i -= One::one();
 		}
+
+		println!("finished all checks");
 
 		Ok(false)
 	}
@@ -392,31 +406,31 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		roots: &Vec<T::Element>,
 	) -> Result<(), DispatchError> {
 		if roots.len() > 1 {
-			// get all the edges of the tree id
-			let edges = EdgeList::<T, I>::iter_prefix(id).into_iter().collect::<Vec<_>>();
-
+			println!("roots are {:?}", roots);
 			// create a new vector of edges
 			let mut new_edges :Vec<EdgeMetadata<_,_,_>> = Vec::new();
 
-			// get the mex_edges
-			let max_edges: u32 = Self::max_edges(id);
+			// get all the edges of the tree id
+			// and push them to the new_edges list
+			let edges = EdgeList::<T, I>::iter_prefix(id)
+				.into_iter()
+				.map(|x| new_edges.push(x.1))
+				.collect::<Vec<_>>();
+
+			// get the max_edges
+			let max_edges = Self::max_edges(id).try_into().unwrap();
 
 			println!("max edges is {:?}", max_edges);
+			println!("edges is {:?}", edges);
 
-			// iterate the max edges
-			for i in 0..max_edges {
-
-				// check if edges exist
-				if edges.len() >  (i + 1).try_into().unwrap() {
-					for (i, (chain_id, _)) in edges.iter().enumerate() {
-						new_edges.push(EdgeList::<T, I>::get(id, *chain_id));
-					}
-				} else {
+			if edges.len() <= max_edges {
+				for _ in 0..(max_edges - edges.len()) {
 					// create a default 0 edge
-					let root = T::Element::from_vec([0u8; 32].encode());
+					// the hash of zero with itself, over and over, ..  30 times
+					let root = T::Element::from_vec(Self::zero_root(30).unwrap().encode());
 					let latest_leaf_index =  T::LeafIndex::zero();
 					let src_chain_id = T::ChainId::zero();
-					let target = T::Element::from_vec([0u8; 32].encode());
+					let target = T::Element::from_vec(Self::zero_root(30).unwrap().encode());
 
 					let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
 					new_edges.push(edge_metadata);
