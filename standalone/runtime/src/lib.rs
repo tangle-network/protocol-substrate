@@ -65,6 +65,7 @@ use pallet_election_provider_multi_phase::NoFallback;
 use serde::{Deserialize, Serialize};
 
 use codec::{Decode, Encode, MaxEncodedLen};
+use frame_benchmarking::frame_support::traits::ConstU8;
 use frame_support::{
 	construct_runtime,
 	pallet_prelude::ConstU32,
@@ -1104,6 +1105,7 @@ impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type DefaultMerkleRootIndex = ConstU8<30>;
 	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
 }
 

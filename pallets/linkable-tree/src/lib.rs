@@ -337,7 +337,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		Ok(roots)
 	}
 
-	fn is_known_neighbor_root(
+		fn is_known_neighbor_root(
 		tree_id: T::TreeId,
 		src_chain_id: T::ChainId,
 		target_root: T::Element,
@@ -437,10 +437,19 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 				}
 			}
 
+			println!("new edges are {:?}", new_edges);
+
 			// ensure that the neighbor root is known
 			for (i, edge_meta) in new_edges.iter().enumerate() {
 				println!("i is {:?}, edge meta data is {:?}", i, edge_meta);
-				Self::ensure_known_neighbor_root(id, edge_meta.src_chain_id, roots[i + 1])?;
+				let mut root_to_be_passed;
+
+				if edge_meta.root == T::Element::from_vec(Self::zero_root(30).unwrap().encode()) {
+					root_to_be_passed = edge_meta.root;
+				} else {
+					root_to_be_passed = roots[i+1];
+				}
+				Self::ensure_known_neighbor_root(id, edge_meta.src_chain_id, root_to_be_passed)?;
 			}
 
 		}

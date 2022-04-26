@@ -143,6 +143,9 @@ pub mod pallet {
 
 		/// WeightInfo for pallet
 		type WeightInfo: WeightInfo;
+
+		/// The index for the default merkle root
+		type DefaultMerkleRootIndex: Get<u8>;
 	}
 
 	#[pallet::storage]
