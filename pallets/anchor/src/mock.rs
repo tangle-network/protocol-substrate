@@ -6,8 +6,11 @@ use codec::{Decode, Encode};
 use sp_core::H256;
 use webb_primitives::verifying::ArkworksVerifierBn254;
 
-use frame_support::{parameter_types, traits::Nothing, PalletId};
-use frame_support::traits::ConstU8;
+use frame_support::{
+	parameter_types,
+	traits::{ConstU8, Nothing},
+	PalletId,
+};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
 use serde::{Deserialize, Serialize};

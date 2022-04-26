@@ -90,6 +90,8 @@ pub use weights::WeightInfo;
 
 pub use pallet::*;
 
+pub type DefaultMerkleRootIndexOf<T, I> = <T as pallet_mt::Config<I>>::DefaultMerkleRootIndex;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -246,7 +248,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		T::Tree::insert_in_order(id, leaf)
 	}
 
-	fn zero_root(i: u8) -> Result<[u8; 32],DispatchError> {
+	fn zero_root(i: u8) -> Result<[u8; 32], DispatchError> {
 		T::Tree::zero_root(i)
 	}
 
@@ -337,19 +339,20 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		Ok(roots)
 	}
 
-		fn is_known_neighbor_root(
+	fn is_known_neighbor_root(
 		tree_id: T::TreeId,
 		src_chain_id: T::ChainId,
 		target_root: T::Element,
 	) -> Result<bool, DispatchError> {
-		println!("target_root is {:?}", target_root);
-		println!("zero root is {:?}",  T::Element::from_vec(Self::zero_root(30).unwrap().encode()));
-		if target_root == T::Element::from_vec(Self::zero_root(30).unwrap().encode()) {
-			return Ok(true)
-		}
-
 		if target_root.is_zero() {
 			return Ok(false)
+		}
+
+		if target_root ==
+			T::Element::from_vec(
+				Self::zero_root(T::DefaultMerkleRootIndex::get()).unwrap().encode(),
+			) {
+			return Ok(true)
 		}
 
 		let get_next_inx = |inx: T::RootIndex| {
@@ -364,12 +367,10 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		let mut historical_root =
 			NeighborRoots::<T, I>::get((tree_id, src_chain_id), curr_root_inx)
 				.unwrap_or_else(|| T::Element::from_bytes(&[0; 32]));
-		println!("historical root is {:?}", historical_root);
 		if target_root == historical_root {
 			return Ok(true)
 		}
 
-		println!("current root index {:?}", curr_root_inx);
 		let mut i = get_next_inx(curr_root_inx);
 
 		while i != curr_root_inx {
@@ -385,8 +386,6 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 
 			i -= One::one();
 		}
-
-		println!("finished all checks");
 
 		Ok(false)
 	}
@@ -406,9 +405,8 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		roots: &Vec<T::Element>,
 	) -> Result<(), DispatchError> {
 		if roots.len() > 1 {
-			println!("roots are {:?}", roots);
 			// create a new vector of edges
-			let mut new_edges :Vec<EdgeMetadata<_,_,_>> = Vec::new();
+			let mut new_edges: Vec<EdgeMetadata<_, _, _>> = Vec::new();
 
 			// get all the edges of the tree id
 			// and push them to the new_edges list
@@ -420,38 +418,36 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 			// get the max_edges
 			let max_edges = Self::max_edges(id).try_into().unwrap();
 
-			println!("max edges is {:?}", max_edges);
-			println!("edges is {:?}", edges);
-
 			if edges.len() <= max_edges {
 				for _ in 0..(max_edges - edges.len()) {
 					// create a default 0 edge
 					// the hash of zero with itself, over and over, ..  30 times
-					let root = T::Element::from_vec(Self::zero_root(30).unwrap().encode());
-					let latest_leaf_index =  T::LeafIndex::zero();
+					let root = T::Element::from_vec(
+						Self::zero_root(T::DefaultMerkleRootIndex::get()).unwrap().encode(),
+					);
+					let latest_leaf_index = T::LeafIndex::zero();
 					let src_chain_id = T::ChainId::zero();
-					let target = T::Element::from_vec(Self::zero_root(30).unwrap().encode());
+					let target = T::Element::from_vec(
+						Self::zero_root(T::DefaultMerkleRootIndex::get()).unwrap().encode(),
+					);
 
-					let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
+					let edge_metadata =
+						EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
 					new_edges.push(edge_metadata);
 				}
 			}
 
-			println!("new edges are {:?}", new_edges);
-
 			// ensure that the neighbor root is known
 			for (i, edge_meta) in new_edges.iter().enumerate() {
-				println!("i is {:?}, edge meta data is {:?}", i, edge_meta);
 				let mut root_to_be_passed;
 
 				if edge_meta.root == T::Element::from_vec(Self::zero_root(30).unwrap().encode()) {
 					root_to_be_passed = edge_meta.root;
 				} else {
-					root_to_be_passed = roots[i+1];
+					root_to_be_passed = roots[i + 1];
 				}
 				Self::ensure_known_neighbor_root(id, edge_meta.src_chain_id, root_to_be_passed)?;
 			}
-
 		}
 		Ok(())
 	}
