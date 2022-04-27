@@ -119,7 +119,6 @@ parameter_types! {
 		180, 093, 161, 235, 182, 053, 058, 052,
 		243, 171, 172, 211, 096, 076, 229, 047,
 	]);
-	pub const NewDefaultZeroElement: Element = Element([0u8; 32]);
 }
 
 #[derive(
@@ -153,7 +152,7 @@ impl pallet_mt::Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
-	type DefaultZeroElement = NewDefaultZeroElement;
+	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
