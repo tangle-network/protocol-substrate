@@ -3,10 +3,7 @@ use std::convert::TryInto;
 use crate::mock_bridge::*;
 
 use asset_registry::AssetType;
-use frame_support::{
-	assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin,
-};
-use pallet_bridge::types::{ProposalStatus, ProposalVotes};
+use frame_support::{assert_err, assert_ok, dispatch::DispatchResultWithPostInfo};
 use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
 
 const TEST_THRESHOLD: u32 = 2;

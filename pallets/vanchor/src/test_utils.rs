@@ -4,7 +4,7 @@ use ark_ff::{BigInteger, PrimeField};
 use ark_std::{rand::thread_rng, vec::Vec};
 use arkworks_native_gadgets::poseidon::Poseidon;
 use arkworks_setups::{
-	common::{prove_unchecked, setup_params, setup_tree_and_create_path},
+	common::{setup_params, setup_tree_and_create_path},
 	r1cs::vanchor::VAnchorR1CSProver,
 	utxo::Utxo,
 	Curve, VAnchorProver,
@@ -19,8 +19,12 @@ type Bn254 = ark_bn254::Bn254;
 const TREE_DEPTH: usize = 30;
 const ANCHOR_CT: usize = 2;
 const NUM_UTXOS: usize = 2;
-const DEFAULT_LEAF: [u8; 32] = [0u8; 32];
-type VAnchorProver_Bn254_30_2x2 =
+pub const DEFAULT_LEAF: [u8; 32] = [
+	108, 175, 153, 072, 237, 133, 150, 036, 226, 065, 231, 118, 015, 052, 027, 130, 180, 093, 161,
+	235, 182, 053, 058, 052, 243, 171, 172, 211, 096, 076, 229, 047,
+];
+
+type VAnchorProver_Bn254_30_2_2_2 =
 	VAnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, NUM_UTXOS>;
 
 pub fn setup_utxos(
@@ -38,7 +42,7 @@ pub fn setup_utxos(
 	} else {
 		[None; NUM_UTXOS]
 	};
-	let utxo1 = VAnchorProver_Bn254_30_2x2::create_random_utxo(
+	let utxo1 = VAnchorProver_Bn254_30_2_2_2::create_random_utxo(
 		curve,
 		chain_ids[0],
 		amounts[0],
@@ -46,7 +50,7 @@ pub fn setup_utxos(
 		rng,
 	)
 	.unwrap();
-	let utxo2 = VAnchorProver_Bn254_30_2x2::create_random_utxo(
+	let utxo2 = VAnchorProver_Bn254_30_2_2_2::create_random_utxo(
 		curve,
 		chain_ids[1],
 		amounts[1],
@@ -99,7 +103,7 @@ pub fn setup_zk_circuit(
 		[(); ANCHOR_CT].map(|_| tree.root().into_repr().to_bytes_le())
 	};
 
-	let vanchor_proof = VAnchorProver_Bn254_30_2x2::create_proof(
+	let vanchor_proof = VAnchorProver_Bn254_30_2_2_2::create_proof(
 		curve,
 		chain_id,
 		public_amount,
@@ -171,11 +175,4 @@ pub fn deconstruct_public_inputs_el(
 		.collect();
 	let ext_data_hash_el = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_le());
 	(chain_id_el, public_amount_el, root_set_el, nullifiers_el, commitments_el, ext_data_hash_el)
-}
-
-/// Truncate and pad 256 bit slice in reverse
-pub fn truncate_and_pad_reverse(t: &[u8]) -> Vec<u8> {
-	let mut truncated_bytes = t[12..].to_vec();
-	truncated_bytes.extend_from_slice(&[0u8; 12]);
-	truncated_bytes
 }

@@ -48,13 +48,7 @@ impl ElementTrait for Element {
 
 	fn from_bytes(input: &[u8]) -> Self {
 		let mut buf = [0u8; 32];
-		let input_length = input.len();
-		if input_length > 32 {
-			buf.copy_from_slice(input);
-		} else {
-			buf[0..input_length].copy_from_slice(input);
-		};
-
+		buf.iter_mut().rev().zip(input).for_each(|(a, b)| *a = *b);
 		Self(buf)
 	}
 }
@@ -162,11 +156,17 @@ impl Into<WebbExtData<AccountId32, i128, u128, WebbElement>>
 const TREE_DEPTH: usize = 30;
 const ANCHOR_CT: usize = 2;
 pub const NUM_UTXOS: usize = 2;
-const DEFAULT_LEAF: [u8; 32] = [0u8; 32];
+pub const DEFAULT_LEAF: [u8; 32] = [
+	108, 175, 153, 072, 237, 133, 150, 036, 226, 065, 231, 118, 015, 052, 027, 130, 180, 093, 161,
+	235, 182, 053, 058, 052, 243, 171, 172, 211, 096, 076, 229, 047,
+];
 
+#[allow(non_camel_case_types)]
 type AnchorProver_Bn254_30_2 = AnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT>;
+#[allow(non_camel_case_types)]
 type MixerProver_Bn254_30 = MixerR1CSProver<Bn254, TREE_DEPTH>;
-type VAnchorProver_Bn254_30_2x2 =
+#[allow(non_camel_case_types)]
+type VAnchorProver_Bn254_30_2_2_2 =
 	VAnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, NUM_UTXOS>;
 
 pub fn setup_mixer_leaf() -> (Element, Element, Element, Element) {
@@ -301,7 +301,7 @@ pub fn setup_utxos(
 	} else {
 		[None; NUM_UTXOS]
 	};
-	let utxo1 = VAnchorProver_Bn254_30_2x2::create_random_utxo(
+	let utxo1 = VAnchorProver_Bn254_30_2_2_2::create_random_utxo(
 		curve,
 		chain_ids[0],
 		amounts[0],
@@ -309,7 +309,7 @@ pub fn setup_utxos(
 		rng,
 	)
 	.unwrap();
-	let utxo2 = VAnchorProver_Bn254_30_2x2::create_random_utxo(
+	let utxo2 = VAnchorProver_Bn254_30_2_2_2::create_random_utxo(
 		curve,
 		chain_ids[1],
 		amounts[1],
@@ -359,7 +359,7 @@ pub fn setup_vanchor_circuit(
 		[(); ANCHOR_CT].map(|_| tree.root().into_repr().to_bytes_le())
 	};
 
-	let vanchor_proof = VAnchorProver_Bn254_30_2x2::create_proof(
+	let vanchor_proof = VAnchorProver_Bn254_30_2_2_2::create_proof(
 		curve,
 		chain_id,
 		public_amount,

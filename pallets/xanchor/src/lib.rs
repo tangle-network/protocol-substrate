@@ -112,7 +112,6 @@ pub mod pallet {
 	use super::*;
 	use frame_support::transactional;
 	use pallet_anchor::BalanceOf;
-	use webb_primitives::utils::{self, compute_chain_id_type, derive_resource_id};
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -673,11 +672,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			// first, we get the target chain tree id
 			let other_chain_id = edge.src_chain_id;
 			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id, tree_id);
-			let my_chain_id = src_chain_id;
 
 			let other_chain_underlying_chain_id: u32 =
 				utils::get_underlying_chain_id(other_chain_id.try_into().unwrap_or_default());
-			let tree: u32 = target_tree_id.try_into().unwrap_or_default();
 
 			let r_id = utils::derive_resource_id(
 				other_chain_underlying_chain_id,

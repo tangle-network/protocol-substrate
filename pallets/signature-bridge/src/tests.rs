@@ -2,9 +2,7 @@
 
 use super::{
 	mock::{
-		assert_events, new_test_ext, Balances, Bridge, Call, ChainIdentifier, Event, Origin,
-		ProposalLifetime, System, Test, ENDOWED_BALANCE, RELAYER_A, RELAYER_B, RELAYER_C,
-		TEST_THRESHOLD,
+		assert_events, new_test_ext, Bridge, Call, ChainIdentifier, Event, Origin, Test, RELAYER_A,
 	},
 	*,
 };
@@ -16,7 +14,7 @@ use frame_support::{assert_err, assert_noop, assert_ok};
 use hex_literal::hex;
 use sp_core::{
 	ecdsa::{self, Signature},
-	keccak_256, Pair, Public,
+	keccak_256, Pair,
 };
 use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
 const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];

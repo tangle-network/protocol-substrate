@@ -32,5 +32,7 @@ ark-std = {version = "^0.3.0", default-features = false}
 # webb deps
 wasm-utils = { version = "0.1.3" }
 webb-primitives = { path = "../primitives", features = ["hashing", "verifying", "field_ops"] }
-arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
-arkworks-native-gadgets = { version = "1.0.0", default-features = false }
+# arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
+arkworks-setups = { path = "../../arkworks-gadgets/arkworks-setups", default-features = false, features = ["r1cs"] }
+# arkworks-native-gadgets = { version = "1.0.0", default-features = false }
+arkworks-native-gadgets = { path = "../../arkworks-gadgets/arkworks-native-gadgets", default-features = false }

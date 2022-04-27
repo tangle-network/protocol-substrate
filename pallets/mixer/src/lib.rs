@@ -49,6 +49,7 @@
 
 #[cfg(test)]
 pub mod mock;
+
 #[cfg(test)]
 mod tests;
 
@@ -344,8 +345,6 @@ impl<T: Config<I>, I: 'static>
 		};
 		let recipient_bytes = truncate_and_pad(&recipient.using_encoded(element_encoder)[..]);
 		let relayer_bytes = truncate_and_pad(&relayer.using_encoded(element_encoder)[..]);
-		let fee_bytes = fee.using_encoded(element_encoder);
-		let refund_bytes = refund.using_encoded(element_encoder);
 
 		let mut arbitrary_data_bytes = Vec::new();
 		arbitrary_data_bytes.extend_from_slice(&recipient_bytes);

@@ -55,6 +55,10 @@ ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-featu
 orml-tokens = { path = "../../open-runtime-module-library/tokens", default-features = false }
 orml-currencies = { path = "../../open-runtime-module-library/currencies", default-features = false }
 
+ark-bn254 = {version = "^0.3.0", default-features = false, features = ["curve"]}
+# arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
+arkworks-setups = { path = "../../../arkworks-gadgets/arkworks-setups", default-features = false, features = ["r1cs"] }
+
 [features]
 default = ["std"]
 std = [

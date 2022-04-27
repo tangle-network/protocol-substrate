@@ -39,7 +39,8 @@ ark-serialize = { version = "^0.3.0", default-features = false, features = [ "de
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ] }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-arkworks-setups = { version = "1.0.0", features = ["r1cs"] }
+# arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
+arkworks-setups = { path = "../../../arkworks-gadgets/arkworks-setups", default-features = false, features = ["r1cs"] }
 
 [features]
 default = ["std"]

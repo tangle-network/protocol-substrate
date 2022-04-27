@@ -380,7 +380,12 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 		let two: T::LeafIndex = Self::two();
 		// get default edge nodes
 		let num_of_zero_nodes = depth;
-		let default_edge_nodes =
+		// Setup default hashes if not initialized
+		if Self::is_default_hashes_empty() {
+			let temp_hashes = generate_default_hashes::<T, I>();
+			DefaultHashes::<T, I>::put(temp_hashes);
+		}
+		let default_edge_nodes: Vec<T::Element> =
 			Self::default_hashes().into_iter().take(num_of_zero_nodes as _).collect();
 		// Setting up the tree
 		let tree_metadata = TreeMetadata {
@@ -389,7 +394,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 			paused: false,
 			max_leaves: two.saturating_pow(depth.into()),
 			leaf_count: T::LeafIndex::zero(),
-			root: T::Element::default(),
+			root: default_edge_nodes[(depth - 1) as usize],
 			edge_nodes: default_edge_nodes,
 		};
 
@@ -414,7 +419,6 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 				let h = T::Hasher::hash_two(edge_nodes[i].to_bytes(), hash.to_bytes())?;
 				T::Element::from_vec(h)
 			};
-
 			edge_index /= two;
 		}
 

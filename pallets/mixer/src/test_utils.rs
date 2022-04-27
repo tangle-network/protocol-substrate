@@ -14,9 +14,10 @@ use wasm_utils::{
 
 use crate::mock::Element;
 
-type Bn254Fr = ark_bn254::Fr;
-
-const DEFAULT_LEAF: [u8; 32] = [0u8; 32];
+pub const DEFAULT_LEAF: [u8; 32] = [
+	108, 175, 153, 072, 237, 133, 150, 036, 226, 065, 231, 118, 015, 052, 027, 130, 180, 093, 161,
+	235, 182, 053, 058, 052, 243, 171, 172, 211, 096, 076, 229, 047,
+];
 const TREE_HEIGHT: usize = 30;
 type MixerR1CSProver_Bn254_30 = MixerR1CSProver<Bn254, TREE_HEIGHT>;
 

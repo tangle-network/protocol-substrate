@@ -389,16 +389,17 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 
 	fn ensure_known_neighbor_roots(
 		id: T::TreeId,
-		roots: &Vec<T::Element>,
+		neighbor_roots: &Vec<T::Element>,
 	) -> Result<(), DispatchError> {
-		if roots.len() > 1 {
-			// Get edges and corresponding chain IDs for the anchor
-			let edges = EdgeList::<T, I>::iter_prefix(id).into_iter().collect::<Vec<_>>();
+		let max_edges = MaxEdges::<T, I>::get(id);
+		ensure!(
+			neighbor_roots.len() as u32 <= max_edges,
+			Error::<T, I>::InvalidNeighborWithdrawRoot
+		);
 
-			// Check membership of provided historical neighbor roots
-			for (i, (chain_id, _)) in edges.iter().enumerate() {
-				Self::ensure_known_neighbor_root(id, *chain_id, roots[i + 1])?;
-			}
+		let edges = EdgeList::<T, I>::iter_prefix(id).into_iter().collect::<Vec<_>>();
+		for (i, (chain_id, _)) in edges.iter().enumerate() {
+			Self::ensure_known_neighbor_root(id, *chain_id, neighbor_roots[i])?;
 		}
 		Ok(())
 	}

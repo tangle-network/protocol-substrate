@@ -13,7 +13,6 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 };
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
-use webb_primitives::AccountId;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -108,6 +107,12 @@ parameter_types! {
 		180, 093, 161, 235, 182, 053, 058, 052,
 		243, 171, 172, 211, 096, 076, 229, 047,
 	]);
+	// pub const DefaultZeroElement: Element = Element([
+	// 	047, 229, 076, 096, 211, 172, 171, 243,
+	// 	052, 058, 053, 182, 235, 161, 093, 180,
+	// 	130, 027, 052, 015, 118, 231, 065, 226,
+	// 	036, 150, 133, 237, 072, 153, 175, 108
+	// ]);
 }
 
 #[derive(
@@ -132,13 +137,7 @@ impl ElementTrait for Element {
 
 	fn from_bytes(input: &[u8]) -> Self {
 		let mut buf = [0u8; 32];
-		let input_length = input.len();
-		if input_length > 32 {
-			buf.copy_from_slice(input);
-		} else {
-			buf[0..input_length].copy_from_slice(input);
-		};
-
+		buf.iter_mut().rev().zip(input).for_each(|(a, b)| *a = *b);
 		Self(buf)
 	}
 }

@@ -1062,7 +1062,6 @@ parameter_types! {
 		180, 093, 161, 235, 182, 053, 058, 052,
 		243, 171, 172, 211, 096, 076, 229, 047,
 	]);
-	pub const NewDefaultZeroElement: Element = Element([0u8; 32]);
 }
 
 #[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
@@ -1076,13 +1075,7 @@ impl ElementTrait for Element {
 
 	fn from_bytes(input: &[u8]) -> Self {
 		let mut buf = [0u8; 32];
-		let input_length = input.len();
-		if input_length > 32 {
-			buf.copy_from_slice(input);
-		} else {
-			buf[0..input_length].copy_from_slice(input);
-		};
-
+		buf.iter_mut().rev().zip(input).for_each(|(a, b)| *a = *b);
 		Self(buf)
 	}
 }
@@ -1091,7 +1084,7 @@ impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
-	type DefaultZeroElement = NewDefaultZeroElement;
+	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
