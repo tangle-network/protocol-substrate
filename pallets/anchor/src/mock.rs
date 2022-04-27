@@ -140,7 +140,6 @@ parameter_types! {
 		180, 093, 161, 235, 182, 053, 058, 052,
 		243, 171, 172, 211, 096, 076, 229, 047,
 	]);
-	// pub const DefaultZeroElement: Element = Element([0; 32]);
 }
 
 #[derive(
