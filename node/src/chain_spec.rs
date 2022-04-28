@@ -105,10 +105,9 @@ pub fn get_shell_chain_spec(id: ParaId) -> ShellChainSpec {
 /// Helper function to convert hex hashes to bytes
 pub fn get_bytes_from_hex(hex: &str) -> [u8; 32] {
 	let mut bytes = [0u8; 32];
-	hex::decode_to_slice(
-		hex,
-		&mut bytes as &mut [u8],
-	);
+	hex::decode_to_slice(hex, &mut bytes as &mut [u8]);
+	// reverses the bytes(turns it to little endian)
+	bytes.reverse();
 
 	bytes
 }
@@ -310,7 +309,10 @@ fn testnet_genesis(
 	default_zero_root_hashes.push(get_bytes_from_hex("1f15585f8947e378bcf8bd918716799da909acdb944c57150b1eb4565fda8aa0"));
 	default_zero_root_hashes.push(get_bytes_from_hex("1eb064b21055ac6a350cf41eb30e4ce2cb19680217df3a243617c2838185ad06"));
 
-	let default_zero_root_hashes_map = default_zero_root_index.iter().cloned().zip(default_zero_root_hashes.into_iter()).collect();
+	let default_zero_root_hashes_map = default_zero_root_index
+		.into_iter()
+		.zip(default_zero_root_hashes.into_iter())
+		.collect();
 
 
 	log::info!("Genesis Config");

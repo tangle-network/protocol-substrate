@@ -462,6 +462,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 pub fn get_bytes_from_hex(hex: &str) -> [u8; 32] {
 	let mut bytes = [0u8; 32];
 	hex::decode_to_slice(hex, &mut bytes as &mut [u8]);
+	// reverses the bytes(turns it to little endian)
+	bytes.reverse();
 
 	bytes
 }
