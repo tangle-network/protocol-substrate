@@ -441,7 +441,10 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 			for (i, edge_meta) in new_edges.iter().enumerate() {
 				let mut root_to_be_passed;
 
-				if edge_meta.root == T::Element::from_vec(Self::zero_root(30).unwrap().encode()) {
+				if edge_meta.root ==
+					T::Element::from_vec(
+						Self::zero_root(T::DefaultMerkleRootIndex::get()).unwrap().encode(),
+					) {
 					root_to_be_passed = edge_meta.root;
 				} else {
 					root_to_be_passed = roots[i + 1];

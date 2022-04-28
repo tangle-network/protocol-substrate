@@ -215,6 +215,12 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
+	/// A map of default zero root hash index to default zero root hashes
+	#[pallet::storage]
+	#[pallet::getter(fn default_zero_root_hashes)]
+	pub type DefaultZeroRootHashes<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, u8, T::Element>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
@@ -257,12 +263,17 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
 		pub phantom: PhantomData<T>,
 		pub default_hashes: Option<Vec<T::Element>>,
+		pub default_zero_root_hashes: Option<Vec<(u8, [u8; 32])>>,
 	}
 
 	#[cfg(feature = "std")]
 	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
 		fn default() -> Self {
-			Self { phantom: Default::default(), default_hashes: None }
+			Self {
+				phantom: Default::default(),
+				default_hashes: None,
+				default_zero_root_hashes: None,
+			}
 		}
 	}
 
@@ -276,6 +287,12 @@ pub mod pallet {
 
 			let default_hashes = generate_default_hashes::<T, I>();
 			DefaultHashes::<T, I>::put(default_hashes);
+
+			if let Some(default_zero_root_hashes) = &self.default_zero_root_hashes {
+				for (index, hash) in default_zero_root_hashes {
+					DefaultZeroRootHashes::<T, I>::insert(index, T::Element::from_bytes(hash));
+				}
+			}
 		}
 	}
 
@@ -451,170 +468,11 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 
 	fn zero_root(i: u8) -> Result<[u8; 32], DispatchError> {
 		ensure!(i < 31, Error::<T, I>::ZeroRootIndexDoesntExist);
-		let mut bytes = [0u8; 32];
-		if i == 0 {
-			hex::decode_to_slice(
-				"2fe54c60d3acabf3343a35b6eba15db4821b340f76e741e2249685ed4899af6c",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 1 {
-			hex::decode_to_slice(
-				"13e37f2d6cb86c78ccc1788607c2b199788c6bb0a615a21f2e7a8e88384222f8",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 2 {
-			hex::decode_to_slice(
-				"217126fa352c326896e8c2803eec8fd63ad50cf65edfef27a41a9e32dc622765",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 3 {
-			hex::decode_to_slice(
-				"0e28a61a9b3e91007d5a9e3ada18e1b24d6d230c618388ee5df34cacd7397eee",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 4 {
-			hex::decode_to_slice(
-				"27953447a6979839536badc5425ed15fadb0e292e9bc36f92f0aa5cfa5013587",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 5 {
-			hex::decode_to_slice(
-				"194191edbfb91d10f6a7afd315f33095410c7801c47175c2df6dc2cce0e3affc",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 6 {
-			hex::decode_to_slice(
-				"1733dece17d71190516dbaf1927936fa643dc7079fc0cc731de9d6845a47741f",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 7 {
-			hex::decode_to_slice(
-				"267855a7dc75db39d81d17f95d0a7aa572bf5ae19f4db0e84221d2b2ef999219",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 8 {
-			hex::decode_to_slice(
-				"1184e11836b4c36ad8238a340ecc0985eeba665327e33e9b0e3641027c27620d",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 9 {
-			hex::decode_to_slice(
-				"0702ab83a135d7f55350ab1bfaa90babd8fc1d2b3e6a7215381a7b2213d6c5ce",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 10 {
-			hex::decode_to_slice(
-				"2eecc0de814cfd8c57ce882babb2e30d1da56621aef7a47f3291cffeaec26ad7",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 11 {
-			hex::decode_to_slice(
-				"280bc02145c155d5833585b6c7b08501055157dd30ce005319621dc462d33b47",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 12 {
-			hex::decode_to_slice(
-				"045132221d1fa0a7f4aed8acd2cbec1e2189b7732ccb2ec272b9c60f0d5afc5b",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 13 {
-			hex::decode_to_slice(
-				"27f427ccbf58a44b1270abbe4eda6ba53bd6ac4d88cf1e00a13c4371ce71d366",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 14 {
-			hex::decode_to_slice(
-				"1617eaae5064f26e8f8a6493ae92bfded7fde71b65df1ca6d5dcec0df70b2cef",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 15 {
-			hex::decode_to_slice(
-				"20c6b400d0ea1b15435703c31c31ee63ad7ba5c8da66cec2796feacea575abca",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 16 {
-			hex::decode_to_slice(
-				"09589ddb438723f53a8e57bdada7c5f8ed67e8fece3889a73618732965645eec",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 17 {
-			hex::decode_to_slice(
-				"0064b6a738a5ff537db7b220f3394f0ecbd35bfd355c5425dc1166bf3236079b",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 18 {
-			hex::decode_to_slice(
-				"095de56281b1d5055e897c3574ff790d5ee81dbc5df784ad2d67795e557c9e9f",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 19 {
-			hex::decode_to_slice(
-				"11cf2e2887aa21963a6ec14289183efe4d4c60f14ecd3d6fe0beebdf855a9b63",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 20 {
-			hex::decode_to_slice(
-				"2b0f6fc0179fa65b6f73627c0e1e84c7374d2eaec44c9a48f2571393ea77bcbb",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 21 {
-			hex::decode_to_slice(
-				"16fdb637c2abf9c0f988dbf2fd64258c46fb6a273d537b2cf1603ea460b13279",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 22 {
-			hex::decode_to_slice(
-				"21bbd7e944f6124dad4c376df9cc12e7ca66e47dff703ff7cedb1a454edcf0ff",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 23 {
-			hex::decode_to_slice(
-				"2784f8220b1c963e468f590f137baaa1625b3b92a27ad9b6e84eb0d3454d9962",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 24 {
-			hex::decode_to_slice(
-				"16ace1a65b7534142f8cc1aad810b3d6a7a74ca905d9c275cb98ba57e509fc10",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 25 {
-			hex::decode_to_slice(
-				"2328068c6a8c24265124debd8fe10d3f29f0665ea725a65e3638f6192a96a013",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 26 {
-			hex::decode_to_slice(
-				"2ddb991be1f028022411b4c4d2c22043e5e751c120736f00adf54acab1c9ac14",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 27 {
-			hex::decode_to_slice(
-				"0113798410eaeb95056a464f70521eb58377c0155f2fe518a5594d38cc209cc0",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 28 {
-			hex::decode_to_slice(
-				"202d1ae61526f0d0d01ef80fb5d4055a7af45721024c2c24cffd6a3798f54d50",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 29 {
-			hex::decode_to_slice(
-				"23ab323453748129f2765f79615022f5bebd6f4096a796300aab049a60b0f187",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 30 {
-			hex::decode_to_slice(
-				"1f15585f8947e378bcf8bd918716799da909acdb944c57150b1eb4565fda8aa0",
-				&mut bytes as &mut [u8],
-			);
-		} else if i == 31 {
-			hex::decode_to_slice(
-				"1eb064b21055ac6a350cf41eb30e4ce2cb19680217df3a243617c2838185ad06",
-				&mut bytes as &mut [u8],
-			);
-		}
+		let hash_element = DefaultZeroRootHashes::<T, I>::get(i).unwrap_or_default();
+		let bytes_vec = hash_element.to_bytes().to_vec();
+		let hash_32_bytes_array = bytes_vec[0..32].try_into().unwrap();
 
-		Ok(bytes)
+		Ok(hash_32_bytes_array)
 	}
 }
 
