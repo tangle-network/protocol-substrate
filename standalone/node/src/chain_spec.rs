@@ -360,8 +360,7 @@ fn testnet_genesis(
 	));
 
 	let default_zero_root_hashes_map = default_zero_root_index
-		.iter()
-		.cloned()
+		.into_iter()
 		.zip(default_zero_root_hashes.into_iter())
 		.collect();
 	log::info!("Genesis Config");

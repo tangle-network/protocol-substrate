@@ -280,6 +280,12 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
 		fn build(&self) {
+			if let Some(default_zero_root_hashes) = &self.default_zero_root_hashes {
+				for (index, hash) in default_zero_root_hashes {
+					DefaultZeroRootHashes::<T, I>::insert(index, T::Element::from_bytes(hash));
+				}
+			}
+
 			if let Some(default_hashes) = &self.default_hashes {
 				DefaultHashes::<T, I>::put(default_hashes);
 				return
@@ -287,12 +293,6 @@ pub mod pallet {
 
 			let default_hashes = generate_default_hashes::<T, I>();
 			DefaultHashes::<T, I>::put(default_hashes);
-
-			if let Some(default_zero_root_hashes) = &self.default_zero_root_hashes {
-				for (index, hash) in default_zero_root_hashes {
-					DefaultZeroRootHashes::<T, I>::insert(index, T::Element::from_bytes(hash));
-				}
-			}
 		}
 	}
 
