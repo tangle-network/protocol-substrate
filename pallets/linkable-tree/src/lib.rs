@@ -248,7 +248,6 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		T::Tree::insert_in_order(id, leaf)
 	}
 
-	/// This returns the byte of zero root default hash
 	fn zero_root(i: u8) -> Result<[u8; 32], DispatchError> {
 		T::Tree::zero_root(i)
 	}

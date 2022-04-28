@@ -466,7 +466,6 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 		Ok(hash)
 	}
 
-	/// This returns the byte of zero root default hash
 	fn zero_root(i: u8) -> Result<[u8; 32], DispatchError> {
 		ensure!(i < 31, Error::<T, I>::ZeroRootIndexDoesntExist);
 		let hash_element = DefaultZeroRootHashes::<T, I>::get(i).unwrap_or_default();
