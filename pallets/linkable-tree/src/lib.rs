@@ -90,8 +90,6 @@ pub use weights::WeightInfo;
 
 pub use pallet::*;
 
-pub type DefaultMerkleRootIndexOf<T, I> = <T as pallet_mt::Config<I>>::DefaultMerkleRootIndex;
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
