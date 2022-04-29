@@ -134,14 +134,14 @@ parameter_types! {
 	pub const LeafDepositBase: u64 = 1;
 	pub const LeafDepositPerByte: u64 = 1;
 	pub const Two: u64 = 2;
-	pub const MaxTreeDepth: u8 = 255;
-	pub const RootHistorySize: u32 = 1096;
+	pub const MaxTreeDepth: u8 = 32;
+	pub const RootHistorySize: u32 = 100;
 	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
 	pub const DefaultZeroElement: Element = Element([
-		047, 229, 076, 096, 211, 172, 171, 243,
-		052, 058, 053, 182, 235, 161, 093, 180,
-		130, 027, 052, 015, 118, 231, 065, 226,
-		036, 150, 133, 237, 072, 153, 175, 108,
+		108, 175, 153, 072, 237, 133, 150, 036,
+		226, 065, 231, 118, 015, 052, 027, 130,
+		180, 093, 161, 235, 182, 053, 058, 052,
+		243, 171, 172, 211, 096, 076, 229, 047,
 	]);
 }
 

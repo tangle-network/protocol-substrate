@@ -114,7 +114,7 @@ parameter_types! {
 	pub const LeafDepositPerByte: u64 = 1;
 	pub const Two: u64 = 2;
 	pub const MaxTreeDepth: u8 = 30;
-	pub const RootHistorySize: u32 = 1096;
+	pub const RootHistorySize: u32 = 100;
 	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
 	pub const DefaultZeroElement: Element = Element([
 		108, 175, 153, 072, 237, 133, 150, 036,

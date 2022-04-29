@@ -1,17 +1,10 @@
 use crate::{mock_bridge::*, types::UpdateRecord, AnchorList, Counts, UpdateRecords};
-use arkworks_setups::{common::setup_params, Curve};
-use frame_support::{assert_ok, traits::OnInitialize};
+use frame_support::assert_ok;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 use pallet_linkable_tree::types::EdgeMetadata;
 use webb_primitives::utils::{
 	compute_chain_id_type, derive_resource_id, get_typed_chain_id_in_u64,
 };
-
-pub fn hasher_params() -> Vec<u8> {
-	let curve = Curve::Bn254;
-	let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-	params.to_bytes()
-}
 
 const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 100;
@@ -60,10 +53,6 @@ fn setup_relayers(src_id: ChainId) {
 }
 // helper function to create anchor using Anchor pallet call
 fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[u8; 32]) {
-	// init hasher pallet first.
-	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
-	// init zero hashes.
-	<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
@@ -170,11 +159,6 @@ fn anchor_create_proposal() {
 // `pallet-bridge`
 fn anchor_update_proposal_edge_add_success() {
 	new_test_ext().execute_with(|| {
-		// init hasher pallet first.
-		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
-		// init zero hashes.
-		<MerkleTree as OnInitialize<u64>>::on_initialize(1);
-		// Get chain and reosurce id data
 		let src_chain_id_u32 = 1u32;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1).into();
 		let src_chain_id = get_typed_chain_id_in_u64(src_chain_id_u32);
@@ -225,6 +209,7 @@ fn anchor_update_proposal_edge_add_success() {
 fn anchor_update_proposal_edge_update_success() {
 	new_test_ext().execute_with(|| {
 		let src_chain_id_u32 = 1u32;
+		let src_chain_id = src_chain_id_u32 as u64;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1u32).into();
 		let src_chain_id = get_typed_chain_id_in_u64(src_chain_id_u32);
 		let prop_id = 1;
