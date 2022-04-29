@@ -167,7 +167,7 @@ impl ElementTrait for Element {
 
 	fn from_bytes(input: &[u8]) -> Self {
 		let mut buf = [0u8; 32];
-		buf.iter_mut().rev().zip(input).for_each(|(a, b)| *a = *b);
+		buf.iter_mut().zip(input).for_each(|(a, b)| *a = *b);
 		Self(buf)
 	}
 }

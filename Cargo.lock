@@ -346,9 +346,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-native-gadgets"
-version = "0.5.3"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f89b1d1b013428e6e4d3da7e6c93121a22afd9e5b13740517ac3eb7afdc4c5e6"
+checksum = "094c12e098ab38468ddb50100a343662b6d643159de67bb29d2e8d092d10a3ce"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
@@ -366,16 +366,16 @@ dependencies = [
 
 [[package]]
 name = "arkworks-r1cs-circuits"
-version = "0.5.3"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21289269e5117dc930fd8f913a8bbe82f7151acd935455322aaeea0d0c25680a"
+checksum = "fe8f8b6631c33b1327efc923a57263653ff2d3645d3008cb7b1120fe39b73fd1"
 dependencies = [
  "ark-ff",
  "ark-r1cs-std",
  "ark-relations",
  "ark-std",
- "arkworks-native-gadgets 0.5.3",
- "arkworks-r1cs-gadgets 0.5.3",
+ "arkworks-native-gadgets 1.0.0",
+ "arkworks-r1cs-gadgets 1.0.0",
 ]
 
 [[package]]
@@ -392,16 +392,16 @@ dependencies = [
 
 [[package]]
 name = "arkworks-r1cs-gadgets"
-version = "0.5.3"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "33436eccb08bd5e857d67cd2901c9bc0f3d006309ed350e3f3d2649cd79e9647"
+checksum = "e3df17a1a5266b0a6ae4894f3d750c3b91f9f90155e6c80a489348f4bbdf69e3"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
  "ark-r1cs-std",
  "ark-relations",
  "ark-std",
- "arkworks-native-gadgets 0.5.3",
+ "arkworks-native-gadgets 1.0.0",
 ]
 
 [[package]]
@@ -418,9 +418,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-setups"
-version = "0.5.3"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77d1f81648d900fec22bd2d8e1a5727895d00f3961882853b0a005e9307f0df3"
+checksum = "02b47ec0b488a100f032f9e676852b32869a8c8a34352854984f2c55bbad3ba8"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ec",
@@ -430,10 +430,10 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 0.5.3",
- "arkworks-r1cs-circuits 0.5.3",
- "arkworks-r1cs-gadgets 0.5.3",
- "arkworks-utils 0.5.3",
+ "arkworks-native-gadgets 1.0.0",
+ "arkworks-r1cs-circuits 1.0.0",
+ "arkworks-r1cs-gadgets 1.0.0",
+ "arkworks-utils 1.0.0",
  "parity-scale-codec 2.3.1",
  "tiny-keccak",
 ]
@@ -460,9 +460,9 @@ dependencies = [
 
 [[package]]
 name = "arkworks-utils"
-version = "0.5.3"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c09e682dc152e3d444c01da4fbbd61b8ccf9493091546193656fae93d2c3968"
+checksum = "5362ed351c04a1e906c655100a649963aefd9e4f3dc02ef1097d9ec49376c2ec"
 dependencies = [
  "ark-ff",
  "ark-std",
@@ -4986,6 +4986,8 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex",
+ "hex-literal 0.2.2",
  "pallet-balances",
  "parity-scale-codec 2.3.1",
  "scale-info 1.0.0",
@@ -10525,9 +10527,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-utils"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6d50a0a311ce77fbd7ee780d3fbee3d6fb3c446e47250624c55d24955f25097"
+version = "0.1.4"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -10536,8 +10536,8 @@ dependencies = [
  "ark-ff",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 0.5.3",
- "arkworks-setups 0.5.3",
+ "arkworks-native-gadgets 1.0.0",
+ "arkworks-setups 1.0.0",
  "console_error_panic_hook",
  "getrandom 0.2.5",
  "hex",
@@ -10545,7 +10545,6 @@ dependencies = [
  "rand 0.8.5",
  "wasm-bindgen",
  "web-sys",
- "webb-pedersen-hash",
 ]
 
 [[package]]
@@ -10767,18 +10766,6 @@ dependencies = [
  "tokio",
  "wasm-utils",
  "webb-primitives",
-]
-
-[[package]]
-name = "webb-pedersen-hash"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e20bb5d3cf671d5ee15f7590197a9778c01da5a54db8aef00e4584fc3585ef3e"
-dependencies = [
- "ark-crypto-primitives",
- "ark-ed-on-bn254",
- "ark-ff",
- "rand_chacha 0.3.1",
 ]
 
 [[package]]

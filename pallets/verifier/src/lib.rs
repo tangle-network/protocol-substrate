@@ -163,9 +163,7 @@ impl<T: Config<I>, I: 'static> VerifierModule for Pallet<T, I> {
 		match T::Verifier::verify(public_inp_bytes, proof, &params) {
 			Ok(verified) => Ok(verified),
 			Err(e) => {
-				log::info!("{:?}", e);
-				// println!("{:?}", e);
-				// TODO: Handle properly
+				log::error!("{:?}", e);
 				ensure!(false, Error::<T, I>::VerifyError);
 				Ok(false)
 			},

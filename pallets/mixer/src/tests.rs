@@ -269,7 +269,7 @@ fn mixer_should_fail_with_when_proof_when_any_byte_is_changed_in_proof() {
 				fee_value.into(),
 				refund_value.into(),
 			),
-			crate::Error::<Test>::InvalidWithdrawProof
+			pallet_verifier::Error::<Test, _>::VerifyError,
 		);
 	});
 }
