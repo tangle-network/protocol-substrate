@@ -1,8 +1,13 @@
 #![allow(clippy::zero_prefixed_literal)]
 
 use crate as pallet_anchor_handler;
+use arkworks_setups::common::setup_params;
 use codec::{Decode, Encode};
-use frame_support::{assert_ok, ord_parameter_types, parameter_types, traits::Nothing, PalletId};
+use frame_support::{
+	assert_ok, ord_parameter_types, parameter_types,
+	traits::{GenesisBuild, Nothing},
+	PalletId,
+};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
 pub use pallet_balances;
@@ -13,7 +18,7 @@ use sp_runtime::{
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 };
 pub use webb_primitives::{hashing::ethereum::Keccak256HasherBn254, ElementTrait, InstanceHasher};
-use webb_primitives::{verifying::ArkworksVerifierBn254, ResourceId};
+use webb_primitives::{verifying::ArkworksVerifierBn254, Curve, ResourceId};
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -294,10 +299,18 @@ pub const RELAYER_C: u64 = 0x4;
 pub const ENDOWED_BALANCE: u128 = 100_000_000;
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
+	let bn254_x5_3_params = setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+
 	let bridge_id = PalletId(*b"dw/bridg").into_account();
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	pallet_balances::GenesisConfig::<Test> {
 		balances: vec![(bridge_id, ENDOWED_BALANCE), (RELAYER_A, ENDOWED_BALANCE)],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+	pallet_hasher::GenesisConfig::<Test> {
+		parameters: Some(bn254_x5_3_params.to_bytes()),
+		phantom: Default::default(),
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
