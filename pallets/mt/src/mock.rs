@@ -5,7 +5,10 @@ use crate as pallet_mt;
 use sp_core::H256;
 
 use arkworks_setups::{common::setup_params, Curve};
-use frame_support::{parameter_types, traits::GenesisBuild};
+use frame_support::{
+	parameter_types,
+	traits::{ConstU8, GenesisBuild},
+};
 use frame_system as system;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
@@ -159,6 +162,7 @@ impl Config for Test {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type DefaultMerkleRootIndex = ConstU8<30>;
 	type WeightInfo = ();
 }
 

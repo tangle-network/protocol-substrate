@@ -374,21 +374,14 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		refund: BalanceOf<T, I>,
 		commitment: T::Element,
 	) -> Result<(), DispatchError> {
-		// double check the number of roots
-		T::LinkableTree::ensure_max_edges(id, roots.len())?;
 		// Check if local root is known
 		T::LinkableTree::ensure_known_root(id, roots[0])?;
 		// Check if neighbor roots are known
-		T::LinkableTree::ensure_known_neighbor_roots(id, &roots[1..].to_vec())?;
-
+		T::LinkableTree::ensure_known_neighbor_roots(id, &roots[1..])?;
 		// Check nullifier and add or return `InvalidNullifier`
 		Self::ensure_nullifier_unused(id, nullifier_hash)?;
 		Self::add_nullifier_hash(id, nullifier_hash)?;
 		// Format proof public inputs for verification
-		// FIXME: This is for a specfic gadget so we ought to create a generic handler
-		// FIXME: Such as a unpack/pack public inputs trait
-		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
-		//
 		// nullifier_hash (0..32)
 		// recipient (32..64)
 		// relayer (64..96)

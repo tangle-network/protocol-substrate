@@ -7,7 +7,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchResult,
 	ord_parameter_types, parameter_types,
-	traits::{Everything, Nothing, SortedMembers},
+	traits::{ConstU8, Everything, Nothing, SortedMembers},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 	Deserialize, PalletId, Serialize,
 };
@@ -423,6 +423,7 @@ impl pallet_mt::Config for Runtime {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type DefaultMerkleRootIndex = ConstU8<30>;
 	type WeightInfo = ();
 }
 

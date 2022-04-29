@@ -349,12 +349,10 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		proof_data: ProofData<T::Element>,
 		ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, T::Element>,
 	) -> Result<(), DispatchError> {
-		// double check the number of roots
-		T::LinkableTree::ensure_max_edges(id, proof_data.roots.len())?;
 		// Check if local root is known
 		T::LinkableTree::ensure_known_root(id, proof_data.roots[0])?;
 		// Check if neighbor roots are known
-		T::LinkableTree::ensure_known_neighbor_roots(id, &proof_data.roots)?;
+		T::LinkableTree::ensure_known_neighbor_roots(id, &proof_data.roots[1..])?;
 
 		// Check nullifier and add or return `InvalidNullifier`
 		for nullifier in &proof_data.input_nullifiers {

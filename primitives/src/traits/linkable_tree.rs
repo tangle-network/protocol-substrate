@@ -10,6 +10,9 @@ pub trait LinkableTreeConfig {
 	type Element;
 }
 
+use codec::{Decode, Encode};
+use scale_info::TypeInfo;
+
 /// LinkableTree trait definition to be used in other pallets
 pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 	// Creates a new linkable tree
@@ -23,6 +26,9 @@ pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 		id: C::TreeId,
 		leaf: C::Element,
 	) -> Result<C::Element, dispatch::DispatchError>;
+
+	/// This returns the byte of zero root default hash
+	fn zero_root(i: u8) -> Result<[u8; 32], dispatch::DispatchError>;
 	/// Add an edge to this tree
 	fn add_edge(
 		id: C::TreeId,
@@ -66,8 +72,9 @@ pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 	#[allow(clippy::ptr_arg)]
 	fn ensure_known_neighbor_roots(
 		id: C::TreeId,
-		roots: &Vec<C::Element>,
+		roots: &[C::Element],
 	) -> Result<(), dispatch::DispatchError>;
+
 	/// Checks if a merkle root is in a tree's cached history or returns
 	/// `InvalidNeighborWithdrawRoot`
 	fn ensure_known_neighbor_root(

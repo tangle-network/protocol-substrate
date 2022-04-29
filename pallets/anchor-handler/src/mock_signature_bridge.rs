@@ -2,7 +2,11 @@
 
 use crate as pallet_anchor_handler;
 use codec::{Decode, Encode};
-use frame_support::{assert_ok, ord_parameter_types, parameter_types, traits::Nothing, PalletId};
+use frame_support::{
+	assert_ok, ord_parameter_types, parameter_types,
+	traits::{ConstU8, Nothing},
+	PalletId,
+};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
 pub use pallet_balances;
@@ -189,6 +193,7 @@ impl pallet_mt::Config for Test {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type DefaultMerkleRootIndex = ConstU8<30>;
 	type WeightInfo = ();
 }
 

@@ -143,6 +143,9 @@ pub mod pallet {
 
 		/// WeightInfo for pallet
 		type WeightInfo: WeightInfo;
+
+		/// The index for the default merkle root
+		type DefaultMerkleRootIndex: Get<u8>;
 	}
 
 	#[pallet::storage]
@@ -212,6 +215,12 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
+	/// A map of default zero root hash index to default zero root hashes
+	#[pallet::storage]
+	#[pallet::getter(fn default_zero_root_hashes)]
+	pub type DefaultZeroRootHashes<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, u8, T::Element>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
@@ -235,6 +244,8 @@ pub mod pallet {
 		TreeDoesntExist,
 		/// Invalid length for default hashes
 		ExceedsMaxDefaultHashes,
+		/// Tree doesnt exist
+		ZeroRootIndexDoesntExist,
 	}
 
 	#[pallet::hooks]
@@ -252,18 +263,29 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
 		pub phantom: PhantomData<T>,
 		pub default_hashes: Option<Vec<T::Element>>,
+		pub default_zero_root_hashes: Option<Vec<(u8, [u8; 32])>>,
 	}
 
 	#[cfg(feature = "std")]
 	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
 		fn default() -> Self {
-			Self { phantom: Default::default(), default_hashes: None }
+			Self {
+				phantom: Default::default(),
+				default_hashes: None,
+				default_zero_root_hashes: None,
+			}
 		}
 	}
 
 	#[pallet::genesis_build]
 	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
 		fn build(&self) {
+			if let Some(default_zero_root_hashes) = &self.default_zero_root_hashes {
+				for (index, hash) in default_zero_root_hashes {
+					DefaultZeroRootHashes::<T, I>::insert(index, T::Element::from_bytes(hash));
+				}
+			}
+
 			if let Some(default_hashes) = &self.default_hashes {
 				DefaultHashes::<T, I>::put(default_hashes);
 				return
@@ -385,8 +407,9 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 			let temp_hashes = generate_default_hashes::<T, I>();
 			DefaultHashes::<T, I>::put(temp_hashes);
 		}
+		let default_hashes = DefaultZeroRootHashes::<T,I>::iter_values().collect::<Vec<_>>();
 		let default_edge_nodes: Vec<T::Element> =
-			Self::default_hashes().into_iter().take(num_of_zero_nodes as _).collect();
+			default_hashes.into_iter().take(num_of_zero_nodes as _).collect();
 		// Setting up the tree
 		let tree_metadata = TreeMetadata {
 			creator,
@@ -404,7 +427,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 
 	fn insert_in_order(id: T::TreeId, leaf: T::Element) -> Result<T::Element, DispatchError> {
 		let tree = Self::get_tree(id)?;
-		let default_hashes = DefaultHashes::<T, I>::get();
+		let default_hashes = DefaultZeroRootHashes::<T,I>::iter_values().collect::<Vec<_>>();
 		let mut edge_index = tree.leaf_count;
 		let mut hash = leaf;
 		let mut edge_nodes = tree.edge_nodes.clone();
@@ -446,6 +469,18 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 
 		// return the root
 		Ok(hash)
+	}
+
+	fn zero_root(i: u8) -> Result<[u8; 32], DispatchError> {
+		ensure!(
+			i < DefaultZeroRootHashes::<T, I>::iter().count() as u8,
+			Error::<T, I>::ZeroRootIndexDoesntExist
+		);
+		let hash_element = DefaultZeroRootHashes::<T, I>::get(i).unwrap_or_default();
+		let bytes_vec = hash_element.to_bytes().to_vec();
+		let hash_32_bytes_array = bytes_vec[0..32].try_into().unwrap();
+
+		Ok(hash_32_bytes_array)
 	}
 }
 

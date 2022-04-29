@@ -1,5 +1,5 @@
 use crate::{mock_bridge::*, types::UpdateRecord, AnchorList, Counts, UpdateRecords};
-use frame_support::assert_ok;
+use frame_support::{assert_ok, traits::OnInitialize};
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 use pallet_linkable_tree::types::EdgeMetadata;
 use webb_primitives::utils::{
@@ -103,6 +103,9 @@ fn relay_anchor_update_proposal(
 // `pallet-bridge`
 fn anchor_create_proposal() {
 	new_test_ext().execute_with(|| {
+		let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+
 		let src_chain_id_u32 = 1u32;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1u32).into();
 		let src_chain_id = get_typed_chain_id_in_u64(src_chain_id_u32);
@@ -159,6 +162,9 @@ fn anchor_create_proposal() {
 // `pallet-bridge`
 fn anchor_update_proposal_edge_add_success() {
 	new_test_ext().execute_with(|| {
+		let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+
 		let src_chain_id_u32 = 1u32;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1).into();
 		let src_chain_id = get_typed_chain_id_in_u64(src_chain_id_u32);
@@ -208,8 +214,10 @@ fn anchor_update_proposal_edge_add_success() {
 // `pallet-anchor-handler` proposal through `pallet-bridge`
 fn anchor_update_proposal_edge_update_success() {
 	new_test_ext().execute_with(|| {
+		let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+
 		let src_chain_id_u32 = 1u32;
-		let src_chain_id = src_chain_id_u32 as u64;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1u32).into();
 		let src_chain_id = get_typed_chain_id_in_u64(src_chain_id_u32);
 		let prop_id = 1;

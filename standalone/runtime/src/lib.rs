@@ -12,7 +12,7 @@ use constants::{currency::*, time::*};
 pub mod impls;
 mod voter_bags;
 mod weights;
-use frame_support::traits::EnsureOneOf;
+use frame_support::traits::{ConstU8, EnsureOneOf};
 use impls::Author;
 use sp_api::impl_runtime_apis;
 use sp_core::{
@@ -1097,6 +1097,7 @@ impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type DefaultMerkleRootIndex = ConstU8<30>;
 	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
 }
 

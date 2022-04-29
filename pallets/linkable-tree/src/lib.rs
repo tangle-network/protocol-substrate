@@ -34,7 +34,7 @@
 //! ### Terminology
 //!
 //! * **EdgeList**: A map of trees and chain ids to their edge metadata.
-//!  
+//!
 //! ### Goals
 //!
 //! The Linkable-tree in Webb is designed to make the following possible:
@@ -246,6 +246,10 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		T::Tree::insert_in_order(id, leaf)
 	}
 
+	fn zero_root(i: u8) -> Result<[u8; 32], DispatchError> {
+		T::Tree::zero_root(i)
+	}
+
 	fn add_edge(
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
@@ -342,6 +346,13 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 			return Ok(false)
 		}
 
+		if target_root ==
+			T::Element::from_vec(
+				Self::zero_root(T::DefaultMerkleRootIndex::get()).unwrap().encode(),
+			) {
+			return Ok(true)
+		}
+
 		let get_next_inx = |inx: T::RootIndex| {
 			if inx.is_zero() {
 				T::HistoryLength::get().saturating_sub(One::one())
@@ -381,21 +392,17 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		EdgeList::<T, I>::contains_key(id, src_chain_id)
 	}
 
-	fn ensure_max_edges(id: T::TreeId, num_roots: usize) -> Result<(), DispatchError> {
+	fn ensure_max_edges(id: T::TreeId, neighbor_root_length: usize) -> Result<(), DispatchError> {
 		let m = MaxEdges::<T, I>::get(id) as usize;
-		ensure!(num_roots == m, Error::<T, I>::InvalidMerkleRoots);
+		ensure!(neighbor_root_length == m, Error::<T, I>::InvalidMerkleRoots);
 		Ok(())
 	}
 
 	fn ensure_known_neighbor_roots(
 		id: T::TreeId,
-		neighbor_roots: &Vec<T::Element>,
+		neighbor_roots: &[T::Element],
 	) -> Result<(), DispatchError> {
-		let max_edges = MaxEdges::<T, I>::get(id);
-		ensure!(
-			neighbor_roots.len() as u32 <= max_edges,
-			Error::<T, I>::InvalidNeighborWithdrawRoot
-		);
+		Self::ensure_max_edges(id, neighbor_roots.len())?;
 
 		let edges = EdgeList::<T, I>::iter_prefix(id).into_iter().collect::<Vec<_>>();
 		for (i, (chain_id, _)) in edges.iter().enumerate() {

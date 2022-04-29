@@ -5,7 +5,7 @@ use crate::{
 };
 
 use codec::{Decode, Encode, EncodeLike};
-use frame_support::{assert_err, assert_ok};
+use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use hex_literal::hex;
 use pallet_linkable_tree::types::EdgeMetadata;
 use sp_core::{
@@ -93,6 +93,11 @@ fn should_create_anchor_with_sig_succeed() {
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
+			let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+
+			let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+
 			let deposit_size = 100;
 			let anchor_create_call = make_anchor_create_proposal(deposit_size, src_id, &r_id);
 			let anchor_create_call_encoded = anchor_create_call.encode();
@@ -153,6 +158,11 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec())
 		.execute_with(|| {
+			let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+
+			let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+
 			let prop_id = 1;
 			mock_anchor_creation_using_pallet_call(src_id, &r_id);
 
@@ -231,6 +241,11 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec())
 		.execute_with(|| {
+			let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+
+			let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+
 			mock_anchor_creation_using_pallet_call(src_id, &r_id);
 
 			let root = Element::from_bytes(&[1; 32]);
@@ -383,7 +398,6 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 #[test]
 fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
-	let chain_type = [2, 0];
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
@@ -400,6 +414,9 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
+			let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+
 			let deposit_size = 100;
 			let anchor_create_call = make_anchor_create_proposal(deposit_size, src_id, &r_id);
 			let anchor_create_call_encoded = anchor_create_call.encode();
@@ -445,6 +462,11 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
+			let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+
+			let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+
 			let deposit_size = 100;
 			let non_existent_r_id = derive_resource_id(this_chain_id_u32, 1).into();
 			let anchor_create_call =
@@ -493,6 +515,11 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
+			let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+
+			let params3 = arkworks_setups::common::setup_params::<ark_bn254::Fr>(arkworks_setups::Curve::Bn254, 5, 3);
+			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+
 			let deposit_size = 100;
 			let anchor_create_call = make_anchor_create_proposal(deposit_size, src_id, &r_id);
 			let anchor_create_call_encoded = anchor_create_call.encode();

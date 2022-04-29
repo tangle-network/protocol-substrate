@@ -2,7 +2,11 @@
 
 use crate as pallet_anchor_handler;
 use codec::{Decode, Encode};
-use frame_support::{ord_parameter_types, parameter_types, traits::Nothing, PalletId};
+use frame_support::{
+	ord_parameter_types, parameter_types,
+	traits::{ConstU8, Nothing, GenesisBuild},
+	PalletId,
+};
 use frame_system as system;
 use orml_currencies::BasicCurrencyAdapter;
 pub use pallet_balances;
@@ -12,6 +16,7 @@ use sp_runtime::{
 	testing::Header,
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 };
+use arkworks_setups::{common::setup_params, Curve};
 use webb_primitives::verifying::ArkworksVerifierBn254;
 pub use webb_primitives::{hashing::ethereum::Keccak256HasherBn254, ElementTrait, InstanceHasher};
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -189,6 +194,7 @@ impl pallet_mt::Config for Test {
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
+	type DefaultMerkleRootIndex = ConstU8<30>;
 	type WeightInfo = ();
 }
 
