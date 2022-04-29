@@ -416,7 +416,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 			// get the max_edges
 			let max_edges = Self::max_edges(id).try_into().unwrap();
 
-			if edges.len() <= max_edges {
+			if edges.len() < max_edges {
 				for _ in 0..(max_edges - edges.len()) {
 					// create a default 0 edge
 					// the hash of zero with itself, over and over, ..  30 times

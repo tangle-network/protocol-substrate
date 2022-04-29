@@ -467,7 +467,10 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 	}
 
 	fn zero_root(i: u8) -> Result<[u8; 32], DispatchError> {
-		ensure!(i < 31, Error::<T, I>::ZeroRootIndexDoesntExist);
+		ensure!(
+			i < DefaultZeroRootHashes::<T, I>::iter().count() as u8,
+			Error::<T, I>::ZeroRootIndexDoesntExist
+		);
 		let hash_element = DefaultZeroRootHashes::<T, I>::get(i).unwrap_or_default();
 		let bytes_vec = hash_element.to_bytes().to_vec();
 		let hash_32_bytes_array = bytes_vec[0..32].try_into().unwrap();
