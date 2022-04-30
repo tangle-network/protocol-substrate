@@ -347,33 +347,12 @@ dependencies = [
 [[package]]
 name = "arkworks-native-gadgets"
 version = "1.0.0"
-dependencies = [
- "ark-crypto-primitives",
- "ark-ff",
- "ark-std",
-]
-
-[[package]]
-name = "arkworks-native-gadgets"
-version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "094c12e098ab38468ddb50100a343662b6d643159de67bb29d2e8d092d10a3ce"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
  "ark-std",
-]
-
-[[package]]
-name = "arkworks-r1cs-circuits"
-version = "1.0.0"
-dependencies = [
- "ark-ff",
- "ark-r1cs-std",
- "ark-relations",
- "ark-std",
- "arkworks-native-gadgets 1.0.0",
- "arkworks-r1cs-gadgets 1.0.0",
 ]
 
 [[package]]
@@ -386,20 +365,8 @@ dependencies = [
  "ark-r1cs-std",
  "ark-relations",
  "ark-std",
- "arkworks-native-gadgets 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "arkworks-r1cs-gadgets 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "arkworks-r1cs-gadgets"
-version = "1.0.0"
-dependencies = [
- "ark-crypto-primitives",
- "ark-ff",
- "ark-r1cs-std",
- "ark-relations",
- "ark-std",
- "arkworks-native-gadgets 1.0.0",
+ "arkworks-native-gadgets",
+ "arkworks-r1cs-gadgets",
 ]
 
 [[package]]
@@ -413,27 +380,7 @@ dependencies = [
  "ark-r1cs-std",
  "ark-relations",
  "ark-std",
- "arkworks-native-gadgets 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "arkworks-setups"
-version = "1.0.0"
-dependencies = [
- "ark-crypto-primitives",
- "ark-ec",
- "ark-ff",
- "ark-groth16",
- "ark-r1cs-std",
- "ark-relations",
- "ark-serialize",
- "ark-std",
- "arkworks-native-gadgets 1.0.0",
- "arkworks-r1cs-circuits 1.0.0",
- "arkworks-r1cs-gadgets 1.0.0",
- "arkworks-utils 1.0.0",
- "parity-scale-codec 2.3.1",
- "tiny-keccak",
+ "arkworks-native-gadgets",
 ]
 
 [[package]]
@@ -450,21 +397,12 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "arkworks-r1cs-circuits 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "arkworks-r1cs-gadgets 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "arkworks-utils 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "arkworks-native-gadgets",
+ "arkworks-r1cs-circuits",
+ "arkworks-r1cs-gadgets",
+ "arkworks-utils",
  "parity-scale-codec 2.3.1",
  "tiny-keccak",
-]
-
-[[package]]
-name = "arkworks-utils"
-version = "1.0.0"
-dependencies = [
- "ark-ff",
- "ark-std",
- "hex",
 ]
 
 [[package]]
@@ -4575,8 +4513,8 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 1.0.0",
- "arkworks-setups 1.0.0",
+ "arkworks-native-gadgets",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -4611,7 +4549,7 @@ version = "1.0.0"
 dependencies = [
  "ark-bn254",
  "ark-crypto-primitives",
- "arkworks-setups 1.0.0",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -4982,7 +4920,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-setups 1.0.0",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5045,7 +4983,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-setups 1.0.0",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5080,7 +5018,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-setups 1.0.0",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5148,7 +5086,7 @@ dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
  "ark-std",
- "arkworks-setups 1.0.0",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5555,8 +5493,8 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 1.0.0",
- "arkworks-setups 1.0.0",
+ "arkworks-native-gadgets",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5630,8 +5568,8 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 1.0.0",
- "arkworks-setups 1.0.0",
+ "arkworks-native-gadgets",
+ "arkworks-setups",
  "cumulus-pallet-xcm",
  "cumulus-primitives-core",
  "frame-benchmarking",
@@ -10538,8 +10476,8 @@ dependencies = [
  "ark-ff",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "arkworks-setups 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "arkworks-native-gadgets",
+ "arkworks-setups",
  "console_error_panic_hook",
  "getrandom 0.2.5",
  "hex",
@@ -10755,8 +10693,8 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 1.0.0",
- "arkworks-setups 1.0.0",
+ "arkworks-native-gadgets",
+ "arkworks-setups",
  "async-std",
  "hex",
  "parity-scale-codec 2.3.1",
@@ -10784,7 +10722,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 1.0.0",
+ "arkworks-native-gadgets",
  "blake2",
  "digest 0.9.0",
  "ethabi",
@@ -10819,7 +10757,7 @@ dependencies = [
  "ark-bn254",
  "ark-serialize",
  "ark-std",
- "arkworks-setups 1.0.0",
+ "arkworks-setups",
  "async-trait",
  "clap",
  "common",

@@ -51,10 +51,10 @@ ark-serialize = { version = "^0.3.0", default-features = false, features = [ "de
 ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-# arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
-arkworks-setups = { path = "../../../arkworks-gadgets/arkworks-setups", default-features = false, features = ["r1cs"] }
-# arkworks-native-gadgets = { version = "1.0.0", default-features = false }
-arkworks-native-gadgets = { path = "../../../arkworks-gadgets/arkworks-native-gadgets", default-features = false }
+arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
+
+arkworks-native-gadgets = { version = "1.0.0", default-features = false }
+
 
 webb-primitives = { path = "../../primitives" }
 

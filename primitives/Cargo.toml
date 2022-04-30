@@ -30,8 +30,7 @@ blake2 = { version = "0.9", default-features = false }
 digest = { version = "0.9", default-features = false }
 
 ark-crypto-primitives = { version = "^0.3.0", default-features = false }
-# arkworks-native-gadgets = { version = "1.0.0", default-features = false, optional = true }
-arkworks-native-gadgets = { path = "../../arkworks-gadgets/arkworks-native-gadgets", default-features = false, optional = true }
+arkworks-native-gadgets = { version = "1.0.0", default-features = false, optional = true }
 
 codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "2.2.0" }
 
