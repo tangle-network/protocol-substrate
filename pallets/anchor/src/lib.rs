@@ -240,7 +240,6 @@ pub mod pallet {
 			depth: u8,
 			asset: CurrencyIdOf<T, I>,
 		) -> DispatchResultWithPostInfo {
-			// Should it only be the root who can create anchors?
 			ensure_root(origin)?;
 			let tree_id =
 				<Self as AnchorInterface<_>>::create(None, deposit_size, depth, max_edges, asset)?;

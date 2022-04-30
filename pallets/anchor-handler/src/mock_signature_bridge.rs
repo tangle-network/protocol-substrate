@@ -115,17 +115,10 @@ impl pallet_verifier::Config for Test {
 	type WeightInfo = ();
 }
 
-pub struct TestHasher;
-impl InstanceHasher for TestHasher {
-	fn hash(data: &[u8], _params: &[u8]) -> Result<Vec<u8>, ark_crypto_primitives::Error> {
-		Ok(data.to_vec())
-	}
-}
-
 impl pallet_hasher::Config for Test {
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = TestHasher;
+	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
 }
 

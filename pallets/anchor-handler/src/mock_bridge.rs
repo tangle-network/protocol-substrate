@@ -115,17 +115,10 @@ impl pallet_verifier::Config for Test {
 	type WeightInfo = ();
 }
 
-pub struct TestHasher;
-impl InstanceHasher for TestHasher {
-	fn hash(data: &[u8], _params: &[u8]) -> Result<Vec<u8>, ark_crypto_primitives::Error> {
-		Ok(data.to_vec())
-	}
-}
-
 impl pallet_hasher::Config for Test {
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = TestHasher;
+	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
 }
 
@@ -134,8 +127,8 @@ parameter_types! {
 	pub const LeafDepositBase: u64 = 1;
 	pub const LeafDepositPerByte: u64 = 1;
 	pub const Two: u64 = 2;
-	pub const MaxTreeDepth: u8 = 255;
-	pub const RootHistorySize: u32 = 1096;
+	pub const MaxTreeDepth: u8 = 32;
+	pub const RootHistorySize: u32 = 100;
 	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
 	pub const DefaultZeroElement: Element = Element([
 		108, 175, 153, 072, 237, 133, 150, 036,

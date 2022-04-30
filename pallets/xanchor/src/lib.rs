@@ -572,9 +572,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id.into());
 		// use the typed_chain_id which is in u64
 		let typed_chain_id = utils::get_typed_chain_id(chain_id);
-		println!("register_new_resource_id");
-		println!("tree_id: {:?}", tree_id);
-		println!("chain_id: {:?}", typed_chain_id);
 		// and we need to also ensure that the anchor exists
 		ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
 		// and not already anchored/linked
@@ -706,7 +703,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				.encode()
 				.into(),
 			};
-			println!("{:?}", update_edge);
 			let dest = (Parent, Parachain(other_para_id.into()));
 			let result = T::XcmSender::send_xcm(dest, Xcm(vec![update_edge]));
 			match result {

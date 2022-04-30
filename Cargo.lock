@@ -5038,12 +5038,14 @@ dependencies = [
 name = "pallet-linkable-tree"
 version = "1.0.0"
 dependencies = [
+ "ark-bn254",
  "ark-crypto-primitives",
  "ark-ec",
  "ark-ff",
  "ark-relations",
  "ark-serialize",
  "ark-std",
+ "arkworks-setups 1.0.0",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

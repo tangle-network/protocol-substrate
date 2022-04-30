@@ -1,7 +1,7 @@
-use webb_primitives::{AccountId, ElementTrait};
-
+use arkworks_setups::{common::setup_params, Curve};
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, error::BadOrigin};
+use webb_primitives::{AccountId, ElementTrait};
 
 use super::*;
 use crate::mock::*;
@@ -13,12 +13,22 @@ const M: usize = 2;
 #[test]
 fn should_create_new_linkable_tree() {
 	new_test_ext().execute_with(|| {
+		let curve = Curve::Bn254;
+		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+		let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		assert_ok!(LinkableTree::create(Origin::root(), max_edges, depth));
 		let id = MerkleTree::next_tree_id() - 1;
 		let root = <LinkableTree as LinkableTreeInspector<_>>::get_root(id);
-		assert_eq!(root.unwrap(), Element::from_bytes(&[0; 32]));
+		assert_eq!(
+			root.unwrap(),
+			Element::from_bytes(&[
+				135, 241, 176, 96, 154, 4, 171, 10, 48, 150, 167, 150, 64, 111, 189, 190, 245, 34,
+				80, 97, 121, 95, 118, 242, 41, 129, 116, 83, 52, 50, 171, 35
+			])
+		);
 	});
 }
 
@@ -43,6 +53,10 @@ fn should_be_able_to_add_neighbors_and_check_history() {
 	use rand::prelude::*;
 
 	new_test_ext().execute_with(|| {
+		let curve = Curve::Bn254;
+		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+		let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		assert_ok!(LinkableTree::create(Origin::root(), max_edges, depth));
