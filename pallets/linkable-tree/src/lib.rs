@@ -339,8 +339,8 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		target_root: T::Element,
 	) -> Result<bool, DispatchError> {
 		// If the src chain is default (empty edge) ensure that the provided target is the default
-		// root. This is to allow useres to prove against partial edge lists that aren't at capacity,
-		// but prevent them from providing their own fake edges / roots.
+		// root. This is to allow useres to prove against partial edge lists that aren't at
+		// capacity, but prevent them from providing their own fake edges / roots.
 		if src_chain_id == T::ChainId::default() {
 			return Ok(target_root == T::Tree::get_default_root(tree_id)?)
 		}
