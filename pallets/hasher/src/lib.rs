@@ -45,14 +45,9 @@ pub mod mock;
 mod tests;
 pub mod weights;
 
-use frame_support::{
-	pallet_prelude::{ensure, DispatchError},
-	traits::{Currency, ReservableCurrency},
-};
-use frame_system::Config as SystemConfig;
-use sp_runtime::traits::{Saturating, Zero};
+use frame_support::pallet_prelude::{ensure, DispatchError};
 use sp_std::{prelude::*, vec};
-use webb_primitives::{hasher::*, types::DepositDetails};
+use webb_primitives::hasher::*;
 
 pub use pallet::*;
 pub use weights::WeightInfo;
@@ -150,7 +145,6 @@ impl<T: Config<I>, I: 'static> HasherModule for Pallet<T, I> {
 		match T::Hasher::hash(data, &params) {
 			Ok(hash) => Ok(hash),
 			Err(_e) => {
-				// TODO: Handle properly
 				ensure!(false, Error::<T, I>::HashError);
 				Ok(vec![])
 			},

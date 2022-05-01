@@ -22,7 +22,10 @@ type RootsElement = Vec<Element>;
 type NullifierHashElement = Element;
 type LeafElement = Element;
 
-pub const DEFAULT_LEAF: [u8; 32] = [0u8; 32];
+pub const DEFAULT_LEAF: [u8; 32] = [
+	108, 175, 153, 072, 237, 133, 150, 036, 226, 065, 231, 118, 015, 052, 027, 130, 180, 093, 161,
+	235, 182, 053, 058, 052, 243, 171, 172, 211, 096, 076, 229, 047,
+];
 // merkle proof path legth
 // TreeConfig_x5, x7 HEIGHT is hardcoded to 30
 pub const TREE_DEPTH: usize = 30;

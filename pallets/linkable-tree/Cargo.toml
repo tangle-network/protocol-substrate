@@ -43,6 +43,10 @@ ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ]}
 ark-std = { version = "^0.3.0", default-features = false }
 
+ark-bn254 = {version = "^0.3.0", default-features = false, features = ["curve"]}
+arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
+
+
 [features]
 default = ["std"]
 std = [

@@ -20,7 +20,7 @@ pub fn compute_chain_id_type<ChainId>(chain_id: ChainId, chain_type: [u8; 2]) ->
 where
 	ChainId: AtLeast32Bit,
 {
-	let mut chain_id_value: u32 = chain_id.try_into().unwrap_or_default();
+	let chain_id_value: u32 = chain_id.try_into().unwrap_or_default();
 	let mut buf = [0u8; 8];
 	buf[2..4].copy_from_slice(&chain_type);
 	buf[4..8].copy_from_slice(&chain_id_value.to_be_bytes());

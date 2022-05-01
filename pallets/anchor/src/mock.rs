@@ -131,8 +131,8 @@ parameter_types! {
 	pub const LeafDepositBase: u64 = 1;
 	pub const LeafDepositPerByte: u64 = 1;
 	pub const Two: u64 = 2;
-	pub const MaxTreeDepth: u8 = 30;
-	pub const RootHistorySize: u32 = 1096;
+	pub const MaxTreeDepth: u8 = 32;
+	pub const RootHistorySize: u32 = 100;
 	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
 	pub const DefaultZeroElement: Element = Element([
 		108, 175, 153, 072, 237, 133, 150, 036,
@@ -140,7 +140,6 @@ parameter_types! {
 		180, 093, 161, 235, 182, 053, 058, 052,
 		243, 171, 172, 211, 096, 076, 229, 047,
 	]);
-	pub const MockZeroElement: Element = Element([0; 32]);
 }
 
 #[derive(
@@ -165,13 +164,7 @@ impl ElementTrait for Element {
 
 	fn from_bytes(input: &[u8]) -> Self {
 		let mut buf = [0u8; 32];
-		let input_length = input.len();
-		if input_length > 32 {
-			buf.copy_from_slice(input);
-		} else {
-			buf[0..input_length].copy_from_slice(input);
-		};
-
+		buf.iter_mut().zip(input).for_each(|(a, b)| *a = *b);
 		Self(buf)
 	}
 }
@@ -180,7 +173,7 @@ impl pallet_mt::Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
-	type DefaultZeroElement = MockZeroElement;
+	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;

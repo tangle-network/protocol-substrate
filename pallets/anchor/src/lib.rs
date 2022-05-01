@@ -240,7 +240,6 @@ pub mod pallet {
 			depth: u8,
 			asset: CurrencyIdOf<T, I>,
 		) -> DispatchResultWithPostInfo {
-			// Should it only be the root who can create anchors?
 			ensure_root(origin)?;
 			let tree_id =
 				<Self as AnchorInterface<_>>::create(None, deposit_size, depth, max_edges, asset)?;
@@ -379,7 +378,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		// Check if local root is known
 		T::LinkableTree::ensure_known_root(id, roots[0])?;
 		// Check if neighbor roots are known
-		T::LinkableTree::ensure_known_neighbor_roots(id, &roots)?;
+		T::LinkableTree::ensure_known_neighbor_roots(id, &roots[1..].to_vec())?;
 
 		// Check nullifier and add or return `InvalidNullifier`
 		Self::ensure_nullifier_unused(id, nullifier_hash)?;
@@ -407,8 +406,6 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		};
 		let recipient_bytes = truncate_and_pad(&recipient.using_encoded(element_encoder)[..]);
 		let relayer_bytes = truncate_and_pad(&relayer.using_encoded(element_encoder)[..]);
-		let fee_bytes = fee.using_encoded(element_encoder);
-		let refund_bytes = refund.using_encoded(element_encoder);
 		let chain_id_type_bytes =
 			T::LinkableTree::get_chain_id_type().using_encoded(element_encoder);
 

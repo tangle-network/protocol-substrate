@@ -1,7 +1,6 @@
-use std::{convert::TryInto, path::Path};
+use std::convert::TryInto;
 
-use ark_bn254::{Bn254, Fr as Bn254Fr};
-use ark_crypto_primitives::commitment;
+use ark_bn254::Fr as Bn254Fr;
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_setups::{common::setup_params, Curve};
 use webb_primitives::{
@@ -496,7 +495,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 				refund_value.into(),
 				commitment_element
 			),
-			pallet_verifier::Error::<Test, _>::VerifyError,
+			crate::Error::<Test, _>::InvalidWithdrawProof,
 		);
 	});
 }

@@ -4,19 +4,18 @@ use crate::{
 	AnchorList, Counts, UpdateRecords,
 };
 
-use codec::{Decode, Encode, EncodeLike};
+use arkworks_setups::{common::setup_params, Curve};
+use codec::Encode;
 use frame_support::{assert_err, assert_ok};
 use hex_literal::hex;
 use pallet_linkable_tree::types::EdgeMetadata;
 use sp_core::{
 	ecdsa::{self, Signature},
-	keccak_256, Pair, Public,
+	keccak_256, Pair,
 };
 
-use webb_primitives::{
-	signing::SigningSystem,
-	utils::{compute_chain_id_type, derive_resource_id, get_typed_chain_id_in_u64},
-	ResourceId,
+use webb_primitives::utils::{
+	compute_chain_id_type, derive_resource_id, get_typed_chain_id_in_u64,
 };
 
 const TEST_MAX_EDGES: u32 = 100;
@@ -93,6 +92,10 @@ fn should_create_anchor_with_sig_succeed() {
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
+			let curve = Curve::Bn254;
+			let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+			let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+
 			let deposit_size = 100;
 			let anchor_create_call = make_anchor_create_proposal(deposit_size, src_id, &r_id);
 			let anchor_create_call_encoded = anchor_create_call.encode();
@@ -153,6 +156,10 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec())
 		.execute_with(|| {
+			let curve = Curve::Bn254;
+			let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+			let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+
 			let prop_id = 1;
 			mock_anchor_creation_using_pallet_call(src_id, &r_id);
 
@@ -231,6 +238,10 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec())
 		.execute_with(|| {
+			let curve = Curve::Bn254;
+			let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+			let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+
 			mock_anchor_creation_using_pallet_call(src_id, &r_id);
 
 			let root = Element::from_bytes(&[1; 32]);
