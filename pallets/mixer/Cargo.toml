@@ -43,7 +43,7 @@ ark-std = {version = "^0.3.0", default-features = false}
 arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
 
 
-wasm-utils = { version = "0.1.3" }
+wasm-utils = { version = "0.1.4" }
 
 pallet-balances = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }

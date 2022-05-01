@@ -55,7 +55,7 @@ arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = f
 
 arkworks-native-gadgets = { version = "1.0.0", default-features = false }
 
-wasm-utils = { version = "0.1.3" }
+wasm-utils = { version = "0.1.4" }
 
 [features]
 default = ["std"]
