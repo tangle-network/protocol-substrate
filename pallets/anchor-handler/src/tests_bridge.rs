@@ -57,7 +57,6 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
-	println!("Tree 0 doesn't exist");
 	let deposit_size = 100;
 	assert_ok!(Anchor::create(Origin::root(), deposit_size, TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 	println!("Anchor created");
