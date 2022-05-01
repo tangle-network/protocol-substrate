@@ -469,4 +469,10 @@ impl<T: Config<I>, I: 'static> TreeInspector<T::AccountId, T::TreeId, T::Element
 
 		Ok(false)
 	}
+
+	fn get_default_root(tree_id: T::TreeId) -> Result<T::Element, DispatchError> {
+		ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T, I>::TreeDoesntExist);
+		let default_hashes = DefaultHashes::<T, I>::get();
+		Ok(default_hashes[(Self::get_tree(tree_id)?.depth - 1) as usize])
+	}
 }

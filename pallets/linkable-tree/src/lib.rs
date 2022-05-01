@@ -338,8 +338,11 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		src_chain_id: T::ChainId,
 		target_root: T::Element,
 	) -> Result<bool, DispatchError> {
-		if target_root.is_zero() {
-			return Ok(false)
+		// If the src chain is default (empty edge) ensure that the provided target is the default
+		// root. This is to allow useres to prove against partial edge lists that aren't at capacity,
+		// but prevent them from providing their own fake edges / roots.
+		if src_chain_id == T::ChainId::default() {
+			return Ok(target_root == T::Tree::get_default_root(tree_id)?)
 		}
 
 		let get_next_inx = |inx: T::RootIndex| {
@@ -393,13 +396,22 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 	) -> Result<(), DispatchError> {
 		let max_edges = MaxEdges::<T, I>::get(id);
 		ensure!(
-			neighbor_roots.len() as u32 <= max_edges,
+			neighbor_roots.len() as u32 == max_edges,
 			Error::<T, I>::InvalidNeighborWithdrawRoot
 		);
 
-		let edges = EdgeList::<T, I>::iter_prefix(id).into_iter().collect::<Vec<_>>();
-		for (i, (chain_id, _)) in edges.iter().enumerate() {
-			Self::ensure_known_neighbor_root(id, *chain_id, neighbor_roots[i])?;
+		let mut edges = EdgeList::<T, I>::iter_prefix_values(id).into_iter().collect::<Vec<_>>();
+		while max_edges.into() > edges.len() {
+			edges.push(EdgeMetadata {
+				src_chain_id: T::ChainId::default(),
+				root: T::Tree::get_default_root(id)?,
+				latest_leaf_index: T::LeafIndex::default(),
+				target: T::Element::from_bytes(&[0; 32]),
+			});
+		}
+
+		for (i, edge_metadata) in edges.iter().enumerate() {
+			Self::ensure_known_neighbor_root(id, edge_metadata.src_chain_id, neighbor_roots[i])?;
 		}
 		Ok(())
 	}
