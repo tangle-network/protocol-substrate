@@ -456,18 +456,22 @@ impl<T: Config<I>, I: 'static> TreeInspector<T::AccountId, T::TreeId, T::Element
 	}
 
 	fn is_known_root(tree_id: T::TreeId, target_root: T::Element) -> Result<bool, DispatchError> {
-		ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T, I>::TreeDoesntExist);
-		let mut temp: T::RootIndex = Zero::zero();
-		while temp < T::RootHistorySize::get() {
-			let cached_root = CachedRoots::<T, I>::get(tree_id, temp);
-			if cached_root == target_root {
-				return Ok(true)
+		let tree = Self::get_tree(tree_id)?;
+		if tree.root == target_root {
+			Ok(true)
+		} else {
+			let mut temp: T::RootIndex = Zero::zero();
+			while temp < T::RootHistorySize::get() {
+				let cached_root = CachedRoots::<T, I>::get(tree_id, temp);
+				if cached_root == target_root {
+					return Ok(true)
+				}
+
+				temp += One::one();
 			}
 
-			temp += One::one();
+			Ok(false)
 		}
-
-		Ok(false)
 	}
 
 	fn get_default_root(tree_id: T::TreeId) -> Result<T::Element, DispatchError> {

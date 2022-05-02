@@ -379,7 +379,6 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		T::LinkableTree::ensure_known_root(id, roots[0])?;
 		// Check if neighbor roots are known
 		T::LinkableTree::ensure_known_neighbor_roots(id, &roots[1..].to_vec())?;
-
 		// Check nullifier and add or return `InvalidNullifier`
 		Self::ensure_nullifier_unused(id, nullifier_hash)?;
 		Self::add_nullifier_hash(id, nullifier_hash)?;

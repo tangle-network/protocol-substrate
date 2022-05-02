@@ -6,6 +6,7 @@ use arkworks_setups::{
 	r1cs::anchor::AnchorR1CSProver,
 	AnchorProver, Curve,
 };
+use std::convert::TryInto;
 use webb_primitives::ElementTrait;
 
 use wasm_utils::{
@@ -30,6 +31,7 @@ pub const DEFAULT_LEAF: [u8; 32] = [
 // TreeConfig_x5, x7 HEIGHT is hardcoded to 30
 pub const TREE_DEPTH: usize = 30;
 pub const ANCHOR_CT: usize = 2;
+#[allow(non_camel_case_types)]
 pub type AnchorR1CSProver_Bn254_30_2 = AnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT>;
 
 pub fn setup_zk_circuit(
@@ -41,6 +43,7 @@ pub fn setup_zk_circuit(
 	chain_id: u64,
 	fee_value: u128,
 	refund_value: u128,
+	neighbor_roots: [Element; ANCHOR_CT - 1],
 ) -> (ProofBytes, RootsElement, NullifierHashElement, LeafElement) {
 	let rng = &mut ark_std::test_rng();
 
@@ -62,28 +65,39 @@ pub fn setup_zk_circuit(
 				&DEFAULT_LEAF,
 			)
 			.unwrap();
-			let roots_f = [tree.root(); ANCHOR_CT];
+			let roots_f: [Bn254Fr; ANCHOR_CT] = vec![tree.root()]
+				.iter()
+				.chain(
+					neighbor_roots
+						.iter()
+						.map(|r| Bn254Fr::from_le_bytes_mod_order(r.to_bytes()))
+						.collect::<Vec<Bn254Fr>>()
+						.iter(),
+				)
+				.cloned()
+				.collect::<Vec<Bn254Fr>>()
+				.try_into()
+				.unwrap();
 			let roots_raw = roots_f.map(|x| x.into_repr().to_bytes_le());
 
-			let AnchorProof { proof, roots_raw, public_inputs_raw, .. } =
-				AnchorR1CSProver_Bn254_30_2::create_proof(
-					curve,
-					chain_id.into(),
-					secret_bytes,
-					nullifier_bytes,
-					leaves,
-					index,
-					roots_raw.clone(),
-					recipient_bytes,
-					relayer_bytes,
-					fee_value,
-					refund_value,
-					commitment_bytes,
-					pk_bytes,
-					DEFAULT_LEAF,
-					rng,
-				)
-				.unwrap();
+			let AnchorProof { proof, roots_raw, .. } = AnchorR1CSProver_Bn254_30_2::create_proof(
+				curve,
+				chain_id.into(),
+				secret_bytes,
+				nullifier_bytes,
+				leaves,
+				index,
+				roots_raw.clone(),
+				recipient_bytes,
+				relayer_bytes,
+				fee_value,
+				refund_value,
+				commitment_bytes,
+				pk_bytes,
+				DEFAULT_LEAF,
+				rng,
+			)
+			.unwrap();
 
 			let roots_element = roots_raw.iter().map(|x| Element::from_bytes(&x)).collect();
 			let nullifier_hash_element = Element::from_bytes(&nullifier_hash_bytes);
@@ -106,6 +120,7 @@ pub fn setup_wasm_utils_zk_circuit(
 	chain_id: u64,
 	fee_value: u128,
 	refund_value: u128,
+	neighbor_roots: [Element; ANCHOR_CT - 1],
 ) -> (
 	Vec<u8>,      // proof bytes
 	Vec<Element>, // roots
@@ -141,7 +156,19 @@ pub fn setup_wasm_utils_zk_circuit(
 				&DEFAULT_LEAF,
 			)
 			.unwrap();
-			let roots_f = [tree.root(); ANCHOR_CT];
+			let roots_f: [Bn254Fr; ANCHOR_CT] = vec![tree.root()]
+				.iter()
+				.chain(
+					neighbor_roots
+						.iter()
+						.map(|r| Bn254Fr::from_le_bytes_mod_order(r.to_bytes()))
+						.collect::<Vec<Bn254Fr>>()
+						.iter(),
+				)
+				.cloned()
+				.collect::<Vec<Bn254Fr>>()
+				.try_into()
+				.unwrap();
 			let roots_raw = roots_f.map(|x| x.into_repr().to_bytes_le());
 
 			let mixer_proof_input = AnchorProofInput {

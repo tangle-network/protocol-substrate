@@ -3,8 +3,10 @@ use std::convert::TryInto;
 use ark_bn254::Fr as Bn254Fr;
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_setups::{common::setup_params, Curve};
+use pallet_linkable_tree::LinkableTreeConfigration;
 use webb_primitives::{
-	merkle_tree::TreeInspector, utils::compute_chain_id_type, AccountId, ElementTrait,
+	linkable_tree::LinkableTreeInspector, merkle_tree::TreeInspector, utils::compute_chain_id_type,
+	AccountId, ElementTrait,
 };
 
 use codec::Encode;
@@ -17,7 +19,7 @@ use crate::{mock::*, test_utils::*};
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
-const M: usize = 2;
+const EDGE_CT: usize = 1;
 const DEPOSIT_SIZE: u128 = 10_000;
 const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
 fn setup_environment(curve: Curve) -> Vec<u8> {
@@ -64,7 +66,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 fn should_create_new_anchor() {
 	new_test_ext().execute_with(|| {
 		setup_environment(Curve::Bn254);
-		let max_edges = M as _;
+		let max_edges = EDGE_CT as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
 
@@ -81,7 +83,7 @@ fn should_create_new_anchor() {
 fn should_fail_to_create_new_anchor_if_not_root() {
 	new_test_ext().execute_with(|| {
 		setup_environment(Curve::Bn254);
-		let max_edges = M as _;
+		let max_edges = EDGE_CT as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
 		assert_err!(
@@ -102,7 +104,7 @@ fn should_be_able_to_deposit() {
 	new_test_ext().execute_with(|| {
 		setup_environment(Curve::Bn254);
 
-		let max_edges = M as _;
+		let max_edges = EDGE_CT as _;
 		let depth = TREE_DEPTH as _;
 		let asset_id = 0;
 		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
@@ -150,9 +152,9 @@ fn should_fail_to_deposit_if_anchor_not_found() {
 }
 
 fn create_anchor(asset_id: u32) -> u32 {
-	let max_edges = 2;
+	let max_edges = EDGE_CT;
 	let depth = TREE_DEPTH as u8;
-	assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+	assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges as u32, depth, asset_id));
 	MerkleTree::next_tree_id() - 1
 }
 
@@ -176,6 +178,12 @@ fn anchor_works() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
@@ -185,6 +193,7 @@ fn anchor_works() {
 			src_chain_id,
 			fee_value,
 			refund_value,
+			neighbor_roots,
 		);
 
 		assert_ok!(Anchor::deposit(
@@ -243,6 +252,12 @@ fn anchor_works_with_wasm_utils() {
 		let commitment_bytes = [0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) =
 			setup_wasm_utils_zk_circuit(
 				curve,
@@ -253,6 +268,7 @@ fn anchor_works_with_wasm_utils() {
 				src_chain_id.into(),
 				fee_value,
 				refund_value,
+				neighbor_roots,
 			);
 
 		assert_ok!(Anchor::deposit(
@@ -311,6 +327,12 @@ fn double_spending_should_fail() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
@@ -320,6 +342,7 @@ fn double_spending_should_fail() {
 			src_chain_id,
 			fee_value,
 			refund_value,
+			neighbor_roots,
 		);
 
 		assert_ok!(Anchor::deposit(
@@ -391,6 +414,12 @@ fn should_fail_when_invalid_merkle_roots() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof_bytes, mut root_elements, nullifier_hash_element, leaf_element) =
 			setup_zk_circuit(
 				curve,
@@ -401,6 +430,7 @@ fn should_fail_when_invalid_merkle_roots() {
 				src_chain_id,
 				fee_value,
 				refund_value,
+				neighbor_roots,
 			);
 
 		assert_ok!(Anchor::deposit(
@@ -456,6 +486,12 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (mut proof_bytes, root_elements, nullifier_hash_element, leaf_element) =
 			setup_zk_circuit(
 				curve,
@@ -466,6 +502,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 				src_chain_id,
 				fee_value,
 				refund_value,
+				neighbor_roots,
 			);
 
 		assert_ok!(Anchor::deposit(
@@ -495,7 +532,7 @@ fn should_fail_with_when_any_byte_is_changed_in_proof() {
 				refund_value.into(),
 				commitment_element
 			),
-			crate::Error::<Test, _>::InvalidWithdrawProof,
+			pallet_verifier::Error::<Test, _>::VerifyError,
 		);
 	});
 }
@@ -520,6 +557,12 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
@@ -529,6 +572,7 @@ fn should_fail_when_relayer_id_is_different_from_that_in_proof_generation() {
 			src_chain_id,
 			fee_value,
 			refund_value,
+			neighbor_roots,
 		);
 
 		assert_ok!(Anchor::deposit(
@@ -578,6 +622,12 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
@@ -587,6 +637,7 @@ fn should_fail_with_when_fee_submitted_is_changed() {
 			src_chain_id,
 			fee_value,
 			refund_value,
+			neighbor_roots,
 		);
 
 		assert_ok!(Anchor::deposit(
@@ -637,6 +688,12 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
@@ -646,6 +703,7 @@ fn should_fail_with_invalid_proof_when_account_ids_are_truncated_in_reverse() {
 			src_chain_id,
 			fee_value,
 			refund_value,
+			neighbor_roots,
 		);
 
 		assert_ok!(Anchor::deposit(
@@ -752,6 +810,12 @@ fn anchor_works_for_pool_tokens() {
 		let commitment_bytes = vec![0u8; 32];
 		let commitment_element = Element::from_bytes(&commitment_bytes);
 
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof_bytes, root_elements, nullifier_hash_element, leaf_element) = setup_zk_circuit(
 			curve,
 			recipient_bytes,
@@ -761,6 +825,7 @@ fn anchor_works_for_pool_tokens() {
 			src_chain_id,
 			fee_value,
 			refund_value,
+			neighbor_roots,
 		);
 
 		assert_ok!(Anchor::deposit(
@@ -809,7 +874,7 @@ fn should_run_post_deposit_hook_sucessfully() {
 	new_test_ext().execute_with(|| {
 		setup_environment(Curve::Bn254);
 
-		let max_edges = M as _;
+		let max_edges = EDGE_CT as _;
 		let depth = TREE_DEPTH as _;
 		let asset_id = 0;
 		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));

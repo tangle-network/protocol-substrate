@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use ark_ff::{BigInteger, PrimeField};
 use ark_std::{rand::thread_rng, vec::Vec};
 use arkworks_native_gadgets::poseidon::Poseidon;
@@ -9,6 +7,7 @@ use arkworks_setups::{
 	utxo::Utxo,
 	Curve, VAnchorProver,
 };
+use std::{collections::BTreeMap, convert::TryInto};
 use webb_primitives::ElementTrait;
 
 use crate::mock::Element;
@@ -70,8 +69,9 @@ pub fn setup_zk_circuit(
 	ext_data_hash: Vec<u8>,
 	in_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
 	out_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
-	custom_roots: Option<[Vec<u8>; ANCHOR_CT]>,
 	pk_bytes: Vec<u8>,
+	neighbor_roots: [Element; ANCHOR_CT - 1],
+	custom_root: Element,
 ) -> (Vec<u8>, Vec<Bn254Fr>) {
 	let curve = Curve::Bn254;
 	let rng = &mut thread_rng();
@@ -87,21 +87,34 @@ pub fn setup_zk_circuit(
 	in_leaves.insert(chain_id, leaves);
 	let in_indices = [0, 1];
 
-	// This allows us to pass zero roots for initial transaction
-	let in_root_set = if custom_roots.is_some() {
-		custom_roots.unwrap()
+	let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
+	let poseidon3 = Poseidon::new(params3);
+	let (tree, _) = setup_tree_and_create_path::<Bn254Fr, Poseidon<Bn254Fr>, TREE_DEPTH>(
+		&poseidon3,
+		&leaves_f,
+		0,
+		&DEFAULT_LEAF,
+	)
+	.unwrap();
+
+	let roots_f: [Bn254Fr; ANCHOR_CT] = vec![if custom_root != Element::from_bytes(&[0u8; 32]) {
+		Bn254Fr::from_le_bytes_mod_order(custom_root.to_bytes())
 	} else {
-		let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
-		let poseidon3 = Poseidon::new(params3);
-		let (tree, _) = setup_tree_and_create_path::<Bn254Fr, Poseidon<Bn254Fr>, TREE_DEPTH>(
-			&poseidon3,
-			&leaves_f,
-			0,
-			&DEFAULT_LEAF,
-		)
-		.unwrap();
-		[(); ANCHOR_CT].map(|_| tree.root().into_repr().to_bytes_le())
-	};
+		tree.root()
+	}]
+	.iter()
+	.chain(
+		neighbor_roots
+			.iter()
+			.map(|r| Bn254Fr::from_le_bytes_mod_order(r.to_bytes()))
+			.collect::<Vec<Bn254Fr>>()
+			.iter(),
+	)
+	.cloned()
+	.collect::<Vec<Bn254Fr>>()
+	.try_into()
+	.unwrap();
+	let in_root_set = roots_f.map(|x| x.into_repr().to_bytes_le());
 
 	let vanchor_proof = VAnchorProver_Bn254_30_2_2_2::create_proof(
 		curve,
