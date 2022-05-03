@@ -7,8 +7,12 @@ use ark_ff::{BigInteger, PrimeField};
 use arkworks_setups::{common::setup_params, utxo::Utxo, Curve};
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
+use pallet_linkable_tree::LinkableTreeConfigration;
 use sp_core::hashing::keccak_256;
+use std::convert::TryInto;
 use webb_primitives::{
+	linkable_tree::LinkableTreeInspector,
+	merkle_tree::TreeInspector,
 	types::vanchor::{ExtData, ProofData},
 	utils::compute_chain_id_type,
 	AccountId,
@@ -18,7 +22,7 @@ type Bn254Fr = ark_bn254::Fr;
 
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
-const M: usize = 2;
+const EDGE_CT: usize = 1;
 const DEFAULT_BALANCE: u128 = 10;
 const BIG_DEFAULT_BALANCE: u128 = 20;
 const BIGGER_DEFAULT_BALANCE: u128 = 30;
@@ -75,7 +79,7 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>) {
 }
 
 fn create_vanchor(asset_id: u32) -> u32 {
-	let max_edges = M as u32;
+	let max_edges = EDGE_CT as u32;
 	let depth = TREE_DEPTH as u8;
 	assert_ok!(VAnchor::create(Origin::root(), max_edges, depth, asset_id));
 	MerkleTree::next_tree_id() - 1
@@ -118,15 +122,22 @@ fn create_vanchor_with_deposits(proving_key_bytes: Vec<u8>) -> (u32, [Utxo<Bn254
 
 	let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-	let custom_roots = Some([[0u8; 32]; M].map(|x| x.to_vec()));
+	let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
+	let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+		LinkableTreeConfigration<Test, ()>,
+	>>::get_neighbor_roots(tree_id)
+	.unwrap()
+	.try_into()
+	.unwrap();
 	let (proof, public_inputs) = setup_zk_circuit(
 		public_amount,
 		chain_id,
 		ext_data_hash.to_vec(),
 		in_utxos,
 		out_utxos.clone(),
-		custom_roots,
 		proving_key_bytes,
+		neighbor_roots,
+		custom_root,
 	);
 
 	// Deconstructing public inputs
@@ -180,15 +191,22 @@ fn should_complete_2x2_transaction_with_deposit() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let custom_roots = Some([[0u8; 32]; M].map(|x| x.to_vec()));
+		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			custom_roots,
 			proving_key_bytes,
+			neighbor_roots,
+			custom_root,
 		);
 
 		// Deconstructing public inputs
@@ -234,6 +252,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, _) = setup_environment();
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_bytes.clone());
+		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
@@ -264,14 +283,21 @@ fn should_complete_2x2_transaction_with_withdraw() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
+		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			None,
 			proving_key_bytes,
+			neighbor_roots,
+			custom_root,
 		);
 
 		// Deconstructing public inputs
@@ -349,15 +375,22 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let custom_roots = Some([[0u8; 32]; M].map(|x| x.to_vec()));
+		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			custom_roots,
 			proving_key_bytes,
+			neighbor_roots,
+			custom_root,
 		);
 
 		// Deconstructing public inputs
@@ -408,6 +441,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, _) = setup_environment();
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_bytes.clone());
+		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
@@ -438,14 +472,21 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
+		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			None,
 			proving_key_bytes,
+			neighbor_roots,
+			custom_root,
 		);
 
 		// Deconstructing public inputs
@@ -495,6 +536,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, _) = setup_environment();
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_bytes.clone());
+		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
@@ -526,14 +568,21 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
+		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			None,
 			proving_key_bytes,
+			neighbor_roots,
+			custom_root,
 		);
 
 		// Deconstructing public inputs
@@ -582,6 +631,7 @@ fn should_not_be_able_to_double_spend() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, _) = setup_environment();
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_bytes.clone());
+		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
@@ -612,14 +662,21 @@ fn should_not_be_able_to_double_spend() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
+		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			None,
 			proving_key_bytes,
+			neighbor_roots,
+			custom_root,
 		);
 
 		// Deconstructing public inputs
@@ -705,15 +762,22 @@ fn should_not_be_able_to_exceed_max_fee() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let custom_roots = Some([[0u8; 32]; M].map(|x| x.to_vec()));
+		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			custom_roots,
 			proving_key_bytes,
+			neighbor_roots,
+			custom_root,
 		);
 
 		// Deconstructing public inputs
@@ -789,15 +853,22 @@ fn should_not_be_able_to_exceed_max_deposit() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let custom_roots = Some([[0u8; 32]; M].map(|x| x.to_vec()));
+		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			custom_roots,
 			proving_key_bytes,
+			neighbor_roots,
+			custom_root,
 		);
 
 		// Deconstructing public inputs
@@ -874,15 +945,22 @@ fn should_not_be_able_to_exceed_external_amount() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let custom_roots = Some([[0u8; 32]; M].map(|x| x.to_vec()));
+		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			custom_roots,
 			proving_key_bytes,
+			neighbor_roots,
+			custom_root,
 		);
 
 		// Deconstructing public inputs
@@ -925,6 +1003,7 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_bytes, _) = setup_environment();
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_bytes.clone());
+		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
@@ -955,14 +1034,21 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
+		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			None,
 			proving_key_bytes,
+			neighbor_roots,
+			custom_root,
 		);
 
 		// Deconstructing public inputs
