@@ -194,5 +194,6 @@ std = [
   "webb-primitives/std",
   "common/std",
   "pallet-mt-rpc-runtime-api/std",
+  "pallet-linkable-tree-rpc-runtime-api/std",
   "pallet-token-wrapper/std",
 ]
