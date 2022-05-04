@@ -30,6 +30,8 @@ async-trait = "0.1.42"
 pallet-mt = { path = "../pallets/mt", version = "1.0.0" }
 pallet-mt-rpc = { path = "../pallets/mt/rpc", version = "0.1.0" }
 pallet-mt-rpc-runtime-api = { path = "../pallets/mt/rpc/runtime-api" }
+pallet-linkable-tree-rpc = { path = "../pallets/linkable-tree/rpc", version = "0.1.0" }
+pallet-linkable-tree-rpc-runtime-api = { path = "../pallets/linkable-tree/rpc/runtime-api" }
 pallet-parachain-staking = { path = "../pallets/parachain-staking", version = "1.0.0" }
 webb-primitives = { path = "../primitives" }
 common = { path = "../common" }

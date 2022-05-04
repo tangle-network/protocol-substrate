@@ -1262,6 +1262,16 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl pallet_linkable_tree_rpc_runtime_api::LinkableTreeApi<Block, Element, ChainId, LeafIndex> for Runtime {
+		fn get_neighbor_roots(tree_id: u32) -> Option<Vec<Element>> {
+			LinkableTreeBn254::get_neighbor_roots(tree_id).ok()
+		}
+
+		fn get_neighbor_edges(tree_id: u32) -> Option<Vec<EdgeMetadata<ChainId, Element, LeafIndex>>> {
+			LinkableTreeBn254::get_neighbor_edges(tree_id).ok()
+		}
+	}
+
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)

@@ -35,7 +35,8 @@ use std::sync::Arc;
 use common::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use webb_runtime::Element;
 
-use pallet_mt_rpc::{MerkleApi, MerkleClient};
+use pallet_linkable_tree_rpc::{LinkableTreeClient, LinkableTreeRpcApi};
+use pallet_mt_rpc::{MerkleTreeClient, MerkleTreeRpcApi};
 use sc_client_api::AuxStore;
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
@@ -164,6 +165,7 @@ where
 		)?,
 	));
 
-	io.extend_with(MerkleApi::to_delegate(MerkleClient::new(client)));
+	io.extend_with(MerkleTreeRpcApi::to_delegate(MerkleTreeClient::new(client.clone())));
+	io.extend_with(LinkableTreeRpcApi::to_delegate(LinkableTreeClient::new(client.clone())));
 	Ok(io)
 }

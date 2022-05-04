@@ -5006,6 +5006,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-linkable-tree-rpc"
+version = "0.1.0"
+dependencies = [
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "pallet-linkable-tree",
+ "pallet-linkable-tree-rpc-runtime-api",
+ "parity-scale-codec 2.3.1",
+ "sc-rpc",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
+ "sp-runtime 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
+ "webb-primitives",
+]
+
+[[package]]
+name = "pallet-linkable-tree-rpc-runtime-api"
+version = "1.0.0"
+dependencies = [
+ "pallet-linkable-tree",
+ "parity-scale-codec 2.3.1",
+ "sp-api",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.17)",
+ "webb-primitives",
+]
+
+[[package]]
 name = "pallet-mixer"
 version = "1.0.0"
 dependencies = [
@@ -10771,6 +10800,8 @@ dependencies = [
  "jsonrpc-core",
  "log",
  "pallet-im-online",
+ "pallet-linkable-tree-rpc",
+ "pallet-linkable-tree-rpc-runtime-api",
  "pallet-mt",
  "pallet-mt-rpc",
  "pallet-mt-rpc-runtime-api",
@@ -10863,6 +10894,7 @@ dependencies = [
  "pallet-im-online",
  "pallet-indices",
  "pallet-linkable-tree",
+ "pallet-linkable-tree-rpc-runtime-api",
  "pallet-mixer",
  "pallet-mt",
  "pallet-mt-rpc-runtime-api",

@@ -13,7 +13,7 @@ use webb_primitives::ElementTrait;
 
 /// Merkle RPC methods.
 #[rpc]
-pub trait MerkleApi<BlockHash, Element> {
+pub trait MerkleTreeRpcApi<BlockHash, Element> {
 	/// Get The MerkleTree leaves.
 	///
 	/// This method calls into a runtime with `Merkle` pallet included and
@@ -32,20 +32,21 @@ pub trait MerkleApi<BlockHash, Element> {
 	) -> Result<Vec<Element>>;
 }
 
-/// A struct that implements the `MerkleApi`.
-pub struct MerkleClient<C, M> {
+/// A struct that implements the `MerkleTreeRpcApi`.
+pub struct MerkleTreeClient<C, M> {
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<M>,
 }
 
-impl<C, M> MerkleClient<C, M> {
+impl<C, M> MerkleTreeClient<C, M> {
 	/// Create new `Merkle` instance with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
 		Self { client, _marker: Default::default() }
 	}
 }
 
-impl<C, Block, Element> MerkleApi<<Block as BlockT>::Hash, Element> for MerkleClient<C, Block>
+impl<C, Block, Element> MerkleTreeRpcApi<<Block as BlockT>::Hash, Element>
+	for MerkleTreeClient<C, Block>
 where
 	Block: BlockT,
 	Element: ElementTrait,

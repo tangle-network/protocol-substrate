@@ -37,6 +37,8 @@ itertools = "0.10.0"
 pallet-mt = { path = "../../pallets/mt", version = "1.0.0" }
 pallet-mt-rpc = { path = "../../pallets/mt/rpc", version = "0.1.0" }
 pallet-mt-rpc-runtime-api = { path = "../../pallets/mt/rpc/runtime-api" }
+pallet-linkable-tree-rpc = { path = "../../pallets/linkable-tree/rpc", version = "0.1.0" }
+pallet-linkable-tree-rpc-runtime-api = { path = "../../pallets/linkable-tree/rpc/runtime-api" }
 
 # Standalone runtimes
 webb-runtime = { package = "webb-standalone-runtime", path = "../runtime", version = "0.1.0" }
