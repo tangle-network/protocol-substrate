@@ -334,7 +334,7 @@ fn testnet_genesis(
 			],
 		},
 		anchor_bn_254: AnchorBn254Config {
-			anchors: vec![(0, 10 * UNITS, 2), (0, 100 * UNITS, 2), (0, 1000 * UNITS, 2)],
+			anchors: vec![(0, 10 * UNITS, 1), (0, 100 * UNITS, 1), (0, 1000 * UNITS, 1)],
 		},
 		v_anchor_bn_254: VAnchorBn254Config {
 			max_deposit_amount: 1_000_000 * UNITS,

@@ -22,7 +22,8 @@ use std::sync::Arc;
 
 use common::{AccountId, Balance, Block, Index as Nonce};
 use webb_runtime::Element;
-use pallet_mt_rpc::{MerkleApi, MerkleClient};
+use pallet_mt_rpc::{MerkleTreeRpcApi, MerkleTreeClient};
+use pallet_linkable_tree_rpc::{LinkableTreeRpcApi, LinkableTreeClient};
 use sc_client_api::AuxStore;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
 use sc_transaction_pool_api::TransactionPool;
@@ -68,7 +69,7 @@ where
 	io.extend_with(SystemApi::to_delegate(FullSystem::new(client.clone(), pool, deny_unsafe)));
 	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone())));
 
-	io.extend_with(MerkleApi::to_delegate(MerkleClient::new(client.clone())));
-
+	io.extend_with(MerkleTreeRpcApi::to_delegate(MerkleTreeClient::new(client.clone())));
+	io.extend_with(LinkableTreeRpcApi::to_delegate(LinkableTreeClient::new(client.clone())));
 	io
 }

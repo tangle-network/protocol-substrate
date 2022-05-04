@@ -14,6 +14,7 @@ mod voter_bags;
 mod weights;
 use frame_support::traits::EnsureOneOf;
 use impls::Author;
+use pallet_linkable_tree::types::EdgeMetadata;
 use sp_api::impl_runtime_apis;
 use sp_core::{
 	crypto::KeyTypeId,
@@ -91,8 +92,10 @@ use webb_primitives::{
 	hashing::{ethereum::Keccak256HasherBn254, ArkworksPoseidonHasherBn254},
 	types::ElementTrait,
 	verifying::ArkworksVerifierBn254,
-	Amount, ChainId,
+	Amount, ChainId, LeafIndex,
 };
+
+use webb_primitives::linkable_tree::LinkableTreeInspector;
 
 impl_opaque_keys! {
 	pub struct SessionKeys {
@@ -1582,6 +1585,16 @@ impl_runtime_apis! {
 			} else {
 				Some(v)
 			}
+		}
+	}
+
+	impl pallet_linkable_tree_rpc_runtime_api::LinkableTreeApi<Block, Element, ChainId, LeafIndex> for Runtime {
+		fn get_neighbor_roots(tree_id: u32) -> Option<Vec<Element>> {
+			LinkableTreeBn254::get_neighbor_roots(tree_id).ok()
+		}
+
+		fn get_neighbor_edges(tree_id: u32) -> Option<Vec<EdgeMetadata<ChainId, Element, LeafIndex>>> {
+			LinkableTreeBn254::get_neighbor_edges(tree_id).ok()
 		}
 	}
 

@@ -29,6 +29,10 @@ pub type Amount = i128;
 /// Index of a transaction in the chain.
 pub type Index = u32;
 
+/// Index of a leaf in a merkle tree
+pub type LeafIndex = u32;
+
+/// Chain Id for Webb-encoded chain identifiers
 pub type ChainId = u64;
 
 /// A hash of some data used by the chain.
