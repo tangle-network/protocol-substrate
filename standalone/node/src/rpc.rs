@@ -32,7 +32,7 @@
 
 use std::sync::Arc;
 
-use common::{AccountId, Balance, Block, BlockNumber, Hash, Index};
+use common::{AccountId, Balance, Block, BlockNumber, ChainId, Hash, Index, LeafIndex};
 use webb_runtime::Element;
 
 use pallet_linkable_tree_rpc::{LinkableTreeClient, LinkableTreeRpcApi};
@@ -117,6 +117,8 @@ where
 	C::Api: BabeApi<Block>,
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_mt_rpc_runtime_api::MerkleTreeApi<Block, Element>,
+	C::Api:
+		pallet_linkable_tree_rpc_runtime_api::LinkableTreeApi<Block, Element, ChainId, LeafIndex>,
 	P: TransactionPool + 'static,
 	SC: SelectChain<Block> + 'static,
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,

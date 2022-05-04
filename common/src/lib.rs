@@ -19,9 +19,12 @@ pub mod impls;
 pub use constants::*;
 pub use opaque::*;
 pub use types::*;
+
 /// Common types of parachains.
 mod types {
 	use sp_runtime::traits::{IdentifyAccount, Verify};
+
+	pub use webb_primitives::{ChainId, LeafIndex};
 
 	/// An index to a block.
 	pub type BlockNumber = u32;
