@@ -55,8 +55,8 @@ mod tests_signature_bridge;
 
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;
-use pallet_vanchor::{BalanceOf as VAnchorBalanceOf, CurrencyIdOf as VAnchorCurrencyIdOf};
 use pallet_linkable_tree::types::EdgeMetadata;
+use pallet_vanchor::{BalanceOf as VAnchorBalanceOf, CurrencyIdOf as VAnchorCurrencyIdOf};
 use webb_primitives::{
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
 	ResourceId,
@@ -71,8 +71,8 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use pallet_vanchor::VAnchorConfigration;
 	use pallet_linkable_tree::types::EdgeMetadata;
+	use pallet_vanchor::VAnchorConfigration;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]

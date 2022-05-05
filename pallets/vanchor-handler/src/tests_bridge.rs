@@ -3,9 +3,7 @@ use arkworks_setups::{common::setup_params, Curve};
 use frame_support::assert_ok;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 use pallet_linkable_tree::types::EdgeMetadata;
-use webb_primitives::utils::{
-	derive_resource_id, get_typed_chain_id_in_u64,
-};
+use webb_primitives::utils::{derive_resource_id, get_typed_chain_id_in_u64};
 
 const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 2;
