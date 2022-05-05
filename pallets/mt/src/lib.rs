@@ -379,7 +379,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 		// get unit of two
 		let two: T::LeafIndex = Self::two();
 		// get default edge nodes
-		let num_of_zero_nodes = depth + 1;
+		let num_of_zero_nodes = depth;
 		// Setup default hashes if not initialized
 		if Self::is_default_hashes_empty() {
 			let temp_hashes = generate_default_hashes::<T, I>();
@@ -394,7 +394,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 			paused: false,
 			max_leaves: two.saturating_pow(depth.into()),
 			leaf_count: T::LeafIndex::zero(),
-			root: default_edge_nodes[depth as usize],
+			root: Self::default_hashes()[depth as usize],
 			edge_nodes: default_edge_nodes,
 		};
 
