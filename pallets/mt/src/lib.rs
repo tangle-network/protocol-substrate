@@ -470,6 +470,10 @@ impl<T: Config<I>, I: 'static> TreeInspector<T::AccountId, T::TreeId, T::Element
 				temp += One::one();
 			}
 
+			if DefaultHashes::<T, I>::get()[(Self::get_tree(tree_id)?.depth) as usize] == tree.root {
+				return Ok(true)
+			}
+
 			Ok(false)
 		}
 	}

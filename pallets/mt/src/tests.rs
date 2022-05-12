@@ -1,3 +1,4 @@
+use ark_crypto_primitives::MerkleTree;
 use ark_ff::{BigInteger, Field, PrimeField};
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use hex_literal::hex;
@@ -171,6 +172,18 @@ fn should_successfully_set_default_hashes_to_match_solidity() {
 			}
 		}
 	});
+}
+
+#[test]
+fn should_successfully_return_is_known_root_if_default() {
+	new_test_ext().execute_with( || {
+		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
+		let depth = 3;
+		assert_ok!(MerkleTree::create(Origin::signed(1), depth));
+		let tree_id = MerkleTree::next_tree_id() - 1;
+		let default_root = MerkleTree::get_default_root();
+		assert_ok!(MerkleTree::is_known_root(default_root));
+	})
 }
 
 #[test]
