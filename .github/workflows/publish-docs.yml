@@ -27,7 +27,7 @@ jobs:
         run: git submodule update --init --recursive
 
       - name: Build documentation
-        run: cargo doc --no-deps 
+        run: RUST_BACKTRACE=1 cargo doc --no-deps 
       - name: Publish documentation
         run: |
           cd target/doc
