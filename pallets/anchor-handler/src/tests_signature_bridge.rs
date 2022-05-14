@@ -18,6 +18,8 @@ use webb_primitives::utils::{
 	compute_chain_id_type, derive_resource_id, get_typed_chain_id_in_u64,
 };
 
+use webb_proposals::substrate::AnchorUpdateProposal;
+
 const TEST_MAX_EDGES: u32 = 100;
 const TEST_TREE_DEPTH: u8 = 32;
 
@@ -74,6 +76,15 @@ fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u
 	prop_data
 }
 
+fn get_edsca_account() -> ecdsa::Pair {
+	let seed = "0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60";
+	ecdsa::Pair::from_string(seed, None).unwrap()
+}
+
+fn get_public_uncompressed_key() -> [u8; 64] {
+	hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4")
+}
+
 // Signature Bridge Tests
 
 #[test]
@@ -83,12 +94,8 @@ fn should_create_anchor_with_sig_succeed() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
-	let pair = ecdsa::Pair::from_string(
-		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
-		None,
-	)
-	.unwrap();
+	let public_uncompressed = get_public_uncompressed_key();
+	let pair = get_edsca_account();
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
@@ -145,14 +152,8 @@ fn should_add_anchor_edge_with_sig_succeed() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
-);
-	let pair = ecdsa::Pair::from_string(
-		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
-		None,
-	)
-	.unwrap();
+	let public_uncompressed = get_public_uncompressed_key();
+	let pair = get_edsca_account();
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec())
 		.execute_with(|| {
@@ -227,14 +228,8 @@ fn should_update_anchor_edge_with_sig_succeed() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
-);
-	let pair = ecdsa::Pair::from_string(
-		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
-		None,
-	)
-	.unwrap();
+	let public_uncompressed = get_public_uncompressed_key();
+	let pair = get_edsca_account();
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec())
 		.execute_with(|| {
@@ -345,14 +340,8 @@ fn should_fail_to_whitelist_chain_already_whitelisted() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
-);
-	let pair = ecdsa::Pair::from_string(
-		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
-		None,
-	)
-	.unwrap();
+	let public_uncompressed = get_public_uncompressed_key();
+	let pair = get_edsca_account();
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
@@ -371,14 +360,8 @@ fn should_fail_to_whitelist_this_chain() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
-);
-	let pair = ecdsa::Pair::from_string(
-		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
-		None,
-	)
-	.unwrap();
+	let public_uncompressed = get_public_uncompressed_key();
+	let pair = get_edsca_account();
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
@@ -400,14 +383,8 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
-);
-	let pair = ecdsa::Pair::from_string(
-		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
-		None,
-	)
-	.unwrap();
+	let public_uncompressed = get_public_uncompressed_key();
+	let pair = get_edsca_account();
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
@@ -445,14 +422,8 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
-);
-	let pair = ecdsa::Pair::from_string(
-		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
-		None,
-	)
-	.unwrap();
+	let public_uncompressed = get_public_uncompressed_key();
+	let pair = get_edsca_account();
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
@@ -493,14 +464,8 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
-);
-	let pair = ecdsa::Pair::from_string(
-		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
-		None,
-	)
-	.unwrap();
+	let public_uncompressed = get_public_uncompressed_key();
+	let pair = get_edsca_account();
 
 	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_create_proposal".to_vec())
 		.execute_with(|| {
@@ -532,5 +497,152 @@ hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd
 				),
 				pallet_signature_bridge::Error::<Test, _>::InvalidPermissions
 			);
+		})
+}
+
+// Test AnchorUpdateProposal using webb-proposals
+// 1. Create an anchor using `pallet-anchor` intrinsic call
+// 2. Add an edge to the anchor using `pallet-anchor-handler` proposal through
+// `pallet-signature-bridge`
+// 3. Update the edge of the anchor using
+// `pallet-anchor-handler` proposal through `pallet-signature-bridge`
+#[test]
+fn should_update_anchor_edge_with_sig_succeed_using_web_proposals() {
+	let src_chain = webb_proposals::TypedChainId::Substrate(1);
+	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
+	let target_system = webb_proposals::TargetSystem::new_tree_id(5);
+	let resource = webb_proposals::ResourceId::new(target_system, this_chain_id);
+
+	let src_id = src_chain.chain_id();
+	let r_id = resource.to_bytes();
+	let public_uncompressed = get_public_uncompressed_key();
+	let pair = get_edsca_account();
+
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec())
+		.execute_with(|| {
+			let curve = Curve::Bn254;
+			let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+			let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+
+			mock_anchor_creation_using_pallet_call(src_id, &r_id);
+
+			let root_bytes = [1u8; 32];
+			let root = Element::from_bytes(&root_bytes);
+			let latest_leaf_index = 5;
+			let target_bytes = [0u8; 32];
+			let target = Element::from_bytes(&target_bytes);
+
+			assert_eq!(0, Counts::<Test>::get(src_id));
+			let edge_metadata =
+				EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
+
+			let anchor_update_proposal = AnchorUpdateProposal::builder()
+				.resource_id(resource)
+				.src_chain(src_chain)
+				.merkle_root(root_bytes)
+				.latest_leaf_index(latest_leaf_index)
+				.target(target_bytes)
+				.pallet_index(10)
+				.build();
+
+			let nonce = [0u8, 0u8, 0u8, 1u8];
+			let anchor_update_proposal_bytes = proposal.to_bytes();
+			let prop_data =
+				make_proposal_data(r_id.encode(), nonce, anchor_update_proposal_bytes.clone());
+			let msg = keccak_256(&prop_data);
+			let sig: Signature = pair.sign_prehashed(&msg).into();
+
+			// set the maintainer
+			assert_ok!(SignatureBridge::force_set_maintainer(
+				Origin::root(),
+				public_uncompressed.to_vec()
+			));
+
+			let anchor_update_call: Call =
+				codec::Decode::decode(&mut anchor_update_proposal_bytes.as_slice()).unwrap();
+			assert_ok!(SignatureBridge::execute_proposal(
+				Origin::signed(RELAYER_A),
+				src_id,
+				Box::new(anchor_update_call),
+				prop_data,
+				sig.0.to_vec(),
+			));
+			assert_eq!(1, Counts::<Test>::get(src_id));
+
+			// the anchor-handler callback must have been called by bridge
+			// event must be emitted in callback should exist
+			event_exists(crate::Event::AnchorEdgeAdded);
+			// edge count should be 1
+			assert_eq!(
+				1,
+				<pallet_linkable_tree::EdgeList<Test>>::iter_prefix_values(0)
+					.into_iter()
+					.count()
+			);
+
+			let expected_tree_id = 0;
+			assert_eq!(
+				edge_metadata,
+				<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_id)
+			);
+
+			let expected_update_record =
+				UpdateRecord { tree_id: expected_tree_id, resource_id: r_id, edge_metadata };
+			assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_id, 0));
+
+			// Update Edge
+			let root_bytes = [2u8; 32];
+			let root = Element::from_bytes(&root_bytes);
+			let latest_leaf_index = 10;
+			let target_bytes = [0u8; 32];
+			let target = Element::from_bytes(&target_bytes);
+			let edge_metadata =
+				EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
+
+			let anchor_update_proposal = AnchorUpdateProposal::builder()
+				.resource_id(resource)
+				.src_chain(src_chain)
+				.merkle_root(root_bytes)
+				.latest_leaf_index(latest_leaf_index)
+				.target(target_bytes)
+				.pallet_index(10)
+				.build();
+
+			let nonce = [0u8, 0u8, 0u8, 2u8];
+			let anchor_update_proposal_bytes = anchor_update_proposal.to_bytes();
+			let prop_data =
+				make_proposal_data(r_id.encode(), nonce, anchor_update_proposal_bytes.clone());
+			let msg = keccak_256(&prop_data);
+			let sig: Signature = pair.sign_prehashed(&msg).into();
+
+			let anchor_update_call: Call =
+				codec::Decode::decode(&mut anchor_update_proposal_bytes.as_slice()).unwrap();
+			assert_ok!(SignatureBridge::execute_proposal(
+				Origin::signed(RELAYER_A),
+				src_id,
+				Box::new(anchor_update_call),
+				prop_data,
+				sig.0.to_vec(),
+			));
+
+			assert_eq!(2, Counts::<Test>::get(src_id));
+
+			// the anchor-handler callback must have been called by bridge
+			// event must be emitted in callback should exist
+			event_exists(crate::Event::AnchorEdgeUpdated);
+			// edge count should be 1
+			assert_eq!(
+				1,
+				<pallet_linkable_tree::EdgeList<Test>>::iter_prefix_values(0)
+					.into_iter()
+					.count()
+			);
+			assert_eq!(
+				edge_metadata,
+				<pallet_linkable_tree::EdgeList<Test>>::get(expected_tree_id, src_id)
+			);
+			let expected_update_record =
+				UpdateRecord { tree_id: expected_tree_id, resource_id: r_id, edge_metadata };
+			assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_id, 1));
 		})
 }
