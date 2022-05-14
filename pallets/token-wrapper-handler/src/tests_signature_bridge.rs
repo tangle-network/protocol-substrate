@@ -106,7 +106,7 @@ fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u
 // ----Signature Bridge Tests----
 
 #[test]
-fn should_update_fee_with_sig_succeed_using_webb_proposals() {
+fn should_update_fee_with_sig_succeed() {
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::new_tree_id(1);
@@ -180,7 +180,7 @@ fn should_update_fee_with_sig_succeed_using_webb_proposals() {
 }
 
 #[test]
-fn should_add_token_with_sig_succeed_using_webb_proposal() {
+fn should_add_token_with_sig_succeed() {
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::new_tree_id(1);
@@ -237,7 +237,7 @@ fn should_add_token_with_sig_succeed_using_webb_proposal() {
 }
 
 #[test]
-fn should_remove_token_with_sig_succeed_using_webb_proposals() {
+fn should_remove_token_with_sig_succeed() {
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::new_tree_id(1);
@@ -330,7 +330,7 @@ fn should_remove_token_with_sig_succeed_using_webb_proposals() {
 }
 
 #[test]
-fn should_fail_to_remove_token_not_in_pool_with_sig_using_webb_prposals() {
+fn should_fail_to_remove_token_not_in_pool_with_sig() {
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::new_tree_id(1);
