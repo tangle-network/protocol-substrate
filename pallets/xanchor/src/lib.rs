@@ -85,7 +85,7 @@ use webb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
 	utils::{self, compute_chain_id_type},
 	webb_proposals::{
-		substrate::AnchorUpdateProposal, ProposalHeader, ResourceId, TargetSystem, TypedChainId,
+		substrate::AnchorUpdateProposal, ResourceId, TargetSystem, TypedChainId,
 	},
 	ElementTrait,
 };
@@ -100,7 +100,6 @@ mod tests;
 pub mod types;
 pub use pallet::*;
 use types::*;
-use webb_primitives::webb_proposals::{FunctionSignature, Nonce};
 
 pub type ChainIdOf<T, I> = <T as pallet_linkable_tree::Config<I>>::ChainId;
 pub type ElementOf<T, I> = <T as pallet_mt::Config<I>>::Element;
@@ -648,11 +647,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// get the current parachain id
 		let my_para_id = T::ParaId::get();
 		let src_chain_id = u32::from(my_para_id);
-
-		let function_signature = FunctionSignature::new([0; 4]);
 		let latest_leaf_index_u32: u32 = latest_leaf_index.try_into().unwrap_or_default();
-		let nonce = Nonce::new(latest_leaf_index_u32);
-
 		let typed_src_chain_id = TypedChainId::Substrate(src_chain_id);
 
 		let mut merkle_root = [0; 32];
@@ -678,8 +673,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 			let typed_other_chain_id = TypedChainId::Substrate(other_chain_underlying_chain_id);
 			let r_id = ResourceId::new(edge_target_system, typed_other_chain_id);
-			// construct the proposal header
-			let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
 
 			// construct the anchor update proposal
 			let anchor_update_proposal = AnchorUpdateProposal::builder()

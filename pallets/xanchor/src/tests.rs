@@ -9,7 +9,7 @@ use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use pallet_anchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};
-use std::{convert::TryInto, path::Path};
+use std::convert::TryInto;
 use webb_primitives::{
 	utils::{derive_resource_id, get_typed_chain_id, get_typed_chain_id_in_u64},
 	webb_proposals::TypedChainId,
@@ -365,12 +365,7 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 		let tree_id = MerkleTree::next_tree_id();
 		let target_system = webb_proposals::TargetSystem::new_tree_id(tree_id);
 		let r_id = derive_resource_id(PARAID_B.into(), tree_id).into();
-
-		let function_signature = FunctionSignature::new([0; 4]);
 		let latest_leaf_index_u32: u32 = 1;
-		let nonce = Nonce::new(latest_leaf_index_u32);
-
-		let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
 		let typed_chain_id = TypedChainId::Substrate(PARAID_B.into());
 
 		let merkle_root = [0; 32];
@@ -820,15 +815,11 @@ fn should_fail_to_call_update_as_signed_account() {
 			root: Element::zero(),
 			latest_leaf_index: 0,
 		};*/
-
-		let function_signature = FunctionSignature::new([0; 4]);
 		let latest_leaf_index_u32: u32 = 0;
-		let nonce = Nonce::new(latest_leaf_index_u32);
 
-		let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
 		let typed_chain_id = TypedChainId::Substrate(PARAID_B.into());
 
-		let mut merkle_root = [0; 32];
+		let merkle_root = [0; 32];
 
 		let anchor_update_proposal = AnchorUpdateProposal::builder()
 			.resource_id(r_id)
