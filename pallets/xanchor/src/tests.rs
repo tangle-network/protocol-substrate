@@ -375,13 +375,14 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 
 		let merkle_root = [0; 32];
 
-		let anchor_update_proposal = AnchorUpdateProposal::new(
-			proposal_header,
-			typed_chain_id,
-			latest_leaf_index_u32,
-			merkle_root,
-			target_system.into_fixed_bytes(),
-		);
+		let anchor_update_proposal = AnchorUpdateProposal::builder()
+			.resource_id(r_id)
+			.src_chain(typed_chain_id)
+			.merkle_root(merkle_root)
+			.latest_leaf_index(latest_leaf_index_u32)
+			.target(target_system.into_fixed_bytes())
+			.pallet_index(10)
+			.build();
 
 		assert_err!(
 			XAnchor::update(
@@ -829,13 +830,14 @@ fn should_fail_to_call_update_as_signed_account() {
 
 		let mut merkle_root = [0; 32];
 
-		let anchor_update_proposal = AnchorUpdateProposal::new(
-			proposal_header,
-			typed_chain_id,
-			latest_leaf_index_u32,
-			merkle_root,
-			target_system.into_fixed_bytes(),
-		);
+		let anchor_update_proposal = AnchorUpdateProposal::builder()
+			.resource_id(r_id)
+			.src_chain(typed_chain_id)
+			.merkle_root(merkle_root)
+			.latest_leaf_index(latest_leaf_index_u32)
+			.target(target_system.into_fixed_bytes())
+			.pallet_index(10)
+			.build();
 
 		assert_err!(
 			XAnchor::update(
