@@ -546,7 +546,7 @@ fn should_update_anchor_edge_with_sig_succeed_using_web_proposals() {
 				.build();
 
 			let nonce = [0u8, 0u8, 0u8, 1u8];
-			let anchor_update_proposal_bytes = proposal.to_bytes();
+			let anchor_update_proposal_bytes = anchor_update_proposal.to_bytes();
 			let prop_data =
 				make_proposal_data(r_id.encode(), nonce, anchor_update_proposal_bytes.clone());
 			let msg = keccak_256(&prop_data);
