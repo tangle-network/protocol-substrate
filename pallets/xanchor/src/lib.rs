@@ -84,9 +84,7 @@ use sp_std::prelude::*;
 use webb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
 	utils::{self, compute_chain_id_type},
-	webb_proposals::{
-		substrate::AnchorUpdateProposal, ResourceId, TargetSystem, TypedChainId,
-	},
+	webb_proposals::{substrate::AnchorUpdateProposal, ResourceId, TargetSystem, TypedChainId},
 	ElementTrait,
 };
 use xcm::latest::prelude::*;
