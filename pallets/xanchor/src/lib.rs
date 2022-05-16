@@ -76,8 +76,10 @@ use frame_support::{
 	dispatch::{DispatchResult, DispatchResultWithPostInfo},
 	ensure,
 	pallet_prelude::*,
+	sp_runtime::traits::AccountIdConversion,
 };
 use frame_system::{pallet_prelude::*, Config as SystemConfig};
+use orml_traits::MultiCurrency;
 use pallet_anchor::{AnchorConfigration, PostDepositHook};
 use pallet_linkable_tree::types::EdgeMetadata;
 use sp_std::prelude::*;
@@ -111,7 +113,7 @@ pub type LinkProposalOf<T, I> = LinkProposal<ChainIdOf<T, I>, TreeIdOf<T, I>>;
 pub mod pallet {
 	use super::*;
 	use frame_support::transactional;
-	use pallet_anchor::BalanceOf;
+	use pallet_anchor::{BalanceOf, CurrencyIdOf};
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -141,6 +143,16 @@ pub mod pallet {
 		/// Anchor Interface
 		type Anchor: AnchorInterface<AnchorConfigration<Self, I>>
 			+ AnchorInspector<AnchorConfigration<Self, I>>;
+
+		/// Currency type for taking deposits
+		type Currency: MultiCurrency<
+			Self::AccountId,
+			CurrencyId = CurrencyIdOf<Self, I>,
+			Balance = BalanceOf<Self, I>,
+		>;
+
+		/// Bond amount to reserve
+		type BondAmount: Get<BalanceOf<Self, I>>;
 	}
 	/// The map of *eventually* linked anchors cross other chains.
 	///
@@ -218,15 +230,13 @@ pub mod pallet {
 		/// Creates a new Proposal to link two anchors cross-chain
 		/// by creating on-chain proposal that once passed will send to the
 		/// other chain a link proposal.
-		///
-		/// TODO: Add a bond (a payment that gets locked up) when calling this xt.
 		#[pallet::weight(0)]
 		pub fn propose_to_link_anchor(
 			origin: OriginFor<T>,
 			payload: LinkProposalOf<T, I>,
 			value: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin.clone())?;
+			let proposer = ensure_signed(origin.clone())?;
 			// First we check if the anchor exists locally
 			ensure!(Self::anchor_exists(payload.local_tree_id), Error::<T, I>::AnchorNotFound);
 			// Then we check if it is not linked to the other chain already.
@@ -245,6 +255,18 @@ pub mod pallet {
 				),
 				Error::<T, I>::AnchorLinkIsAlreadyPending
 			);
+
+			// get the proposer chain details
+			let proposer_anchor = pallet_anchor::Pallet::<T, I>::get_anchor(payload.local_tree_id)?;
+
+			// reserve bond from proposer
+			<T as Config<I>>::Currency::transfer(
+				proposer_anchor.asset,
+				&Self::account_id(),
+				&proposer,
+				<T as Config<I>>::BondAmount::get(),
+			)?;
+
 			// TODO: Ensure the target chain ID has the updated chain ID type encoded in it.
 			// TODO: Ensure that the chain type in the target chain ID matches our chain type.
 			// TODO: Implement get_chain_type, should return [u8; 2]
@@ -420,6 +442,7 @@ pub mod pallet {
 			let dest = (Parent, Parachain(other_para_id.into()));
 			T::XcmSender::send_xcm(dest, Xcm(vec![handle_link_anchor]))
 				.map_err(|_| Error::<T, I>::SendingLinkProposalFailed)?;
+
 			Ok(().into())
 		}
 
@@ -564,6 +587,10 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
+	pub fn account_id() -> T::AccountId {
+		T::PalletId::get().into_account()
+	}
+
 	fn register_new_resource_id(
 		r_id: ResourceId,
 		target_tree_id: T::TreeId,

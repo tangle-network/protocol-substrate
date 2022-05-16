@@ -503,6 +503,8 @@ impl pallet_xanchor::Config for Runtime {
 	type Event = Event;
 	type Origin = Origin;
 	type ParaId = MsgQueue;
+	type Currency = Currencies;
+	type BondAmount = frame_support::traits::ConstU128<1>;
 	type XcmSender = XcmRouter;
 }
 
