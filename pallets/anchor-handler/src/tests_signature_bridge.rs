@@ -507,7 +507,7 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 // 3. Update the edge of the anchor using
 // `pallet-anchor-handler` proposal through `pallet-signature-bridge`
 #[test]
-fn should_update_anchor_edge_with_sig_succeed_using_web_proposals() {
+fn should_update_anchor_edge_with_sig_succeed_using_webb_proposals() {
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::new_tree_id(5);
