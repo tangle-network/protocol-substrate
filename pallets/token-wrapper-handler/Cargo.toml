@@ -38,6 +38,8 @@ pallet-balances = {git = "https://github.com/paritytech/substrate",  branch = "p
 pallet-treasury = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17"}
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17"}
 sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17"}
+webb-proposals = {version = "0.3.0", default-features = false, features = ["scale","substrate"]}
+
 
 [features]
 default = ["std"]

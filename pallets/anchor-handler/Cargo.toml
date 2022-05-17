@@ -58,6 +58,8 @@ orml-currencies = { path = "../../open-runtime-module-library/currencies", defau
 ark-bn254 = {version = "^0.3.0", default-features = false, features = ["curve"]}
 arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
 
+webb-proposals = { version = "0.3.0", default-features = false, features = ["scale","substrate"] }
+
 
 [features]
 default = ["std"]

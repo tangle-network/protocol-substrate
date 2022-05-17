@@ -84,8 +84,8 @@ use sp_std::prelude::*;
 use webb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
 	utils::{self, compute_chain_id_type},
-	webb_proposals::{AnchorUpdateProposal, ProposalHeader, TypedChainId},
-	ElementTrait, ResourceId,
+	webb_proposals::{substrate::AnchorUpdateProposal, ResourceId, TargetSystem, TypedChainId},
+	ElementTrait,
 };
 use xcm::latest::prelude::*;
 
@@ -98,7 +98,6 @@ mod tests;
 pub mod types;
 pub use pallet::*;
 use types::*;
-use webb_primitives::webb_proposals::{FunctionSignature, Nonce};
 
 pub type ChainIdOf<T, I> = <T as pallet_linkable_tree::Config<I>>::ChainId;
 pub type ElementOf<T, I> = <T as pallet_mt::Config<I>>::Element;
@@ -492,15 +491,16 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn update(
 			origin: OriginFor<T>,
-			anchor_update_proposal_bytes: [u8; 114],
+			anchor_update_proposal_bytes: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
 
 			// get the anchor update proposal struct from the bytes
-			let anchor_update_proposal = AnchorUpdateProposal::from(anchor_update_proposal_bytes);
+			let anchor_update_proposal =
+				AnchorUpdateProposal::try_from(anchor_update_proposal_bytes).unwrap();
 
 			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(
-				anchor_update_proposal.header().resource_id().into(),
+				anchor_update_proposal.resource_id().into(),
 			);
 
 			let my_para_id = T::ParaId::get();
@@ -641,16 +641,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// and the latest leaf index
 		let latest_leaf_index = tree.leaf_count;
 		// and the target system
-		let target_system =
-			webb_proposals::TargetSystem::new_tree_id(tree_id.try_into().unwrap_or_default());
+		let target_system = TargetSystem::new_tree_id(tree_id.try_into().unwrap_or_default());
 		// get the current parachain id
 		let my_para_id = T::ParaId::get();
 		let src_chain_id = u32::from(my_para_id);
-
-		let function_signature = FunctionSignature::new([0; 4]);
 		let latest_leaf_index_u32: u32 = latest_leaf_index.try_into().unwrap_or_default();
-		let nonce = Nonce::new(latest_leaf_index_u32);
-
 		let typed_src_chain_id = TypedChainId::Substrate(src_chain_id);
 
 		let mut merkle_root = [0; 32];
@@ -669,26 +664,23 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			// first, we get the target chain tree id
 			let other_chain_id = edge.src_chain_id;
 			let target_tree_id = LinkedAnchors::<T, I>::get(other_chain_id, tree_id);
-
+			let edge_target_system =
+				TargetSystem::new_tree_id(target_tree_id.try_into().unwrap_or_default());
 			let other_chain_underlying_chain_id: u32 =
 				utils::get_underlying_chain_id(other_chain_id.try_into().unwrap_or_default());
 
-			let r_id = utils::derive_resource_id(
-				other_chain_underlying_chain_id,
-				target_tree_id.try_into().unwrap_or_default(),
-			);
-
-			// construct the proposal header
-			let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
+			let typed_other_chain_id = TypedChainId::Substrate(other_chain_underlying_chain_id);
+			let r_id = ResourceId::new(edge_target_system, typed_other_chain_id);
 
 			// construct the anchor update proposal
-			let anchor_update_proposal = AnchorUpdateProposal::new(
-				proposal_header,
-				typed_src_chain_id,
-				latest_leaf_index_u32,
-				merkle_root,
-				target_system.into_fixed_bytes(),
-			);
+			let anchor_update_proposal = AnchorUpdateProposal::builder()
+				.resource_id(r_id)
+				.src_chain(typed_src_chain_id)
+				.merkle_root(merkle_root)
+				.latest_leaf_index(latest_leaf_index_u32)
+				.target(target_system.into_fixed_bytes())
+				.pallet_index(42)
+				.build();
 
 			let other_para_id = chain_id_to_para_id::<T, I>(other_chain_id);
 			let update_edge = Transact {
