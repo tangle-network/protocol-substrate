@@ -402,10 +402,9 @@ pub mod pallet {
 			let r_id = utils::derive_resource_id(
 				payload.target_chain_id.try_into().unwrap_or_default(),
 				payload.local_tree_id.try_into().unwrap_or_default(),
-			)
-			.into();
+			);
 			// unwrap here is safe, since we are sure that it has the value of the tree id.
-			let target_tree_id = payload.target_tree_id.try_into().unwrap_or_default();
+			let target_tree_id = payload.target_tree_id;
 			// We are now ready to link the anchor locally.
 			Self::register_new_resource_id(r_id, target_tree_id)?;
 			// Next, we signal back to the other chain that the link process is done.
@@ -446,8 +445,7 @@ pub mod pallet {
 			let r_id = utils::derive_resource_id(
 				caller_chain_id.try_into().unwrap_or_default(),
 				my_tree_id.try_into().unwrap_or_default(),
-			)
-			.into();
+			);
 			let target_tree_id = payload.local_tree_id;
 			// We are now ready to link them locally.
 			Self::register_new_resource_id(r_id, target_tree_id)?;
@@ -500,7 +498,7 @@ pub mod pallet {
 				AnchorUpdateProposal::try_from(anchor_update_proposal_bytes).unwrap();
 
 			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(
-				anchor_update_proposal.resource_id().into(),
+				anchor_update_proposal.resource_id(),
 			);
 
 			let my_para_id = T::ParaId::get();
@@ -540,8 +538,7 @@ pub mod pallet {
 			metadata: EdgeMetadataOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let (tree_id, chain_id) =
-				utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id.into());
+			let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
 			let typed_chain_id = utils::get_typed_chain_id(chain_id);
 			ensure!(metadata.src_chain_id == typed_chain_id, Error::<T, I>::InvalidPermissions);
 			ensure!(Self::anchor_exists(tree_id), Error::<T, I>::AnchorNotFound);
@@ -569,7 +566,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		target_tree_id: T::TreeId,
 	) -> DispatchResultWithPostInfo {
 		// extract the resource id information
-		let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id.into());
+		let (tree_id, chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(r_id);
 		// use the typed_chain_id which is in u64
 		let typed_chain_id = utils::get_typed_chain_id(chain_id);
 		// and we need to also ensure that the anchor exists
@@ -701,13 +698,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				Ok(()) => {
 					Self::deposit_event(Event::RemoteAnchorEdgeUpdated {
 						para_id: other_para_id,
-						resource_id: r_id.into(),
+						resource_id: r_id,
 					});
 				},
 				Err(e) => {
 					Self::deposit_event(Event::RemoteAnchorEdgeUpdateFailed {
 						para_id: other_para_id,
-						resource_id: r_id.into(),
+						resource_id: r_id,
 						error: e,
 					});
 				},

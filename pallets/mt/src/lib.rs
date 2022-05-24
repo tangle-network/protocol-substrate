@@ -338,7 +338,7 @@ pub mod pallet {
 		let default_zero = T::DefaultZeroElement::get();
 		temp_hashes.push(default_zero);
 		let mut temp_hash = default_zero.to_bytes().to_vec();
-		for i in 0..T::MaxTreeDepth::get() {
+		for _ in 0..T::MaxTreeDepth::get() {
 			temp_hash = T::Hasher::hash_two(&temp_hash, &temp_hash).unwrap();
 			temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
 		}
@@ -362,6 +362,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		default_hashes.is_empty()
 	}
 
+	#[allow(clippy::type_complexity)]
 	fn get_tree(
 		tree_id: T::TreeId,
 	) -> Result<TreeMetadata<T::AccountId, T::LeafIndex, T::Element>, DispatchError> {

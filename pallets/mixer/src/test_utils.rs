@@ -15,8 +15,8 @@ use wasm_utils::{
 use crate::mock::Element;
 
 pub const DEFAULT_LEAF: [u8; 32] = [
-	108, 175, 153, 072, 237, 133, 150, 036, 226, 065, 231, 118, 015, 052, 027, 130, 180, 093, 161,
-	235, 182, 053, 058, 052, 243, 171, 172, 211, 096, 076, 229, 047,
+	108, 175, 153, 72, 237, 133, 150, 36, 226, 65, 231, 118, 15, 52, 27, 130, 180, 93, 161, 235,
+	182, 53, 58, 52, 243, 171, 172, 211, 96, 76, 229, 47,
 ];
 const TREE_HEIGHT: usize = 30;
 type MixerR1CSProver_Bn254_30 = MixerR1CSProver<Bn254, TREE_HEIGHT>;
@@ -87,7 +87,7 @@ pub fn setup_wasm_utils_zk_circuit(
 ) {
 	match curve {
 		Curve::Bn254 => {
-			let note_secret = "7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d0729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";
+			let note_secret = "7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";
 			let raw = hex::decode(&note_secret).unwrap();
 
 			let secret = &raw[0..32];

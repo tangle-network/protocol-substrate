@@ -168,6 +168,6 @@ where
 	));
 
 	io.extend_with(MerkleTreeRpcApi::to_delegate(MerkleTreeClient::new(client.clone())));
-	io.extend_with(LinkableTreeRpcApi::to_delegate(LinkableTreeClient::new(client.clone())));
+	io.extend_with(LinkableTreeRpcApi::to_delegate(LinkableTreeClient::new(client)));
 	Ok(io)
 }

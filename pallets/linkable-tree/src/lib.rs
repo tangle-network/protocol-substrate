@@ -416,6 +416,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
+	#[allow(clippy::type_complexity)]
 	pub fn get_neighbor_edges(
 		tree_id: T::TreeId,
 	) -> Result<Vec<EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>>, DispatchError> {

@@ -71,8 +71,7 @@ where
 		}
 		let leaves = (from..to)
 			.into_iter()
-			.map(|i| api.get_leaf(&at, tree_id, i as u32)) // Result<Option<Element>>
-			.flatten() // Option<Element>
+			.flat_map(|i| api.get_leaf(&at, tree_id, i as u32)) // Result<Option<Element>>
 			.flatten() // Element
 			.collect();
 		Ok(leaves)

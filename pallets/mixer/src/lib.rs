@@ -214,7 +214,7 @@ pub mod pallet {
 					CurrencyIdOf<T, I>,
 					T::TreeId,
 					T::Element,
-				>>::create(None, deposit_size.clone(), 30, asset_id.clone())
+				>>::create(None, *deposit_size, 30, *asset_id)
 				.map_err(|_| panic!("Failed to create mixer"));
 			})
 		}

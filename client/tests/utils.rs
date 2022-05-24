@@ -157,8 +157,8 @@ const TREE_DEPTH: usize = 30;
 const ANCHOR_CT: usize = 2;
 pub const NUM_UTXOS: usize = 2;
 pub const DEFAULT_LEAF: [u8; 32] = [
-	108, 175, 153, 072, 237, 133, 150, 036, 226, 065, 231, 118, 015, 052, 027, 130, 180, 093, 161,
-	235, 182, 053, 058, 052, 243, 171, 172, 211, 096, 076, 229, 047,
+	108, 175, 153, 72, 237, 133, 150, 36, 226, 65, 231, 118, 15, 52, 27, 130, 180, 93, 161, 235,
+	182, 53, 58, 52, 243, 171, 172, 211, 96, 76, 229, 47,
 ];
 
 #[allow(non_camel_case_types)]
@@ -483,7 +483,7 @@ pub async fn expect_event<E: Event + Debug>(
 		}
 	}
 
-	Ok(())
+	Ok(().into())
 }
 
 pub fn truncate_and_pad(t: &[u8]) -> Vec<u8> {
