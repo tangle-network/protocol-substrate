@@ -19,7 +19,7 @@ pub const DEFAULT_LEAF: [u8; 32] = [
 	182, 53, 58, 52, 243, 171, 172, 211, 96, 76, 229, 47,
 ];
 const TREE_HEIGHT: usize = 30;
-type MixerR1CSProver_Bn254_30 = MixerR1CSProver<Bn254, TREE_HEIGHT>;
+type MixerR1csproverBn254_30 = MixerR1CSProver<Bn254, TREE_HEIGHT>;
 
 pub fn setup_zk_circuit(
 	curve: Curve,
@@ -40,11 +40,11 @@ pub fn setup_zk_circuit(
 		Curve::Bn254 => {
 			// fit inputs to the curve.
 			let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes, .. } =
-				MixerR1CSProver_Bn254_30::create_random_leaf(curve, rng).unwrap();
+			MixerR1csproverBn254_30::create_random_leaf(curve, rng).unwrap();
 
 			let leaves = vec![leaf_bytes.clone()];
 			let index = 0;
-			let MixerProof { proof, root_raw, .. } = MixerR1CSProver_Bn254_30::create_proof(
+			let MixerProof { proof, root_raw, .. } = MixerR1csproverBn254_30::create_proof(
 				curve,
 				secret_bytes,
 				nullifier_bytes,
@@ -92,7 +92,7 @@ pub fn setup_wasm_utils_zk_circuit(
 
 			let secret = &raw[0..32];
 			let nullifier = &raw[32..64];
-			let leaf = MixerR1CSProver_Bn254_30::create_leaf_with_privates(
+			let leaf = MixerR1csproverBn254_30::create_leaf_with_privates(
 				curve,
 				secret.to_vec(),
 				nullifier.to_vec(),

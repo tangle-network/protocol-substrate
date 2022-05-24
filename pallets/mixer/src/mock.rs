@@ -18,8 +18,6 @@ use sp_runtime::{
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
 use webb_primitives::{hashing::ethereum::Keccak256HasherBn254, types::ElementTrait, AccountId};
 
-use frame_benchmarking::account;
-
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 type BlockNumber = u64;

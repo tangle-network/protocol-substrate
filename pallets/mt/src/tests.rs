@@ -1,5 +1,5 @@
-use ark_ff::{BigInteger, Field, PrimeField};
-use frame_support::{assert_err, assert_ok, traits::OnInitialize};
+use ark_ff::{BigInteger, PrimeField};
+use frame_support::{assert_err, assert_ok};
 use hex_literal::hex;
 use sp_runtime::ModuleError;
 use sp_std::vec;
