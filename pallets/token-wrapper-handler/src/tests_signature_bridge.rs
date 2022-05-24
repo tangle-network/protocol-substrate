@@ -53,12 +53,12 @@ fn get_public_uncompressed_key() -> [u8; 64] {
 }
 
 fn make_wrapping_fee_proposal(
-	resource_id: webb_proposals::ResourceId,
+	header: webb_proposals::ProposalHeader,
 	wrapping_fee_percent: u128,
 	into_pool_share_id: u32,
 ) -> Vec<u8> {
 	let wrapping_fee_proposal = WrappingFeeUpdateProposal::builder()
-		.resource_id(resource_id)
+		.header(header)
 		.wrapping_fee_percent(5)
 		.into_pool_share_id(into_pool_share_id)
 		.pallet_index(7)
@@ -141,21 +141,19 @@ fn should_update_fee_with_sig_succeed() {
 			existential_balance.into(),
 		)
 		.unwrap();
-		let wrapping_fee_proposal_bytes = make_wrapping_fee_proposal(resource, 5, pool_share_id);
-		let nonce = [0u8, 0u8, 0u8, 1u8];
-		let prop_data =
-			make_proposal_data(r_id.encode(), nonce, wrapping_fee_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
+		let nonce = webb_proposals::Nonce::from(0x0001);
+		let header = make_proposal_header(resource, nonce);
+		let wrapping_fee_proposal_bytes = make_wrapping_fee_proposal(header, 5, pool_share_id);
+		let msg = keccak_256(&wrapping_fee_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
-		let proposal_bytes = wrapping_fee_proposal_bytes.clone();
-		let fee_call: Call = codec::Decode::decode(&mut proposal_bytes.as_slice()).unwrap();
+		let fee_call: Call = codec::Decode::decode(&mut &wrapping_fee_proposal_bytes[40..]).unwrap();
 		// should fail to execute proposal as non-maintainer
 		assert_err!(
 			SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id,
 				Box::new(fee_call.clone()),
-				prop_data,
+				wrapping_fee_proposal_bytes.clone(),
 				sig.0.to_vec(),
 			),
 			pallet_signature_bridge::Error::<Test, _>::InvalidPermissions
@@ -167,19 +165,11 @@ fn should_update_fee_with_sig_succeed() {
 			public_uncompressed.to_vec()
 		));
 
-		let nonce = [0u8, 0u8, 0u8, 1u8];
-		let prop_data =
-			make_proposal_data(r_id.encode(), nonce, wrapping_fee_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
-		let proposal_bytes = wrapping_fee_proposal_bytes.clone();
-		let fee_call: Call = codec::Decode::decode(&mut proposal_bytes.as_slice()).unwrap();
-		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
 			Box::new(fee_call.clone()),
-			prop_data,
+			wrapping_fee_proposal_bytes.clone(),
 			sig.0.to_vec(),
 		));
 
