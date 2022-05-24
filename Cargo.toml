@@ -16,6 +16,7 @@ members = [
 	"pallets/vanchor",
 	"pallets/xanchor",
 	"pallets/anchor-handler",
+	"pallets/vanchor-handler",
 	"pallets/token-wrapper",
 	"pallets/token-wrapper-handler",
 	"standalone/*",
