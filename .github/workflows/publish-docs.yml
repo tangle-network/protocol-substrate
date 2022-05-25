@@ -27,7 +27,7 @@ jobs:
         run: git submodule update --init --recursive
 
       - name: Build documentation
-        run: RUST_BACKTRACE=1 cargo doc --no-deps --release --all-features --workspace --exclude webb-client --exclude open-runtime-module-library/**/* --exclude open-runtime-module-library/auction/README.md'
+        run: RUST_BACKTRACE=1 cargo doc --no-deps --release --workspace --exclude webb-client --exclude open-runtime-module-library/**/* --exclude open-runtime-module-library/auction/README.md'
       - name: Publish documentation
         run: |
           cd target/doc
