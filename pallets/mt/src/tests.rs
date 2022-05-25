@@ -1,5 +1,5 @@
-use ark_ff::{BigInteger, PrimeField};
-use frame_support::{assert_err, assert_ok};
+use ark_ff::{BigInteger, Field, PrimeField};
+use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use hex_literal::hex;
 use sp_runtime::ModuleError;
 use sp_std::vec;
@@ -81,7 +81,7 @@ fn should_successfully_set_default_hashes_to_match_solidity() {
 				"267855a7dc75db39d81d17f95d0a7aa572bf5ae19f4db0e84221d2b2ef999219"
 			)),
 			Element::from_bytes(&hex!(
-				"1184e11836b4c36ad8238a340ecc0985eeba665327e33e9b0e364127c27620d"
+				"1184e11836b4c36ad8238a340ecc0985eeba665327e33e9b0e3641027c27620d"
 			)),
 			Element::from_bytes(&hex!(
 				"0702ab83a135d7f55350ab1bfaa90babd8fc1d2b3e6a7215381a7b2213d6c5ce"
@@ -90,7 +90,7 @@ fn should_successfully_set_default_hashes_to_match_solidity() {
 				"2eecc0de814cfd8c57ce882babb2e30d1da56621aef7a47f3291cffeaec26ad7"
 			)),
 			Element::from_bytes(&hex!(
-				"280bc02145c155d5833585b6c7b08501055157dd30ce05319621dc462d33b47"
+				"280bc02145c155d5833585b6c7b08501055157dd30ce005319621dc462d33b47"
 			)),
 			Element::from_bytes(&hex!(
 				"045132221d1fa0a7f4aed8acd2cbec1e2189b7732ccb2ec272b9c60f0d5afc5b"
@@ -138,13 +138,13 @@ fn should_successfully_set_default_hashes_to_match_solidity() {
 				"2ddb991be1f028022411b4c4d2c22043e5e751c120736f00adf54acab1c9ac14"
 			)),
 			Element::from_bytes(&hex!(
-				"0113798410eaeb95056a464f7521eb58377c155f2fe518a5594d38cc209cc0"
+				"0113798410eaeb95056a464f70521eb58377c0155f2fe518a5594d38cc209cc0"
 			)),
 			Element::from_bytes(&hex!(
 				"202d1ae61526f0d0d01ef80fb5d4055a7af45721024c2c24cffd6a3798f54d50"
 			)),
 			Element::from_bytes(&hex!(
-				"23ab323453748129f2765f79615022f5bebd6f496a796300aab049a60b0f187"
+				"23ab323453748129f2765f79615022f5bebd6f4096a796300aab049a60b0f187"
 			)),
 			Element::from_bytes(&hex!(
 				"1f15585f8947e378bcf8bd918716799da909acdb944c57150b1eb4565fda8aa0"
