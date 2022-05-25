@@ -104,8 +104,8 @@ pub fn get_underlying_chain_id(typed_chain_id: u64) -> u32 {
 
 #[cfg(test)]
 mod tests {
-	use super::*;	
-	
+	use super::*;
+
 	#[test]
 	fn derive_parse_resource_ids() {
 		let tree_id = 0u32;

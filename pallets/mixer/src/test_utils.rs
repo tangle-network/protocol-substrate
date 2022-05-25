@@ -40,7 +40,7 @@ pub fn setup_zk_circuit(
 		Curve::Bn254 => {
 			// fit inputs to the curve.
 			let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes, .. } =
-			MixerR1csproverBn254_30::create_random_leaf(curve, rng).unwrap();
+				MixerR1csproverBn254_30::create_random_leaf(curve, rng).unwrap();
 
 			let leaves = vec![leaf_bytes.clone()];
 			let index = 0;
