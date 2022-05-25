@@ -129,7 +129,7 @@ pub fn setup_wasm_utils_zk_circuit(
 ) {
 	match curve {
 		Curve::Bn254 => {
-			let note_secret = "7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";
+			let note_secret = "7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d0729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";
 			let raw = hex::decode(&note_secret).unwrap();
 
 			let secret = &raw[0..32];
@@ -171,7 +171,7 @@ pub fn setup_wasm_utils_zk_circuit(
 				.unwrap();
 			let roots_raw = roots_f.map(|x| x.into_repr().to_bytes_le());
 
-			let mixer_proof_input = AnchorProofInput {
+			let anchor_proof_input = AnchorProofInput {
 				exponentiation: 5,
 				width: 4,
 				curve: WasmCurve::Bn254,
@@ -189,7 +189,7 @@ pub fn setup_wasm_utils_zk_circuit(
 				roots: roots_raw.to_vec(),
 				refresh_commitment: commitment_bytes,
 			};
-			let js_proof_inputs = JsProofInput { inner: ProofInput::Anchor(mixer_proof_input) };
+			let js_proof_inputs = JsProofInput { inner: ProofInput::Anchor(anchor_proof_input) };
 			let proof = generate_proof_js(js_proof_inputs).unwrap();
 
 			let root_elements = proof.roots.iter().map(|root| Element::from_bytes(&root)).collect();
