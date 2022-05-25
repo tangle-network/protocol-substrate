@@ -82,7 +82,7 @@ fn should_create_anchor_with_sig_succeed() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f2701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
 		None,
@@ -148,8 +148,7 @@ fn should_add_anchor_edge_with_sig_succeed() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f2701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -233,8 +232,7 @@ fn should_update_anchor_edge_with_sig_succeed() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f2701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -353,8 +351,8 @@ fn should_fail_to_whitelist_chain_already_whitelisted() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f2701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+	let public_uncompressed = hex!(
+		"8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -383,8 +381,7 @@ fn should_fail_to_whitelist_this_chain() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f2701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -416,8 +413,7 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f2701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -465,8 +461,7 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f2701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -517,8 +512,7 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 	let this_chain_id_u32 = 5u32;
 	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed =
-hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f2701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
+	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
