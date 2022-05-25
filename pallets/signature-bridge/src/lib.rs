@@ -98,7 +98,7 @@ pub mod pallet {
 			+ Decode
 			+ GetDispatchInfo;
 		/// ChainID for anchor edges
-		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy + From<u64> + From<u32> ;
 		/// Proposal nonce type
 		type ProposalNonce: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 		/// Maintainer nonce type
@@ -393,11 +393,24 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	pub fn parse_r_id_from_proposal_data(proposal_data: &[u8]) -> [u8; 32] {
-		proposal_data[0..32].try_into().unwrap_or_default()
+		let mut buf = [0u8; 32];
+		if proposal_data.len() < 32 {
+			buf[0..proposal_data.len()].copy_from_slice(&proposal_data[..]);
+		} else {
+			buf.copy_from_slice(&proposal_data[0..32]);
+		}
+
+		buf
 	}
 
 	pub fn parse_nonce_from_proposal_data(proposal_data: &[u8]) -> T::ProposalNonce {
-		let nonce_bytes = proposal_data[36..40].try_into().unwrap_or_default();
+		let mut nonce_bytes = [0u8; 4];
+		if proposal_data.len() < 4 {
+			nonce_bytes[0..proposal_data.len()].copy_from_slice(&proposal_data[..]);
+		} else {
+			nonce_bytes.copy_from_slice(&proposal_data[0..4]);
+		}
+
 		let nonce = u32::from_be_bytes(nonce_bytes);
 		T::ProposalNonce::from(nonce)
 	}
@@ -441,11 +454,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn whitelist(id: T::ChainId) -> DispatchResultWithPostInfo {
 		// Cannot whitelist this chain
 		ensure!(
-			id != T::ChainId::try_from(compute_chain_id_type(
+			id != T::ChainId::from(compute_chain_id_type(
 				T::ChainIdentifier::get(),
 				T::ChainType::get()
-			))
-			.unwrap_or_default(),
+			)),
 			Error::<T, I>::InvalidChainId
 		);
 		// Cannot whitelist with an existing entry

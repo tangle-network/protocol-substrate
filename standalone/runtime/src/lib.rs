@@ -7,7 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
-use common::*;
+use webb_primitives::*;
 use constants::{currency::*, time::*};
 pub mod impls;
 mod voter_bags;

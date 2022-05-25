@@ -117,7 +117,7 @@ pub mod pallet {
 			+ EncodeLike
 			+ GetDispatchInfo;
 		/// ChainID for anchor edges
-		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy + From<u64> + From<u32>;
 		/// The identifier for this chain.
 		/// This must be unique and must not collide with existing IDs within a
 		/// set of bridged chains.
@@ -450,11 +450,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn whitelist(id: T::ChainId) -> DispatchResultWithPostInfo {
 		// Cannot whitelist this chain
 		ensure!(
-			id != T::ChainId::try_from(compute_chain_id_type(
+			id != T::ChainId::from(compute_chain_id_type(
 				T::ChainIdentifier::get(),
 				T::ChainType::get()
-			))
-			.unwrap_or_default(),
+			)),
 			Error::<T, I>::InvalidChainId
 		);
 		// Cannot whitelist with an existing entry

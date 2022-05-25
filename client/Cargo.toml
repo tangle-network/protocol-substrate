@@ -8,15 +8,15 @@ edition = "2021"
 [dependencies]
 async-std = { version = "1.9.0", features = ["attributes", "tokio1"] }
 subxt = { version = "0.17.0" }
-codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = ["derive", "full", "bit-vec"] }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
 
 [dev-dependencies]
-serde = { version = "1.0.119" }
-sp-keyring = "5.0.0"
 hex = "0.4"
+serde = { version = "1.0.119" }
+sp-keyring = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22" }
 tokio = { version = "1.17.0", features = ["full"] }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17" }
-scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22" }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 
 # arkworks related deps
 ark-bls12-377 = {version = "^0.3.0", default-features = false, features = ["curve", "r1cs"]}
@@ -32,5 +32,5 @@ ark-std = {version = "^0.3.0", default-features = false}
 # webb deps
 wasm-utils = { version = "0.1.4" }
 webb-primitives = { path = "../primitives", features = ["hashing", "verifying", "field_ops"] }
-arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
+arkworks-setups = { version = "1.1.1", features = ["r1cs"], default-features = false }
 arkworks-native-gadgets = { version = "1.0.0", default-features = false }

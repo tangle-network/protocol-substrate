@@ -32,7 +32,7 @@
 
 use std::sync::Arc;
 
-use common::{AccountId, Balance, Block, BlockNumber, ChainId, Hash, Index, LeafIndex};
+use webb_primitives::{AccountId, Balance, Block, BlockNumber, ChainId, Hash, Index, LeafIndex};
 use webb_runtime::Element;
 
 use pallet_linkable_tree_rpc::{LinkableTreeClient, LinkableTreeRpcApi};

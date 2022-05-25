@@ -14,7 +14,7 @@
 // limitations under the License.
 
 pub mod currency {
-	use common::Balance;
+	use webb_primitives::Balance;
 
 	/// The existential deposit. Set to 1/10 of its parent Relay Chain (v9020).
 	pub const EXISTENTIAL_DEPOSIT: Balance = CENTS / 10;
@@ -34,7 +34,7 @@ pub mod currency {
 
 /// Fee-related.
 pub mod fee {
-	use common::Balance;
+	use webb_primitives::Balance;
 	use frame_support::weights::{
 		constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
 		WeightToFeePolynomial,
@@ -76,7 +76,7 @@ pub mod fee {
 }
 
 pub mod time {
-	use common::{BlockNumber, Moment};
+	use webb_primitives::{BlockNumber, Moment};
 	/// Since BABE is probabilistic this is the average expected block time that
 	/// we are targeting. Blocks will be produced at a minimum duration defined
 	/// by `SLOT_DURATION`, but some slots will not be allocated to any
