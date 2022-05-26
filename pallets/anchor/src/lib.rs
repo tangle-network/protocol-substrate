@@ -217,10 +217,10 @@ pub mod pallet {
 			self.anchors.iter().for_each(|(asset_id, deposit_size, max_edges)| {
 				let _ = <Pallet<T, I> as AnchorInterface<_>>::create(
 					None,
-					deposit_size.clone(),
+					*deposit_size,
 					30,
 					*max_edges,
-					asset_id.clone(),
+					*asset_id,
 				)
 				.map_err(|_| panic!("Failed to create anchor"));
 			})
@@ -413,7 +413,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 		arbitrary_data_bytes.extend_from_slice(&relayer_bytes);
 		arbitrary_data_bytes.extend_from_slice(&fee.encode());
 		arbitrary_data_bytes.extend_from_slice(&refund.encode());
-		arbitrary_data_bytes.extend_from_slice(&commitment.to_bytes());
+		arbitrary_data_bytes.extend_from_slice(commitment.to_bytes());
 		let arbitrary_data = T::ArbitraryHasher::hash(&arbitrary_data_bytes, &[])
 			.map_err(|_| Error::<T, I>::InvalidArbitraryData)?;
 
@@ -436,10 +436,7 @@ impl<T: Config<I>, I: 'static> AnchorInterface<AnchorConfigration<T, I>> for Pal
 				&recipient,
 				anchor.deposit_size,
 			)?;
-			Self::deposit_event(Event::Withdraw {
-				who: recipient.clone(),
-				amount: anchor.deposit_size,
-			});
+			Self::deposit_event(Event::Withdraw { who: recipient, amount: anchor.deposit_size });
 		} else {
 			// deposit the new commitment when the commitment is not default / zero (a
 			// refresh)

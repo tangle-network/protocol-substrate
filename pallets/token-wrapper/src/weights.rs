@@ -48,23 +48,23 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: System Account (r:1 w:1)
 	// Storage: Tokens TotalIssuance (r:1 w:1)
 	fn wrap() -> Weight {
-		(141_546_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(8 as Weight))
-			.saturating_add(T::DbWeight::get().writes(5 as Weight))
+		(141_546_000_u64)
+			.saturating_add(T::DbWeight::get().reads(8_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
 	// Storage: AssetRegistry Assets (r:2 w:0)
 	// Storage: Tokens Accounts (r:3 w:3)
 	// Storage: Tokens TotalIssuance (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn unwrap() -> Weight {
-		(125_843_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(7 as Weight))
-			.saturating_add(T::DbWeight::get().writes(5 as Weight))
+		(125_843_000_u64)
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
 	// Storage: TokenWrapper WrappingFeePercent (r:0 w:1)
 	fn set_wrapping_fee() -> Weight {
-		(16_705_000 as Weight)
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		(16_705_000_u64)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 

@@ -105,14 +105,12 @@ pub fn get_underlying_chain_id(typed_chain_id: u64) -> u32 {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	type TreeId = u32;
-	type ChainId = u64;
 
 	#[test]
 	fn derive_parse_resource_ids() {
 		let tree_id = 0u32;
 		let chain_id = 2000u32;
-		let updated_chain_id: u64 = compute_chain_id_type(chain_id, [2, 0]);
+		compute_chain_id_type(chain_id, [2, 0]);
 		let resource_id = derive_resource_id(chain_id, tree_id);
 		let (tree_id2, chain_id2): (u32, u64) = parse_resource_id(resource_id);
 		assert_eq!(chain_id as u64, chain_id2);

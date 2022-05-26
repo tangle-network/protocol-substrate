@@ -2,34 +2,20 @@ use std::convert::TryInto;
 
 use sp_core::{
 	ecdsa::{self, Signature},
-	keccak_256, Pair, Public,
+	keccak_256, Pair,
 };
 
-use super::{
-	mock_signature_bridge::{
-		assert_events, new_test_ext, Balances, Call, ChainIdentifier, Event, Origin,
-		ProposalLifetime, SignatureBridge, System, Test, ENDOWED_BALANCE, RELAYER_A, RELAYER_B,
-		RELAYER_C,
-	},
-	*,
-};
+use super::mock_signature_bridge::{Call, Origin, SignatureBridge, System, Test, RELAYER_A};
 
 use crate::mock_signature_bridge::new_test_ext_initialized;
 
-use codec::{Decode, Encode, EncodeLike};
+use codec::Encode;
 
 use hex_literal::hex;
-use webb_primitives::{
-	signing::SigningSystem,
-	utils::{compute_chain_id_type, derive_resource_id},
-	ResourceId,
-};
 
 use crate::mock_signature_bridge::*;
 use asset_registry::AssetType;
-use frame_support::{
-	assert_err, assert_ok, dispatch::DispatchResultWithPostInfo, error::BadOrigin,
-};
+use frame_support::{assert_err, assert_ok};
 use webb_proposals::substrate::{TokenAddProposal, TokenRemoveProposal, WrappingFeeUpdateProposal};
 
 const TEST_THRESHOLD: u32 = 2;

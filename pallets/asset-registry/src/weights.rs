@@ -32,7 +32,7 @@
 // --extrinsic=*
 // --execution=wasm
 // --wasm-execution=compiled
-// --heap-pages=4096
+// --heap-pages=496
 // --template=.maintain/pallet-weight-template.hbs
 // --output=lbp.rs
 

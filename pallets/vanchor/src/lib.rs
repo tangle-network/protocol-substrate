@@ -254,13 +254,9 @@ pub mod pallet {
 			MinWithdrawAmount::<T, I>::put(self.min_withdraw_amount);
 
 			self.vanchors.iter().for_each(|(asset_id, max_edges)| {
-				let _ = <Pallet<T, I> as VAnchorInterface<_>>::create(
-					None,
-					30,
-					*max_edges,
-					asset_id.clone(),
-				)
-				.map_err(|_| panic!("Failed to create vanchor"));
+				let _ =
+					<Pallet<T, I> as VAnchorInterface<_>>::create(None, 30, *max_edges, *asset_id)
+						.map_err(|_| panic!("Failed to create vanchor"));
 			});
 		}
 	}
@@ -368,7 +364,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			.map_err(|_| Error::<T, I>::InvalidExtData)?;
 		// Ensure that the passed external data hash matches the computed one
 		ensure!(
-			proof_data.ext_data_hash.to_bytes() == &computed_ext_data_hash,
+			proof_data.ext_data_hash.to_bytes() == computed_ext_data_hash,
 			Error::<T, I>::InvalidExtData
 		);
 
@@ -398,17 +394,17 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 
 		// Construct public inputs
 		let mut bytes = Vec::new();
-		bytes.extend_from_slice(&proof_data.public_amount.to_bytes());
-		bytes.extend_from_slice(&proof_data.ext_data_hash.to_bytes());
+		bytes.extend_from_slice(proof_data.public_amount.to_bytes());
+		bytes.extend_from_slice(proof_data.ext_data_hash.to_bytes());
 		for null in &proof_data.input_nullifiers {
-			bytes.extend_from_slice(&null.to_bytes());
+			bytes.extend_from_slice(null.to_bytes());
 		}
 		for comm in &proof_data.output_commitments {
-			bytes.extend_from_slice(&comm.to_bytes());
+			bytes.extend_from_slice(comm.to_bytes());
 		}
 		bytes.extend_from_slice(&chain_id_type.using_encoded(element_encoder));
 		for root in proof_data.roots {
-			bytes.extend_from_slice(&root.to_bytes());
+			bytes.extend_from_slice(root.to_bytes());
 		}
 
 		let res = match (proof_data.input_nullifiers.len(), proof_data.output_commitments.len()) {
@@ -475,7 +471,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		}
 
 		Self::deposit_event(Event::Transaction {
-			transactor: transactor.clone(),
+			transactor,
 			tree_id: id,
 			leafs: proof_data.output_commitments,
 			amount: calc_public_amount,

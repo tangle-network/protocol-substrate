@@ -392,23 +392,23 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Self::chains(id) != None
 	}
 
-	pub fn parse_r_id_from_proposal_data(proposal_data: &Vec<u8>) -> [u8; 32] {
+	pub fn parse_r_id_from_proposal_data(proposal_data: &[u8]) -> [u8; 32] {
 		proposal_data[0..32].try_into().unwrap_or_default()
 	}
 
-	pub fn parse_nonce_from_proposal_data(proposal_data: &Vec<u8>) -> T::ProposalNonce {
+	pub fn parse_nonce_from_proposal_data(proposal_data: &[u8]) -> T::ProposalNonce {
 		let nonce_bytes = proposal_data[36..40].try_into().unwrap_or_default();
 		let nonce = u32::from_be_bytes(nonce_bytes);
 		T::ProposalNonce::from(nonce)
 	}
 
-	pub fn parse_call_from_proposal_data(proposal_data: &Vec<u8>) -> Vec<u8> {
+	pub fn parse_call_from_proposal_data(proposal_data: &[u8]) -> Vec<u8> {
 		// Not [36..] because there are 4 byte of zero padding to match Solidity side
 		proposal_data[40..].to_vec()
 	}
 
 	pub fn parse_method_from_call(parsed_call: Vec<u8>) -> Vec<u8> {
-		parsed_call.clone()
+		parsed_call
 	}
 
 	pub fn parse_chain_id_type_from_r_id(r_id: ResourceId) -> u64 {

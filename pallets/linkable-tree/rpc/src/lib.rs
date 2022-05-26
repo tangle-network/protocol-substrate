@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use codec::{Decode, Encode};
-use jsonrpc_core::{Error, ErrorCode, Result};
+use jsonrpc_core::Result;
 use jsonrpc_derive::rpc;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -60,7 +60,7 @@ where
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		let roots = api.get_neighbor_roots(&at, tree_id).ok().flatten();
-		Ok(roots.unwrap_or(vec![]))
+		Ok(roots.unwrap_or_default())
 	}
 
 	fn get_neighbor_edges(
@@ -71,6 +71,6 @@ where
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		let roots = api.get_neighbor_edges(&at, tree_id).ok().flatten();
-		Ok(roots.unwrap_or(vec![]))
+		Ok(roots.unwrap_or_default())
 	}
 }

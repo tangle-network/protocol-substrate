@@ -124,7 +124,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 
 	expect_event::<webb_runtime::mixer_bn254::events::Withdraw>(&mut withdraw_res).await?;
 
-	Ok(())
+	Ok(().into())
 }
 
 #[tokio::test]
@@ -238,7 +238,7 @@ async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 
 	expect_event::<webb_runtime::anchor_bn254::events::Withdraw>(&mut withdraw_res).await?;
 
-	Ok(())
+	Ok(().into())
 }
 
 async fn make_vanchor_tx(
@@ -314,7 +314,7 @@ async fn make_vanchor_tx(
 
 	expect_event::<webb_runtime::v_anchor_bn254::events::Transaction>(&mut transact_res).await?;
 
-	Ok(())
+	Ok(().into())
 }
 
 #[tokio::test]
@@ -421,5 +421,5 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	println!("Leaf count: {:?}", leaf_count);
 	println!("Chain root {:?}", chain_root);
 
-	Ok(())
+	Ok(().into())
 }

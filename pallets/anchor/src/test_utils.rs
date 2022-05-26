@@ -24,8 +24,8 @@ type NullifierHashElement = Element;
 type LeafElement = Element;
 
 pub const DEFAULT_LEAF: [u8; 32] = [
-	108, 175, 153, 072, 237, 133, 150, 036, 226, 065, 231, 118, 015, 052, 027, 130, 180, 093, 161,
-	235, 182, 053, 058, 052, 243, 171, 172, 211, 096, 076, 229, 047,
+	108, 175, 153, 72, 237, 133, 150, 36, 226, 65, 231, 118, 15, 52, 27, 130, 180, 93, 161, 235,
+	182, 53, 58, 52, 243, 171, 172, 211, 96, 76, 229, 47,
 ];
 // merkle proof path legth
 // TreeConfig_x5, x7 HEIGHT is hardcoded to 30
@@ -171,7 +171,7 @@ pub fn setup_wasm_utils_zk_circuit(
 				.unwrap();
 			let roots_raw = roots_f.map(|x| x.into_repr().to_bytes_le());
 
-			let mixer_proof_input = AnchorProofInput {
+			let anchor_proof_input = AnchorProofInput {
 				exponentiation: 5,
 				width: 4,
 				curve: WasmCurve::Bn254,
@@ -189,7 +189,7 @@ pub fn setup_wasm_utils_zk_circuit(
 				roots: roots_raw.to_vec(),
 				refresh_commitment: commitment_bytes,
 			};
-			let js_proof_inputs = JsProofInput { inner: ProofInput::Anchor(mixer_proof_input) };
+			let js_proof_inputs = JsProofInput { inner: ProofInput::Anchor(anchor_proof_input) };
 			let proof = generate_proof_js(js_proof_inputs).unwrap();
 
 			let root_elements = proof.roots.iter().map(|root| Element::from_bytes(&root)).collect();

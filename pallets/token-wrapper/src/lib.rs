@@ -274,7 +274,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 			wrapping_fee_percent: fee,
 			into_pool_share_id,
 		});
-		Ok(().into())
+		Ok(())
 	}
 
 	fn wrap(

@@ -89,21 +89,21 @@ fn should_build_the_same_merkle_tree_solidity() {
 			hex!("1eb064b21055ac6a350cf41eb30e4ce2cb19680217df3a243617c2838185ad06"),
 		];
 		let default_zero = [
-			108, 175, 153, 072, 237, 133, 150, 036, 226, 065, 231, 118, 015, 052, 027, 130, 180,
-			093, 161, 235, 182, 053, 058, 052, 243, 171, 172, 211, 096, 076, 229, 047,
+			108, 175, 153, 72, 237, 133, 150, 36, 226, 65, 231, 118, 15, 52, 27, 130, 180, 93, 161,
+			235, 182, 53, 58, 52, 243, 171, 172, 211, 96, 76, 229, 47,
 		]
 		.to_vec();
 
-		let other_zero = [
-			047, 229, 076, 096, 211, 172, 171, 243, 052, 058, 053, 182, 235, 161, 093, 180, 130,
-			027, 052, 015, 118, 231, 065, 226, 036, 150, 133, 237, 072, 153, 175, 108,
+		let _other_zero = [
+			47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52,
+			15, 118, 231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,
 		]
 		.to_vec();
 
 		let mut hashes = vec![];
 		let mut temp_hash_bytes = default_zero;
 		hashes.push(temp_hash_bytes.clone());
-		for i in 0..32 {
+		for _i in 0..32 {
 			temp_hash_bytes =
 				DefaultPalletHasher::hash_two(&temp_hash_bytes, &temp_hash_bytes).unwrap();
 			hashes.push(temp_hash_bytes.clone());

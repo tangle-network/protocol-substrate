@@ -30,9 +30,8 @@ node-primitives = { git = "https://github.com/paritytech/substrate", branch = "p
 polkadot-runtime-common = { git = 'https://github.com/paritytech/polkadot', branch = "release-v0.9.17", default-features = false }
 polkadot-primitives = { git = 'https://github.com/paritytech/polkadot', branch = "release-v0.9.17", default-features = false }
 
-# Local dependencies
+# Substrate dependencies
 pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
-pallet-parachain-staking = { path = "../pallets/parachain-staking", default-features = false }
 
 # Webb primitives
 webb-primitives = { path = "../primitives", default-features = false }
@@ -62,5 +61,4 @@ std = [
 	'node-primitives/std',
 	'polkadot-runtime-common/std',
 	'polkadot-primitives/std',
-	'pallet-parachain-staking/std'
 ]
