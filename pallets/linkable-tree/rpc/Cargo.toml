@@ -5,9 +5,8 @@ authors = ["Webb Tools"]
 edition = "2018"
 
 [dependencies]
-jsonrpc-core = "18.0.0"
-jsonrpc-core-client = "18.0.0"
-jsonrpc-derive = "18.0.0"
+jsonrpsee = { version = "0.13.0", features = ["server"] }
+thiserror = "1.0"
 sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22" }
 
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }

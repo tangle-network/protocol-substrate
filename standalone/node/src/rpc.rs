@@ -51,9 +51,15 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
 use sp_keystore::SyncCryptoStorePtr;
-use webb_primitives::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index};
+use webb_primitives::{
+	opaque::Block, AccountId, Balance, BlockNumber, ChainId, Hash, Index, LeafIndex,
+};
+use webb_runtime::Element;
 
 pub use jsonrpc_core::IoHandler;
+
+use pallet_linkable_tree_rpc::LinkableTreeClient;
+use pallet_mt_rpc::MerkleTreeClient;
 
 /// Extra dependencies for BABE.
 pub struct BabeDeps {
@@ -115,11 +121,16 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BabeApi<Block>,
 	C::Api: BlockBuilder<Block>,
+	C::Api: pallet_mt_rpc_runtime_api::MerkleTreeApi<Block, Element>,
+	C::Api:
+		pallet_linkable_tree_rpc_runtime_api::LinkableTreeApi<Block, ChainId, Element, LeafIndex>,
 	P: TransactionPool + 'static,
 	SC: SelectChain<Block> + 'static,
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
+	use pallet_linkable_tree_rpc::LinkableTreeRpcApiServer;
+	use pallet_mt_rpc::MerkleTreeRpcApiServer;
 	use pallet_transaction_payment_rpc::{TransactionPaymentApiServer, TransactionPaymentRpc};
 	use sc_consensus_babe_rpc::BabeApiServer;
 	use sc_finality_grandpa_rpc::GrandpaApiServer;
@@ -176,7 +187,9 @@ where
 		substrate_state_trie_migration_rpc::MigrationRpc::new(client.clone(), backend, deny_unsafe)
 			.into_rpc(),
 	)?;
-	io.merge(Dev::new(client, deny_unsafe).into_rpc())?;
+	io.merge(Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 
+	io.merge(MerkleTreeClient::new(client.clone(), deny_unsafe).into_rpc())?;
+	io.merge(LinkableTreeClient::new(client, deny_unsafe).into_rpc())?;
 	Ok(io)
 }

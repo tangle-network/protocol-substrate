@@ -1,18 +1,36 @@
+// This file is part of Webb.
+
+// Copyright (C) 2021 Webb Technologies Inc.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #![allow(clippy::unnecessary_mut_passed)]
 
-use std::sync::Arc;
+mod error;
 
-use jsonrpc_core::{Error, ErrorCode, Result};
-use jsonrpc_derive::rpc;
+use jsonrpsee::{core::RpcResult, proc_macros::rpc};
+use sc_rpc::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use std::sync::Arc;
 
 use pallet_mt_rpc_runtime_api::MerkleTreeApi;
 use webb_primitives::ElementTrait;
 
 /// Merkle RPC methods.
-#[rpc]
+#[rpc(client, server)]
 pub trait MerkleTreeRpcApi<BlockHash, Element> {
 	/// Get The MerkleTree leaves.
 	///
@@ -22,30 +40,31 @@ pub trait MerkleTreeRpcApi<BlockHash, Element> {
 	/// specified.
 	///
 	/// Returns the (full) a Vec<[u8; 32]> of the leaves.
-	#[rpc(name = "mt_getLeaves")]
+	#[method(name = "mt_getLeaves")]
 	fn get_leaves(
 		&self,
 		tree_id: u32,
 		from: usize,
 		to: usize,
 		at: Option<BlockHash>,
-	) -> Result<Vec<Element>>;
+	) -> RpcResult<Vec<Element>>;
 }
 
 /// A struct that implements the `MerkleTreeRpcApi`.
 pub struct MerkleTreeClient<C, M> {
 	client: Arc<C>,
+	deny_unsafe: DenyUnsafe,
 	_marker: std::marker::PhantomData<M>,
 }
 
 impl<C, M> MerkleTreeClient<C, M> {
 	/// Create new `Merkle` instance with the given reference to the client.
-	pub fn new(client: Arc<C>) -> Self {
-		Self { client, _marker: Default::default() }
+	pub fn new(client: Arc<C>, deny_unsafe: DenyUnsafe) -> Self {
+		Self { client, deny_unsafe, _marker: Default::default() }
 	}
 }
 
-impl<C, Block, Element> MerkleTreeRpcApi<<Block as BlockT>::Hash, Element>
+impl<C, Block, Element> MerkleTreeRpcApiServer<<Block as BlockT>::Hash, Element>
 	for MerkleTreeClient<C, Block>
 where
 	Block: BlockT,
@@ -59,15 +78,13 @@ where
 		from: usize,
 		to: usize,
 		at: Option<<Block as BlockT>::Hash>,
-	) -> Result<Vec<Element>> {
+	) -> RpcResult<Vec<Element>> {
+		self.deny_unsafe.check_if_safe()?;
+
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		if to - from >= 512 {
-			return Err(Error {
-				code: ErrorCode::ServerError(1512), // Too many leaves
-				message: "TooManyLeaves".into(),
-				data: Some("MaxRange512".into()),
-			})
+			return Err(error::Error::TooManyLeavesRequested.into())
 		}
 		let leaves = (from..to)
 			.into_iter()
