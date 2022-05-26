@@ -27,7 +27,7 @@ substrate-build-script-utils = "3.0.0"
 futures = { version = "0.3.16" }
 log = "0.4.8"
 clap = { version = "3.0", features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "2.3.0" }
+codec = {package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"]}
 serde = { version = "1.0.101", features = ["derive"] }
 hex-literal = "0.2.1"
 async-trait = "0.1.42"

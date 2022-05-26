@@ -18,7 +18,7 @@ use frame_support::{
 	traits::{EnsureOneOf, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier},
 };
-use impls::Author;
+use impls::{Author, CreditToBlockAuthor};
 use orml_currencies::NativeCurrencyOf;
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -38,8 +38,8 @@ use sp_runtime::{
 	generic::Era,
 	impl_opaque_keys,
 	traits::{
-		self, BlakeTwo256, Block as BlockT, NumberFor, OpaqueKeys, SaturatedConversion,
-		StaticLookup,
+		self, AccountIdConversion, BlakeTwo256, Block as BlockT, Convert, ConvertInto, NumberFor,
+		OpaqueKeys, SaturatedConversion, StaticLookup,
 	},
 	transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, FixedPointNumber, Perbill, Percent, Permill, Perquintill,
@@ -583,8 +583,6 @@ parameter_types! {
 	pub const MinPointsToBalance: u32 = 10;
 }
 
-use sp_runtime::traits::{AccountIdConversion, Convert};
-
 pub struct BalanceToU256;
 impl Convert<Balance, sp_core::U256> for BalanceToU256 {
 	fn convert(balance: Balance) -> sp_core::U256 {
@@ -1014,13 +1012,14 @@ where
 			.saturating_sub(1);
 		let era = Era::mortal(period, current_block);
 		let extra = (
+			frame_system::CheckNonZeroSender::<Runtime>::new(),
 			frame_system::CheckSpecVersion::<Runtime>::new(),
 			frame_system::CheckTxVersion::<Runtime>::new(),
 			frame_system::CheckGenesis::<Runtime>::new(),
 			frame_system::CheckEra::<Runtime>::from(era),
 			frame_system::CheckNonce::<Runtime>::from(nonce),
 			frame_system::CheckWeight::<Runtime>::new(),
-			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+			pallet_asset_tx_payment::ChargeAssetTxPayment::<Runtime>::from(tip, None),
 		);
 		let raw_payload = SignedPayload::new(call, extra)
 			.map_err(|e| {
@@ -1050,14 +1049,14 @@ where
 impl pallet_im_online::Config for Runtime {
 	type AuthorityId = ImOnlineId;
 	type Event = Event;
-	type MaxKeys = MaxKeys;
-	type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
-	type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
 	type NextSessionRotation = Babe;
+	type ValidatorSet = Historical;
 	type ReportUnresponsiveness = Offences;
 	type UnsignedPriority = ImOnlineUnsignedPriority;
-	type ValidatorSet = Historical;
 	type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
+	type MaxKeys = MaxKeys;
+	type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
+	type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
 }
 
 impl pallet_offences::Config for Runtime {
@@ -1447,16 +1446,14 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllPalletsWithoutSystemReversed,
+	AllPalletsWithSystem,
 	OnRuntimeUpgrade,
 >;
 
 pub struct OnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for OnRuntimeUpgrade {
 	fn on_runtime_upgrade() -> u64 {
-		frame_support::migrations::migrate_from_pallet_version_to_storage_version::<
-			AllPalletsWithSystem,
-		>(&RocksDbWeight::get())
+		0u64
 	}
 }
 

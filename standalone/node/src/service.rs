@@ -20,7 +20,6 @@
 
 //! Service implementation. Specialized wrapper over substrate service.
 
-use codec::Encode;
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
 use sc_client_api::{BlockBackend, ExecutorProvider};
@@ -86,6 +85,8 @@ pub fn create_extrinsic(
 	function: impl Into<webb_runtime::Call>,
 	nonce: Option<u32>,
 ) -> webb_runtime::UncheckedExtrinsic {
+	use sp_core::Encode;
+
 	let function = function.into();
 	let genesis_hash = client.block_hash(0).ok().flatten().expect("Genesis block exists; qed");
 	let best_hash = client.chain_info().best_hash;
@@ -391,7 +392,7 @@ pub fn new_full_base(
 	let force_authoring = config.force_authoring;
 	let backoff_authoring_blocks =
 		Some(sc_consensus_slots::BackoffAuthoringOnFinalizedHeadLagging::default());
-	let name = config.network.webb_name.clone();
+	let name = config.network.node_name.clone();
 	let enable_grandpa = !config.disable_grandpa;
 	let prometheus_registry = config.prometheus_registry().cloned();
 
