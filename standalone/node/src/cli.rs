@@ -1,34 +1,72 @@
-// Copyright 2019-2021 Parity Technologies (UK) Ltd.
-// This file is part of Cumulus.
+// This file is part of Substrate.
 
-// Cumulus is free software: you can redistribute it and/or modify
+// Copyright (C) 2018-2022 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
+// This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 
-// Cumulus is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 
 // You should have received a copy of the GNU General Public License
-// along with Cumulus.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+/// An overarching CLI command definition.
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
+	/// Possible subcommand with parameters.
 	#[clap(subcommand)]
 	pub subcommand: Option<Subcommand>,
 
 	#[allow(missing_docs)]
 	#[clap(flatten)]
 	pub run: sc_cli::RunCmd,
+
+	/// Disable automatic hardware benchmarks.
+	///
+	/// By default these benchmarks are automatically ran at startup and measure
+	/// the CPU speed, the memory bandwidth and the disk speed.
+	///
+	/// The results are then printed out in the logs, and also sent as part of
+	/// telemetry, if telemetry is enabled.
+	#[clap(long)]
+	pub no_hardware_benchmarks: bool,
 }
 
-#[derive(Debug, clap::Parser)]
+/// Possible subcommands of the main binary.
+#[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
+	/// Sub-commands concerned with benchmarking.
+	/// The pallet benchmarking moved to the `pallet` sub-command.
+	#[clap(subcommand)]
+	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
+
+	/// Try some command against runtime state.
+	#[cfg(feature = "try-runtime")]
+	TryRuntime(try_runtime_cli::TryRuntimeCmd),
+
+	/// Try some command against runtime state. Note: `try-runtime` feature must be enabled.
+	#[cfg(not(feature = "try-runtime"))]
+	TryRuntime,
+
 	/// Key management cli utilities
 	#[clap(subcommand)]
 	Key(sc_cli::KeySubcommand),
+
+	/// Verify a signature for a message, provided on STDIN, with a given (public or secret) key.
+	Verify(sc_cli::VerifyCmd),
+
+	/// Generate a seed that provides a vanity address.
+	Vanity(sc_cli::VanityCmd),
+
+	/// Sign a message, with a given (secret) key.
+	Sign(sc_cli::SignCmd),
+
 	/// Build a chain specification.
 	BuildSpec(sc_cli::BuildSpecCmd),
 
@@ -50,7 +88,6 @@ pub enum Subcommand {
 	/// Revert the chain to a previous state.
 	Revert(sc_cli::RevertCmd),
 
-	/// The custom benchmark subcommmand benchmarking runtime pallets.
-	#[clap(name = "benchmark", about = "Benchmark runtime pallets.")]
-	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
+	/// Db meta columns information.
+	ChainInfo(sc_cli::ChainInfoCmd),
 }
