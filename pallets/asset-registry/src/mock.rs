@@ -28,9 +28,8 @@ use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
+use sp_std::convert::{TryFrom, TryInto};
 use webb_primitives::{AssetId, Balance};
-
-// use polkadot_xcm::v0::MultiLocation;
 
 use crate::{self as asset_registry, Config};
 

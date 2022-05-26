@@ -53,11 +53,11 @@ pub mod mock_signature_bridge;
 #[cfg(test)]
 mod tests_signature_bridge;
 
-use core::convert::TryInto;
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;
 use pallet_linkable_tree::types::EdgeMetadata;
 use pallet_vanchor::{BalanceOf as VAnchorBalanceOf, CurrencyIdOf as VAnchorCurrencyIdOf};
+use sp_std::convert::TryInto;
 use webb_primitives::{
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
 	ResourceId,

@@ -12,7 +12,7 @@ use frame_support::{
 	Deserialize, PalletId, Serialize,
 };
 use frame_system::{pallet_prelude::OriginFor, EnsureRoot, EnsureSignedBy};
-use orml_currencies::BasicCurrencyAdapter;
+use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 use pallet_anchor::BalanceOf;
 use sp_core::H256;
 use sp_runtime::{
@@ -444,14 +444,14 @@ impl orml_tokens::Config for Runtime {
 	type WeightInfo = ();
 }
 
+pub type NativeCurrency = NativeCurrencyOf<Runtime>;
+pub type AdaptedBasicCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, Balance>;
 impl orml_currencies::Config for Runtime {
-	type Event = Event;
-	type GetNativeCurrencyId = NativeCurrencyId;
 	type MultiCurrency = Tokens;
-	type NativeCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
+	type NativeCurrency = AdaptedBasicCurrency;
+	type GetNativeCurrencyId = NativeCurrencyId;
 	type WeightInfo = ();
 }
-
 impl pallet_asset_registry::Config for Runtime {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
@@ -635,7 +635,7 @@ construct_runtime!(
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
 		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
-		Currencies: orml_currencies::{Pallet, Call, Event<T>},
+		Currencies: orml_currencies::{Pallet, Call},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},

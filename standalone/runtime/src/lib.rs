@@ -89,7 +89,7 @@ use frame_system::{
 };
 
 use frame_support::traits::Nothing;
-use orml_currencies::BasicCurrencyAdapter;
+use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 use webb_primitives::{
 	field_ops::arkworks::ArkworksIntoFieldBn254,
 	hashing::{ethereum::Keccak256HasherBn254, ArkworksPoseidonHasherBn254},

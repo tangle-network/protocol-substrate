@@ -1,5 +1,6 @@
 use super::*;
 use crate as pallet_verifier;
+
 use frame_support::parameter_types;
 use frame_system as system;
 use sp_core::H256;
@@ -8,6 +9,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32,
 };
+use sp_std::convert::{TryFrom, TryInto};
 use webb_primitives::AccountId;
 pub use webb_primitives::{
 	verifier::{InstanceVerifier, VerifierModule},

@@ -66,7 +66,7 @@ mod zk_config;
 
 mod benchmarking;
 
-use core::convert::TryInto;
+use sp_std::convert::TryInto;
 pub mod types;
 pub mod weights;
 use codec::Encode;

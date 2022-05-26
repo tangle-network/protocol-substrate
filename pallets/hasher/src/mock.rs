@@ -8,6 +8,7 @@ use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
+use sp_std::convert::{TryFrom, TryInto};
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
 use webb_primitives::AccountId;
 

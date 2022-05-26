@@ -1,11 +1,11 @@
 pub mod parachain;
 pub mod relay_chain;
 
-use std::ops::Mul;
-
 use frame_support::traits::{GenesisBuild, OnInitialize};
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_runtime::traits::AccountIdConversion;
+use sp_std::convert::{TryFrom, TryInto};
+use std::ops::Mul;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
 pub const INITIAL_BALANCE: u128 = 1_000_000_000;

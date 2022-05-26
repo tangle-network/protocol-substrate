@@ -2,15 +2,17 @@
 
 use super::*;
 use crate as pallet_token_wrapper_handler;
+
 use frame_support::{assert_ok, parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
-use orml_currencies::BasicCurrencyAdapter;
+use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 	Permill,
 };
+use sp_std::convert::{TryFrom, TryInto};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -26,7 +28,7 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 		AssetRegistry: asset_registry::{Pallet, Call, Storage, Event<T>},
-		Currencies: orml_currencies::{Pallet, Call, Event<T>},
+		Currencies: orml_currencies::{Pallet, Call},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>},
@@ -76,6 +78,8 @@ parameter_types! {
 pub type AssetId = u32;
 /// Signed version of Balance
 pub type Amount = i128;
+/// Unsigned version of Balance
+pub type Balance = u128;
 
 impl asset_registry::Config for Test {
 	type AssetId = webb_primitives::AssetId;
@@ -107,21 +111,24 @@ impl pallet_balances::Config for Test {
 /// Tokens Configurations
 impl orml_tokens::Config for Test {
 	type Amount = Amount;
-	type Balance = u128;
+	type Balance = Balance;
 	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
 	type Event = Event;
 	type ExistentialDeposits = AssetRegistry;
-	type MaxLocks = ();
 	type OnDust = ();
 	type WeightInfo = ();
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = ();
 }
 
+pub type NativeCurrency = NativeCurrencyOf<Test>;
+pub type AdaptedBasicCurrency = BasicCurrencyAdapter<Test, Balances, Amount, Balance>;
 impl orml_currencies::Config for Test {
-	type Event = Event;
-	type GetNativeCurrencyId = NativeAssetId;
 	type MultiCurrency = Tokens;
-	type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+	type NativeCurrency = AdaptedBasicCurrency;
+	type GetNativeCurrencyId = NativeCurrencyId;
 	type WeightInfo = ();
 }
 

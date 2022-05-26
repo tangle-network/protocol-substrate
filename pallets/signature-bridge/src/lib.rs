@@ -54,7 +54,6 @@ pub mod mock;
 mod tests;
 
 use codec::{Decode, Encode, EncodeLike};
-use core::convert::TryInto;
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
@@ -66,7 +65,7 @@ use sp_runtime::{
 	traits::{AccountIdConversion, Dispatchable},
 	RuntimeDebug,
 };
-use sp_std::prelude::*;
+use sp_std::{convert::TryInto, prelude::*};
 use webb_primitives::{signing::SigningSystem, utils::compute_chain_id_type, ResourceId};
 
 #[frame_support::pallet]

@@ -74,7 +74,7 @@ mod tests;
 
 mod benchmarking;
 
-use core::convert::TryInto;
+use sp_std::convert::TryInto;
 pub mod types;
 pub mod weights;
 use codec::{Decode, Encode};
