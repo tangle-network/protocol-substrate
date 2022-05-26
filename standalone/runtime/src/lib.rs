@@ -92,6 +92,7 @@ use webb_primitives::{
 	hashing::{ethereum::Keccak256HasherBn254, ArkworksPoseidonHasherBn254},
 	types::ElementTrait,
 	verifying::ArkworksVerifierBn254,
+	signing::SignatureVerifier,
 	Amount, ChainId, LeafIndex,
 };
 
@@ -1245,6 +1246,21 @@ impl pallet_bridge::Config<BridgeInstance> for Runtime {
 	type ProposalLifetime = ProposalLifetime;
 }
 
+type SignatureBridgeInstance = pallet_signature_bridge::Instance1;
+impl pallet_signature_bridge::Config<SignatureBridgeInstance> for Runtime {
+	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type BridgeAccountId = BridgeAccountId;
+	type ChainId = ChainId;
+	type ChainIdentifier = ChainIdentifier;
+	type ChainType = ChainType;
+	type Event = Event;
+	type Proposal = Call;
+	type ProposalLifetime = ProposalLifetime;
+	type ProposalNonce = u32;
+	type MaintainerNonce = u32;
+	type SignatureVerifier = SignatureVerifier;
+}
+
 parameter_types! {
 	pub const TokenWrapperPalletId: PalletId = PalletId(*b"dw/tkwrp");
 	pub const WrappingFeeDivider: Balance = 100;
@@ -1341,6 +1357,10 @@ construct_runtime!(
 		VAnchorBn254: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
+
+		// Signature Bridge
+		SignatureBridge: pallet_signature_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
+
 	}
 );
 
