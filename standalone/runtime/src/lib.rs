@@ -90,9 +90,9 @@ use orml_currencies::BasicCurrencyAdapter;
 use webb_primitives::{
 	field_ops::arkworks::ArkworksIntoFieldBn254,
 	hashing::{ethereum::Keccak256HasherBn254, ArkworksPoseidonHasherBn254},
+	signing::SignatureVerifier,
 	types::ElementTrait,
 	verifying::ArkworksVerifierBn254,
-	signing::SignatureVerifier,
 	Amount, ChainId, LeafIndex,
 };
 

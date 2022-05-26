@@ -146,7 +146,8 @@ fn should_update_fee_with_sig_succeed() {
 		let wrapping_fee_proposal_bytes = make_wrapping_fee_proposal(header, 5, pool_share_id);
 		let msg = keccak_256(&wrapping_fee_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
-		let fee_call: Call = codec::Decode::decode(&mut &wrapping_fee_proposal_bytes[40..]).unwrap();
+		let fee_call: Call =
+			codec::Decode::decode(&mut &wrapping_fee_proposal_bytes[40..]).unwrap();
 		// should fail to execute proposal as non-maintainer
 		assert_err!(
 			SignatureBridge::execute_proposal(
