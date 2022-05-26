@@ -107,7 +107,7 @@ fn make_proposal_header(
 	resource_id: webb_proposals::ResourceId,
 	nonce: webb_proposals::Nonce,
 ) -> webb_proposals::ProposalHeader {
-	let function_signature = webb_proposals::FunctionSignature::new(hex_literal::hex!("cafebabe"));
+	let function_signature = webb_proposals::FunctionSignature::new([0u8; 4]);
 	let header = webb_proposals::ProposalHeader::new(resource_id, function_signature, nonce);
 	header
 }
