@@ -17,7 +17,7 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 codec = {package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"]}
 hex-literal = {version = '0.3.1', optional = true}
 log = {version = "0.4.14", default-features = false}
-scale-info = {version = "1.0.0", default-features = false, features = ["derive"]}
+scale-info = {version = "2.1.1", default-features = false, features = ["derive"]}
 serde = {version = "1.0.101", optional = true, features = ["derive"]}
 smallvec = "1.6.1"
 static_assertions = "1.1.0"
@@ -81,6 +81,7 @@ pallet-elections-phragmen = { git = "https://github.com/paritytech/substrate.git
 pallet-im-online = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22", default-features = false }
 pallet-indices = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22", default-features = false }
 pallet-offences = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22", default-features = false }
+pallet-nomination-pools = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22", default-features = false }
 
 pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22", default-features = false }
 pallet-preimage = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22", default-features = false }
@@ -173,6 +174,7 @@ std = [
   "pallet-election-provider-multi-phase/std",
   "pallet-elections-phragmen/std",
   "pallet-im-online/std",
+  "pallet-nomination-pools/std",
   "pallet-offences/std",
   "pallet-staking/std",
   "pallet-scheduler/std",
