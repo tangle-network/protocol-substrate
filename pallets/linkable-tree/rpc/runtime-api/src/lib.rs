@@ -2,8 +2,8 @@
 
 use codec::{Decode, Encode};
 use pallet_linkable_tree::types::EdgeMetadata;
-use webb_primitives::ElementTrait;
 use sp_std::vec::Vec;
+use webb_primitives::ElementTrait;
 
 // pub struct NeighborRoots<E>(Vec<E>);
 

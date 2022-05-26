@@ -71,9 +71,9 @@ pub mod mock;
 mod tests;
 pub mod types;
 
-use core::convert::TryInto;
 use crate::types::{DepositNonce, ProposalStatus, ProposalVotes};
 use codec::{Decode, Encode, EncodeLike};
+use core::convert::TryInto;
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
@@ -118,7 +118,14 @@ pub mod pallet {
 			+ EncodeLike
 			+ GetDispatchInfo;
 		/// ChainID for anchor edges
-		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy + From<u64> + From<u32>;
+		type ChainId: Encode
+			+ Decode
+			+ Parameter
+			+ AtLeast32Bit
+			+ Default
+			+ Copy
+			+ From<u64>
+			+ From<u32>;
 		/// The identifier for this chain.
 		/// This must be unique and must not collide with existing IDs within a
 		/// set of bridged chains.

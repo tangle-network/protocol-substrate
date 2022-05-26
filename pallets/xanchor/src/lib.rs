@@ -84,7 +84,10 @@ use sp_std::prelude::*;
 use webb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
 	utils::{self, compute_chain_id_type},
-	webb_proposals::{substrate::AnchorUpdateProposal, ResourceId, TargetSystem, TypedChainId, ProposalHeader, FunctionSignature},
+	webb_proposals::{
+		substrate::AnchorUpdateProposal, FunctionSignature, ProposalHeader, ResourceId,
+		TargetSystem, TypedChainId,
+	},
 	ElementTrait,
 };
 use xcm::latest::prelude::*;
@@ -669,11 +672,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			let typed_other_chain_id = TypedChainId::Substrate(other_chain_underlying_chain_id);
 			let r_id = ResourceId::new(edge_target_system, typed_other_chain_id);
 
-			let header = ProposalHeader::new(
-				r_id,
-				FunctionSignature::from([0,0,0,0]),
-				1u32.into(),
-			);
+			let header =
+				ProposalHeader::new(r_id, FunctionSignature::from([0, 0, 0, 0]), 1u32.into());
 			// construct the anchor update proposal
 			let anchor_update_proposal = AnchorUpdateProposal::builder()
 				.header(header)

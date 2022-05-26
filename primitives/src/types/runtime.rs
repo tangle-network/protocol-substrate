@@ -1,4 +1,3 @@
-
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// An index to a block.
@@ -25,7 +24,7 @@ pub type Index = u32;
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
 
-/// Digest item type. 
+/// Digest item type.
 pub type DigestItem = sp_runtime::generic::DigestItem;
 
 // Aura consensus authority.

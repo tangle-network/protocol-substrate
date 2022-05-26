@@ -1,5 +1,5 @@
-pub mod vanchor;
 pub mod runtime;
+pub mod vanchor;
 
 use codec::{Decode, Encode};
 pub use ethabi::{encode, Token};

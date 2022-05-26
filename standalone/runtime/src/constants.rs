@@ -34,13 +34,13 @@ pub mod currency {
 
 /// Fee-related.
 pub mod fee {
-	use webb_primitives::Balance;
 	use frame_support::weights::{
 		constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
 		WeightToFeePolynomial,
 	};
 	use smallvec::smallvec;
 	pub use sp_runtime::Perbill;
+	use webb_primitives::Balance;
 
 	/// The block saturation level. Fees will be updates based on this value.
 	pub const TARGET_BLOCK_FULLNESS: Perbill = Perbill::from_percent(25);
@@ -76,7 +76,7 @@ pub mod fee {
 }
 
 pub mod time {
-	use webb_primitives::{BlockNumber, types::Moment};
+	use webb_primitives::{types::Moment, BlockNumber};
 	/// Since BABE is probabilistic this is the average expected block time that
 	/// we are targeting. Blocks will be produced at a minimum duration defined
 	/// by `SLOT_DURATION`, but some slots will not be allocated to any

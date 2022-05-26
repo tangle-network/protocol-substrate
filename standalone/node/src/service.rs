@@ -20,7 +20,6 @@
 
 //! Service implementation. Specialized wrapper over substrate service.
 
-use webb_primitives::Block;
 use futures::prelude::*;
 use sc_client_api::{BlockBackend, ExecutorProvider};
 use sc_consensus_babe::{self, SlotProportion};
@@ -30,6 +29,7 @@ use sc_service::{config::Configuration, error::Error as ServiceError, TaskManage
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
+use webb_primitives::Block;
 use webb_runtime::RuntimeApi;
 
 // Declare an instance of the native executor named `ExecutorDispatch`. Include

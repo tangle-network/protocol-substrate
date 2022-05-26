@@ -62,6 +62,7 @@ use sp_runtime::traits::Saturating;
 use sp_std::prelude::*;
 
 use asset_registry::{Registry, ShareTokenRegistry};
+use core::convert::TryInto;
 use frame_support::{
 	pallet_prelude::{ensure, DispatchError},
 	sp_runtime::traits::AccountIdConversion,
@@ -71,7 +72,6 @@ use frame_support::{
 use orml_traits::MultiCurrency;
 use traits::TokenWrapperInterface;
 use weights::WeightInfo;
-use core::convert::TryInto;
 
 pub use pallet::*;
 

@@ -53,8 +53,8 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
-use core::convert::TryInto;
 use codec::{Decode, Encode, EncodeLike};
+use core::convert::TryInto;
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
@@ -99,7 +99,14 @@ pub mod pallet {
 			+ Decode
 			+ GetDispatchInfo;
 		/// ChainID for anchor edges
-		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy + From<u64> + From<u32> ;
+		type ChainId: Encode
+			+ Decode
+			+ Parameter
+			+ AtLeast32Bit
+			+ Default
+			+ Copy
+			+ From<u64>
+			+ From<u32>;
 		/// Proposal nonce type
 		type ProposalNonce: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 		/// Maintainer nonce type

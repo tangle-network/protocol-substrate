@@ -7,7 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
-use common::*;
+use webb_primitives::*;
 use constants::{currency::*, time::*};
 pub mod impls;
 mod voter_bags;
@@ -18,11 +18,11 @@ use pallet_linkable_tree::types::EdgeMetadata;
 use sp_api::impl_runtime_apis;
 use sp_core::{
 	crypto::KeyTypeId,
-	u32_trait::{_1, _2, _3, _4, _5},
 	OpaqueMetadata,
 };
 use static_assertions::const_assert;
 
+use sp_std::convert::TryFrom;
 use frame_support::{traits::EqualPrivilegeOnly, weights::constants::RocksDbWeight};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -583,7 +583,7 @@ parameter_types! {
 
 type EnsureRootOrHalfCouncil = EnsureOneOf<
 	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>,
+	pallet_collective::EnsureProportionMoreThan<ConstU32<1>, ConstU32<2>, AccountId, CouncilCollective>,
 >;
 
 impl pallet_democracy::Config for Runtime {
@@ -592,12 +592,12 @@ impl pallet_democracy::Config for Runtime {
 	// be unanimous or Root must agree.
 	type CancelProposalOrigin = EnsureOneOf<
 		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>,
+		pallet_collective::EnsureProportionAtLeast<ConstU32<1>, ConstU32<1>, AccountId, CouncilCollective>,
 	>;
 	// To cancel a proposal which has been passed, 2/3 of the council must agree to
 	// it.
 	type CancellationOrigin =
-		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>;
+		pallet_collective::EnsureProportionAtLeast<ConstU32<2>, ConstU32<3>, AccountId, CouncilCollective>;
 	type CooloffPeriod = CooloffPeriod;
 	type Currency = Balances;
 	type EnactmentPeriod = EnactmentPeriod;
@@ -605,23 +605,23 @@ impl pallet_democracy::Config for Runtime {
 	/// A unanimous council can have the next scheduled referendum be a straight
 	/// default-carries (NTB) vote.
 	type ExternalDefaultOrigin =
-		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
+		pallet_collective::EnsureProportionAtLeast<ConstU32<1>, ConstU32<1>, AccountId, CouncilCollective>;
 	/// A super-majority can have the next scheduled referendum be a straight
 	/// majority-carries vote.
 	type ExternalMajorityOrigin =
-		pallet_collective::EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>;
+		pallet_collective::EnsureProportionAtLeast<ConstU32<3>, ConstU32<4>, AccountId, CouncilCollective>;
 	/// A straight majority of the council can decide what their next motion is.
 	type ExternalOrigin =
-		pallet_collective::EnsureProportionAtLeast<_1, _2, AccountId, CouncilCollective>;
+		pallet_collective::EnsureProportionAtLeast<ConstU32<1>, ConstU32<2>, AccountId, CouncilCollective>;
 	/// Two thirds of the technical committee can have an
 	/// ExternalMajority/ExternalDefault vote be tabled immediately and with a
 	/// shorter voting/enactment period.
 	type FastTrackOrigin =
-		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>;
+		pallet_collective::EnsureProportionAtLeast<ConstU32<2>, ConstU32<3>, AccountId, CouncilCollective>;
 	type FastTrackVotingPeriod = FastTrackVotingPeriod;
 	type InstantAllowed = InstantAllowed;
 	type InstantOrigin =
-		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
+		pallet_collective::EnsureProportionAtLeast<ConstU32<1>, ConstU32<1>, AccountId, CouncilCollective>;
 	type LaunchPeriod = LaunchPeriod;
 	type MaxProposals = MaxProposals;
 	type MaxVotes = MaxVotes;
@@ -733,7 +733,7 @@ impl pallet_treasury::Config for Runtime {
 	type ProposalBondMinimum = ProposalBondMinimum;
 	type RejectOrigin = EnsureOneOf<
 		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>,
+		pallet_collective::EnsureProportionMoreThan<ConstU32<1>, ConstU32<2>, AccountId, CouncilCollective>,
 	>;
 	type SpendFunds = Bounties;
 	type SpendPeriod = SpendPeriod;
@@ -1589,12 +1589,12 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_linkable_tree_rpc_runtime_api::LinkableTreeApi<Block, Element, ChainId, LeafIndex> for Runtime {
-		fn get_neighbor_roots(tree_id: u32) -> Option<Vec<Element>> {
-			LinkableTreeBn254::get_neighbor_roots(tree_id).ok()
+		fn get_neighbor_roots(tree_id: u32) -> Vec<Element> {
+			LinkableTreeBn254::get_neighbor_roots(tree_id).ok().unwrap_or_default()
 		}
 
-		fn get_neighbor_edges(tree_id: u32) -> Option<Vec<EdgeMetadata<ChainId, Element, LeafIndex>>> {
-			LinkableTreeBn254::get_neighbor_edges(tree_id).ok()
+		fn get_neighbor_edges(tree_id: u32) -> Vec<EdgeMetadata<ChainId, Element, LeafIndex>> {
+			LinkableTreeBn254::get_neighbor_edges(tree_id).ok().unwrap_or_default()
 		}
 	}
 

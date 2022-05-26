@@ -45,10 +45,10 @@ pub mod mock;
 mod tests;
 pub mod weights;
 
+use core::convert::TryInto;
 use frame_support::pallet_prelude::{ensure, DispatchError};
 use sp_std::{prelude::*, vec};
 use webb_primitives::hasher::*;
-use core::convert::TryInto;
 
 pub use pallet::*;
 pub use weights::WeightInfo;

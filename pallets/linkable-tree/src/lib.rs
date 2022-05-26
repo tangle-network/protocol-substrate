@@ -109,7 +109,14 @@ pub mod pallet {
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// ChainID for anchor edges
-		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy + From<u32> + From<u64>;
+		type ChainId: Encode
+			+ Decode
+			+ Parameter
+			+ AtLeast32Bit
+			+ Default
+			+ Copy
+			+ From<u32>
+			+ From<u64>;
 
 		/// ChainID type for this chain
 		#[pallet::constant]
