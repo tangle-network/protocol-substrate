@@ -7,7 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
-use webb_primitives::*;
+use common::*;
 use constants::{currency::*, time::*};
 pub mod impls;
 mod voter_bags;
@@ -1589,12 +1589,12 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_linkable_tree_rpc_runtime_api::LinkableTreeApi<Block, Element, ChainId, LeafIndex> for Runtime {
-		fn get_neighbor_roots(tree_id: u32) -> Vec<Element> {
-			LinkableTreeBn254::get_neighbor_roots(tree_id).ok().unwrap_or_default()
+		fn get_neighbor_roots(tree_id: u32) -> Option<Vec<Element>> {
+			LinkableTreeBn254::get_neighbor_roots(tree_id).ok()
 		}
 
-		fn get_neighbor_edges(tree_id: u32) -> Vec<EdgeMetadata<ChainId, Element, LeafIndex>> {
-			LinkableTreeBn254::get_neighbor_edges(tree_id).ok().unwrap_or_default()
+		fn get_neighbor_edges(tree_id: u32) -> Option<Vec<EdgeMetadata<ChainId, Element, LeafIndex>>> {
+			LinkableTreeBn254::get_neighbor_edges(tree_id).ok()
 		}
 	}
 

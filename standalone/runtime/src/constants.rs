@@ -76,7 +76,7 @@ pub mod fee {
 }
 
 pub mod time {
-	use webb_primitives::{BlockNumber, Moment};
+	use webb_primitives::{BlockNumber, types::Moment};
 	/// Since BABE is probabilistic this is the average expected block time that
 	/// we are targeting. Blocks will be produced at a minimum duration defined
 	/// by `SLOT_DURATION`, but some slots will not be allocated to any

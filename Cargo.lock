@@ -492,9 +492,9 @@ dependencies = [
 
 [[package]]
 name = "async-io"
-version = "1.6.0"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a811e6a479f2439f0c04038796b5cfb3d2ad56c230e0f2d3f7b04d68cfee607b"
+checksum = "e5e18f61464ae81cde0a23e713ae8fd299580c54d697a35820cfd0625b8b0e07"
 dependencies = [
  "concurrent-queue",
  "futures-lite",
@@ -4403,7 +4403,7 @@ checksum = "ff011a302c396a5197692431fc1948019154afc178baf7d8e37367442a4601cf"
 [[package]]
 name = "orml-currencies"
 version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#e65be8747f4c5245721d281c93746fa17a06f924"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#954cc7d97f70fe5c3c5ba286e0160b48ab5c6758"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4420,7 +4420,7 @@ dependencies = [
 [[package]]
 name = "orml-tokens"
 version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#e65be8747f4c5245721d281c93746fa17a06f924"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#954cc7d97f70fe5c3c5ba286e0160b48ab5c6758"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4435,7 +4435,7 @@ dependencies = [
 [[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#e65be8747f4c5245721d281c93746fa17a06f924"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#954cc7d97f70fe5c3c5ba286e0160b48ab5c6758"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -4453,7 +4453,7 @@ dependencies = [
 [[package]]
 name = "orml-utilities"
 version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#e65be8747f4c5245721d281c93746fa17a06f924"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#954cc7d97f70fe5c3c5ba286e0160b48ab5c6758"
 dependencies = [
  "frame-support",
  "parity-scale-codec 3.1.2",
@@ -4466,9 +4466,9 @@ dependencies = [
 
 [[package]]
 name = "os_str_bytes"
-version = "6.0.1"
+version = "6.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "029d8d0b2f198229de29dca79676f2738ff952edf3fde542eb8bf94d8c21b435"
+checksum = "21326818e99cfe6ce1e524c2a805c189a99b5ae555a35d19f9a284b427d86afa"
 
 [[package]]
 name = "owning_ref"

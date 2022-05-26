@@ -12,7 +12,7 @@ use pallet_democracy::{AccountVote, Conviction, Vote};
 use std::convert::TryInto;
 use webb_primitives::{
 	utils::{derive_resource_id, get_typed_chain_id, get_typed_chain_id_in_u64},
-	webb_proposals::TypedChainId,
+	webb_proposals::{TypedChainId, ProposalHeader, FunctionSignature},
 };
 use xcm_simulator::TestExt;
 
@@ -370,8 +370,13 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 
 		let merkle_root = [0; 32];
 
+		let header = ProposalHeader::new(
+			r_id,
+			FunctionSignature::from([0,0,0,0]),
+			1u32.into(),
+		);
 		let anchor_update_proposal = AnchorUpdateProposal::builder()
-			.resource_id(r_id)
+			.header(header)
 			.src_chain(typed_chain_id)
 			.merkle_root(merkle_root)
 			.latest_leaf_index(latest_leaf_index_u32)
@@ -820,9 +825,14 @@ fn should_fail_to_call_update_as_signed_account() {
 		let typed_chain_id = TypedChainId::Substrate(PARAID_B.into());
 
 		let merkle_root = [0; 32];
-
+		
+		let header = ProposalHeader::new(
+			r_id,
+			FunctionSignature::from([0,0,0,0]),
+			1u32.into(),
+		);
 		let anchor_update_proposal = AnchorUpdateProposal::builder()
-			.resource_id(r_id)
+			.header(header)
 			.src_chain(typed_chain_id)
 			.merkle_root(merkle_root)
 			.latest_leaf_index(latest_leaf_index_u32)
