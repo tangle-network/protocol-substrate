@@ -24,7 +24,7 @@ fn should_fail_in_case_of_larger_depth() {
 			MerkleTree::create(Origin::signed(1), max_depth + 1),
 			DispatchError::Module(ModuleError {
 				index: 3,
-				error: 1, // InvalidTreeDepth,
+				error: [1, 0, 0, 0], // InvalidTreeDepth,
 				message: None,
 			})
 		);
@@ -206,7 +206,7 @@ fn should_fail_if_the_tree_is_full() {
 			MerkleTree::insert(Origin::signed(1), tree_id, leaf),
 			DispatchError::Module(ModuleError {
 				index: 3,
-				error: 3, // ExceedsMaxLeaves
+				error: [3, 0, 0, 0], // ExceedsMaxLeaves
 				message: None,
 			})
 		);

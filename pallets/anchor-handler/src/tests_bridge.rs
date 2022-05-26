@@ -3,14 +3,11 @@ use arkworks_setups::{common::setup_params, Curve};
 use frame_support::assert_ok;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 use pallet_linkable_tree::types::EdgeMetadata;
-use webb_primitives::utils::{
-	compute_chain_id_type, derive_resource_id, get_typed_chain_id_in_u64,
-};
+use webb_primitives::utils::{derive_resource_id, get_typed_chain_id_in_u64};
 
 const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 2;
 const TEST_TREE_DEPTH: u8 = 32;
-const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
 
 fn make_anchor_create_proposal(
 	deposit_size: Balance,

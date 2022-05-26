@@ -5,11 +5,9 @@ use sp_core::{
 	keccak_256, Pair,
 };
 
-use super::mock_signature_bridge::{Call, Origin, SignatureBridge, System, Test, RELAYER_A};
+use super::mock_signature_bridge::{Call, Origin, SignatureBridge, Test, RELAYER_A};
 
 use crate::mock_signature_bridge::new_test_ext_initialized;
-
-use codec::Encode;
 
 use hex_literal::hex;
 
@@ -17,9 +15,6 @@ use crate::mock_signature_bridge::*;
 use asset_registry::AssetType;
 use frame_support::{assert_err, assert_ok};
 use webb_proposals::substrate::{TokenAddProposal, TokenRemoveProposal, WrappingFeeUpdateProposal};
-
-const TEST_THRESHOLD: u32 = 2;
-const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
 
 fn get_add_token_resource() -> Vec<u8> {
 	b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec()
@@ -45,7 +40,7 @@ fn make_wrapping_fee_proposal(
 ) -> Vec<u8> {
 	let wrapping_fee_proposal = WrappingFeeUpdateProposal::builder()
 		.header(header)
-		.wrapping_fee_percent(5)
+		.wrapping_fee_percent(wrapping_fee_percent)
 		.into_pool_share_id(into_pool_share_id)
 		.pallet_index(7)
 		.build();
@@ -81,14 +76,6 @@ fn make_remove_token_proposal(
 	remove_token_proposal.to_bytes()
 }
 
-fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u8>) -> Vec<u8> {
-	let mut prop_data = encoded_r_id;
-	prop_data.extend_from_slice(&[0u8; 4]);
-	prop_data.extend_from_slice(&nonce);
-	prop_data.extend_from_slice(&encoded_call[..]);
-	prop_data
-}
-
 fn make_proposal_header(
 	resource_id: webb_proposals::ResourceId,
 	nonce: webb_proposals::Nonce,
@@ -119,7 +106,6 @@ fn should_update_fee_with_sig_succeed() {
 		b"TokenWrapperHandler.execute_wrapping_fee_proposal".to_vec(),
 	)
 	.execute_with(|| {
-		let prop_id = 1;
 		let existential_balance: u32 = 1000;
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
@@ -335,7 +321,7 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 		)
 		.unwrap();
 
-		let pool_share_id = AssetRegistry::register_asset(
+		AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
 			AssetType::PoolShare(vec![]),
 			existential_balance.into(),
@@ -578,7 +564,7 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 
 		let first_token_id = 100;
 
-		let pool_share_id = AssetRegistry::register_asset(
+		AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
 			AssetType::PoolShare(vec![]),
 			existential_balance.into(),

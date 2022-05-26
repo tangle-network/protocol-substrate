@@ -118,13 +118,19 @@ impl orml_tokens::Config for Test {
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
-	type ReserveIdentifier = ();
+	type ReserveIdentifier = [u8; 8];
 }
 
+parameter_types! {
+	pub const NativeCurrencyId: AssetId = 0;
+}
+
+pub type NativeCurrency = NativeCurrencyOf<Test>;
+pub type AdaptedBasicCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
 impl orml_currencies::Config for Test {
-	type GetNativeCurrencyId = NativeAssetId;
 	type MultiCurrency = Tokens;
-	type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+	type NativeCurrency = AdaptedBasicCurrency;
+	type GetNativeCurrencyId = NativeCurrencyId;
 	type WeightInfo = ();
 }
 

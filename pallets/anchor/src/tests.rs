@@ -896,7 +896,6 @@ fn should_run_post_deposit_hook_sucessfully() {
 		// the balance should be less now with `deposit_size`
 		assert_eq!(balance_after, balance_before - DEPOSIT_SIZE);
 		// now we need also to check if the state got updated.
-		let tree = MerkleTree::trees(tree_id);
 		crate::mock::assert_last_event::<Test>(
 			crate::Event::<Test>::PostDeposit { depositor: account_id, tree_id, leaf }.into(),
 		);

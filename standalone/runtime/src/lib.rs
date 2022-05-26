@@ -11,9 +11,7 @@ use constants::{constants::*, currency::*, time::*};
 pub use webb_primitives::{types::runtime::Moment, *};
 pub mod impls;
 mod voter_bags;
-use frame_election_provider_support::{
-	onchain, ElectionDataProvider, ExtendedBalance, SequentialPhragmen, VoteWeight,
-};
+use frame_election_provider_support::{onchain, ExtendedBalance, SequentialPhragmen, VoteWeight};
 use frame_support::{
 	traits::{EnsureOneOf, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier},
@@ -62,7 +60,7 @@ pub use pallet_staking::StakerStatus;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-use pallet_election_provider_multi_phase::{NoFallback, SolutionAccuracyOf};
+use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};

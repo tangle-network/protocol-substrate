@@ -120,7 +120,11 @@ impl orml_tokens::Config for Test {
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
-	type ReserveIdentifier = ();
+	type ReserveIdentifier = [u8; 8];
+}
+
+parameter_types! {
+	pub const NativeCurrencyId: AssetId = 0;
 }
 
 pub type NativeCurrency = NativeCurrencyOf<Test>;

@@ -4556,9 +4556,11 @@ dependencies = [
  "sp-api",
  "sp-arithmetic",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "webb-primitives",
+ "xcm",
 ]
 
 [[package]]

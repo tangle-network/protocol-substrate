@@ -165,11 +165,28 @@ parameter_types! {
 	pub const FirstMessageFactorPercent: u64 = 100;
 }
 
+/// fallback implementation
+pub struct TestWeightInfo;
+impl polkadot_runtime_parachains::ump::WeightInfo for TestWeightInfo {
+	fn service_overweight() -> Weight {
+		Weight::MAX
+	}
+
+	fn process_upward_message(_msg_size: u32) -> Weight {
+		Weight::MAX
+	}
+
+	fn clean_ump_after_outgoing() -> Weight {
+		Weight::MAX
+	}
+}
+
 impl ump::Config for Runtime {
 	type Event = Event;
 	type UmpSink = ump::XcmSink<XcmExecutor<XcmConfig>, Runtime>;
 	type FirstMessageFactorPercent = FirstMessageFactorPercent;
 	type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+	type WeightInfo = TestWeightInfo;
 }
 
 impl origin::Config for Runtime {}

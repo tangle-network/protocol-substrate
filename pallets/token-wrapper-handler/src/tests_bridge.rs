@@ -254,7 +254,7 @@ fn should_fail_to_remove_token_not_in_pool() {
 		)
 		.unwrap();
 
-		let pool_share_id = AssetRegistry::register_asset(
+		AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
 			AssetType::PoolShare(vec![]),
 			existential_balance.into(),
@@ -432,7 +432,7 @@ fn should_fail_to_add_non_existent_token() {
 
 		let first_token_id = 100;
 
-		let pool_share_id = AssetRegistry::register_asset(
+		AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
 			AssetType::PoolShare(vec![]),
 			existential_balance.into(),

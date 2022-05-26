@@ -63,7 +63,7 @@ pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{AccountIdConversion, Dispatchable},
-	RuntimeDebug,
+	DispatchError, RuntimeDebug,
 };
 use sp_std::{convert::TryInto, prelude::*};
 use webb_primitives::{signing::SigningSystem, utils::compute_chain_id_type, ResourceId};
@@ -199,6 +199,8 @@ pub mod pallet {
 		IncorrectExecutionChainIdType,
 		/// Invalid nonce
 		InvalidNonce,
+		/// Invalid proposal data
+		InvalidProposalData,
 	}
 
 	#[pallet::hooks]
@@ -334,8 +336,8 @@ pub mod pallet {
 			signature: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let _ = ensure_signed(origin)?;
-			let r_id = Self::parse_r_id_from_proposal_data(&proposal_data);
-			let nonce = Self::parse_nonce_from_proposal_data(&proposal_data);
+			let r_id = Self::parse_r_id_from_proposal_data(&proposal_data)?;
+			let nonce = Self::parse_nonce_from_proposal_data(&proposal_data)?;
 			let parsed_call = Self::parse_call_from_proposal_data(&proposal_data);
 
 			// Nonce should be greater than the proposal nonce in storage
@@ -399,27 +401,18 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Self::chains(id) != None
 	}
 
-	pub fn parse_r_id_from_proposal_data(proposal_data: &[u8]) -> [u8; 32] {
-		let mut buf = [0u8; 32];
-		if proposal_data.len() < 32 {
-			buf[0..proposal_data.len()].copy_from_slice(&proposal_data[..]);
-		} else {
-			buf.copy_from_slice(&proposal_data[0..32]);
-		}
-
-		buf
+	pub fn parse_r_id_from_proposal_data(proposal_data: &[u8]) -> Result<[u8; 32], DispatchError> {
+		ensure!(proposal_data.len() >= 40, Error::<T, I>::InvalidProposalData);
+		Ok(proposal_data[0..32].try_into().unwrap_or_default())
 	}
 
-	pub fn parse_nonce_from_proposal_data(proposal_data: &[u8]) -> T::ProposalNonce {
-		let mut nonce_bytes = [0u8; 4];
-		if proposal_data.len() < 4 {
-			nonce_bytes[0..proposal_data.len()].copy_from_slice(&proposal_data[..]);
-		} else {
-			nonce_bytes.copy_from_slice(&proposal_data[0..4]);
-		}
-
+	pub fn parse_nonce_from_proposal_data(
+		proposal_data: &[u8],
+	) -> Result<T::ProposalNonce, DispatchError> {
+		ensure!(proposal_data.len() >= 40, Error::<T, I>::InvalidProposalData);
+		let nonce_bytes = proposal_data[36..40].try_into().unwrap_or_default();
 		let nonce = u32::from_be_bytes(nonce_bytes);
-		T::ProposalNonce::from(nonce)
+		Ok(T::ProposalNonce::from(nonce))
 	}
 
 	pub fn parse_call_from_proposal_data(proposal_data: &[u8]) -> Vec<u8> {

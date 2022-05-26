@@ -434,14 +434,16 @@ parameter_types! {
 /// Tokens Configurations
 impl orml_tokens::Config for Runtime {
 	type Amount = Amount;
-	type Balance = u128;
-	type CurrencyId = OrmlAssetId;
+	type Balance = Balance;
+	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
 	type Event = Event;
 	type ExistentialDeposits = AssetRegistry;
-	type MaxLocks = ();
 	type OnDust = ();
 	type WeightInfo = ();
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
 }
 
 pub type NativeCurrency = NativeCurrencyOf<Runtime>;
