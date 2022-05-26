@@ -210,7 +210,7 @@ impl orml_tokens::Config for Test {
 }
 
 pub type NativeCurrency = NativeCurrencyOf<Test>;
-pub type AdaptedBasicCurrency = BasicCurrencyAdapter<Test, Balances, Amount, Balance>;
+pub type AdaptedBasicCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
 impl orml_currencies::Config for Test {
 	type MultiCurrency = Tokens;
 	type NativeCurrency = AdaptedBasicCurrency;

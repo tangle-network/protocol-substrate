@@ -3850,9 +3850,9 @@ dependencies = [
 
 [[package]]
 name = "lru"
-version = "0.7.5"
+version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32613e41de4c47ab04970c348ca7ae7382cf116625755af070b008a15516a889"
+checksum = "8015d95cb7b2ddd3c0d32ca38283ceb1eea09b4713ee380bceb942d85a244228"
 dependencies = [
  "hashbrown 0.11.2",
 ]
@@ -4385,7 +4385,7 @@ checksum = "ff011a302c396a5197692431fc1948019154afc178baf7d8e37367442a4601cf"
 [[package]]
 name = "orml-currencies"
 version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#954cc7d97f70fe5c3c5ba286e0160b48ab5c6758"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#070457de18d26d2daed6abdfa57d8a951a525605"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4402,7 +4402,7 @@ dependencies = [
 [[package]]
 name = "orml-tokens"
 version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#954cc7d97f70fe5c3c5ba286e0160b48ab5c6758"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#070457de18d26d2daed6abdfa57d8a951a525605"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4417,7 +4417,7 @@ dependencies = [
 [[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#954cc7d97f70fe5c3c5ba286e0160b48ab5c6758"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#070457de18d26d2daed6abdfa57d8a951a525605"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
@@ -4435,7 +4435,7 @@ dependencies = [
 [[package]]
 name = "orml-utilities"
 version = "0.4.1-dev"
-source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#954cc7d97f70fe5c3c5ba286e0160b48ab5c6758"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git#070457de18d26d2daed6abdfa57d8a951a525605"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -10050,7 +10050,7 @@ dependencies = [
 [[package]]
 name = "webb-proposals"
 version = "0.4.0"
-source = "git+https://github.com/webb-tools/webb-rs?branch=drew/update-version#e142317f6ee8ff64de40ac4debb884c824f0d933"
+source = "git+https://github.com/webb-tools/webb-rs?branch=drew/update-version#c0adc7767b905e6757fd116ff467e5597466e7c2"
 dependencies = [
  "num-traits",
  "parity-scale-codec",
