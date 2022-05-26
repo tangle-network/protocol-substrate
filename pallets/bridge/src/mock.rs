@@ -9,6 +9,7 @@ use sp_runtime::{
 	testing::Header,
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 };
+use sp_std::convert::{TryFrom, TryInto};
 
 use crate::{self as pallet_bridge, Config};
 pub use pallet_balances;

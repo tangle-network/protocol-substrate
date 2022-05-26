@@ -4,7 +4,7 @@ use crate as pallet_anchor_handler;
 use codec::{Decode, Encode};
 use frame_support::{assert_ok, ord_parameter_types, parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
-use orml_currencies::BasicCurrencyAdapter;
+use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 pub use pallet_balances;
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
@@ -12,6 +12,7 @@ use sp_runtime::{
 	testing::Header,
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 };
+use sp_std::convert::{TryFrom, TryInto};
 pub use webb_primitives::{hashing::ethereum::Keccak256HasherBn254, ElementTrait, InstanceHasher};
 use webb_primitives::{verifying::ArkworksVerifierBn254, ResourceId};
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -40,7 +41,7 @@ frame_support::construct_runtime!(
 		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
 		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
-		Currencies: orml_currencies::{Pallet, Call, Event<T>},
+		Currencies: orml_currencies::{Pallet, Call},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
@@ -193,21 +194,24 @@ parameter_types! {
 /// Tokens Configurations
 impl orml_tokens::Config for Test {
 	type Amount = Amount;
-	type Balance = u128;
-	type CurrencyId = AssetId;
+	type Balance = Balance;
+	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
 	type Event = Event;
 	type ExistentialDeposits = AssetRegistry;
-	type MaxLocks = ();
 	type OnDust = ();
 	type WeightInfo = ();
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
 }
 
+pub type NativeCurrency = NativeCurrencyOf<Test>;
+pub type AdaptedBasicCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
 impl orml_currencies::Config for Test {
-	type Event = Event;
-	type GetNativeCurrencyId = NativeCurrencyId;
 	type MultiCurrency = Tokens;
-	type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+	type NativeCurrency = AdaptedBasicCurrency;
+	type GetNativeCurrencyId = NativeCurrencyId;
 	type WeightInfo = ();
 }
 

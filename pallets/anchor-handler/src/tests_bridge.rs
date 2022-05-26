@@ -3,14 +3,11 @@ use arkworks_setups::{common::setup_params, Curve};
 use frame_support::assert_ok;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 use pallet_linkable_tree::types::EdgeMetadata;
-use webb_primitives::utils::{
-	compute_chain_id_type, derive_resource_id, get_typed_chain_id_in_u64,
-};
+use webb_primitives::utils::{derive_resource_id, get_typed_chain_id_in_u64};
 
 const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 2;
 const TEST_TREE_DEPTH: u8 = 32;
-const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
 
 fn make_anchor_create_proposal(
 	deposit_size: Balance,
@@ -106,7 +103,7 @@ fn anchor_create_proposal() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
 
 		let src_chain_id_u32 = 1u32;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1u32).into();
@@ -166,7 +163,7 @@ fn anchor_update_proposal_edge_add_success() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
 		println!("anchor_update_proposal_edge_add_success");
 		let src_chain_id_u32 = 1u32;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1).into();
@@ -221,10 +218,9 @@ fn anchor_update_proposal_edge_update_success() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
 		println!("anchor_update_proposal_edge_update_success");
 		let src_chain_id_u32 = 1u32;
-		let src_chain_id = src_chain_id_u32 as u64;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1u32).into();
 		let src_chain_id = get_typed_chain_id_in_u64(src_chain_id_u32);
 		let prop_id = 1;

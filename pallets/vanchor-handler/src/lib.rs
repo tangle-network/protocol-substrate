@@ -57,6 +57,7 @@ use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::Ensure
 use frame_system::pallet_prelude::OriginFor;
 use pallet_linkable_tree::types::EdgeMetadata;
 use pallet_vanchor::{BalanceOf as VAnchorBalanceOf, CurrencyIdOf as VAnchorCurrencyIdOf};
+use sp_std::convert::TryInto;
 use webb_primitives::{
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
 	ResourceId,

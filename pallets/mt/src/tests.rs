@@ -1,5 +1,5 @@
-use ark_ff::{BigInteger, Field, PrimeField};
-use frame_support::{assert_err, assert_ok, traits::OnInitialize};
+use ark_ff::{BigInteger, PrimeField};
+use frame_support::{assert_err, assert_ok};
 use hex_literal::hex;
 use sp_runtime::ModuleError;
 use sp_std::vec;
@@ -24,7 +24,7 @@ fn should_fail_in_case_of_larger_depth() {
 			MerkleTree::create(Origin::signed(1), max_depth + 1),
 			DispatchError::Module(ModuleError {
 				index: 3,
-				error: 1, // InvalidTreeDepth,
+				error: [1, 0, 0, 0], // InvalidTreeDepth,
 				message: None,
 			})
 		);
@@ -183,7 +183,7 @@ fn should_be_able_to_insert_leaves() {
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let total_leaves_count = 2u32.pow(depth as _);
 		let leaf = Element::from_bytes(&ark_bn254::Fr::from(1).into_repr().to_bytes_le());
-		(0..total_leaves_count).for_each(|i| {
+		(0..total_leaves_count).for_each(|_| {
 			assert_ok!(MerkleTree::insert(Origin::signed(1), tree_id, leaf));
 		});
 	});
@@ -206,7 +206,7 @@ fn should_fail_if_the_tree_is_full() {
 			MerkleTree::insert(Origin::signed(1), tree_id, leaf),
 			DispatchError::Module(ModuleError {
 				index: 3,
-				error: 3, // ExceedsMaxLeaves
+				error: [3, 0, 0, 0], // ExceedsMaxLeaves
 				message: None,
 			})
 		);

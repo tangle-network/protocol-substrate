@@ -8,13 +8,8 @@ use webb_primitives::utils::{derive_resource_id, get_typed_chain_id_in_u64};
 const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 2;
 const TEST_TREE_DEPTH: u8 = 32;
-const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
 
-fn make_anchor_create_proposal(
-	deposit_size: Balance,
-	src_chain_id: ChainId,
-	resource_id: &[u8; 32],
-) -> Call {
+fn make_vanchor_create_proposal(src_chain_id: ChainId, resource_id: &[u8; 32]) -> Call {
 	Call::VAnchorHandler(crate::Call::execute_vanchor_create_proposal {
 		src_chain_id,
 		r_id: *resource_id,
@@ -50,11 +45,10 @@ fn setup_relayers(src_id: ChainId) {
 	assert_ok!(Bridge::whitelist_chain(Origin::root(), src_id));
 }
 // helper function to create anchor using Anchor pallet call
-fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[u8; 32]) {
+fn mock_vanchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[u8; 32]) {
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
-	let deposit_size = 100;
 	assert_ok!(VAnchor::create(Origin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 	println!("Anchor created");
 	// hack: insert an entry in AnchorsList with tree-id=0
@@ -103,7 +97,7 @@ fn anchor_create_proposal() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
 
 		let src_chain_id_u32 = 1u32;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1u32).into();
@@ -111,8 +105,7 @@ fn anchor_create_proposal() {
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
 		// make anchor create proposal
-		let deposit_size = 100;
-		let create_proposal = make_anchor_create_proposal(deposit_size, src_chain_id, &resource_id);
+		let create_proposal = make_vanchor_create_proposal(src_chain_id, &resource_id);
 		let resource = b"VAnchorHandler.execute_vanchor_create_proposal".to_vec();
 		// set resource id
 		assert_ok!(Bridge::set_resource(Origin::root(), resource_id, resource.clone()));
@@ -163,7 +156,7 @@ fn anchor_update_proposal_edge_add_success() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
 		println!("anchor_update_proposal_edge_add_success");
 		let src_chain_id_u32 = 1u32;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1).into();
@@ -172,7 +165,7 @@ fn anchor_update_proposal_edge_add_success() {
 		// create anchor update proposal
 		setup_relayers(src_chain_id);
 
-		mock_anchor_creation_using_pallet_call(src_chain_id, &resource_id);
+		mock_vanchor_creation_using_pallet_call(src_chain_id, &resource_id);
 		println!("Here");
 		let root = Element::from_bytes(&[1; 32]);
 		let latest_leaf_index = 5;
@@ -218,15 +211,14 @@ fn anchor_update_proposal_edge_update_success() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
 		println!("anchor_update_proposal_edge_update_success");
 		let src_chain_id_u32 = 1u32;
-		let src_chain_id = src_chain_id_u32 as u64;
 		let resource_id = derive_resource_id(src_chain_id_u32, 1u32).into();
 		let src_chain_id = get_typed_chain_id_in_u64(src_chain_id_u32);
 		let prop_id = 1;
 		setup_relayers(src_chain_id);
-		mock_anchor_creation_using_pallet_call(src_chain_id, &resource_id);
+		mock_vanchor_creation_using_pallet_call(src_chain_id, &resource_id);
 		let root = Element::from_bytes(&[1; 32]);
 		let latest_leaf_index = 5;
 		let expected_tree_id = 0u32;

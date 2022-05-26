@@ -12,7 +12,7 @@ use pallet_democracy::{AccountVote, Conviction, Vote};
 use std::convert::TryInto;
 use webb_primitives::{
 	utils::{derive_resource_id, get_typed_chain_id, get_typed_chain_id_in_u64},
-	webb_proposals::TypedChainId,
+	webb_proposals::{ProposalHeader, TypedChainId},
 };
 use xcm_simulator::TestExt;
 
@@ -399,6 +399,7 @@ fn aye(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
 	}
 }
 
+#[allow(dead_code)]
 fn nay(who: AccountId) -> AccountVote<BalanceOf<Runtime, ()>> {
 	AccountVote::Standard {
 		vote: Vote { aye: false, conviction: Conviction::None },

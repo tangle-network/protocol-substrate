@@ -21,7 +21,7 @@ use sp_runtime::{
 	Perbill,
 };
 use sp_std::{convert::TryFrom, prelude::*};
-use webb_primitives::{Amount, BlockNumber, ChainId};
+use webb_primitives::{Amount, ChainId};
 
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
@@ -434,24 +434,25 @@ parameter_types! {
 /// Tokens Configurations
 impl orml_tokens::Config for Runtime {
 	type Amount = Amount;
-	type Balance = u128;
-	type CurrencyId = OrmlAssetId;
+	type Balance = Balance;
+	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
 	type Event = Event;
 	type ExistentialDeposits = AssetRegistry;
-	type MaxLocks = ();
 	type OnDust = ();
 	type WeightInfo = ();
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
 }
 
+pub type AdaptedBasicCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, Balance>;
 impl orml_currencies::Config for Runtime {
-	type Event = Event;
-	type GetNativeCurrencyId = NativeCurrencyId;
 	type MultiCurrency = Tokens;
-	type NativeCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, BlockNumber>;
+	type NativeCurrency = AdaptedBasicCurrency;
+	type GetNativeCurrencyId = NativeCurrencyId;
 	type WeightInfo = ();
 }
-
 impl pallet_asset_registry::Config for Runtime {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
@@ -635,7 +636,7 @@ construct_runtime!(
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
 		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
-		Currencies: orml_currencies::{Pallet, Call, Event<T>},
+		Currencies: orml_currencies::{Pallet, Call},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},

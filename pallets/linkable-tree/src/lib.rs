@@ -74,6 +74,7 @@ mod tests;
 
 mod benchmarking;
 
+use sp_std::convert::TryInto;
 pub mod types;
 pub mod weights;
 use codec::{Decode, Encode};
@@ -108,7 +109,14 @@ pub mod pallet {
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// ChainID for anchor edges
-		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+		type ChainId: Encode
+			+ Decode
+			+ Parameter
+			+ AtLeast32Bit
+			+ Default
+			+ Copy
+			+ From<u32>
+			+ From<u64>;
 
 		/// ChainID type for this chain
 		#[pallet::constant]
@@ -303,8 +311,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 	}
 
 	fn get_chain_id_type() -> T::ChainId {
-		T::ChainId::try_from(compute_chain_id_type(T::ChainIdentifier::get(), T::ChainType::get()))
-			.unwrap_or_default()
+		T::ChainId::from(compute_chain_id_type(T::ChainIdentifier::get(), T::ChainType::get()))
 	}
 
 	fn get_chain_type() -> [u8; 2] {

@@ -1,5 +1,5 @@
 use arkworks_setups::{common::setup_params, Curve};
-use common::{AccountId, BabeId, Balance, Signature};
+use webb_primitives::{types::runtime::BabeId, AccountId, Balance, Signature};
 
 use itertools::Itertools;
 use sc_chain_spec::ChainSpecExtension;

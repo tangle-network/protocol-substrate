@@ -69,6 +69,7 @@ use frame_support::{
 	PalletId,
 };
 use orml_traits::MultiCurrency;
+use sp_std::convert::TryInto;
 use traits::TokenWrapperInterface;
 use weights::WeightInfo;
 

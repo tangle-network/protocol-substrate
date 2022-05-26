@@ -46,7 +46,7 @@ mod tests;
 pub mod weights;
 
 use frame_support::pallet_prelude::{ensure, DispatchError};
-use sp_std::{prelude::*, vec};
+use sp_std::{convert::TryInto, prelude::*, vec};
 use webb_primitives::hasher::*;
 
 pub use pallet::*;

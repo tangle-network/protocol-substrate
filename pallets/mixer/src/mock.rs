@@ -9,12 +9,13 @@ use webb_primitives::verifying::ArkworksVerifierBn254;
 
 use frame_support::{parameter_types, traits::Nothing};
 use frame_system as system;
-use orml_currencies::BasicCurrencyAdapter;
+use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 };
+use sp_std::convert::{TryFrom, TryInto};
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
 use webb_primitives::{hashing::ethereum::Keccak256HasherBn254, types::ElementTrait, AccountId};
 
@@ -36,7 +37,7 @@ frame_support::construct_runtime!(
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
-		Currencies: orml_currencies::{Pallet, Call, Event<T>},
+		Currencies: orml_currencies::{Pallet, Call},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 	}
 );
@@ -182,6 +183,7 @@ parameter_types! {
 pub type AssetId = u32;
 /// Signed version of Balance
 pub type Amount = i128;
+pub type Balance = u128;
 
 impl pallet_asset_registry::Config for Test {
 	type AssetId = webb_primitives::AssetId;
@@ -197,21 +199,24 @@ impl pallet_asset_registry::Config for Test {
 /// Tokens Configurations
 impl orml_tokens::Config for Test {
 	type Amount = Amount;
-	type Balance = u128;
+	type Balance = Balance;
 	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
 	type Event = Event;
 	type ExistentialDeposits = AssetRegistry;
-	type MaxLocks = ();
 	type OnDust = ();
 	type WeightInfo = ();
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
 }
 
+pub type NativeCurrency = NativeCurrencyOf<Test>;
+pub type AdaptedBasicCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
 impl orml_currencies::Config for Test {
-	type Event = Event;
-	type GetNativeCurrencyId = NativeAssetId;
 	type MultiCurrency = Tokens;
-	type NativeCurrency = BasicCurrencyAdapter<Test, Balances, Amount, BlockNumber>;
+	type NativeCurrency = AdaptedBasicCurrency;
+	type GetNativeCurrencyId = NativeCurrencyId;
 	type WeightInfo = ();
 }
 

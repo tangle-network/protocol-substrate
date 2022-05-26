@@ -26,7 +26,6 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
-	let deposit_size = 100;
 	assert_ok!(VAnchor::create(Origin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 	// hack: insert an entry in AnchorsList with tree-id=0
 	AnchorList::<Test>::insert(resource_id, 0);
@@ -37,11 +36,7 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[
 	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test>>::get(0));
 }
 
-fn make_anchor_create_proposal(
-	deposit_size: Balance,
-	src_chain_id: ChainId,
-	resource_id: &[u8; 32],
-) -> Call {
+fn make_vanchor_create_proposal(src_chain_id: ChainId, resource_id: &[u8; 32]) -> Call {
 	Call::VAnchorHandler(crate::Call::execute_vanchor_create_proposal {
 		src_chain_id,
 		r_id: *resource_id,
@@ -80,7 +75,6 @@ fn should_create_anchor_with_sig_succeed() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
@@ -97,10 +91,9 @@ fn should_create_anchor_with_sig_succeed() {
 	.execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
 
-		let deposit_size = 100;
-		let anchor_create_call = make_anchor_create_proposal(deposit_size, src_id, &r_id);
+		let anchor_create_call = make_vanchor_create_proposal(src_id, &r_id);
 		let anchor_create_call_encoded = anchor_create_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_create_call_encoded);
@@ -146,7 +139,6 @@ fn should_add_anchor_edge_with_sig_succeed() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -164,9 +156,8 @@ fn should_add_anchor_edge_with_sig_succeed() {
 	.execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
 
-		let prop_id = 1;
 		mock_anchor_creation_using_pallet_call(src_id, &r_id);
 
 		let root = Element::from_bytes(&[1; 32]);
@@ -230,7 +221,6 @@ fn should_update_anchor_edge_with_sig_succeed() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -248,7 +238,7 @@ fn should_update_anchor_edge_with_sig_succeed() {
 	.execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
 
 		mock_anchor_creation_using_pallet_call(src_id, &r_id);
 
@@ -349,16 +339,7 @@ fn should_fail_to_whitelist_chain_already_whitelisted() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed = hex!(
-		"8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
-);
-	let pair = ecdsa::Pair::from_string(
-		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
-		None,
-	)
-	.unwrap();
 
 	new_test_ext_initialized(
 		src_id,
@@ -379,15 +360,7 @@ fn should_fail_to_whitelist_this_chain() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
-);
-	let pair = ecdsa::Pair::from_string(
-		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
-		None,
-	)
-	.unwrap();
 
 	new_test_ext_initialized(
 		src_id,
@@ -407,11 +380,9 @@ fn should_fail_to_whitelist_this_chain() {
 
 #[test]
 fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
-	let chain_type = [2, 0];
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -427,8 +398,7 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 		b"VAnchorHandler.execute_vanchor_create_proposal".to_vec(),
 	)
 	.execute_with(|| {
-		let deposit_size = 100;
-		let anchor_create_call = make_anchor_create_proposal(deposit_size, src_id, &r_id);
+		let anchor_create_call = make_vanchor_create_proposal(src_id, &r_id);
 		let anchor_create_call_encoded = anchor_create_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_create_call_encoded);
@@ -459,7 +429,6 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -475,10 +444,8 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 		b"VAnchorHandler.execute_vanchor_create_proposal".to_vec(),
 	)
 	.execute_with(|| {
-		let deposit_size = 100;
 		let non_existent_r_id = derive_resource_id(this_chain_id_u32, 1).into();
-		let anchor_create_call =
-			make_anchor_create_proposal(deposit_size, src_id, &non_existent_r_id);
+		let anchor_create_call = make_vanchor_create_proposal(src_id, &non_existent_r_id);
 		let anchor_create_call_encoded = anchor_create_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data =
@@ -510,7 +477,6 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let this_chain_id = get_typed_chain_id_in_u64(this_chain_id_u32);
 	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4"
 );
@@ -526,8 +492,7 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 		b"VAnchorHandler.execute_vanchor_create_proposal".to_vec(),
 	)
 	.execute_with(|| {
-		let deposit_size = 100;
-		let anchor_create_call = make_anchor_create_proposal(deposit_size, src_id, &r_id);
+		let anchor_create_call = make_vanchor_create_proposal(src_id, &r_id);
 		let anchor_create_call_encoded = anchor_create_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_create_call_encoded);

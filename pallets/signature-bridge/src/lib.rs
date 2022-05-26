@@ -63,9 +63,9 @@ pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{AccountIdConversion, Dispatchable},
-	RuntimeDebug,
+	DispatchError, RuntimeDebug,
 };
-use sp_std::prelude::*;
+use sp_std::{convert::TryInto, prelude::*};
 use webb_primitives::{signing::SigningSystem, utils::compute_chain_id_type, ResourceId};
 
 #[frame_support::pallet]
@@ -98,7 +98,14 @@ pub mod pallet {
 			+ Decode
 			+ GetDispatchInfo;
 		/// ChainID for anchor edges
-		type ChainId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+		type ChainId: Encode
+			+ Decode
+			+ Parameter
+			+ AtLeast32Bit
+			+ Default
+			+ Copy
+			+ From<u64>
+			+ From<u32>;
 		/// Proposal nonce type
 		type ProposalNonce: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
 		/// Maintainer nonce type
@@ -192,6 +199,8 @@ pub mod pallet {
 		IncorrectExecutionChainIdType,
 		/// Invalid nonce
 		InvalidNonce,
+		/// Invalid proposal data
+		InvalidProposalData,
 	}
 
 	#[pallet::hooks]
@@ -327,8 +336,8 @@ pub mod pallet {
 			signature: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let _ = ensure_signed(origin)?;
-			let r_id = Self::parse_r_id_from_proposal_data(&proposal_data);
-			let nonce = Self::parse_nonce_from_proposal_data(&proposal_data);
+			let r_id = Self::parse_r_id_from_proposal_data(&proposal_data)?;
+			let nonce = Self::parse_nonce_from_proposal_data(&proposal_data)?;
 			let parsed_call = Self::parse_call_from_proposal_data(&proposal_data);
 
 			// Nonce should be greater than the proposal nonce in storage
@@ -392,14 +401,18 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Self::chains(id) != None
 	}
 
-	pub fn parse_r_id_from_proposal_data(proposal_data: &[u8]) -> [u8; 32] {
-		proposal_data[0..32].try_into().unwrap_or_default()
+	pub fn parse_r_id_from_proposal_data(proposal_data: &[u8]) -> Result<[u8; 32], DispatchError> {
+		ensure!(proposal_data.len() >= 40, Error::<T, I>::InvalidProposalData);
+		Ok(proposal_data[0..32].try_into().unwrap_or_default())
 	}
 
-	pub fn parse_nonce_from_proposal_data(proposal_data: &[u8]) -> T::ProposalNonce {
+	pub fn parse_nonce_from_proposal_data(
+		proposal_data: &[u8],
+	) -> Result<T::ProposalNonce, DispatchError> {
+		ensure!(proposal_data.len() >= 40, Error::<T, I>::InvalidProposalData);
 		let nonce_bytes = proposal_data[36..40].try_into().unwrap_or_default();
 		let nonce = u32::from_be_bytes(nonce_bytes);
-		T::ProposalNonce::from(nonce)
+		Ok(T::ProposalNonce::from(nonce))
 	}
 
 	pub fn parse_call_from_proposal_data(proposal_data: &[u8]) -> Vec<u8> {
@@ -441,11 +454,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn whitelist(id: T::ChainId) -> DispatchResultWithPostInfo {
 		// Cannot whitelist this chain
 		ensure!(
-			id != T::ChainId::try_from(compute_chain_id_type(
+			id != T::ChainId::from(compute_chain_id_type(
 				T::ChainIdentifier::get(),
 				T::ChainType::get()
-			))
-			.unwrap_or_default(),
+			)),
 			Error::<T, I>::InvalidChainId
 		);
 		// Cannot whitelist with an existing entry

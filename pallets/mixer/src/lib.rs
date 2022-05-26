@@ -61,6 +61,7 @@ mod zk_config;
 
 mod benchmarking;
 
+use sp_std::convert::TryInto;
 pub mod types;
 pub mod weights;
 use types::MixerMetadata;

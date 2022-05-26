@@ -14,7 +14,7 @@
 // limitations under the License.
 
 pub mod currency {
-	use common::Balance;
+	use webb_primitives::Balance;
 
 	/// The existential deposit. Set to 1/10 of its parent Relay Chain (v9020).
 	pub const EXISTENTIAL_DEPOSIT: Balance = CENTS / 10;
@@ -32,15 +32,31 @@ pub mod currency {
 	}
 }
 
+/// Other constants
+pub mod constants {
+	use frame_support::weights::{constants::WEIGHT_PER_SECOND, Weight};
+	use sp_runtime::Perbill;
+	/// We assume that ~5% of the block weight is consumed by `on_initialize`
+	/// handlers. This is used to limit the maximal weight of a single
+	/// extrinsic.
+	pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
+	/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest
+	/// can be used by Operational  extrinsics.
+	pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+
+	/// We allow for 0.5 seconds of compute with a 6 second average block time.
+	pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+}
+
 /// Fee-related.
 pub mod fee {
-	use common::Balance;
 	use frame_support::weights::{
 		constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
 		WeightToFeePolynomial,
 	};
 	use smallvec::smallvec;
 	pub use sp_runtime::Perbill;
+	use webb_primitives::Balance;
 
 	/// The block saturation level. Fees will be updates based on this value.
 	pub const TARGET_BLOCK_FULLNESS: Perbill = Perbill::from_percent(25);
@@ -76,7 +92,7 @@ pub mod fee {
 }
 
 pub mod time {
-	use common::{BlockNumber, Moment};
+	use webb_primitives::{types::runtime::Moment, BlockNumber};
 	/// Since BABE is probabilistic this is the average expected block time that
 	/// we are targeting. Blocks will be produced at a minimum duration defined
 	/// by `SLOT_DURATION`, but some slots will not be allocated to any
