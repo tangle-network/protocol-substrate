@@ -23,6 +23,7 @@ pub const DEFAULT_LEAF: [u8; 32] = [
 	182, 53, 58, 52, 243, 171, 172, 211, 96, 76, 229, 47,
 ];
 
+#[allow(non_camel_case_types)]
 type VAnchorProver_Bn254_30_2_2_2 =
 	VAnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, NUM_UTXOS>;
 

@@ -12,7 +12,7 @@ use frame_support::{
 	Deserialize, PalletId, Serialize,
 };
 use frame_system::{pallet_prelude::OriginFor, EnsureRoot, EnsureSignedBy};
-use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
+use orml_currencies::BasicCurrencyAdapter;
 use pallet_anchor::BalanceOf;
 use sp_core::H256;
 use sp_runtime::{
@@ -21,7 +21,7 @@ use sp_runtime::{
 	Perbill,
 };
 use sp_std::{convert::TryFrom, prelude::*};
-use webb_primitives::{Amount, BlockNumber, ChainId};
+use webb_primitives::{Amount, ChainId};
 
 use pallet_xcm::XcmPassthrough;
 use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
@@ -446,7 +446,6 @@ impl orml_tokens::Config for Runtime {
 	type ReserveIdentifier = [u8; 8];
 }
 
-pub type NativeCurrency = NativeCurrencyOf<Runtime>;
 pub type AdaptedBasicCurrency = BasicCurrencyAdapter<Runtime, Balances, Amount, Balance>;
 impl orml_currencies::Config for Runtime {
 	type MultiCurrency = Tokens;

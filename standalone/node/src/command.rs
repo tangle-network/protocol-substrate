@@ -27,7 +27,6 @@ use frame_benchmarking_cli::*;
 use sc_cli::{ChainSpec, Result, RuntimeVersion, SubstrateCli};
 use sc_service::PartialComponents;
 use webb_primitives::opaque::Block;
-use webb_runtime::RuntimeApi;
 
 use std::sync::Arc;
 

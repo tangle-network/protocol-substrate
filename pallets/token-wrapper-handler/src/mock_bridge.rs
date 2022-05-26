@@ -3,7 +3,7 @@
 use super::*;
 use crate as pallet_token_wrapper_handler;
 
-use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::Nothing, PalletId};
+use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 use sp_core::H256;
