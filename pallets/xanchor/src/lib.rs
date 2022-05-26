@@ -84,7 +84,10 @@ use sp_std::prelude::*;
 use webb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
 	utils::{self, compute_chain_id_type},
-	webb_proposals::{substrate::AnchorUpdateProposal, ResourceId, TargetSystem, TypedChainId},
+	webb_proposals::{
+		substrate::AnchorUpdateProposal, FunctionSignature, Nonce, ProposalHeader, ResourceId,
+		TargetSystem, TypedChainId,
+	},
 	ElementTrait,
 };
 use xcm::latest::prelude::*;
@@ -500,7 +503,7 @@ pub mod pallet {
 				AnchorUpdateProposal::try_from(anchor_update_proposal_bytes).unwrap();
 
 			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(
-				anchor_update_proposal.resource_id().into(),
+				anchor_update_proposal.header().resource_id().into(),
 			);
 
 			let my_para_id = T::ParaId::get();
@@ -647,6 +650,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let src_chain_id = u32::from(my_para_id);
 		let latest_leaf_index_u32: u32 = latest_leaf_index.try_into().unwrap_or_default();
 		let typed_src_chain_id = TypedChainId::Substrate(src_chain_id);
+		let function_signature = FunctionSignature::new([0; 4]);
+		let nonce = Nonce::new(latest_leaf_index_u32);
 
 		let mut merkle_root = [0; 32];
 		merkle_root.copy_from_slice(root.to_bytes());
@@ -671,10 +676,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 			let typed_other_chain_id = TypedChainId::Substrate(other_chain_underlying_chain_id);
 			let r_id = ResourceId::new(edge_target_system, typed_other_chain_id);
+			let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
 
 			// construct the anchor update proposal
 			let anchor_update_proposal = AnchorUpdateProposal::builder()
-				.resource_id(r_id)
+				.header(proposal_header)
 				.src_chain(typed_src_chain_id)
 				.merkle_root(merkle_root)
 				.latest_leaf_index(latest_leaf_index_u32)
