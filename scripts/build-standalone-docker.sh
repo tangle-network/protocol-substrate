@@ -13,9 +13,9 @@ GITUSER=webb-tools
 IMAGE_NAME=protocol-substrate-standalone-node
 
 # Build the image
-echo "Building ${GITUSER}/${IMAGE_NAME}:latest docker image, hang on!"
-time docker build -f ./docker/Standalone.Dockerfile -t ${GITUSER}/${IMAGE_NAME}:latest .
-docker tag ${GITUSER}/${IMAGE_NAME}:latest ${GITUSER}/${IMAGE_NAME}:v${VERSION}
+echo "Building ${ gitUSER}/${IMAGE_NAME}:latest docker image, hang on!"
+time docker build -f ./docker/Standalone.Dockerfile -t ${ gitUSER}/${IMAGE_NAME}:latest .
+docker tag ${ gitUSER}/${IMAGE_NAME}:latest ${ gitUSER}/${IMAGE_NAME}:v${ version}
 
 # Show the list of available images for this repo
 echo "Image is ready"

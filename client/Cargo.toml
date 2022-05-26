@@ -19,15 +19,15 @@ sp-runtime = { default-features = false, git = "https://github.com/paritytech/su
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 
 # arkworks related deps
-ark-bls12-377 = {version = "^0.3.0", default-features = false, features = ["curve", "r1cs"]}
-ark-bls12-381 = {version = "^0.3.0", default-features = false, features = ["curve"]}
-ark-bn254 = {version = "^0.3.0", default-features = false, features = ["curve"]}
-ark-crypto-primitives = {version = "^0.3.0", features = ["r1cs"], default-features = false}
-ark-ec = {version = "^0.3.0", default-features = false}
-ark-ff = {version = "^0.3.0", default-features = false}
-ark-relations = {version = "^0.3.0", default-features = false}
-ark-serialize = {version = "^0.3.0", default-features = false, features = ["derive"]}
-ark-std = {version = "^0.3.0", default-features = false}
+ark-bls12-377 = { version = "^0.3.0", default-features = false, features = ["curve", "r1cs"]}
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = ["curve"] }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
+ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false}
+ark-ec = { version = "^0.3.0", default-features = false}
+ark-ff = { version = "^0.3.0", default-features = false}
+ark-relations = { version = "^0.3.0", default-features = false}
+ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"]}
+ark-std = { version = "^0.3.0", default-features = false}
 
 # webb deps
 wasm-utils = { version = "0.1.4" }

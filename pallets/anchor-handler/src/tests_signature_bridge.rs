@@ -85,6 +85,15 @@ fn get_public_uncompressed_key() -> [u8; 64] {
 	hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4")
 }
 
+fn make_proposal_header(
+	resource_id: webb_proposals::ResourceId,
+	nonce: webb_proposals::Nonce,
+) -> webb_proposals::ProposalHeader {
+	let function_signature = webb_proposals::FunctionSignature::new([0u8; 4]);
+	let header = webb_proposals::ProposalHeader::new(resource_id, function_signature, nonce);
+	header
+}
+
 // Signature Bridge Tests
 
 #[test]
@@ -535,9 +544,10 @@ fn should_update_anchor_edge_with_sig_succeed_using_webb_proposals() {
 			assert_eq!(0, Counts::<Test>::get(src_id));
 			let edge_metadata =
 				EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
-
+			let nonce = webb_proposals::Nonce::from(0x0001);
+			let header = make_proposal_header(resource, nonce);
 			let anchor_update_proposal = AnchorUpdateProposal::builder()
-				.resource_id(resource)
+				.header(header)
 				.src_chain(src_chain)
 				.merkle_root(root_bytes)
 				.latest_leaf_index(latest_leaf_index)
@@ -545,11 +555,8 @@ fn should_update_anchor_edge_with_sig_succeed_using_webb_proposals() {
 				.pallet_index(10)
 				.build();
 
-			let nonce = [0u8, 0u8, 0u8, 1u8];
 			let anchor_update_proposal_bytes = anchor_update_proposal.to_bytes();
-			let prop_data =
-				make_proposal_data(r_id.encode(), nonce, anchor_update_proposal_bytes.clone());
-			let msg = keccak_256(&prop_data);
+			let msg = keccak_256(&anchor_update_proposal_bytes);
 			let sig: Signature = pair.sign_prehashed(&msg).into();
 
 			// set the maintainer
@@ -559,12 +566,12 @@ fn should_update_anchor_edge_with_sig_succeed_using_webb_proposals() {
 			));
 
 			let anchor_update_call: Call =
-				codec::Decode::decode(&mut anchor_update_proposal_bytes.as_slice()).unwrap();
+				codec::Decode::decode(&mut &anchor_update_proposal_bytes[40..]).unwrap();
 			assert_ok!(SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id,
 				Box::new(anchor_update_call),
-				prop_data,
+				anchor_update_proposal_bytes,
 				sig.0.to_vec(),
 			));
 			assert_eq!(1, Counts::<Test>::get(src_id));
@@ -598,9 +605,10 @@ fn should_update_anchor_edge_with_sig_succeed_using_webb_proposals() {
 			let target = Element::from_bytes(&target_bytes);
 			let edge_metadata =
 				EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
-
+			let nonce = webb_proposals::Nonce::from(0x0002);
+			let header = make_proposal_header(resource, nonce);
 			let anchor_update_proposal = AnchorUpdateProposal::builder()
-				.resource_id(resource)
+				.header(header)
 				.src_chain(src_chain)
 				.merkle_root(root_bytes)
 				.latest_leaf_index(latest_leaf_index)
@@ -608,20 +616,17 @@ fn should_update_anchor_edge_with_sig_succeed_using_webb_proposals() {
 				.pallet_index(10)
 				.build();
 
-			let nonce = [0u8, 0u8, 0u8, 2u8];
 			let anchor_update_proposal_bytes = anchor_update_proposal.to_bytes();
-			let prop_data =
-				make_proposal_data(r_id.encode(), nonce, anchor_update_proposal_bytes.clone());
-			let msg = keccak_256(&prop_data);
+			let msg = keccak_256(&anchor_update_proposal_bytes);
 			let sig: Signature = pair.sign_prehashed(&msg).into();
 
 			let anchor_update_call: Call =
-				codec::Decode::decode(&mut anchor_update_proposal_bytes.as_slice()).unwrap();
+				codec::Decode::decode(&mut &anchor_update_proposal_bytes[40..]).unwrap();
 			assert_ok!(SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id,
 				Box::new(anchor_update_call),
-				prop_data,
+				anchor_update_proposal_bytes.clone(),
 				sig.0.to_vec(),
 			));
 

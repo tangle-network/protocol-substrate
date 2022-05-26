@@ -15,10 +15,10 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 
 [dependencies]
 codec = {package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"]}
-hex-literal = {version = '0.3.1', optional = true}
-log = {version = "0.4.14", default-features = false}
-scale-info = {version = "2.1.1", default-features = false, features = ["derive"]}
-serde = {version = "1.0.101", optional = true, features = ["derive"]}
+hex-literal = { version = '0.3.1', optional = true }
+log = { version = "0.4.14", default-features = false}
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"]}
+serde = { version = "1.0.101", optional = true, features = ["derive"]}
 smallvec = "1.6.1"
 static_assertions = "1.1.0"
 
@@ -32,6 +32,7 @@ pallet-anchor = {path = "../../pallets/anchor", default-features = false}
 pallet-anchor-handler = {path = "../../pallets/anchor-handler", default-features = false}
 pallet-asset-registry = {path = "../../pallets/asset-registry", default-features = false}
 pallet-bridge = {path = "../../pallets/bridge", default-features = false}
+pallet-signature-bridge = { path = "../../pallets/signature-bridge", default-features = false }
 pallet-hasher = {path = "../../pallets/hasher", default-features = false}
 pallet-mixer = {path = "../../pallets/mixer", default-features = false}
 pallet-mt = {path = "../../pallets/mt", default-features = false}
@@ -124,6 +125,7 @@ runtime-benchmarks = [
   "pallet-anchor-handler/runtime-benchmarks",
   "pallet-asset-registry/runtime-benchmarks",
   "pallet-bridge/runtime-benchmarks",
+  "pallet-signature-bridge/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
   "pallet-collective/runtime-benchmarks",
   "pallet-token-wrapper/runtime-benchmarks"
@@ -192,6 +194,7 @@ std = [
   "pallet-anchor/std",
   "pallet-vanchor/std",
   "pallet-bridge/std",
+  "pallet-signature-bridge/std",
   "pallet-asset-registry/std",
   "pallet-anchor-handler/std",
   "webb-primitives/std",

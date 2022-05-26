@@ -10191,6 +10191,7 @@ dependencies = [
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-session",
+ "pallet-signature-bridge",
  "pallet-staking",
  "pallet-staking-reward-curve",
  "pallet-sudo",

@@ -364,15 +364,16 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 		// it should fail.
 		let tree_id = MerkleTree::next_tree_id();
 		let target_system = webb_proposals::TargetSystem::new_tree_id(tree_id);
-		let r_id = derive_resource_id(PARAID_B.into(), tree_id).into();
-		let latest_leaf_index_u32: u32 = 1;
 		let typed_chain_id = TypedChainId::Substrate(PARAID_B.into());
-
+		let r_id = webb_proposals::ResourceId::new(target_system, typed_chain_id).into();
+		let latest_leaf_index_u32: u32 = 1;
+		let function_signature = webb_proposals::FunctionSignature::new([0; 4]);
+		let nonce = webb_proposals::Nonce::new(latest_leaf_index_u32);
+		let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
 		let merkle_root = [0; 32];
 
-		let header = ProposalHeader::new(r_id, FunctionSignature::from([0, 0, 0, 0]), 1u32.into());
 		let anchor_update_proposal = AnchorUpdateProposal::builder()
-			.header(header)
+			.header(proposal_header)
 			.src_chain(typed_chain_id)
 			.merkle_root(merkle_root)
 			.latest_leaf_index(latest_leaf_index_u32)
@@ -808,23 +809,19 @@ fn should_fail_to_call_update_as_signed_account() {
 	// on parachain A.
 	ParaA::execute_with(|| {
 		let tree_id = MerkleTree::next_tree_id();
+		let typed_chain_id = TypedChainId::Substrate(PARAID_B.into());
 		let target_system =
 			webb_proposals::TargetSystem::new_tree_id(tree_id.try_into().unwrap_or_default());
-		let r_id = derive_resource_id(PARAID_B.into(), tree_id).into();
-		/*let edge_metadata = EdgeMetadata {
-			src_chain_id: PARAID_B.into(),
-			root: Element::zero(),
-			latest_leaf_index: 0,
-		};*/
+		let r_id = webb_proposals::ResourceId::new(target_system, typed_chain_id).into();
 		let latest_leaf_index_u32: u32 = 0;
-
-		let typed_chain_id = TypedChainId::Substrate(PARAID_B.into());
+		let function_signature = webb_proposals::FunctionSignature::new([0; 4]);
+		let nonce = webb_proposals::Nonce::new(latest_leaf_index_u32);
+		let proposal_header = webb_proposals::ProposalHeader::new(r_id, function_signature, nonce);
 
 		let merkle_root = [0; 32];
 
-		let header = ProposalHeader::new(r_id, FunctionSignature::from([0, 0, 0, 0]), 1u32.into());
 		let anchor_update_proposal = AnchorUpdateProposal::builder()
-			.header(header)
+			.header(proposal_header)
 			.src_chain(typed_chain_id)
 			.merkle_root(merkle_root)
 			.latest_leaf_index(latest_leaf_index_u32)
