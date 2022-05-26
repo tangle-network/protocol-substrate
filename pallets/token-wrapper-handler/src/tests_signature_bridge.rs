@@ -53,12 +53,12 @@ fn get_public_uncompressed_key() -> [u8; 64] {
 }
 
 fn make_wrapping_fee_proposal(
-	resource_id: webb_proposals::ResourceId,
+	header: webb_proposals::ProposalHeader,
 	wrapping_fee_percent: u128,
 	into_pool_share_id: u32,
 ) -> Vec<u8> {
 	let wrapping_fee_proposal = WrappingFeeUpdateProposal::builder()
-		.resource_id(resource_id)
+		.header(header)
 		.wrapping_fee_percent(5)
 		.into_pool_share_id(into_pool_share_id)
 		.pallet_index(7)
@@ -67,12 +67,12 @@ fn make_wrapping_fee_proposal(
 }
 
 fn make_add_token_proposal(
-	resource_id: webb_proposals::ResourceId,
+	header: webb_proposals::ProposalHeader,
 	name: String,
 	asset_id: u32,
 ) -> Vec<u8> {
 	let add_token_proposal = TokenAddProposal::builder()
-		.resource_id(resource_id)
+		.header(header)
 		.name(name)
 		.asset_id(asset_id)
 		.pallet_index(7)
@@ -81,12 +81,12 @@ fn make_add_token_proposal(
 }
 
 fn make_remove_token_proposal(
-	resource_id: webb_proposals::ResourceId,
+	header: webb_proposals::ProposalHeader,
 	name: String,
 	asset_id: u32,
 ) -> Vec<u8> {
 	let remove_token_proposal = TokenRemoveProposal::builder()
-		.resource_id(resource_id)
+		.header(header)
 		.name(name)
 		.asset_id(asset_id)
 		.pallet_index(7)
@@ -101,6 +101,15 @@ fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u
 	prop_data.extend_from_slice(&nonce);
 	prop_data.extend_from_slice(&encoded_call[..]);
 	prop_data
+}
+
+fn make_proposal_header(
+	resource_id: webb_proposals::ResourceId,
+	nonce: webb_proposals::Nonce,
+) -> webb_proposals::ProposalHeader {
+	let function_signature = webb_proposals::FunctionSignature::new([0u8; 4]);
+	let header = webb_proposals::ProposalHeader::new(resource_id, function_signature, nonce);
+	header
 }
 
 // ----Signature Bridge Tests----
@@ -132,22 +141,20 @@ fn should_update_fee_with_sig_succeed() {
 			existential_balance.into(),
 		)
 		.unwrap();
-
-		let wrapping_fee_proposal_bytes = make_wrapping_fee_proposal(resource, 5, pool_share_id);
-		let nonce = [0u8, 0u8, 0u8, 1u8];
-		let prop_data =
-			make_proposal_data(r_id.encode(), nonce, wrapping_fee_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
+		let nonce = webb_proposals::Nonce::from(0x0001);
+		let header = make_proposal_header(resource, nonce);
+		let wrapping_fee_proposal_bytes = make_wrapping_fee_proposal(header, 5, pool_share_id);
+		let msg = keccak_256(&wrapping_fee_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
-		let proposal_bytes = wrapping_fee_proposal_bytes.clone();
-		let fee_call: Call = codec::Decode::decode(&mut proposal_bytes.as_slice()).unwrap();
+		let fee_call: Call =
+			codec::Decode::decode(&mut &wrapping_fee_proposal_bytes[40..]).unwrap();
 		// should fail to execute proposal as non-maintainer
 		assert_err!(
 			SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id,
 				Box::new(fee_call.clone()),
-				prop_data,
+				wrapping_fee_proposal_bytes.clone(),
 				sig.0.to_vec(),
 			),
 			pallet_signature_bridge::Error::<Test, _>::InvalidPermissions
@@ -159,19 +166,11 @@ fn should_update_fee_with_sig_succeed() {
 			public_uncompressed.to_vec()
 		));
 
-		let nonce = [0u8, 0u8, 0u8, 1u8];
-		let prop_data =
-			make_proposal_data(r_id.encode(), nonce, wrapping_fee_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
-		let proposal_bytes = wrapping_fee_proposal_bytes.clone();
-		let fee_call: Call = codec::Decode::decode(&mut proposal_bytes.as_slice()).unwrap();
-		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
 			Box::new(fee_call.clone()),
-			prop_data,
+			wrapping_fee_proposal_bytes.clone(),
 			sig.0.to_vec(),
 		));
 
@@ -209,11 +208,11 @@ fn should_add_token_with_sig_succeed() {
 		)
 		.unwrap();
 		// create add token proposal bytes
+		let nonce = webb_proposals::Nonce::from(0x0001);
+		let header = make_proposal_header(resource, nonce);
 		let add_token_proposal_bytes =
-			make_add_token_proposal(resource, "meme".to_string(), first_token_id);
-		let nonce = [0u8, 0u8, 0u8, 1u8];
-		let prop_data = make_proposal_data(r_id.encode(), nonce, add_token_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
+			make_add_token_proposal(header, "meme".to_string(), first_token_id);
+		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
@@ -222,13 +221,13 @@ fn should_add_token_with_sig_succeed() {
 		));
 
 		let add_token_call: Call =
-			codec::Decode::decode(&mut add_token_proposal_bytes.as_slice()).unwrap();
+			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
 			Box::new(add_token_call.clone()),
-			prop_data,
+			add_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
 		// Check that first_token_id is part of pool
@@ -279,12 +278,12 @@ fn should_remove_token_with_sig_succeed() {
 			existential_balance.into(),
 		)
 		.unwrap();
-
+		let nonce = webb_proposals::Nonce::from(0x0001);
+		let header = make_proposal_header(resource, nonce);
 		let add_token_proposal_bytes =
-			make_add_token_proposal(resource, "meme".to_string(), first_token_id);
-		let nonce = [0u8, 0u8, 0u8, 1u8];
-		let prop_data = make_proposal_data(r_id.encode(), nonce, add_token_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
+			make_add_token_proposal(header, "meme".to_string(), first_token_id);
+
+		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
 		// set the new maintainer
@@ -294,34 +293,32 @@ fn should_remove_token_with_sig_succeed() {
 		));
 
 		let add_token_call: Call =
-			codec::Decode::decode(&mut add_token_proposal_bytes.as_slice()).unwrap();
+			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
 			Box::new(add_token_call.clone()),
-			prop_data,
+			add_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
 		// Check that first_token_id is part of pool
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
-
+		let nonce = webb_proposals::Nonce::from(0x0002);
+		let header = make_proposal_header(resource, nonce);
 		let remove_token_proposal_bytes =
-			make_remove_token_proposal(resource, "meme".to_string(), first_token_id);
-		let nonce = [0u8, 0u8, 0u8, 2u8];
-		let prop_data =
-			make_proposal_data(r_id.encode(), nonce, remove_token_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
+			make_remove_token_proposal(header, "meme".to_string(), first_token_id);
+		let msg = keccak_256(&remove_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
 		let remove_token_call: Call =
-			codec::Decode::decode(&mut remove_token_proposal_bytes.as_slice()).unwrap();
+			codec::Decode::decode(&mut &remove_token_proposal_bytes[40..]).unwrap();
 
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
 			Box::new(remove_token_call.clone()),
-			prop_data,
+			remove_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
 
@@ -364,22 +361,20 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 			Origin::root(),
 			public_uncompressed.to_vec()
 		));
-
+		let nonce = webb_proposals::Nonce::from(0x0001);
+		let header = make_proposal_header(resource, nonce);
 		let remove_token_proposal_bytes =
-			make_remove_token_proposal(resource, "meme".to_string(), first_token_id);
-		let nonce = [0u8, 0u8, 0u8, 1u8];
-		let prop_data =
-			make_proposal_data(r_id.encode(), nonce, remove_token_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
+			make_remove_token_proposal(header, "meme".to_string(), first_token_id);
+		let msg = keccak_256(&remove_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 		let remove_token_call: Call =
-			codec::Decode::decode(&mut remove_token_proposal_bytes.as_slice()).unwrap();
+			codec::Decode::decode(&mut &remove_token_proposal_bytes[40..]).unwrap();
 		assert_err!(
 			SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id,
 				Box::new(remove_token_call.clone()),
-				prop_data,
+				remove_token_proposal_bytes,
 				sig.0.to_vec(),
 			),
 			asset_registry::Error::<Test>::AssetNotFoundInPool
@@ -435,30 +430,29 @@ fn should_add_many_tokens_with_sig_succeed() {
 			Origin::root(),
 			public_uncompressed.to_vec()
 		));
+		let nonce = webb_proposals::Nonce::from(0x0001);
+		let header = make_proposal_header(resource, nonce);
 		let add_token_proposal_bytes =
-			make_add_token_proposal(resource, "meme".to_string(), first_token_id);
+			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 		let add_token_call: Call =
-			codec::Decode::decode(&mut add_token_proposal_bytes.as_slice()).unwrap();
-		let nonce = [0u8, 0u8, 0u8, 1u8];
-		let prop_data = make_proposal_data(r_id.encode(), nonce, add_token_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
+			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
+		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
 			Box::new(add_token_call.clone()),
-			prop_data,
+			add_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
-
+		let nonce = webb_proposals::Nonce::from(0x0002);
+		let header = make_proposal_header(resource, nonce);
 		let add_token_proposal_bytes =
-			make_add_token_proposal(resource, "meme".to_string(), second_token_id);
+			make_add_token_proposal(header, "meme".to_string(), second_token_id);
 		let add_token_call: Call =
-			codec::Decode::decode(&mut add_token_proposal_bytes.as_slice()).unwrap();
-		let nonce = [0u8, 0u8, 0u8, 2u8];
-		let prop_data = make_proposal_data(r_id.encode(), nonce, add_token_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
+			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
+		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
 		// Create proposal (& vote)
@@ -466,17 +460,16 @@ fn should_add_many_tokens_with_sig_succeed() {
 			Origin::signed(RELAYER_A),
 			src_id,
 			Box::new(add_token_call.clone()),
-			prop_data,
+			add_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
-
+		let nonce = webb_proposals::Nonce::from(0x0003);
+		let header = make_proposal_header(resource, nonce);
 		let add_token_proposal_bytes =
-			make_add_token_proposal(resource, "meme".to_string(), third_token_id);
+			make_add_token_proposal(header, "meme".to_string(), third_token_id);
 		let add_token_call: Call =
-			codec::Decode::decode(&mut add_token_proposal_bytes.as_slice()).unwrap();
-		let nonce = [0u8, 0u8, 0u8, 3u8];
-		let prop_data = make_proposal_data(r_id.encode(), nonce, add_token_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
+			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
+		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
 		// Create proposal (& vote)
@@ -484,7 +477,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 			Origin::signed(RELAYER_A),
 			src_id,
 			Box::new(add_token_call.clone()),
-			prop_data,
+			add_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
 
@@ -528,14 +521,13 @@ fn should_fail_to_add_same_token_with_sig() {
 			existential_balance.into(),
 		)
 		.unwrap();
-
+		let nonce = webb_proposals::Nonce::from(0x0001);
+		let header = make_proposal_header(resource, nonce);
 		let add_token_proposal_bytes =
-			make_add_token_proposal(resource, "meme".to_string(), first_token_id);
+			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 		let add_token_call: Call =
-			codec::Decode::decode(&mut add_token_proposal_bytes.as_slice()).unwrap();
-		let nonce = [0u8, 0u8, 0u8, 1u8];
-		let prop_data = make_proposal_data(r_id.encode(), nonce, add_token_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
+			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
+		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
 		// set the new maintainer
@@ -548,20 +540,20 @@ fn should_fail_to_add_same_token_with_sig() {
 			Origin::signed(RELAYER_A),
 			src_id,
 			Box::new(add_token_call.clone()),
-			prop_data.clone(),
+			add_token_proposal_bytes.clone(),
 			sig.0.to_vec(),
 		));
 		// Check that first_token_id is part of pool
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
 
 		// Have to remake prop_data with incremented nonce
+		let nonce = webb_proposals::Nonce::from(0x0002);
+		let header = make_proposal_header(resource, nonce);
 		let add_token_proposal_bytes =
-			make_add_token_proposal(resource, "meme".to_string(), first_token_id);
+			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 		let add_token_call: Call =
-			codec::Decode::decode(&mut add_token_proposal_bytes.as_slice()).unwrap();
-		let nonce = [0u8, 0u8, 0u8, 2u8];
-		let prop_data = make_proposal_data(r_id.encode(), nonce, add_token_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
+			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
+		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
 		assert_err!(
@@ -569,7 +561,7 @@ fn should_fail_to_add_same_token_with_sig() {
 				Origin::signed(RELAYER_A),
 				src_id,
 				Box::new(add_token_call.clone()),
-				prop_data.clone(),
+				add_token_proposal_bytes.clone(),
 				sig.0.to_vec(),
 			),
 			asset_registry::Error::<Test>::AssetExistsInPool
@@ -606,14 +598,13 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 			existential_balance.into(),
 		)
 		.unwrap();
-
+		let nonce = webb_proposals::Nonce::from(0x0001);
+		let header = make_proposal_header(resource, nonce);
 		let add_token_proposal_bytes =
-			make_add_token_proposal(resource, "meme".to_string(), first_token_id);
+			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 		let add_token_call: Call =
-			codec::Decode::decode(&mut add_token_proposal_bytes.as_slice()).unwrap();
-		let nonce = [0u8, 0u8, 0u8, 1u8];
-		let prop_data = make_proposal_data(r_id.encode(), nonce, add_token_proposal_bytes.clone());
-		let msg = keccak_256(&prop_data);
+			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
+		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
 		// set the new maintainer
@@ -627,7 +618,7 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 				Origin::signed(RELAYER_A),
 				src_id,
 				Box::new(add_token_call.clone()),
-				prop_data.clone(),
+				add_token_proposal_bytes.clone(),
 				sig.0.to_vec(),
 			),
 			asset_registry::Error::<Test>::AssetNotRegistered

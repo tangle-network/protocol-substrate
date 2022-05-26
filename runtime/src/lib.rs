@@ -71,6 +71,7 @@ use webb_primitives::{
 	hashing::{ArkworksPoseidonHasherBls381, ArkworksPoseidonHasherBn254},
 	types::ElementTrait,
 	verifying::{ArkworksVerifierBls381, ArkworksVerifierBn254},
+	signing::SignatureVerifier,
 	Amount, ChainId,
 };
 
@@ -924,6 +925,21 @@ impl pallet_bridge::Config<BridgeInstance> for Runtime {
 	type ProposalLifetime = ProposalLifetime;
 }
 
+type SignatureBridgeInstance = pallet_signature_bridge::Instance1;
+impl pallet_signature_bridge::Config<SignatureBridgeInstance> for Runtime {
+	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type BridgeAccountId = BridgeAccountId;
+	type ChainId = ChainId;
+	type ChainIdentifier = ChainIdentifier;
+	type ChainType = ChainType;
+	type Event = Event;
+	type Proposal = Call;
+	type ProposalLifetime = ProposalLifetime;
+	type ProposalNonce = u32;
+	type MaintainerNonce = u32;
+	type SignatureVerifier = SignatureVerifier;
+}
+
 parameter_types! {
 	pub const CouncilMotionDuration: BlockNumber = 5 * DAYS;
 	pub const CouncilMaxProposals: u32 = 100;
@@ -1110,6 +1126,9 @@ construct_runtime!(
 		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 
 		Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>}
+
+		// Signature Bridge
+		SignatureBridge: pallet_signature_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
