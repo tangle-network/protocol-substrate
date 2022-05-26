@@ -61,6 +61,7 @@ mod tests;
 
 mod benchmarking;
 
+use core::convert::TryInto;
 pub mod weights;
 use sp_std::prelude::*;
 

@@ -27,22 +27,6 @@ pub use runtime::*;
 
 pub use webb_proposals;
 
-// /// Common constants of parachains.
-// mod constants {
-// 	use frame_support::weights::{constants::WEIGHT_PER_SECOND, Weight};
-// 	use sp_runtime::Perbill;
-// 	/// We assume that ~5% of the block weight is consumed by `on_initialize`
-// 	/// handlers. This is used to limit the maximal weight of a single
-// 	/// extrinsic.
-// 	pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
-// 	/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest
-// 	/// can be used by Operational  extrinsics.
-// 	pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-
-// 	/// We allow for 0.5 seconds of compute with a 6 second average block time.
-// 	pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
-// }
-
 /// Opaque types. These are used by the CLI to instantiate machinery that don't
 /// need to know the specifics of the runtime. They can then be made to be
 /// agnostic over specific formats of data like extrinsics, allowing for them to

@@ -71,6 +71,7 @@ pub mod mock;
 mod tests;
 pub mod types;
 
+use core::convert::TryInto;
 use crate::types::{DepositNonce, ProposalStatus, ProposalVotes};
 use codec::{Decode, Encode, EncodeLike};
 use frame_support::{

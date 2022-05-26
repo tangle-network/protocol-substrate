@@ -12,8 +12,8 @@ version = "1.0.0"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = {package = "parity-scale-codec", version = "2.3.0", default-features = false, features = ["derive", "max-encoded-len"]}
-scale-info = {version = "1.0", default-features = false, features = ["derive"]}
+codec = {package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"]}
+scale-info = {version = "2.1.1", default-features = false, features = ["derive"]}
 asset-registry = {package = "pallet-asset-registry", path = "../asset-registry", default-features = false}
 webb-primitives = {path = "../../primitives", default-features = false}
 frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22"}
@@ -38,7 +38,7 @@ pallet-balances = {git = "https://github.com/paritytech/substrate",  branch = "p
 pallet-treasury = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.22"}
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22"}
 sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22"}
-webb-proposals = {version = "0.3.0", default-features = false, features = ["scale","substrate"]}
+webb-proposals = { git = "https://github.com/webb-tools/webb-rs", branch = "drew/update-version", default-features = false, features = ["scale", "substrate"] }
 
 
 [features]

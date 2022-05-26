@@ -57,6 +57,7 @@ pub mod mock_signature_bridge;
 #[cfg(test)]
 mod tests_signature_bridge;
 
+use core::convert::TryInto;
 use frame_support::traits::EnsureOrigin;
 use frame_system::pallet_prelude::OriginFor;
 

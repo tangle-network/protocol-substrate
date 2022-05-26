@@ -71,6 +71,7 @@ use frame_support::{
 use orml_traits::MultiCurrency;
 use traits::TokenWrapperInterface;
 use weights::WeightInfo;
+use core::convert::TryInto;
 
 pub use pallet::*;
 

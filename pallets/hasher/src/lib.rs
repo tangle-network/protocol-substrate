@@ -48,6 +48,7 @@ pub mod weights;
 use frame_support::pallet_prelude::{ensure, DispatchError};
 use sp_std::{prelude::*, vec};
 use webb_primitives::hasher::*;
+use core::convert::TryInto;
 
 pub use pallet::*;
 pub use weights::WeightInfo;

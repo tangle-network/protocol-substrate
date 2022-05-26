@@ -7,6 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "3" }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22" }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.22" }
@@ -34,12 +35,10 @@ digest = { version = "0.9", default-features = false }
 ark-crypto-primitives = { version = "^0.3.0", default-features = false }
 arkworks-native-gadgets = { version = "1.0.0", default-features = false, optional = true }
 
-codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "3" }
-
 ethabi = { version = "15.0.0", default-features = false }
 hex-literal = { version = "0.3.4", default-features = false }
 
-webb-proposals = { version = "0.3.0", default-features = false , features = ["scale","substrate"] }
+webb-proposals = { git = "https://github.com/webb-tools/webb-rs", branch = "drew/update-version", default-features = false, features = ["scale", "substrate"] }
 
 [features]
 default = ["std", "hashing", "verifying", "field_ops"]

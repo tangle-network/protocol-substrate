@@ -54,13 +54,18 @@ where
 	CID: Encode + Decode,
 	L: Encode + Decode,
 	C: HeaderBackend<B> + ProvideRuntimeApi<B> + Send + Sync + 'static,
-	C::Api: LinkableTreeApi<B, E, CID, L>,
+	C::Api: LinkableTreeApi<B, CID, E, L>,
 {
 	fn get_neighbor_roots(&self, tree_id: u32, at: Option<<B as BlockT>::Hash>) -> Result<Vec<E>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		let roots = api.get_neighbor_roots(&at, tree_id).ok().flatten();
-		Ok(roots.unwrap_or_default())
+		api.get_neighbor_roots(&at, tree_id).map_err(|e| {
+			return Err(Error {
+				code: ErrorCode::ServerError(1513), // Too many leaves
+				message: "NoNeighborRoots".into(),
+				data: Some(format!("{?}", e)),
+			})
+		})
 	}
 
 	fn get_neighbor_edges(
@@ -70,7 +75,12 @@ where
 	) -> Result<Vec<EdgeMetadata<CID, E, L>>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		let roots = api.get_neighbor_edges(&at, tree_id).ok().flatten();
-		Ok(roots.unwrap_or_default())
+		api.get_neighbor_edges(&at, tree_id).map_err(|e| {
+			return Err(Error {
+				code: ErrorCode::ServerError(1513), // Too many leaves
+				message: "NoNeighborEdges".into(),
+				data: Some(format!("{?}", e)),
+			})
+		})
 	}
 }

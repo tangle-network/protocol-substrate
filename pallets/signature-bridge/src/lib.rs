@@ -53,6 +53,7 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
+use core::convert::TryInto;
 use codec::{Decode, Encode, EncodeLike};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},

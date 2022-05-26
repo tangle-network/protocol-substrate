@@ -59,6 +59,7 @@ pub mod types;
 use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchError};
 use types::TreeMetadata;
+use core::convert::TryInto;
 
 pub use weights::WeightInfo;
 
