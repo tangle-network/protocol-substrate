@@ -33,6 +33,7 @@ pallet-anchor = {path = "../../pallets/anchor", default-features = false}
 pallet-anchor-handler = {path = "../../pallets/anchor-handler", default-features = false}
 pallet-asset-registry = {path = "../../pallets/asset-registry", default-features = false}
 pallet-bridge = {path = "../../pallets/bridge", default-features = false}
+pallet-signature-bridge = { path = "../../pallets/signature-bridge", default-features = false }
 pallet-hasher = {path = "../../pallets/hasher", default-features = false}
 pallet-mixer = {path = "../../pallets/mixer", default-features = false}
 pallet-mt = {path = "../../pallets/mt", default-features = false}
@@ -123,6 +124,7 @@ runtime-benchmarks = [
   "pallet-anchor-handler/runtime-benchmarks",
   "pallet-asset-registry/runtime-benchmarks",
   "pallet-bridge/runtime-benchmarks",
+  "pallet-signature-bridge/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
   "pallet-collective/runtime-benchmarks",
   "pallet-token-wrapper/runtime-benchmarks"
@@ -189,6 +191,7 @@ std = [
   "pallet-anchor/std",
   "pallet-vanchor/std",
   "pallet-bridge/std",
+  "pallet-signature-bridge/std",
   "pallet-asset-registry/std",
   "pallet-anchor-handler/std",
   "webb-primitives/std",
