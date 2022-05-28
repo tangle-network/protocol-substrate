@@ -5,11 +5,6 @@ use pallet_linkable_tree::types::EdgeMetadata;
 use sp_std::vec::Vec;
 use webb_primitives::ElementTrait;
 
-// pub struct NeighborRoots<E>(Vec<E>);
-
-// #[#[derive(scale_info::TypeInfo)]]
-// pub struct NeighborEdges<C, E, L>(Vec<EdgeMetadata<C, E, L>>);
-
 sp_api::decl_runtime_apis! {
 	pub trait LinkableTreeApi<C, E, L>
 	where
