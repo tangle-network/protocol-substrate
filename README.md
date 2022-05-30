@@ -86,10 +86,10 @@ git clone git@github.com:webb-tools/protocol-substrate.git
 git submodule update --init
 ```
 
-Build the node in `release mode`:
+Build the standalone node in `release mode`:
 
 ```bash
-cargo build --release
+cargo build --release -p webb-standalone-node
 ```
 
 #### Troubleshooting for Apple Silicon users

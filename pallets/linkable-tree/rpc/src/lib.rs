@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use codec::{Decode, Encode};
-use jsonrpc_core::{Error, ErrorCode, Result};
+use jsonrpc_core::{Result};
 use jsonrpc_derive::rpc;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
