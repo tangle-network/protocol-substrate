@@ -38,7 +38,7 @@ arkworks-native-gadgets = { version = "1.0.0", default-features = false, optiona
 ethabi = { version = "15.0.0", default-features = false }
 hex-literal = { version = "0.3.4", default-features = false }
 
-webb-proposals = { git = "https://github.com/webb-tools/webb-rs", branch = "drew/update-version", default-features = false, features = ["scale", "substrate"] }
+webb-proposals = { version = "0.3.2", default-features = false, features = ["scale", "substrate"] }
 
 [features]
 default = ["std", "hashing", "verifying", "field_ops"]

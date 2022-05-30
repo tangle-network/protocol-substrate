@@ -2,7 +2,7 @@ use wasm_utils::ANCHOR_COUNT;
 use webb_client::{self, client, webb_runtime, WebbRuntimeApi};
 
 use sp_keyring::AccountKeyring;
-use subxt::{sp_core::sr25519::Pair, DefaultConfig, DefaultExtra, PairSigner};
+use subxt::{DefaultConfig, PairSigner, PolkadotExtrinsicParams};
 
 mod utils;
 
@@ -25,7 +25,7 @@ use ark_ff::{BigInteger, PrimeField};
 async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let api = client().await?;
 
-	let signer = PairSigner::<DefaultConfig, DefaultExtra<DefaultConfig>, _>::new(
+	let signer = PairSigner::<DefaultConfig, PolkadotExtrinsicParams<DefaultConfig>, _>::new(
 		AccountKeyring::Alice.pair(),
 	);
 
@@ -131,7 +131,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 	let api = client().await?;
 
-	let signer = PairSigner::<DefaultConfig, DefaultExtra<DefaultConfig>, _>::new(
+	let signer = PairSigner::<DefaultConfig, PolkadotExtrinsicParams<DefaultConfig>, _>::new(
 		AccountKeyring::Alice.pair(),
 	);
 
@@ -243,7 +243,7 @@ async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 
 async fn make_vanchor_tx(
 	api: &WebbRuntimeApi,
-	signer: &PairSigner<DefaultConfig, DefaultExtra<DefaultConfig>, Pair>,
+	signer: &PairSigner<DefaultConfig, PolkadotExtrinsicParams<DefaultConfig>>,
 	pk_bytes: &[u8],
 	vk_bytes: &[u8],
 	recipient: &AccountId32,
@@ -266,8 +266,8 @@ async fn make_vanchor_tx(
 		relayer.clone(),
 		ext_amount,
 		fee,
-		Element(output1),
-		Element(output2),
+		Element(output1).to_vec(),
+		Element(output2).to_vec(),
 	);
 
 	let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -321,7 +321,7 @@ async fn make_vanchor_tx(
 async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let api = client().await?;
 
-	let signer = PairSigner::<DefaultConfig, DefaultExtra<DefaultConfig>, _>::new(
+	let signer = PairSigner::<DefaultConfig, PolkadotExtrinsicParams<DefaultConfig>, _>::new(
 		AccountKeyring::Alice.pair(),
 	);
 

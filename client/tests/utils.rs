@@ -1,6 +1,7 @@
 use ark_std::collections::BTreeMap;
 use core::fmt::Debug;
 use subxt::{DefaultConfig, Event, TransactionProgress};
+use webb_client::webb_runtime::system::storage::Events;
 
 use subxt::sp_runtime::AccountId32;
 use webb_client::webb_runtime;
@@ -138,9 +139,7 @@ impl<I: Encode, A: Encode, B: Encode> IntoAbiToken for ExtData<I, A, B> {
 	}
 }
 
-impl Into<WebbExtData<AccountId32, i128, u128>>
-	for ExtData<AccountId32, i128, u128>
-{
+impl Into<WebbExtData<AccountId32, i128, u128>> for ExtData<AccountId32, i128, u128> {
 	fn into(self) -> WebbExtData<AccountId32, i128, u128> {
 		WebbExtData {
 			recipient: self.recipient.clone(),
@@ -434,7 +433,7 @@ pub fn deconstruct_vanchor_pi_el(
 }
 
 pub async fn expect_event<E: Event + Debug>(
-	tx_progess: &mut TransactionProgress<'_, DefaultConfig, DispatchError>,
+	tx_progess: &mut TransactionProgress<'_, DefaultConfig, DispatchError, E>,
 ) -> Result<(), Box<dyn std::error::Error>> {
 	// Start printing on a fresh line
 	println!("");
@@ -452,7 +451,7 @@ pub async fn expect_event<E: Event + Debug>(
 			);
 
 			let events = details.wait_for_success().await?;
-			let transfer_event = events.find_first_event::<E>()?;
+			let transfer_event = events.find_first::<E>()?;
 
 			if let Some(event) = transfer_event {
 				println!("In block (but not finalized): {event:?}");
@@ -469,7 +468,7 @@ pub async fn expect_event<E: Event + Debug>(
 			);
 
 			let events = details.wait_for_success().await?;
-			let transfer_event = events.find_first_event::<E>()?;
+			let transfer_event = events.find_first::<E>()?;
 
 			if let Some(event) = transfer_event {
 				println!("Transaction success: {event:?}");
