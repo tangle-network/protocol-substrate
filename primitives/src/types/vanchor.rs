@@ -35,38 +35,38 @@ impl<E: ElementTrait> ProofData<E> {
 	}
 }
 
-#[derive(Encode, Decode, Default, Debug, Clone, Eq, PartialEq, Copy, TypeInfo)]
-pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode, Element: Encode> {
+#[derive(Encode, Decode, Default, Debug, Clone, Eq, PartialEq, TypeInfo)]
+pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode> {
 	pub recipient: AccountId,
 	pub relayer: AccountId,
 	pub ext_amount: Amount,
 	pub fee: Balance,
-	pub encrypted_output1: Element,
-	pub encrypted_output2: Element,
+	pub encrypted_output1: Vec<u8>,
+	pub encrypted_output2: Vec<u8>,
 }
 
-impl<I: Encode, A: Encode, B: Encode, E: Encode> ExtData<I, A, B, E> {
+impl<I: Encode, A: Encode, B: Encode> ExtData<I, A, B> {
 	pub fn new(
 		recipient: I,
 		relayer: I,
 		ext_amount: A,
 		fee: B,
-		encrypted_output1: E,
-		encrypted_output2: E,
+		encrypted_output1: Vec<u8>,
+		encrypted_output2: Vec<u8>,
 	) -> Self {
 		Self { recipient, relayer, ext_amount, fee, encrypted_output1, encrypted_output2 }
 	}
 }
 
-impl<I: Encode, A: Encode, B: Encode, E: Encode> IntoAbiToken for ExtData<I, A, B, E> {
+impl<I: Encode, A: Encode, B: Encode> IntoAbiToken for ExtData<I, A, B> {
 	fn into_abi(&self) -> Token {
 		// TODO: Make sure the encodings match the solidity side
 		let recipient = Token::Bytes(self.recipient.encode());
 		let ext_amount = Token::Bytes(self.ext_amount.encode());
 		let relayer = Token::Bytes(self.relayer.encode());
 		let fee = Token::Bytes(self.fee.encode());
-		let encrypted_output1 = Token::Bytes(self.encrypted_output1.encode());
-		let encrypted_output2 = Token::Bytes(self.encrypted_output2.encode());
+		let encrypted_output1 = Token::Bytes(self.encrypted_output1.clone());
+		let encrypted_output2 = Token::Bytes(self.encrypted_output2.clone());
 		let mut ext_data_args = Vec::new();
 		ext_data_args.push(recipient);
 		ext_data_args.push(relayer);

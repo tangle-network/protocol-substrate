@@ -282,7 +282,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			id: T::TreeId,
 			proof_data: ProofData<T::Element>,
-			ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, T::Element>,
+			ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			<Self as VAnchorInterface<_>>::transact(sender, id, proof_data, ext_data)?;
@@ -343,7 +343,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		transactor: T::AccountId,
 		id: T::TreeId,
 		proof_data: ProofData<T::Element>,
-		ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, T::Element>,
+		ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
 	) -> Result<(), DispatchError> {
 		// double check the number of roots
 		T::LinkableTree::ensure_max_edges(id, proof_data.roots.len())?;

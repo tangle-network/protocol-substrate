@@ -111,13 +111,15 @@ fn create_vanchor_with_deposits(proving_key_bytes: Vec<u8>) -> (u32, [Utxo<Bn254
 
 	let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 	let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-	let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+	let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 		recipient.clone(),
 		relayer.clone(),
 		ext_amount,
 		fee,
-		Element::from_bytes(&output1),
-		Element::from_bytes(&output2),
+		// Mock encryption value, not meant to be used in production
+		Element::from_bytes(&output1).to_vec(),
+		// Mock encryption value, not meant to be used in production
+		Element::from_bytes(&output2).to_vec(),
 	);
 
 	let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -180,13 +182,15 @@ fn should_complete_2x2_transaction_with_deposit() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			Element::from_bytes(&output1),
-			Element::from_bytes(&output2),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output1).to_vec(),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output2).to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -216,13 +220,13 @@ fn should_complete_2x2_transaction_with_deposit() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			output1,
-			output2,
+			output1.to_vec(),
+			output2.to_vec(),
 		);
 
 		// Constructing proof data
@@ -272,13 +276,15 @@ fn should_complete_2x2_transaction_with_withdraw() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			Element::from_bytes(&output1),
-			Element::from_bytes(&output2),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output1).to_vec(),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output2).to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -307,13 +313,13 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			output1,
-			output2,
+			output1.to_vec(),
+			output2.to_vec(),
 		);
 
 		// Constructing proof data
@@ -364,13 +370,15 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			Element::from_bytes(&output1),
-			Element::from_bytes(&output2),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output1).to_vec(),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output2).to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -402,13 +410,13 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 
 		// INVALID output commitment
 		let output2 = Element::from_bytes(&[0u8; 32]);
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			output1,
-			output2,
+			output1.to_vec(),
+			output2.to_vec(),
 		);
 
 		// Constructing proof data
@@ -461,13 +469,15 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			Element::from_bytes(&output1),
-			Element::from_bytes(&output2),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output1).to_vec(),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output2).to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -496,13 +506,13 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			output1,
-			output2,
+			output1.to_vec(),
+			output2.to_vec(),
 		);
 
 		// Constructing proof data
@@ -557,13 +567,15 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			Element::from_bytes(&output1),
-			Element::from_bytes(&output2),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output1).to_vec(),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output2).to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -592,13 +604,13 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			output1,
-			output2,
+			output1.to_vec(),
+			output2.to_vec(),
 		);
 
 		// Constructing proof data
@@ -651,13 +663,15 @@ fn should_not_be_able_to_double_spend() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			Element::from_bytes(&output1),
-			Element::from_bytes(&output2),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output1).to_vec(),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output2).to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -686,13 +700,13 @@ fn should_not_be_able_to_double_spend() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			output1,
-			output2,
+			output1.to_vec(),
+			output2.to_vec(),
 		);
 
 		// Constructing proof data
@@ -751,13 +765,15 @@ fn should_not_be_able_to_exceed_max_fee() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			Element::from_bytes(&output1),
-			Element::from_bytes(&output2),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output1).to_vec(),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output2).to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -787,13 +803,13 @@ fn should_not_be_able_to_exceed_max_fee() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			output1,
-			output2,
+			output1.to_vec(),
+			output2.to_vec(),
 		);
 
 		// Constructing proof data
@@ -842,13 +858,15 @@ fn should_not_be_able_to_exceed_max_deposit() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			Element::from_bytes(&output1),
-			Element::from_bytes(&output2),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output1).to_vec(),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output2).to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -878,13 +896,13 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			output1,
-			output2,
+			output1.to_vec(),
+			output2.to_vec(),
 		);
 
 		// Constructing proof data
@@ -934,13 +952,15 @@ fn should_not_be_able_to_exceed_external_amount() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			Element::from_bytes(&output1),
-			Element::from_bytes(&output2),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output1).to_vec(),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output2).to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -970,13 +990,13 @@ fn should_not_be_able_to_exceed_external_amount() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			output1,
-			output2,
+			output1.to_vec(),
+			output2.to_vec(),
 		);
 
 		// Constructing proof data
@@ -1023,13 +1043,15 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			Element::from_bytes(&output1),
-			Element::from_bytes(&output2),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output1).to_vec(),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output2).to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -1058,13 +1080,13 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance, Element>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
-			output1,
-			output2,
+			output1.to_vec(),
+			output2.to_vec(),
 		);
 
 		// Constructing proof data
