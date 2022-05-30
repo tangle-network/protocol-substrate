@@ -1,7 +1,7 @@
 use ark_std::collections::BTreeMap;
 use core::fmt::Debug;
 use subxt::{DefaultConfig, Event, TransactionProgress};
-use webb_client::webb_runtime::system::storage::Events;
+use webb_client::webb_runtime::{runtime_types::webb_standalone_runtime, system::storage::Events};
 
 use subxt::sp_runtime::AccountId32;
 use webb_client::webb_runtime;
@@ -433,7 +433,12 @@ pub fn deconstruct_vanchor_pi_el(
 }
 
 pub async fn expect_event<E: Event + Debug>(
-	tx_progess: &mut TransactionProgress<'_, DefaultConfig, DispatchError, E>,
+	tx_progess: &mut TransactionProgress<
+		'_,
+		DefaultConfig,
+		DispatchError,
+		webb_client::webb_runtime::Event,
+	>,
 ) -> Result<(), Box<dyn std::error::Error>> {
 	// Start printing on a fresh line
 	println!("");

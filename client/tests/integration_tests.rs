@@ -1,8 +1,8 @@
+use sp_keyring::{sr25519::sr25519::Pair, AccountKeyring};
+use subxt::{DefaultConfig, PairSigner};
 use wasm_utils::ANCHOR_COUNT;
 use webb_client::{self, client, webb_runtime, WebbRuntimeApi};
-
-use sp_keyring::AccountKeyring;
-use subxt::{DefaultConfig, PairSigner, PolkadotExtrinsicParams};
+use webb_primitives::ElementTrait;
 
 mod utils;
 
@@ -25,9 +25,7 @@ use ark_ff::{BigInteger, PrimeField};
 async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let api = client().await?;
 
-	let signer = PairSigner::<DefaultConfig, PolkadotExtrinsicParams<DefaultConfig>, _>::new(
-		AccountKeyring::Alice.pair(),
-	);
+	let signer = PairSigner::<DefaultConfig, Pair>::new(AccountKeyring::Alice.pair());
 
 	let pk_bytes = include_bytes!(
 		"../../protocol-substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin"
@@ -50,8 +48,8 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let mt_storage = api.storage().merkle_tree_bn254();
 
 	let tree_id = 0;
-	let deposit_tx = mixer.deposit(tree_id, leaf.into());
-	let mut deposit_res = deposit_tx.sign_and_submit_then_watch(&signer).await?;
+	let deposit_tx = mixer.deposit(tree_id, leaf.into()).unwrap();
+	let mut deposit_res = deposit_tx.sign_and_submit_then_watch_default(&signer).await?;
 
 	expect_event::<webb_runtime::mixer_bn254::events::Deposit>(&mut deposit_res).await?;
 
@@ -80,7 +78,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	);
 
 	// Fetch the root from chain storage and check if it equals the local root
-	let tree_metadata_res = mt_storage.trees(0, None).await?;
+	let tree_metadata_res = mt_storage.trees(&0, None).await?;
 	if let Some(tree_metadata) = tree_metadata_res {
 		let chain_root = tree_metadata.root;
 		assert_eq!(chain_root.0, root.0);
@@ -110,17 +108,19 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	assert!(res, "Invalid proof");
 
 	// Do the withdraw
-	let withdraw_tx = mixer.withdraw(
-		tree_id,
-		proof_bytes,
-		root.into(),
-		nullifier_hash.into(),
-		recipient,
-		relayer,
-		fee,
-		refund,
-	);
-	let mut withdraw_res = withdraw_tx.sign_and_submit_then_watch(&signer).await?;
+	let withdraw_tx = mixer
+		.withdraw(
+			tree_id,
+			proof_bytes,
+			root.into(),
+			nullifier_hash.into(),
+			recipient,
+			relayer,
+			fee,
+			refund,
+		)
+		.unwrap();
+	let mut withdraw_res = withdraw_tx.sign_and_submit_then_watch_default(&signer).await?;
 
 	expect_event::<webb_runtime::mixer_bn254::events::Withdraw>(&mut withdraw_res).await?;
 
@@ -131,9 +131,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 	let api = client().await?;
 
-	let signer = PairSigner::<DefaultConfig, PolkadotExtrinsicParams<DefaultConfig>, _>::new(
-		AccountKeyring::Alice.pair(),
-	);
+	let signer = PairSigner::<DefaultConfig, Pair>::new(AccountKeyring::Alice.pair());
 
 	let pk_bytes = include_bytes!(
 		"../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/2/proving_key_uncompressed.bin"
@@ -158,8 +156,8 @@ async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 	let mt_storage = api.storage().merkle_tree_bn254();
 
 	let tree_id = 4;
-	let deposit_tx = anchor.deposit(tree_id, leaf.into());
-	let mut deposit_res = deposit_tx.sign_and_submit_then_watch(&signer).await?;
+	let deposit_tx = anchor.deposit(tree_id, leaf.into()).unwrap();
+	let mut deposit_res = deposit_tx.sign_and_submit_then_watch_default(&signer).await?;
 
 	expect_event::<webb_runtime::anchor_bn254::events::Deposit>(&mut deposit_res).await?;
 
@@ -223,18 +221,20 @@ async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 	assert!(res, "Invalid proof");
 
 	// Do the withdraw
-	let withdraw_tx = anchor.withdraw(
-		tree_id,
-		proof_bytes,
-		root_elemets,
-		nullifier_hash.into(),
-		recipient,
-		relayer,
-		fee,
-		refund,
-		commitment.into(),
-	);
-	let mut withdraw_res = withdraw_tx.sign_and_submit_then_watch(&signer).await?;
+	let withdraw_tx = anchor
+		.withdraw(
+			tree_id,
+			proof_bytes,
+			root_elemets,
+			nullifier_hash.into(),
+			recipient,
+			relayer,
+			fee,
+			refund,
+			commitment.into(),
+		)
+		.unwrap();
+	let mut withdraw_res = withdraw_tx.sign_and_submit_then_watch_default(&signer).await?;
 
 	expect_event::<webb_runtime::anchor_bn254::events::Withdraw>(&mut withdraw_res).await?;
 
@@ -243,7 +243,7 @@ async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 
 async fn make_vanchor_tx(
 	api: &WebbRuntimeApi,
-	signer: &PairSigner<DefaultConfig, PolkadotExtrinsicParams<DefaultConfig>>,
+	signer: &PairSigner<DefaultConfig, Pair>,
 	pk_bytes: &[u8],
 	vk_bytes: &[u8],
 	recipient: &AccountId32,
@@ -308,9 +308,9 @@ async fn make_vanchor_tx(
 	// Get the vanchor transaction API
 	let vanchor = api.tx().v_anchor_bn254();
 
-	let transact_tx = vanchor.transact(tree_id, proof_data.into(), ext_data.into());
+	let transact_tx = vanchor.transact(tree_id, proof_data.into(), ext_data.into()).unwrap();
 
-	let mut transact_res = transact_tx.sign_and_submit_then_watch(signer).await?;
+	let mut transact_res = transact_tx.sign_and_submit_then_watch_default(signer).await?;
 
 	expect_event::<webb_runtime::v_anchor_bn254::events::Transaction>(&mut transact_res).await?;
 
@@ -321,9 +321,7 @@ async fn make_vanchor_tx(
 async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let api = client().await?;
 
-	let signer = PairSigner::<DefaultConfig, PolkadotExtrinsicParams<DefaultConfig>, _>::new(
-		AccountKeyring::Alice.pair(),
-	);
+	let signer = PairSigner::<DefaultConfig, Pair>::new(AccountKeyring::Alice.pair());
 
 	let pk_bytes = include_bytes!(
 		"../../protocol-substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
