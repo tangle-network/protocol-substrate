@@ -37,7 +37,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	);
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();
-	let recipient_bytes = truncate_and_pad(&recipient.encode());
+	let recipient_bytes = truncate_and_pad(&&recipient.encode());
 	let relayer_bytes = truncate_and_pad(&relayer.encode());
 	let fee = 0;
 	let refund = 0;
@@ -55,12 +55,12 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 
 	expect_event::<webb_runtime::mixer_bn254::events::Deposit>(&mut deposit_res).await?;
 
-	let tree_metadata_res = mt_storage.trees(tree_id, None).await?;
+	let tree_metadata_res = mt_storage.trees(&tree_id, None).await?;
 	let leaf_count = tree_metadata_res.unwrap().leaf_count;
 
 	let mut leaves = Vec::new();
 	for i in 0..leaf_count {
-		let leaf = mt_storage.leaves(tree_id, i, None).await?;
+		let leaf = mt_storage.leaves(&tree_id, &i, None).await?;
 		leaves.push(leaf.0.to_vec());
 	}
 
@@ -163,14 +163,14 @@ async fn test_anchor() -> Result<(), Box<dyn std::error::Error>> {
 
 	expect_event::<webb_runtime::anchor_bn254::events::Deposit>(&mut deposit_res).await?;
 
-	let tree_metadata_res = mt_storage.trees(tree_id, None).await?;
+	let tree_metadata_res = mt_storage.trees(&tree_id, None).await?;
 	let tree_metadata = tree_metadata_res.unwrap();
 	let leaf_count = tree_metadata.leaf_count;
 	let chain_root = tree_metadata.root;
 
 	let mut leaves = Vec::new();
 	for i in 0..leaf_count {
-		let leaf = mt_storage.leaves(tree_id, i, None).await?;
+		let leaf = mt_storage.leaves(&tree_id, &i, None).await?;
 		leaves.push(leaf.0.to_vec());
 	}
 
@@ -376,14 +376,14 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let mt_storage = api.storage().merkle_tree_bn254();
 
 	let tree_id = 6;
-	let tree_metadata_res = mt_storage.trees(tree_id, None).await?;
+	let tree_metadata_res = mt_storage.trees(&tree_id, None).await?;
 	let tree_metadata = tree_metadata_res.unwrap();
 	let leaf_count = tree_metadata.leaf_count;
 	let chain_root = tree_metadata.root;
 
 	let mut leaves = Vec::new();
 	for i in 0..leaf_count {
-		let leaf = mt_storage.leaves(tree_id, i, None).await?;
+		let leaf = mt_storage.leaves(&tree_id, &i, None).await?;
 		leaves.push(leaf.0.to_vec());
 	}
 
