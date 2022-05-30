@@ -28,7 +28,7 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		transactor: C::AccountId,
 		id: C::TreeId,
 		proof_data: ProofData<C::Element>,
-		ext_data: ExtData<C::AccountId, C::Amount, C::Balance, C::Element>,
+		ext_data: ExtData<C::AccountId, C::Amount, C::Balance>,
 	) -> Result<(), dispatch::DispatchError>;
 	// Stores nullifier hash from a spend tx
 	fn add_nullifier_hash(

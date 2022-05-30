@@ -1,6 +1,7 @@
 use ark_std::collections::BTreeMap;
 use core::fmt::Debug;
 use subxt::{DefaultConfig, Event, TransactionProgress};
+use webb_client::webb_runtime::{runtime_types::webb_standalone_runtime, system::storage::Events};
 
 use subxt::sp_runtime::AccountId32;
 use webb_client::webb_runtime;
@@ -96,37 +97,37 @@ impl Into<WebbProofData<WebbElement>> for ProofData<Element> {
 }
 
 #[derive(Clone, Encode, Decode, Debug, Eq, PartialEq, TypeInfo)]
-pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode, Element: Encode> {
+pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode> {
 	pub recipient: AccountId,
 	pub relayer: AccountId,
 	pub ext_amount: Amount,
 	pub fee: Balance,
-	pub encrypted_output1: Element,
-	pub encrypted_output2: Element,
+	pub encrypted_output1: Vec<u8>,
+	pub encrypted_output2: Vec<u8>,
 }
 
-impl<I: Encode, A: Encode, B: Encode, E: Encode> ExtData<I, A, B, E> {
+impl<I: Encode, A: Encode, B: Encode> ExtData<I, A, B> {
 	pub fn new(
 		recipient: I,
 		relayer: I,
 		ext_amount: A,
 		fee: B,
-		encrypted_output1: E,
-		encrypted_output2: E,
+		encrypted_output1: Vec<u8>,
+		encrypted_output2: Vec<u8>,
 	) -> Self {
 		Self { recipient, relayer, ext_amount, fee, encrypted_output1, encrypted_output2 }
 	}
 }
 
-impl<I: Encode, A: Encode, B: Encode, E: Encode> IntoAbiToken for ExtData<I, A, B, E> {
+impl<I: Encode, A: Encode, B: Encode> IntoAbiToken for ExtData<I, A, B> {
 	fn into_abi(&self) -> Token {
 		// TODO: Make sure the encodings match the solidity side
 		let recipient = Token::Bytes(self.recipient.encode());
 		let ext_amount = Token::Bytes(self.ext_amount.encode());
 		let relayer = Token::Bytes(self.relayer.encode());
 		let fee = Token::Bytes(self.fee.encode());
-		let encrypted_output1 = Token::Bytes(self.encrypted_output1.encode());
-		let encrypted_output2 = Token::Bytes(self.encrypted_output2.encode());
+		let encrypted_output1 = Token::Bytes(self.encrypted_output1.clone());
+		let encrypted_output2 = Token::Bytes(self.encrypted_output2.clone());
 		let mut ext_data_args = Vec::new();
 		ext_data_args.push(recipient);
 		ext_data_args.push(relayer);
@@ -138,17 +139,15 @@ impl<I: Encode, A: Encode, B: Encode, E: Encode> IntoAbiToken for ExtData<I, A, 
 	}
 }
 
-impl Into<WebbExtData<AccountId32, i128, u128, WebbElement>>
-	for ExtData<AccountId32, i128, u128, Element>
-{
-	fn into(self) -> WebbExtData<AccountId32, i128, u128, WebbElement> {
+impl Into<WebbExtData<AccountId32, i128, u128>> for ExtData<AccountId32, i128, u128> {
+	fn into(self) -> WebbExtData<AccountId32, i128, u128> {
 		WebbExtData {
 			recipient: self.recipient.clone(),
 			relayer: self.relayer.clone(),
 			ext_amount: self.ext_amount,
 			fee: self.fee,
-			encrypted_output1: self.encrypted_output1.into(),
-			encrypted_output2: self.encrypted_output2.into(),
+			encrypted_output1: self.encrypted_output1,
+			encrypted_output2: self.encrypted_output2,
 		}
 	}
 }
@@ -434,7 +433,12 @@ pub fn deconstruct_vanchor_pi_el(
 }
 
 pub async fn expect_event<E: Event + Debug>(
-	tx_progess: &mut TransactionProgress<'_, DefaultConfig, DispatchError>,
+	tx_progess: &mut TransactionProgress<
+		'_,
+		DefaultConfig,
+		DispatchError,
+		webb_client::webb_runtime::Event,
+	>,
 ) -> Result<(), Box<dyn std::error::Error>> {
 	// Start printing on a fresh line
 	println!("");
@@ -452,7 +456,7 @@ pub async fn expect_event<E: Event + Debug>(
 			);
 
 			let events = details.wait_for_success().await?;
-			let transfer_event = events.find_first_event::<E>()?;
+			let transfer_event = events.find_first::<E>()?;
 
 			if let Some(event) = transfer_event {
 				println!("In block (but not finalized): {event:?}");
@@ -469,7 +473,7 @@ pub async fn expect_event<E: Event + Debug>(
 			);
 
 			let events = details.wait_for_success().await?;
-			let transfer_event = events.find_first_event::<E>()?;
+			let transfer_event = events.find_first::<E>()?;
 
 			if let Some(event) = transfer_event {
 				println!("Transaction success: {event:?}");
