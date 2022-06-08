@@ -637,3 +637,63 @@ fn should_update_anchor_edge_with_sig_succeed_using_webb_proposals() {
 			assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_id, 1));
 		})
 }
+// Test ResourceIdProposal
+#[test]
+fn should_add_resource_sig_succeed_using_webb_proposals() {
+	let target_system = webb_proposals::TargetSystem::new_tree_id(5);
+	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
+	let resource = webb_proposals::ResourceId::new(target_system, this_chain_id);
+	let src_chain = webb_proposals::TypedChainId::Substrate(1);
+
+	let src_id = src_chain.chain_id();
+	let r_id = resource.to_bytes();
+	let public_uncompressed = get_public_uncompressed_key();
+	let pair = get_edsca_account();
+
+	new_test_ext_initialized(src_id, r_id, b"AnchorHandler.execute_anchor_update_proposal".to_vec())
+		.execute_with(|| {
+			let curve = Curve::Bn254;
+			let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+			let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+			let nonce = webb_proposals::Nonce::from(0x0001);
+			let header = make_proposal_header(resource, nonce);
+			mock_anchor_creation_using_pallet_call(src_id, &r_id);
+			let new_target_system = webb_proposals::TargetSystem::new_tree_id(7);
+			let new_resource = webb_proposals::ResourceId::new(new_target_system, this_chain_id);
+			let set_resource_proposal = webb_proposals::substrate::ResourceIdUpdateProposal::builder()
+				.header(header)
+				.new_resource_id(new_resource)
+				.tree_id(0)
+				.pallet_index(10)
+				.call_index(2)
+				.build();
+			let set_resource_proposal_bytes = set_resource_proposal.to_bytes();
+
+			let msg = keccak_256(&set_resource_proposal_bytes);
+			let sig: Signature = pair.sign_prehashed(&msg).into();
+
+			// set the maintainer
+			assert_ok!(SignatureBridge::force_set_maintainer(
+				Origin::root(),
+				public_uncompressed.to_vec()
+			));
+			let set_resource_call: Call =
+				codec::Decode::decode(&mut &set_resource_proposal_bytes[40..]).unwrap();
+			assert_ok!(SignatureBridge::set_resource_with_signature(
+				Origin::signed(RELAYER_A),
+				src_id,
+				Box::new(set_resource_call),
+				set_resource_proposal_bytes,
+				sig.0.to_vec(),
+			));
+
+			// the anchor-handler callback must have been called by bridge
+			// event must be emitted in callback should exist
+			event_exists(crate::Event::ResourceAnchored);
+			// edge count should be 1
+			assert_eq!(
+				2,
+				AnchorList::<Test>::iter_keys().count()
+			);
+		})
+}
