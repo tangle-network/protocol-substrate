@@ -660,13 +660,14 @@ fn should_add_resource_sig_succeed_using_webb_proposals() {
 			mock_anchor_creation_using_pallet_call(src_id, &r_id);
 			let new_target_system = webb_proposals::TargetSystem::new_tree_id(7);
 			let new_resource = webb_proposals::ResourceId::new(new_target_system, this_chain_id);
-			let set_resource_proposal = webb_proposals::substrate::ResourceIdUpdateProposal::builder()
-				.header(header)
-				.new_resource_id(new_resource)
-				.tree_id(0)
-				.pallet_index(10)
-				.call_index(2)
-				.build();
+			let set_resource_proposal =
+				webb_proposals::substrate::ResourceIdUpdateProposal::builder()
+					.header(header)
+					.new_resource_id(new_resource)
+					.tree_id(0)
+					.pallet_index(10)
+					.call_index(2)
+					.build();
 			let set_resource_proposal_bytes = set_resource_proposal.to_bytes();
 
 			let msg = keccak_256(&set_resource_proposal_bytes);
@@ -691,9 +692,6 @@ fn should_add_resource_sig_succeed_using_webb_proposals() {
 			// event must be emitted in callback should exist
 			event_exists(crate::Event::ResourceAnchored);
 			// edge count should be 1
-			assert_eq!(
-				2,
-				AnchorList::<Test>::iter_keys().count()
-			);
+			assert_eq!(2, AnchorList::<Test>::iter_keys().count());
 		})
 }

@@ -202,10 +202,7 @@ impl<T: Config<I>, I: 'static> AnchorConfig for Pallet<T, I> {
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	fn set_resource(
-		r_id: ResourceId,
-		tree_id: T::TreeId
-	) -> DispatchResultWithPostInfo {
+	fn set_resource(r_id: ResourceId, tree_id: T::TreeId) -> DispatchResultWithPostInfo {
 		ensure!(!AnchorList::<T, I>::contains_key(r_id), Error::<T, I>::ResourceIsAlreadyAnchored);
 		AnchorList::<T, I>::insert(r_id, tree_id);
 		Self::deposit_event(Event::ResourceAnchored);
