@@ -215,11 +215,11 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	pub fn account_id() -> T::AccountId {
-		T::PalletId::get().into_account()
+		T::PalletId::get().into_account_truncating()
 	}
 
 	pub fn treasury_id() -> T::AccountId {
-		T::TreasuryId::get().into_account()
+		T::TreasuryId::get().into_account_truncating()
 	}
 
 	pub fn to_currency_id(asset_id: T::AssetId) -> Result<CurrencyIdOf<T>, &'static str> {
