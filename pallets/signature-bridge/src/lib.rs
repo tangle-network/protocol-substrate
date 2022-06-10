@@ -145,7 +145,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn resources)]
 	pub type Resources<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_256, ResourceId, Vec<u8>>;
+		StorageMap<_, Blake2_256, ResourceId, ()>;
 
 	/// The proposal nonce used to prevent replay attacks on execute_proposal
 	#[pallet::storage]
@@ -185,6 +185,8 @@ pub mod pallet {
 		ChainAlreadyWhitelisted,
 		/// Resource ID provided isn't mapped to anything
 		ResourceDoesNotExist,
+		/// Resource ID provided is already mapped to anchor
+		ResourceAlreadyExists,
 		/// Provided signature is not from the active maintainer
 		SignatureInvalid,
 		/// Protected operation, must be performed by relayer
@@ -272,10 +274,9 @@ pub mod pallet {
 		pub fn set_resource(
 			origin: OriginFor<T>,
 			id: ResourceId,
-			method: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
-			Self::register_resource(id, method)
+			Self::register_resource(id)
 		}
 
 		/// Removes a resource ID from the resource mapping.
@@ -372,6 +373,10 @@ pub mod pallet {
 				this_chain_id_type == execution_chain_id_type,
 				Error::<T, I>::IncorrectExecutionChainIdType
 			);
+			// check if resource already exists
+			ensure!(!Self::resource_exists(r_id), Error::<T, I>::ResourceAlreadyExists);
+			//add resource
+			_ = Self::register_resource(r_id);
 
 			Self::finalize_execution(src_id, nonce, call)
 		}
@@ -512,8 +517,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	// *** Admin methods ***
 
 	/// Register a method for a resource Id, enabling associated transfers
-	pub fn register_resource(id: ResourceId, method: Vec<u8>) -> DispatchResultWithPostInfo {
-		Resources::<T, I>::insert(id, method);
+	pub fn register_resource(id: ResourceId) -> DispatchResultWithPostInfo {
+		Resources::<T, I>::insert(id, ());
 		Ok(().into())
 	}
 

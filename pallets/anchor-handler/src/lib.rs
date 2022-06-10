@@ -62,7 +62,9 @@ use webb_primitives::{
 	anchor::AnchorConfig,
 	traits::anchor::{AnchorInspector, AnchorInterface},
 	ResourceId,
+	webb_proposals::TargetSystem,
 };
+
 pub mod types;
 use types::*;
 
@@ -181,9 +183,13 @@ pub mod pallet {
 		pub fn execute_set_resource_proposal(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
-			tree_id: T::TreeId,
+			target: TargetSystem,
 		) -> DispatchResultWithPostInfo {
 			T::BridgeOrigin::ensure_origin(origin)?;
+			let tree_id: T::TreeId = match target {
+				TargetSystem::TreeId(id) => id.into(),
+				_ => 0u32.into()
+			};
 			Self::set_resource(r_id, tree_id)
 		}
 
@@ -219,8 +225,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> DispatchResultWithPostInfo {
 		ensure!(!AnchorList::<T, I>::contains_key(r_id), Error::<T, I>::ResourceIsAlreadyAnchored);
 		let tree_id = T::Anchor::create(None, deposit_size, tree_depth, max_edges, asset)?;
-		Counts::<T, I>::insert(src_chain_id, 0);
 		_ = Self::set_resource(r_id, tree_id);
+		Counts::<T, I>::insert(src_chain_id, 0);
 		Self::deposit_event(Event::AnchorCreated);
 		Ok(().into())
 	}

@@ -30,6 +30,7 @@ orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-li
 pallet-vanchor = {path = "../../pallets/vanchor", default-features = false}
 pallet-anchor = {path = "../../pallets/anchor", default-features = false}
 pallet-anchor-handler = {path = "../../pallets/anchor-handler", default-features = false}
+pallet-vanchor-handler = {path = "../../pallets/vanchor-handler", default-features = false}
 pallet-asset-registry = {path = "../../pallets/asset-registry", default-features = false}
 pallet-bridge = {path = "../../pallets/bridge", default-features = false}
 pallet-signature-bridge = { path = "../../pallets/signature-bridge", default-features = false }
