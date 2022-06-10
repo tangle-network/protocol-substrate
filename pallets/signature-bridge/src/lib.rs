@@ -53,6 +53,9 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 use codec::{Decode, Encode, EncodeLike};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
