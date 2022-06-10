@@ -443,6 +443,8 @@ impl orml_tokens::Config for Runtime {
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
+	type OnNewTokenAccount = ();
+	type OnKilledTokenAccount = ();
 	type ReserveIdentifier = [u8; 8];
 }
 

@@ -462,7 +462,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Provides an AccountId for the pallet.
 	/// This is used both as an origin check and deposit/withdrawal account.
 	pub fn account_id() -> T::AccountId {
-		T::BridgeAccountId::get().into_account()
+		T::BridgeAccountId::get().into_account_truncating()
 	}
 
 	/// Asserts if a resource is registered
@@ -568,7 +568,7 @@ impl<T: Config<I>, I: 'static> EnsureOrigin<T::Origin> for EnsureBridge<T, I> {
 	type Success = T::AccountId;
 
 	fn try_origin(o: T::Origin) -> Result<Self::Success, T::Origin> {
-		let bridge_id = T::BridgeAccountId::get().into_account();
+		let bridge_id = T::BridgeAccountId::get().into_account_truncating();
 		o.into().and_then(|o| match o {
 			system::RawOrigin::Signed(who) if who == bridge_id => Ok(bridge_id),
 			r => Err(T::Origin::from(r)),
@@ -580,6 +580,8 @@ impl<T: Config<I>, I: 'static> EnsureOrigin<T::Origin> for EnsureBridge<T, I> {
 	/// ** Should be used for benchmarking only!!! **
 	#[cfg(feature = "runtime-benchmarks")]
 	fn successful_origin() -> T::Origin {
-		T::Origin::from(frame_system::RawOrigin::Signed(T::BridgeAccountId::get().into_account()))
+		T::Origin::from(frame_system::RawOrigin::Signed(
+			T::BridgeAccountId::get().into_account_truncating(),
+		))
 	}
 }
