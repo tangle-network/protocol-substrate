@@ -144,8 +144,7 @@ pub mod pallet {
 	/// Utilized by the bridge software to map resource IDs to actual methods
 	#[pallet::storage]
 	#[pallet::getter(fn resources)]
-	pub type Resources<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_256, ResourceId, ()>;
+	pub type Resources<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, ResourceId, ()>;
 
 	/// The proposal nonce used to prevent replay attacks on execute_proposal
 	#[pallet::storage]
@@ -271,10 +270,7 @@ pub mod pallet {
 		/// - O(1) write
 		/// # </weight>
 		#[pallet::weight(195_000_000)]
-		pub fn set_resource(
-			origin: OriginFor<T>,
-			id: ResourceId,
-		) -> DispatchResultWithPostInfo {
+		pub fn set_resource(origin: OriginFor<T>, id: ResourceId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::register_resource(id)
 		}

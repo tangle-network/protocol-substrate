@@ -58,7 +58,7 @@ orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-modul
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
 arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
 
-webb-proposals = { path = "/Users/salman01z/webb-tools/webb-rs/proposals", version = "0.3.6", default-features = false, features = ["scale", "substrate"] }
+webb-proposals = { version = "0.3.6", default-features = false, features = ["scale", "substrate"] }
 
 
 [features]

@@ -22,7 +22,7 @@ pallet-anchor = { path = "../anchor", default-features = false }
 orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 webb-primitives = { path = "../../primitives", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
-webb-proposals = { version = "0.3.2", default-features = false, features = ["scale", "substrate"] }
+webb-proposals = { version = "0.3.6", default-features = false, features = ["scale", "substrate"] }
 
 # XCM dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.22", default-features = false }

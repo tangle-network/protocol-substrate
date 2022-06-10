@@ -61,8 +61,8 @@ use sp_std::convert::TryInto;
 use webb_primitives::{
 	anchor::AnchorConfig,
 	traits::anchor::{AnchorInspector, AnchorInterface},
-	ResourceId,
 	webb_proposals::TargetSystem,
+	ResourceId,
 };
 
 pub mod types;
@@ -188,7 +188,7 @@ pub mod pallet {
 			T::BridgeOrigin::ensure_origin(origin)?;
 			let tree_id: T::TreeId = match target {
 				TargetSystem::TreeId(id) => id.into(),
-				_ => 0u32.into()
+				_ => 0u32.into(),
 			};
 			Self::set_resource(r_id, tree_id)
 		}
