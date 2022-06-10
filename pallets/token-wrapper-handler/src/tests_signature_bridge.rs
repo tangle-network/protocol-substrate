@@ -222,14 +222,8 @@ fn should_remove_token_with_sig_succeed() {
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
-		assert_ok!(SignatureBridge::set_resource(
-			Origin::root(),
-			r_id_add_token.to_bytes()
-		));
-		assert_ok!(SignatureBridge::set_resource(
-			Origin::root(),
-			r_id_remove_token.to_bytes()
-		));
+		assert_ok!(SignatureBridge::set_resource(Origin::root(), r_id_add_token.to_bytes()));
+		assert_ok!(SignatureBridge::set_resource(Origin::root(), r_id_remove_token.to_bytes()));
 
 		let existential_balance: u32 = 1000;
 
