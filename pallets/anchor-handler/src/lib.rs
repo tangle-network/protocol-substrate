@@ -148,7 +148,7 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		/// This will be called by bridge when proposal to create an
 		/// anchor has been successfully voted on.
-		#[pallet::weight(195_000_000)]
+		#[pallet::weight(T::DbWeight::get().reads_writes(1_u64, 3_u64))]
 		pub fn execute_anchor_create_proposal(
 			origin: OriginFor<T>,
 			deposit_size: BalanceOf<T, I>,
@@ -164,7 +164,7 @@ pub mod pallet {
 
 		/// This will be called by bridge when proposal to add/update edge of an
 		/// anchor has been successfully voted on.
-		#[pallet::weight(195_000_000)]
+		#[pallet::weight(T::DbWeight::get().reads_writes(1_u64, 3_u64))]
 		pub fn execute_anchor_update_proposal(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
