@@ -29,7 +29,6 @@ frame-system-benchmarking = { default-features = false, git = "https://github.co
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23", optional = true }
 
 webb-primitives = { path = "../../primitives", default-features = false }
-libsecp256k1 = { version = "0.7.0", default-features = false, optional = true}
 hex-literal = "0.3.4"
 
 [dev-dependencies]
@@ -49,6 +48,5 @@ std = [
 	"webb-primitives/std",
 ]
 runtime-benchmarks = [
-	"libsecp256k1",
 	"frame-benchmarking/runtime-benchmarks",
 ]
