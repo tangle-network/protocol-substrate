@@ -41,14 +41,8 @@ fn derive_ids() {
 fn setup_resources() {
 	new_test_ext().execute_with(|| {
 		let id: ResourceId = [1; 32];
-		let method = "Pallet.do_something".as_bytes().to_vec();
-		let method2 = "Pallet.do_somethingElse".as_bytes().to_vec();
-
-		assert_ok!(Bridge::set_resource(Origin::root(), id, method.clone()));
-		assert_eq!(Bridge::resources(id), Some(method));
-		assert_ok!(Bridge::set_resource(Origin::root(), id, method2.clone()));
-		assert_eq!(Bridge::resources(id), Some(method2));
-
+		assert_ok!(Bridge::set_resource(Origin::root(), id));
+		assert_eq!(Bridge::resources(id), Some(()));
 		assert_ok!(Bridge::remove_resource(Origin::root(), id));
 		assert_eq!(Bridge::resources(id), None);
 	})

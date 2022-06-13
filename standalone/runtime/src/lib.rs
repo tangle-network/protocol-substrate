@@ -1302,6 +1302,12 @@ impl pallet_vanchor::Config<pallet_vanchor::Instance1> for Runtime {
 	type NativeCurrencyId = GetNativeCurrencyId;
 }
 
+impl pallet_vanchor_handler::Config<pallet_vanchor_handler::Instance1> for Runtime {
+	type VAnchor = VAnchorBn254;
+	type BridgeOrigin = pallet_bridge::EnsureBridge<Runtime, BridgeInstance>;
+	type Event = Event;
+}
+
 parameter_types! {
 	pub const ProposalLifetime: BlockNumber = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
@@ -1430,6 +1436,9 @@ construct_runtime!(
 
 		// VAnchor
 		VAnchorBn254: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+
+		// VAnchor Handler
+		VAnchorHandlerBn254: pallet_vanchor_handler::<Instance1>::{Pallet, Call, Storage, Event<T>},
 
 		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 

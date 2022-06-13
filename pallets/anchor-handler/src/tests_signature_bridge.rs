@@ -23,13 +23,32 @@ use webb_proposals::substrate::AnchorUpdateProposal;
 const TEST_MAX_EDGES: u32 = 100;
 const TEST_TREE_DEPTH: u8 = 32;
 
+fn make_set_resource_proposal(
+	header: webb_proposals::ProposalHeader,
+	new_resource: webb_proposals::ResourceId,
+	target_system: webb_proposals::TargetSystem,
+) -> Vec<u8> {
+	let set_resource_proposal = webb_proposals::substrate::ResourceIdUpdateProposal::builder()
+		.header(header)
+		.new_resource_id(new_resource)
+		.target_system(target_system)
+		.pallet_index(10)
+		.call_index(2)
+		.build();
+	set_resource_proposal.to_bytes()
+}
+
+fn create_anchor() {
+	let deposit_size = 100;
+	assert_ok!(Anchor::create(Origin::root(), deposit_size, TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
+}
 // helper function to create anchor using Anchor pallet call
 fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[u8; 32]) {
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
-	let deposit_size = 100;
-	assert_ok!(Anchor::create(Origin::root(), deposit_size, TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
+	//create anchor
+	create_anchor();
 	// hack: insert an entry in AnchorsList with tree-id=0
 	AnchorList::<Test>::insert(resource_id, 0);
 	Counts::<Test>::insert(src_chain_id, 0);
@@ -636,4 +655,58 @@ fn should_update_anchor_edge_with_sig_succeed_using_webb_proposals() {
 				UpdateRecord { tree_id: expected_tree_id, resource_id: r_id, edge_metadata };
 			assert_eq!(expected_update_record, UpdateRecords::<Test>::get(src_id, 1));
 		})
+}
+// Test ResourceIdProposal
+#[test]
+fn should_add_resource_sig_succeed_using_webb_proposals() {
+	let target_system = webb_proposals::TargetSystem::new_tree_id(5);
+	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
+	let resource = webb_proposals::ResourceId::new(target_system, this_chain_id);
+	let src_chain = webb_proposals::TypedChainId::Substrate(1);
+
+	let src_id = src_chain.chain_id();
+	let public_uncompressed = get_public_uncompressed_key();
+	let pair = get_edsca_account();
+
+	new_test_ext_for_set_resource_proposal_initialized(src_id).execute_with(|| {
+		let curve = Curve::Bn254;
+		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let nonce = webb_proposals::Nonce::from(0x0001);
+		let header = make_proposal_header(resource, nonce);
+		//create anchor
+		create_anchor();
+		let anchor_target_system = webb_proposals::TargetSystem::new_tree_id(0);
+
+		// Anchorlist should be 0 and will be updated after exectuing set resource proposal
+		assert_eq!(0, AnchorList::<Test>::iter_keys().count());
+
+		// make set resource proposal
+		let set_resource_proposal_bytes =
+			make_set_resource_proposal(header, resource, anchor_target_system);
+
+		let msg = keccak_256(&set_resource_proposal_bytes);
+		let sig: Signature = pair.sign_prehashed(&msg).into();
+
+		// set the maintainer
+		assert_ok!(SignatureBridge::force_set_maintainer(
+			Origin::root(),
+			public_uncompressed.to_vec()
+		));
+		let set_resource_call: Call =
+			codec::Decode::decode(&mut &set_resource_proposal_bytes[40..]).unwrap();
+		assert_ok!(SignatureBridge::set_resource_with_signature(
+			Origin::signed(RELAYER_A),
+			src_id,
+			Box::new(set_resource_call),
+			set_resource_proposal_bytes,
+			sig.0.to_vec(),
+		));
+
+		// the anchor-handler callback must have been called by bridge
+		// event must be emitted in callback should exist
+		event_exists(crate::Event::ResourceAnchored);
+		// edge count should be 1
+		assert_eq!(1, AnchorList::<Test>::iter_keys().count());
+	})
 }
