@@ -346,15 +346,26 @@ pub fn assert_events(mut expected: Vec<Event>) {
 pub fn new_test_ext_initialized(
 	src_id: <Test as pallet_signature_bridge::Config<BridgeInstance>>::ChainId,
 	r_id: ResourceId,
-	resource: Vec<u8>,
+	_resource: Vec<u8>,
 ) -> sp_io::TestExternalities {
 	let mut t = new_test_ext();
 	t.execute_with(|| {
 		// Whitelist chain
 		assert_ok!(SignatureBridge::whitelist_chain(Origin::root(), src_id));
 		// Set and check resource ID mapped to some junk data
-		assert_ok!(SignatureBridge::set_resource(Origin::root(), r_id, resource));
+		assert_ok!(SignatureBridge::set_resource(Origin::root(), r_id));
 		assert!(SignatureBridge::resource_exists(r_id));
+	});
+	t
+}
+
+pub fn new_test_ext_for_set_resource_proposal_initialized(
+	src_id: <Test as pallet_signature_bridge::Config<BridgeInstance>>::ChainId,
+) -> sp_io::TestExternalities {
+	let mut t = new_test_ext();
+	t.execute_with(|| {
+		// Whitelist chain
+		assert_ok!(SignatureBridge::whitelist_chain(Origin::root(), src_id));
 	});
 	t
 }

@@ -61,8 +61,10 @@ use sp_std::convert::TryInto;
 use webb_primitives::{
 	anchor::AnchorConfig,
 	traits::anchor::{AnchorInspector, AnchorInterface},
+	webb_proposals::TargetSystem,
 	ResourceId,
 };
+
 pub mod types;
 use types::*;
 
@@ -125,6 +127,7 @@ pub mod pallet {
 		AnchorCreated,
 		AnchorEdgeAdded,
 		AnchorEdgeUpdated,
+		ResourceAnchored,
 	}
 
 	#[pallet::error]
@@ -174,6 +177,22 @@ pub mod pallet {
 			Self::update_anchor(r_id, anchor_metadata)
 		}
 
+		/// This will by called by bridge when proposal to set new resource for
+		/// handler has been successfully voted on
+		#[pallet::weight(195_000_000)]
+		pub fn execute_set_resource_proposal(
+			origin: OriginFor<T>,
+			r_id: ResourceId,
+			target: TargetSystem,
+		) -> DispatchResultWithPostInfo {
+			T::BridgeOrigin::ensure_origin(origin)?;
+			let tree_id: T::TreeId = match target {
+				TargetSystem::TreeId(id) => id.into(),
+				_ => 0u32.into(),
+			};
+			Self::set_resource(r_id, tree_id)
+		}
+
 		// TODO: Add configurable limit proposal executors for VAnchors
 	}
 }
@@ -189,6 +208,13 @@ impl<T: Config<I>, I: 'static> AnchorConfig for Pallet<T, I> {
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
+	fn set_resource(r_id: ResourceId, tree_id: T::TreeId) -> DispatchResultWithPostInfo {
+		ensure!(!AnchorList::<T, I>::contains_key(r_id), Error::<T, I>::ResourceIsAlreadyAnchored);
+		AnchorList::<T, I>::insert(r_id, tree_id);
+		Self::deposit_event(Event::ResourceAnchored);
+		Ok(().into())
+	}
+
 	fn create_anchor(
 		deposit_size: BalanceOf<T, I>,
 		src_chain_id: T::ChainId,
@@ -199,7 +225,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> DispatchResultWithPostInfo {
 		ensure!(!AnchorList::<T, I>::contains_key(r_id), Error::<T, I>::ResourceIsAlreadyAnchored);
 		let tree_id = T::Anchor::create(None, deposit_size, tree_depth, max_edges, asset)?;
-		AnchorList::<T, I>::insert(r_id, tree_id);
+		_ = Self::set_resource(r_id, tree_id);
 		Counts::<T, I>::insert(src_chain_id, 0);
 		Self::deposit_event(Event::AnchorCreated);
 		Ok(().into())

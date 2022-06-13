@@ -144,8 +144,7 @@ pub mod pallet {
 	/// Utilized by the bridge software to map resource IDs to actual methods
 	#[pallet::storage]
 	#[pallet::getter(fn resources)]
-	pub type Resources<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_256, ResourceId, Vec<u8>>;
+	pub type Resources<T: Config<I>, I: 'static = ()> = StorageMap<_, Blake2_256, ResourceId, ()>;
 
 	/// The proposal nonce used to prevent replay attacks on execute_proposal
 	#[pallet::storage]
@@ -185,6 +184,8 @@ pub mod pallet {
 		ChainAlreadyWhitelisted,
 		/// Resource ID provided isn't mapped to anything
 		ResourceDoesNotExist,
+		/// Resource ID provided is already mapped to anchor
+		ResourceAlreadyExists,
 		/// Provided signature is not from the active maintainer
 		SignatureInvalid,
 		/// Protected operation, must be performed by relayer
@@ -269,13 +270,9 @@ pub mod pallet {
 		/// - O(1) write
 		/// # </weight>
 		#[pallet::weight(195_000_000)]
-		pub fn set_resource(
-			origin: OriginFor<T>,
-			id: ResourceId,
-			method: Vec<u8>,
-		) -> DispatchResultWithPostInfo {
+		pub fn set_resource(origin: OriginFor<T>, id: ResourceId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
-			Self::register_resource(id, method)
+			Self::register_resource(id)
 		}
 
 		/// Removes a resource ID from the resource mapping.
@@ -301,6 +298,83 @@ pub mod pallet {
 		pub fn whitelist_chain(origin: OriginFor<T>, id: T::ChainId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::whitelist(id)
+		}
+
+		/// @param origin
+		/// @param src_id
+		/// @param call: the dispatchable call corresponding to a
+		/// handler function
+		/// @param proposal_data: (r_id, nonce, 4 bytes of zeroes, call)
+		/// @param signature: a signature over the proposal_data
+		///
+		/// We check:
+		/// 1. That the signature is actually over the proposal data
+		/// 2. Add ResourceId to the Storage
+		/// 3. That the call from the proposal data and the call input parameter to the function are
+		/// consistent with each other 4. That the execution chain id type parsed from the r_id is
+		/// indeed this chain's id type
+		///
+		/// If all these checks pass then we call finalize_execution which actually executes the
+		/// dispatchable call. The dispatchable call is usually a handler function, for instance in
+		/// the anchor-handler or token-wrapper-handler pallet.
+		///
+		/// There are a few TODOs left in the function.
+		///
+		/// In the set_resource_with_signature
+		/// # <weight>
+		/// - weight of proposed call, regardless of whether execution is performed
+		/// # </weight>
+		#[pallet::weight((call.get_dispatch_info().weight + 195_000_000, call.get_dispatch_info().class, Pays::Yes))]
+		pub fn set_resource_with_signature(
+			origin: OriginFor<T>,
+			src_id: T::ChainId,
+			call: Box<<T as Config<I>>::Proposal>,
+			proposal_data: Vec<u8>,
+			signature: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
+			let _ = ensure_signed(origin)?;
+			let r_id = Self::parse_r_id_from_proposal_data(&proposal_data)?;
+			let nonce = Self::parse_nonce_from_proposal_data(&proposal_data)?;
+			let parsed_call = Self::parse_call_from_proposal_data(&proposal_data);
+
+			// Nonce should be greater than the proposal nonce in storage
+			let proposal_nonce = ProposalNonce::<T, I>::get();
+			ensure!(proposal_nonce < nonce, Error::<T, I>::InvalidNonce);
+
+			// Nonce should increment by 1
+			ensure!(
+				nonce <= proposal_nonce + T::ProposalNonce::from(1u32),
+				Error::<T, I>::InvalidNonce
+			);
+
+			// Verify proposal signature
+			ensure!(
+				T::SignatureVerifier::verify(&Self::maintainer(), &proposal_data[..], &signature)
+					.unwrap_or(false),
+				Error::<T, I>::InvalidPermissions,
+			);
+			// ChainId should be whitelisted
+			ensure!(Self::chain_whitelisted(src_id), Error::<T, I>::ChainNotWhitelisted);
+
+			// Ensure that call is consistent with parsed_call
+			let encoded_call = call.encode();
+			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
+
+			// Ensure this chain id matches the r_id
+			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
+			let this_chain_id_type =
+				compute_chain_id_type(T::ChainIdentifier::get(), T::ChainType::get());
+
+			ensure!(
+				this_chain_id_type == execution_chain_id_type,
+				Error::<T, I>::IncorrectExecutionChainIdType
+			);
+			// check if resource already exists
+			ensure!(!Self::resource_exists(r_id), Error::<T, I>::ResourceAlreadyExists);
+			//add resource
+			_ = Self::register_resource(r_id);
+
+			Self::finalize_execution(src_id, nonce, call)
 		}
 
 		/// @param origin
@@ -439,8 +513,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	// *** Admin methods ***
 
 	/// Register a method for a resource Id, enabling associated transfers
-	pub fn register_resource(id: ResourceId, method: Vec<u8>) -> DispatchResultWithPostInfo {
-		Resources::<T, I>::insert(id, method);
+	pub fn register_resource(id: ResourceId) -> DispatchResultWithPostInfo {
+		Resources::<T, I>::insert(id, ());
 		Ok(().into())
 	}
 

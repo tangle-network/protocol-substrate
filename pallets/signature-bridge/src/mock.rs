@@ -124,14 +124,14 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 pub fn new_test_ext_initialized(
 	src_id: <Test as pallet::Config>::ChainId,
 	r_id: ResourceId,
-	resource: Vec<u8>,
+	_resource: Vec<u8>,
 ) -> sp_io::TestExternalities {
 	let mut t = new_test_ext();
 	t.execute_with(|| {
 		// Whitelist chain
 		assert_ok!(Bridge::whitelist_chain(Origin::root(), src_id));
 		// Set and check resource ID mapped to some junk data
-		assert_ok!(Bridge::set_resource(Origin::root(), r_id, resource));
+		assert_ok!(Bridge::set_resource(Origin::root(), r_id));
 		assert!(Bridge::resource_exists(r_id));
 	});
 	t
