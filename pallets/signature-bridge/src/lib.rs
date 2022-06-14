@@ -331,7 +331,7 @@ pub mod pallet {
 		/// # <weight>
 		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
-		#[pallet::weight((call.get_dispatch_info().weight + 195_000_000, call.get_dispatch_info().class, Pays::Yes))]
+		#[pallet::weight((call.get_dispatch_info().weight + T::WeightInfo::set_resource_with_signature(), call.get_dispatch_info().class, Pays::Yes))]
 		pub fn set_resource_with_signature(
 			origin: OriginFor<T>,
 			src_id: T::ChainId,
@@ -408,7 +408,7 @@ pub mod pallet {
 		/// # <weight>
 		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
-		#[pallet::weight((T::WeightInfo::execute_proposal() + call.get_dispatch_info().weight + 195_000_000, call.get_dispatch_info().class, Pays::Yes))]
+		#[pallet::weight((T::WeightInfo::execute_proposal() + call.get_dispatch_info().weight, call.get_dispatch_info().class, Pays::Yes))]
 		pub fn execute_proposal(
 			origin: OriginFor<T>,
 			src_id: T::ChainId,

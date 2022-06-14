@@ -2,14 +2,16 @@
 
 use super::*;
 
-use frame_support::{assert_ok, ord_parameter_types, parameter_types, PalletId};
+use frame_support::{assert_ok, parameter_types, PalletId};
 use frame_system::{self as system};
 use sp_core::H256;
+use sp_keystore::{testing::KeyStore, KeystoreExt};
 use sp_runtime::{
 	testing::Header,
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
+use std::{sync::Arc, vec};
 
 use crate::{self as pallet_signature_bridge, Config};
 pub use pallet_balances;
@@ -115,6 +117,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		.unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
+	let keystore = KeyStore::new();
+	ext.register_extension(KeystoreExt(Arc::new(keystore)));
 	ext
 }
 
