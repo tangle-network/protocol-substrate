@@ -20,7 +20,7 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-
+use crate::Pallet;
 use frame_benchmarking::{
 	account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account,
 	whitelisted_caller,
@@ -29,8 +29,6 @@ use frame_support::traits::Currency;
 use frame_system::RawOrigin;
 use sp_runtime::traits::Bounded;
 use webb_primitives::types::DepositDetails;
-type BalanceOf<T, I> =
-	<<T as Config<I>>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
@@ -47,16 +45,9 @@ benchmarks_instance_pallet! {
 		let c in 0..MAX_VERIFIER_LENGTH;
 		let depositor: T::AccountId = account("depositor", 0, SEED);
 		let parameters = vec![0u8;c as usize];
-
-		Deposit::<T, I>::put::<Option<DepositDetails<T::AccountId, DepositBalanceOf<T, I>>>>(Some(DepositDetails{
-			depositor,
-			deposit:1_000u32.into()
-		}));
-
-
 	}: _(RawOrigin::Root, parameters.clone())
 	verify {
-		assert_last_event::<T, I>(Event::ParametersSet{who: Default::default(), parameters}.into());
+		assert_eq!(Pallet::<T, I>::parameters(), parameters);
 	}
 }
 
