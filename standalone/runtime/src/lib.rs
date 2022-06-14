@@ -1338,6 +1338,7 @@ impl pallet_signature_bridge::Config<SignatureBridgeInstance> for Runtime {
 	type ProposalNonce = u32;
 	type MaintainerNonce = u32;
 	type SignatureVerifier = SignatureVerifier;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -1721,6 +1722,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_verifier, MixerVerifierBn254);
 			list_benchmark!(list, extra, pallet_verifier, AnchorVerifierBn254);
 			list_benchmark!(list, extra, pallet_token_wrapper, TokenWrapper);
+			list_benchmark!(list, extra, pallet_signature_bridge, SignatureBridge);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1744,7 +1746,7 @@ impl_runtime_apis! {
 				// Event Count
 				hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850").to_vec().into(),
 				// System Events
-				hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc846185172c9d7").to_vec().into(),
+				hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7").to_vec().into(),
 			];
 
 			let mut batches = Vec::<BenchmarkBatch>::new();
@@ -1760,6 +1762,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_verifier, MixerVerifierBn254);
 			add_benchmark!(params, batches, pallet_verifier, AnchorVerifierBn254);
 			add_benchmark!(params, batches, pallet_token_wrapper, TokenWrapper);
+			add_benchmark!(params, batches, pallet_signature_bridge, SignatureBridge);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

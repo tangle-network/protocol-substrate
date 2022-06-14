@@ -87,16 +87,14 @@ benchmarks_instance_pallet! {
 
 	set_resource {
 		let id: ResourceId = [1; 32];
-		let method = "Pallet.do_something".as_bytes().to_vec();
-	}: _(RawOrigin::Root, id, method.clone())
+	}: _(RawOrigin::Root, id)
 	verify {
-	   assert_eq!(Resources::<T, I>::get(id).unwrap(), method);
+	   assert_eq!(Resources::<T, I>::get(id), Some(()));
 	}
 
 	remove_resource {
 		let id: ResourceId = [1; 32];
-		let method = "Pallet.do_something".as_bytes().to_vec();
-		let _ = crate::Pallet::<T,I>::set_resource(RawOrigin::Root.into(), id, method);
+		let _ = crate::Pallet::<T,I>::set_resource(RawOrigin::Root.into(), id);
 	}: _(RawOrigin::Root, id)
 	verify {
 	   assert_eq!(Resources::<T, I>::get(id), None);
@@ -106,6 +104,46 @@ benchmarks_instance_pallet! {
 	}: _(RawOrigin::Root, 0_u32.into())
 	verify {
 		assert_last_event::<T, I>(Event::ChainWhitelisted{chain_id : 0_u32.into()}.into());
+	}
+
+	set_resource_with_signature {
+		let caller: T::AccountId = whitelisted_caller();
+
+		// set a new maintainer
+		let new_maintainer = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
+		let _ = crate::Pallet::<T,I>::force_set_maintainer(RawOrigin::Root.into(), new_maintainer.to_vec());
+
+		// whitelist chain
+		let chain_type = [2, 0];
+		let src_id = compute_chain_id_type(1u32, chain_type);
+		let _ = crate::Pallet::<T,I>::whitelist_chain(RawOrigin::Root.into(), src_id.into());
+		let r_id : ResourceId = derive_resource_id(1080u32, 1u32).into();
+
+		// prepare proposal
+		let call : <T as pallet::Config<I>>::Proposal = frame_system::Call::<T>::remark { remark: vec![10] }.into();
+		let call_encoded = call.encode();
+		let nonce = [0u8, 0u8, 0u8, 1u8];
+		let prop_data = make_proposal_data(r_id.encode(), nonce, call_encoded);
+		let msg = keccak_256(&prop_data);
+
+		// use sp_core::Pair;
+		// let pair = sp_core::ecdsa::Pair::from_string(
+		// 	"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+		// 	None,
+		// )
+		// .unwrap();
+		// let sig: sp_core::ecdsa::Signature = pair.sign_prehashed(&msg).into();
+		// println!("{:?}", sig.0.to_vec());
+
+		// presigned to avoid type import issues
+		let sig =  [43, 2, 84, 111, 3, 39, 241, 48, 255, 80, 221, 152, 244, 253, 94, 40, 102,
+		103, 241, 197, 9, 227, 172, 15, 27, 205, 233, 191, 103, 19, 146, 121, 66, 124, 42, 84,
+		25, 180, 198, 191, 178, 54, 160, 51, 230, 112, 211, 82, 109, 207, 71, 251, 110, 151, 144,
+		186, 104, 88, 5, 107, 21, 75, 103, 243, 0];
+
+	}: _(RawOrigin::Signed(caller), src_id.into(), Box::new(call), prop_data, sig.to_vec())
+	verify {
+		assert_last_event::<T, I>(Event::ProposalSucceeded{chain_id : src_id.into(), proposal_nonce : 1_u32.into()}.into());
 	}
 
 	execute_proposal {
@@ -122,7 +160,7 @@ benchmarks_instance_pallet! {
 
 		// set resource
 		let r_id : ResourceId = derive_resource_id(1080u32, 1u32).into();
-		let _ = crate::Pallet::<T,I>::set_resource(RawOrigin::Root.into(), r_id.into(), b"System.remark".to_vec());
+		let _ = crate::Pallet::<T,I>::set_resource(RawOrigin::Root.into(), r_id.into());
 
 		// prepare proposal
 		let call : <T as pallet::Config<I>>::Proposal = frame_system::Call::<T>::remark { remark: vec![10] }.into();
@@ -131,7 +169,7 @@ benchmarks_instance_pallet! {
 		let prop_data = make_proposal_data(r_id.encode(), nonce, call_encoded);
 		let msg = keccak_256(&prop_data);
 
-		// use sp_core::Pair;
+		//use sp_core::Pair;
 		// let pair = sp_core::ecdsa::Pair::from_string(
 		// 	"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
 		// 	None,

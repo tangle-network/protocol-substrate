@@ -66,10 +66,6 @@ parameter_types! {
 	pub const ExistentialDeposit: u64 = 1;
 }
 
-ord_parameter_types! {
-	pub const One: u64 = 1;
-}
-
 impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = u64;
@@ -101,6 +97,7 @@ impl Config for Test {
 	type ProposalNonce = u32;
 	type MaintainerNonce = u32;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
+	type WeightInfo = ();
 }
 
 // pub const BRIDGE_ID: u64 =
