@@ -2,14 +2,16 @@
 
 use super::*;
 
-use frame_support::{assert_ok, ord_parameter_types, parameter_types, PalletId};
+use frame_support::{assert_ok, parameter_types, PalletId};
 use frame_system::{self as system};
 use sp_core::H256;
+use sp_keystore::{testing::KeyStore, KeystoreExt};
 use sp_runtime::{
 	testing::Header,
 	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
+use std::{sync::Arc, vec};
 
 use crate::{self as pallet_signature_bridge, Config};
 pub use pallet_balances;
@@ -66,10 +68,6 @@ parameter_types! {
 	pub const ExistentialDeposit: u64 = 1;
 }
 
-ord_parameter_types! {
-	pub const One: u64 = 1;
-}
-
 impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = u64;
@@ -83,7 +81,7 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
-	pub const ChainIdentifier: u64 = 5;
+	pub const ChainIdentifier: u64 = 1080;
 	pub const ChainType: [u8; 2] = [2, 0];
 	pub const ProposalLifetime: u64 = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
@@ -101,6 +99,7 @@ impl Config for Test {
 	type ProposalNonce = u32;
 	type MaintainerNonce = u32;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
+	type WeightInfo = ();
 }
 
 // pub const BRIDGE_ID: u64 =
@@ -118,6 +117,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		.unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
+	let keystore = KeyStore::new();
+	ext.register_extension(KeystoreExt(Arc::new(keystore)));
 	ext
 }
 

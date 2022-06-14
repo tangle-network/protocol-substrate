@@ -5183,6 +5183,7 @@ dependencies = [
  "scale-info",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.23)",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.23)",
+ "sp-keystore 0.12.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.23)",
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.23)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.23)",
  "webb-primitives",
@@ -5451,6 +5452,7 @@ dependencies = [
  "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.23)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.23)",
  "webb-primitives",
+ "webb-proposals",
 ]
 
 [[package]]
@@ -10410,9 +10412,9 @@ dependencies = [
 
 [[package]]
 name = "webb-proposals"
-version = "0.3.5"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a9cb5bff0b15056749c9d0329aeddc6f7d79a813825f4f54f6c49b1fd9fa0ec"
+checksum = "c4244d4a8178f5a3906f11845c37c8acdad5f07526d578110d840e71991e2a14"
 dependencies = [
  "num-traits",
  "parity-scale-codec",
@@ -10564,6 +10566,7 @@ dependencies = [
  "pallet-treasury",
  "pallet-utility",
  "pallet-vanchor",
+ "pallet-vanchor-handler",
  "pallet-verifier",
  "parity-scale-codec",
  "scale-info",
