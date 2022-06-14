@@ -21,17 +21,19 @@
 
 use super::*;
 
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_benchmarking::{
+	account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelisted_caller,
+};
 use frame_system::RawOrigin;
 
 use frame_support::traits::Get;
 
 const MAX_EDGES: u32 = 256;
 
-benchmarks! {
+benchmarks_instance_pallet! {
 	create {
 	  let i in 1..MAX_EDGES;
-	  let d in 1..<T as pallet_mt::Config>::MaxTreeDepth::get() as u32;
+	  let d in 1..<T as pallet_mt::Config<I>>::MaxTreeDepth::get() as u32;
 	}: _(RawOrigin::Root, i, d as u8)
 }
 
