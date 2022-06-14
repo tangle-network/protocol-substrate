@@ -101,8 +101,8 @@ impl WeightInfo for () {
 		(34_099_000 as Weight)
 			// Standard Error: 5_000
 			.saturating_add(43_000_u64.saturating_mul(d as Weight))
-			.saturating_add(T::RocksDbWeight::get().reads(2_u64))
-			.saturating_add(T::RocksDbWeight::get().writes(3_u64))
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
 	// Storage: MerkleTree Trees (r:1 w:1)
 	// Storage: MerkleTree DefaultHashes (r:1 w:0)
@@ -115,8 +115,8 @@ impl WeightInfo for () {
 	// Storage: MerkleTree CachedRoots (r:0 w:1)
 	fn deposit() -> Weight {
 		(9_847_660_000 as Weight)
-			.saturating_add(T::RocksDbWeight::get().reads(7_u64))
-			.saturating_add(T::RocksDbWeight::get().writes(6_u64))
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(6_u64))
 	}
 	// Storage: Mixer Mixers (r:1 w:0)
 	// Storage: MerkleTree Trees (r:1 w:0)
@@ -126,7 +126,7 @@ impl WeightInfo for () {
 	// Storage: System Account (r:1 w:1)
 	fn withdraw() -> Weight {
 		(35_264_966_000 as Weight)
-			.saturating_add(T::RocksDbWeight::get().reads(6_u64))
-			.saturating_add(T::RocksDbWeight::get().writes(2_u64))
+			.saturating_add(RocksDbWeight::get().reads(6_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 }
