@@ -1720,7 +1720,6 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_anchor, AnchorBn254);
 			list_benchmark!(list, extra, pallet_mixer, MixerBn254);
 			list_benchmark!(list, extra, pallet_verifier, MixerVerifierBn254);
-			list_benchmark!(list, extra, pallet_verifier, AnchorVerifierBn254);
 			list_benchmark!(list, extra, pallet_token_wrapper, TokenWrapper);
 			list_benchmark!(list, extra, pallet_signature_bridge, SignatureBridge);
 
@@ -1758,9 +1757,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_vanchor, VAnchorBn254);
 			add_benchmark!(params, batches, pallet_anchor, AnchorBn254);
 			add_benchmark!(params, batches, pallet_mixer, MixerBn254);
-			add_benchmark!(params, batches, pallet_mixer, MixerBls254);
 			add_benchmark!(params, batches, pallet_verifier, MixerVerifierBn254);
-			add_benchmark!(params, batches, pallet_verifier, AnchorVerifierBn254);
 			add_benchmark!(params, batches, pallet_token_wrapper, TokenWrapper);
 			add_benchmark!(params, batches, pallet_signature_bridge, SignatureBridge);
 

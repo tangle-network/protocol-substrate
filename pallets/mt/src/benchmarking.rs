@@ -21,57 +21,67 @@
 
 use super::*;
 
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use arkworks_setups::{common::setup_params, Curve};
+use frame_benchmarking::{
+	benchmarks_instance_pallet, impl_benchmark_test_suite, whitelisted_caller,
+};
 use frame_support::traits::Currency;
 use frame_system::RawOrigin;
 use sp_runtime::traits::Bounded;
 use sp_std::vec;
 use webb_primitives::traits::merkle_tree::TreeInterface;
-type BalanceOf<T> =
-	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+type BalanceOf<T, I> =
+	<<T as Config<I>>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
+}
+
+pub fn hasher_params() -> Vec<u8> {
+	let curve = Curve::Bn254;
+	let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+	params.to_bytes()
 }
 
 const SEED: u32 = 0;
 
-benchmarks! {
+benchmarks_instance_pallet! {
+
+	where_clause {  where T: pallet_hasher::Config<I> }
 
 	create {
-		let d in 1..T::MaxTreeDepth::get() as u32;
-
+		let d in 1..<T as pallet::Config<I>>::MaxTreeDepth::get() as u32;
+		pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params()).unwrap();
 		let caller: T::AccountId = whitelisted_caller();
-
-		<<T as Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller, BalanceOf::<T>::max_value());
-		let tree_id = Pallet::<T>::next_tree_id();
+		<<T as pallet::Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller, BalanceOf::<T, I>::max_value());
+		let tree_id = Pallet::<T, I>::next_tree_id();
 
 	}:_(RawOrigin::Signed(caller.clone()), d as u8)
 	verify {
-		assert_last_event::<T>(Event::TreeCreation{tree_id: tree_id, who: caller}.into())
+		assert_last_event::<T, I>(Event::TreeCreation{tree_id: tree_id, who: caller}.into())
 	}
 
 	insert {
 		let caller: T::AccountId = whitelisted_caller();
-		let tree_id: T::TreeId = <Pallet<T> as TreeInterface<_,_,_>>::create(caller.clone(), T::MaxTreeDepth::get()).unwrap();
-
-		let leaf_index = Pallet::<T>::next_leaf_index(tree_id);
-
+		pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params()).unwrap();
+		let tree_id: T::TreeId = <Pallet<T, I> as TreeInterface<_,_,_>>::create(Some(caller.clone()), T::MaxTreeDepth::get()).unwrap();
+		let leaf_index = Pallet::<T, I>::next_leaf_index(tree_id);
 		let element: T::Element = T::DefaultZeroElement::get();
 
 	}:_(RawOrigin::Signed(caller.clone()), tree_id, element)
 	verify {
-		assert_last_event::<T>(Event::LeafInsertion{tree_id, leaf_index, leaf: element}.into())
+		assert_last_event::<T, I>(Event::LeafInsertion{tree_id, leaf_index, leaf: element}.into())
 	}
 
 	force_set_default_hashes {
-		let p in 1..T::MaxTreeDepth::get() as u32;
+		let p in 1..<T as pallet::Config<I>>::MaxTreeDepth::get() as u32;
 
-		let default_hashes = vec![T::DefaultZeroElement::get();p as usize];
+		let default_hashes = vec![<T as pallet::Config<I>>::DefaultZeroElement::get();p as usize];
 
 	}:_(RawOrigin::Root, default_hashes)
 	verify {
-		assert_eq!(DefaultHashes::<T>::get().len(), p as usize)
+		assert_eq!(DefaultHashes::<T, I>::get().len(), p as usize)
 	}
 
 }
