@@ -206,6 +206,7 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type ProposalNonce = ProposalNonce;
 	type MaintainerNonce = MaintainerNonce;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
+	type WeightInfo = ();
 }
 
 impl Config for Test {

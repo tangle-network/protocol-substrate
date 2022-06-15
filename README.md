@@ -188,6 +188,26 @@ docker build -t cov -f docker/Coverage.Dockerfile .
 docker run --security-opt seccomp=unconfined cov
 ```
 
+### Benchmarks
+
+To generate benchmarks for a pallet run
+
+```
+cargo b --release --features runtime-benchmarks -p webb-standalone-node
+
+./target/release/webb-standalone-node benchmark pallet \
+--chain=dev \
+--steps=20 \
+--repeat=10 \
+--log=warn \
+--pallet=<pallet_name> \
+--extrinsic="*" \
+--execution=wasm \
+--wasm-execution=compiled \
+--output=./pallets/signature-bridge/src/weights.rs \
+--template=./.maintain/webb-weight-template.hbs
+```
+
 ## Contributing
 
 Interested in contributing to protocol-substrate? Thank you so much for your interest! We are always appreciative for contributions from the open-source community!  

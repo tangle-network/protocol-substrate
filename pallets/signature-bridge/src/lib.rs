@@ -53,6 +53,10 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+mod weights;
 use codec::{Decode, Encode, EncodeLike};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
@@ -67,6 +71,7 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryInto, prelude::*};
 use webb_primitives::{signing::SigningSystem, utils::compute_chain_id_type, ResourceId};
+pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -128,6 +133,8 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type BridgeAccountId: Get<PalletId>;
+
+		type WeightInfo: WeightInfo;
 	}
 
 	/// The parameter maintainer who can change the parameters
@@ -210,7 +217,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		/// Sets the maintainer.
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::set_maintainer())]
 		pub fn set_maintainer(
 			origin: OriginFor<T>,
 			// message contains the nonce as the first 4 bytes and the laste bytes of the message
@@ -249,7 +256,7 @@ pub mod pallet {
 		}
 
 		// Forcefully set the maintainer.
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::force_set_maintainer())]
 		pub fn force_set_maintainer(
 			origin: OriginFor<T>,
 			new_maintainer: Vec<u8>,
@@ -269,7 +276,7 @@ pub mod pallet {
 		/// # <weight>
 		/// - O(1) write
 		/// # </weight>
-		#[pallet::weight(195_000_000)]
+		#[pallet::weight(T::WeightInfo::set_resource())]
 		pub fn set_resource(origin: OriginFor<T>, id: ResourceId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::register_resource(id)
@@ -283,7 +290,7 @@ pub mod pallet {
 		/// # <weight>
 		/// - O(1) removal
 		/// # </weight>
-		#[pallet::weight(195_000_000)]
+		#[pallet::weight(T::WeightInfo::remove_resource())]
 		pub fn remove_resource(origin: OriginFor<T>, id: ResourceId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::unregister_resource(id)
@@ -294,7 +301,7 @@ pub mod pallet {
 		/// # <weight>
 		/// - O(1) lookup and insert
 		/// # </weight>
-		#[pallet::weight(195_000_000)]
+		#[pallet::weight(T::WeightInfo::whitelist_chain())]
 		pub fn whitelist_chain(origin: OriginFor<T>, id: T::ChainId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::whitelist(id)
@@ -324,7 +331,7 @@ pub mod pallet {
 		/// # <weight>
 		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
-		#[pallet::weight((call.get_dispatch_info().weight + 195_000_000, call.get_dispatch_info().class, Pays::Yes))]
+		#[pallet::weight((call.get_dispatch_info().weight + T::WeightInfo::set_resource_with_signature(), call.get_dispatch_info().class, Pays::Yes))]
 		pub fn set_resource_with_signature(
 			origin: OriginFor<T>,
 			src_id: T::ChainId,
@@ -401,7 +408,7 @@ pub mod pallet {
 		/// # <weight>
 		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
-		#[pallet::weight((call.get_dispatch_info().weight + 195_000_000, call.get_dispatch_info().class, Pays::Yes))]
+		#[pallet::weight((T::WeightInfo::execute_proposal() + call.get_dispatch_info().weight, call.get_dispatch_info().class, Pays::Yes))]
 		pub fn execute_proposal(
 			origin: OriginFor<T>,
 			src_id: T::ChainId,

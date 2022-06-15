@@ -1322,6 +1322,7 @@ impl pallet_signature_bridge::Config<SignatureBridgeInstance> for Runtime {
 	type ProposalNonce = u32;
 	type MaintainerNonce = u32;
 	type SignatureVerifier = SignatureVerifier;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -1704,6 +1705,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_mixer, MixerBn254);
 			list_benchmark!(list, extra, pallet_verifier, MixerVerifierBn254);
 			list_benchmark!(list, extra, pallet_token_wrapper, TokenWrapper);
+			list_benchmark!(list, extra, pallet_signature_bridge, SignatureBridge);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1741,6 +1743,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_mixer, MixerBn254);
 			add_benchmark!(params, batches, pallet_verifier, MixerVerifierBn254);
 			add_benchmark!(params, batches, pallet_token_wrapper, TokenWrapper);
+			add_benchmark!(params, batches, pallet_signature_bridge, SignatureBridge);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
