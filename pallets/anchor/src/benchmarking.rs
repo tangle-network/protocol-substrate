@@ -56,7 +56,7 @@ const MAX_EDGES: u32 = 256;
 
 benchmarks_instance_pallet! {
 
-	where_clause { where T: pallet::Config + pallet_mt::Config + pallet_hasher::Config<I>, <T as pallet_mt::Config<I>>::Element : From<Element> }
+	where_clause { where T: pallet::Config<I> + pallet_mt::Config<I> + pallet_hasher::Config<I>, <T as pallet_mt::Config<I>>::Element : From<Element> }
 	create {
 	  let i in 1..MAX_EDGES;
 	  let d in 1..<T as pallet_mt::Config<I>>::MaxTreeDepth::get() as u32;
@@ -78,7 +78,7 @@ benchmarks_instance_pallet! {
 
 	}: _(RawOrigin::Signed(caller.clone()), tree_id, leaf)
 	verify {
-	  assert_eq!(<<T as crate::Config<I>>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &crate::Pallet::<T>::account_id()), deposit_size.into())
+	  assert_eq!(<<T as crate::Config<I>>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &crate::Pallet::<T, I>::account_id()), deposit_size.into())
 	}
 
 	withdraw {

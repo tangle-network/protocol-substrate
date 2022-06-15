@@ -22,7 +22,7 @@
 use super::*;
 
 use webb_primitives::{traits::merkle_tree::TreeInspector, vanchor::VAnchorInterface, ElementTrait};
-use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
+use frame_benchmarking::{account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
 use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
 // Run the zk-setup binary before compiling the with runtime-benchmarks to
@@ -44,35 +44,35 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 const SEED: u32 = 0;
 const MAX_EDGES: u32 = 256;
 
-benchmarks! {
+benchmarks_instance_pallet! {
 
 	create {
 	  let i in 1..MAX_EDGES;
-	  let d in 1..<T as pallet_mt::Config>::MaxTreeDepth::get() as u32;
+	  let d in 1..<T as pallet_mt::Config<I>>::MaxTreeDepth::get() as u32;
 
 	  let deposit_size: u32 = 1_000_000_000;
-	  let asset_id = <<T as crate::Config>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, _>>>::get();
+	  let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
 	}: _(RawOrigin::Root, deposit_size.into(), i, d as u8, asset_id)
 
 	deposit {
 	  let caller: T::AccountId = whitelisted_caller();
 	  let deposit_size: u32 = 50_000_000;
-	  let asset_id = <<T as crate::Config>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, _>>>::get();
-	  let depth = <T as pallet_mt::Config>::MaxTreeDepth::get();
+	  let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
+	  let depth = <T as pallet_mt::Config<I>>::MaxTreeDepth::get();
 
-	  let tree_id = <VAnchor<T> as VAnchorInterface<VAnchorConfigration<T, _>>>::create(T::AccountId::default(), deposit_size.into(), depth, MAX_EDGES as u32, asset_id)?;
-	  let leaf = <T as pallet_mt::Config>::Element::from_bytes(&[1u8; 32]);
-	  <<T as pallet_mt::Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
+	  let tree_id = <VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::create(T::AccountId::default(), deposit_size.into(), depth, MAX_EDGES as u32, asset_id)?;
+	  let leaf = <T as pallet_mt::Config<I>>::Element::from_bytes(&[1u8; 32]);
+	  <<T as pallet_mt::Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
 
 	}: _(RawOrigin::Signed(caller.clone()), tree_id, leaf)
 	verify {
-	  assert_eq!(<<T as crate::Config>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &crate::Pallet::<T>::account_id()), deposit_size.into())
+	  assert_eq!(<<T as crate::Config<I>>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &crate::Pallet::<T. I>::account_id()), deposit_size.into())
 	}
 
 	withdraw {
 
-		let hasher_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as pallet_mt::Config>::Hasher>().unwrap();
-		let verifier_pallet_name = <T as frame_system::Config>::PalletInfo::name::<<T as Config>::Verifier>().unwrap();
+		let hasher_pallet_name = <T as frame_system::Config<I>>::PalletInfo::name::<<T as pallet_mt::Config<I>>::Hasher>().unwrap();
+		let verifier_pallet_name = <T as frame_system::Config<I>>::PalletInfo::name::<<T as Config>::Verifier>().unwrap();
 
 		// 1. Setup The Hasher Pallet.
 		storage::unhashed::put(&storage::storage_prefix(hasher_pallet_name.as_bytes(), "Parameters".as_bytes()),&HASH_PARAMS[..]);
@@ -85,32 +85,32 @@ benchmarks! {
 
 		// inputs
 		let caller: T::AccountId = whitelisted_caller();
-		<<T as pallet_mt::Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
+		<<T as pallet_mt::Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
 		let src_chain_id: u32 = 1;
 		let recipient_account_id: T::AccountId = account("recipient", 0, SEED);
 		let relayer_account_id: T::AccountId = account("relayer", 1, SEED);
 		whitelist_account!(recipient_account_id);
 		whitelist_account!(relayer_account_id);
-		<<T as pallet_mt::Config>::Currency as Currency<T::AccountId>>::make_free_balance_be(&recipient_account_id.clone(), 100_000_000u32.into());
+		<<T as pallet_mt::Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&recipient_account_id.clone(), 100_000_000u32.into());
 		let fee_value: u32 = 0;
 		let refund_value: u32 = 0;
 
 		let deposit_size: u32 = 50_000_000;
-		let depth = <T as pallet_mt::Config>::MaxTreeDepth::get();
-		let asset_id = <<T as crate::Config>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, _>>>::get();
+		let depth = <T as pallet_mt::Config<I>>::MaxTreeDepth::get();
+		let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, _>>>::get();
 
-		let tree_id = <VAnchor<T> as VAnchorInterface<VAnchorConfigration<T, _>>>::create(T::AccountId::default(), deposit_size.into(), depth, 2, asset_id)?;
+		let tree_id = <VAnchor<T> as VAnchorInterface<VAnchorConfigration<T, I>>>::create(T::AccountId::default(), deposit_size.into(), depth, 2, asset_id)?;
 
-		<VAnchor<T> as VAnchorInterface<VAnchorConfigration<T, _>>>::deposit(
+		<VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::deposit(
 			caller.clone(),
 			tree_id,
-			<T as pallet_mt::Config>::Element::from_bytes(&LEAF[..]),
+			<T as pallet_mt::Config<I>>::Element::from_bytes(&LEAF[..]),
 		)?;
 
-		let tree_root = <pallet_mt::Pallet<T> as TreeInspector<T::AccountId, <T as pallet_mt::Config>::TreeId, <T as pallet_mt::Config>::Element>>::get_root(tree_id).unwrap();
+		let tree_root = <pallet_mt::Pallet<T, I> as TreeInspector<T::AccountId, <T as pallet_mt::Config<I>>::TreeId, <T as pallet_mt::Config<I>>::Element>>::get_root(tree_id).unwrap();
 		// sanity check.
 
-		assert_eq!(<T as pallet_mt::Config>::Element::from_bytes(&ROOT_ELEMENT_BYTES[0]), tree_root);
+		assert_eq!(<T as pallet_mt::Config<I>>::Element::from_bytes(&ROOT_ELEMENT_BYTES[0]), tree_root);
 
 		let roots_element = ROOT_ELEMENT_BYTES
 			.iter()
@@ -133,7 +133,7 @@ benchmarks! {
 		refund_value.into()
 	)
 	verify {
-		assert_eq!(<<T as crate::Config>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &recipient_account_id), (100_000_000u32 + deposit_size).into())
+		assert_eq!(<<T as crate::Config<I>>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &recipient_account_id), (100_000_000u32 + deposit_size).into())
 	}
 
 }

@@ -87,16 +87,16 @@ use frame_system::{
 
 use frame_support::traits::Nothing;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
+pub use webb_primitives::runtime::Element;
 use webb_primitives::{
 	field_ops::arkworks::ArkworksIntoFieldBn254,
 	hashing::{ethereum::Keccak256HasherBn254, ArkworksPoseidonHasherBn254},
+	linkable_tree::LinkableTreeInspector,
 	signing::SignatureVerifier,
 	types::ElementTrait,
 	verifying::ArkworksVerifierBn254,
 	Amount, ChainId, LeafIndex,
 };
-
-use webb_primitives::linkable_tree::LinkableTreeInspector;
 
 impl_opaque_keys! {
 	pub struct SessionKeys {
@@ -1127,22 +1127,6 @@ parameter_types! {
 	]);
 }
 
-#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct Element([u8; 32]);
-
-impl ElementTrait for Element {
-	fn to_bytes(&self) -> &[u8] {
-		&self.0
-	}
-
-	fn from_bytes(input: &[u8]) -> Self {
-		let mut buf = [0u8; 32];
-		buf.iter_mut().zip(input).for_each(|(a, b)| *a = *b);
-		Self(buf)
-	}
-}
-
 impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
@@ -1715,7 +1699,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_hasher, HasherBn254);
 			list_benchmark!(list, extra, pallet_mt, MerkleTreeBn254);
 			list_benchmark!(list, extra, pallet_linkable_tree, LinkableTreeBn254);
-			list_benchmark!(list, extra, pallet_vanchor, VAnchorBn254);
+			//list_benchmark!(list, extra, pallet_vanchor, VAnchorBn254);
 			list_benchmark!(list, extra, pallet_anchor, AnchorBn254);
 			list_benchmark!(list, extra, pallet_mixer, MixerBn254);
 			list_benchmark!(list, extra, pallet_verifier, MixerVerifierBn254);
@@ -1752,7 +1736,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_hasher, HasherBn254);
 			add_benchmark!(params, batches, pallet_mt, MerkleTreeBn254);
 			add_benchmark!(params, batches, pallet_linkable_tree, LinkableTreeBn254);
-			add_benchmark!(params, batches, pallet_vanchor, VAnchorBn254);
+			//add_benchmark!(params, batches, pallet_vanchor, VAnchorBn254);
 			add_benchmark!(params, batches, pallet_anchor, AnchorBn254);
 			add_benchmark!(params, batches, pallet_mixer, MixerBn254);
 			add_benchmark!(params, batches, pallet_verifier, MixerVerifierBn254);

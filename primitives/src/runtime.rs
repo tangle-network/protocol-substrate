@@ -1,10 +1,10 @@
+use crate::ElementTrait;
+use codec::{Decode, Encode};
 use frame_support::sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
 	MultiSignature,
 };
-use codec::{Encode, Decode};
-use crate::ElementTrait;
 
 /// An index to a block.
 pub type BlockNumber = u64;
