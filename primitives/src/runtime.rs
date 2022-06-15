@@ -3,6 +3,8 @@ use frame_support::sp_runtime::{
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
 	MultiSignature,
 };
+use codec::{Encode, Decode};
+use crate::ElementTrait;
 
 /// An index to a block.
 pub type BlockNumber = u64;
@@ -57,4 +59,20 @@ pub mod opaque {
 	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
+}
+
+#[derive(Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub struct Element(pub [u8; 32]);
+
+impl ElementTrait for Element {
+	fn to_bytes(&self) -> &[u8] {
+		&self.0
+	}
+
+	fn from_bytes(input: &[u8]) -> Self {
+		let mut buf = [0u8; 32];
+		buf.iter_mut().zip(input).for_each(|(a, b)| *a = *b);
+		Self(buf)
+	}
 }

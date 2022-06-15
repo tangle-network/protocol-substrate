@@ -7,15 +7,12 @@ use arkworks_setups::{
 	AnchorProver, Curve,
 };
 use std::convert::TryInto;
-use webb_primitives::ElementTrait;
+use webb_primitives::{runtime::Element, ElementTrait};
 
 use wasm_utils::{
 	proof::{generate_proof_js, AnchorProofInput, JsProofInput, ProofInput},
 	types::{Backend, Curve as WasmCurve},
 };
-
-use crate::mock::Element;
-
 type Bn254Fr = ark_bn254::Fr;
 
 type ProofBytes = Vec<u8>;
