@@ -5,8 +5,8 @@ use ark_ff::{BigInteger, PrimeField};
 use arkworks_setups::{common::setup_params, Curve};
 use pallet_linkable_tree::LinkableTreeConfigration;
 use webb_primitives::{
-	linkable_tree::LinkableTreeInspector, merkle_tree::TreeInspector, utils::compute_chain_id_type,
-	AccountId, ElementTrait,
+	linkable_tree::LinkableTreeInspector, merkle_tree::TreeInspector, runtime::Element,
+	utils::compute_chain_id_type, AccountId, ElementTrait,
 };
 
 use codec::Encode;

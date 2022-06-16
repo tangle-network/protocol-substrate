@@ -10401,6 +10401,7 @@ dependencies = [
  "hex-literal 0.3.4",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-consensus-aura",
  "sp-consensus-babe",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.23)",
