@@ -62,9 +62,6 @@ pub use sp_runtime::BuildStorage;
 
 use pallet_election_provider_multi_phase::SolutionAccuracyOf;
 
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	construct_runtime,
@@ -93,7 +90,6 @@ use webb_primitives::{
 	hashing::{ethereum::Keccak256HasherBn254, ArkworksPoseidonHasherBn254},
 	linkable_tree::LinkableTreeInspector,
 	signing::SignatureVerifier,
-	types::ElementTrait,
 	verifying::ArkworksVerifierBn254,
 	Amount, ChainId, LeafIndex,
 };
@@ -538,7 +534,7 @@ impl pallet_election_provider_multi_phase::MinerConfig for WebbMinerConfig {
 	type MaxVotesPerVoter = MaxNominations;
 	type Solution = NposSolution16;
 
-	fn solution_weight(v: u32, t: u32, a: u32, d: u32) -> Weight {
+	fn solution_weight(_v: u32, _t: u32, _a: u32, _d: u32) -> Weight {
 		0
 	}
 }
@@ -632,11 +628,6 @@ parameter_types! {
 	pub const MaxVotes: u32 = 100;
 	pub const MaxProposals: u32 = 100;
 }
-
-type EnsureRootOrHalfCouncil = EnsureOneOf<
-	EnsureRoot<AccountId>,
-	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
->;
 
 impl pallet_democracy::Config for Runtime {
 	type BlacklistOrigin = EnsureRoot<AccountId>;
