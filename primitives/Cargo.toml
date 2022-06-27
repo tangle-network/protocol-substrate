@@ -10,14 +10,14 @@ edition = "2018"
 serde = { version = "1.0.119", optional = true, features = ["derive"] }
 codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "3" }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-consensus-aura = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git"}
+sp-consensus-aura = { default-features = false, git = "https://github.com/paritytech/substrate.git" }
+sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git" }
 
 # Arkworks
 ark-ff = { version = "^0.3.0", default-features = false }
