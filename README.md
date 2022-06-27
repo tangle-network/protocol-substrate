@@ -63,7 +63,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source ~/.cargo/env
 ```
 
-Configure the Rust toolchain to default to the latest stable version, add nightly and the nightly wasm target:
+Configure the Rust toolchain to default to the latest nightly version, and add the nightly wasm target:
 
 ```bash
 rustup default nightly
