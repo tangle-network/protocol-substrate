@@ -18,13 +18,13 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 
 # frame dependencies
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-arithmetic = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25" }
+sp-arithmetic = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25" }
 pallet-mt = { path = "../mt", default-features = false }
 pallet-linkable-tree = { path = "../linkable-tree", default-features = false }
 pallet-vanchor = { path = "../vanchor", default-features = false }
@@ -34,17 +34,17 @@ orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-li
 webb-primitives = { path = "../../primitives", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
 
-frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23", optional = true }
-frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23", optional = true }
+frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25", optional = true }
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25", optional = true }
 
 hex-literal = "0.3.4"
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
-pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.23" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25" }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.25" }
 pallet-hasher = { path = "../hasher", default-features = false }
 pallet-mixer = { path = "../mixer", default-features = false }
 pallet-mt = { path = "../mt", default-features = false }
