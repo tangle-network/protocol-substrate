@@ -378,30 +378,6 @@ fn should_fail_to_whitelist_chain_already_whitelisted() {
 }
 
 #[test]
-fn should_fail_to_whitelist_this_chain() {
-	let chain_type = [2, 0];
-	let src_id_u32 = 1u32;
-	let src_id = get_typed_chain_id_in_u64(src_id_u32);
-	let this_chain_id_u32 = 5u32;
-	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
-
-	new_test_ext_initialized(
-		src_id,
-		r_id,
-		b"VAnchorHandler.execute_vanchor_create_proposal".to_vec(),
-	)
-	.execute_with(|| {
-		assert_err!(
-			SignatureBridge::whitelist_chain(
-				Origin::root(),
-				compute_chain_id_type(ChainIdentifier::get(), chain_type)
-			),
-			pallet_signature_bridge::Error::<Test, _>::InvalidChainId
-		);
-	})
-}
-
-#[test]
 fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
