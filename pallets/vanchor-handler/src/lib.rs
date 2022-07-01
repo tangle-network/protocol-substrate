@@ -60,6 +60,7 @@ use pallet_vanchor::{BalanceOf as VAnchorBalanceOf, CurrencyIdOf as VAnchorCurre
 use sp_std::convert::TryInto;
 use webb_primitives::{
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
+	webb_proposals,
 	webb_proposals::TargetSystem,
 	ResourceId,
 };
@@ -209,6 +210,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	fn set_resource(r_id: ResourceId, tree_id: T::TreeId) -> DispatchResultWithPostInfo {
 		ensure!(!AnchorList::<T, I>::contains_key(r_id), Error::<T, I>::ResourceIsAlreadyAnchored);
 		AnchorList::<T, I>::insert(r_id, tree_id);
+		let resource = webb_proposals::ResourceId::from(r_id);
+		let src_chain_id: T::ChainId = resource.typed_chain_id().chain_id().into();
+		Counts::<T, I>::insert(src_chain_id, 0);
 		Self::deposit_event(Event::ResourceAnchored);
 		Ok(().into())
 	}
@@ -223,7 +227,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		ensure!(!AnchorList::<T, I>::contains_key(r_id), Error::<T, I>::ResourceIsAlreadyAnchored);
 		let tree_id = T::VAnchor::create(None, tree_depth, max_edges, asset)?;
 		_ = Self::set_resource(r_id, tree_id);
-		Counts::<T, I>::insert(src_chain_id, 0);
 		Self::deposit_event(Event::AnchorCreated);
 		Ok(().into())
 	}

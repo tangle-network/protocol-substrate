@@ -48,24 +48,6 @@ fn setup_resources() {
 	})
 }
 
-#[test]
-fn whitelist_chain() {
-	new_test_ext().execute_with(|| {
-		assert!(!Bridge::chain_whitelisted(0));
-
-		assert_ok!(Bridge::whitelist_chain(Origin::root(), 0));
-		assert_noop!(
-			Bridge::whitelist_chain(
-				Origin::root(),
-				compute_chain_id_type(ChainIdentifier::get(), SUBSTRATE_CHAIN_TYPE)
-			),
-			Error::<Test>::InvalidChainId
-		);
-
-		assert_events(vec![Event::Bridge(pallet_bridge::Event::ChainWhitelisted { chain_id: 0 })]);
-	})
-}
-
 fn make_proposal(r: Vec<u8>) -> mock::Call {
 	Call::System(system::Call::remark { remark: r })
 }

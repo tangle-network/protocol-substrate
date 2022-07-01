@@ -155,6 +155,7 @@ pub mod pallet {
 
 	/// The proposal nonce used to prevent replay attacks on execute_proposal
 	#[pallet::storage]
+	#[pallet::getter(fn proposal_nonce)]
 	pub type ProposalNonce<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, T::ProposalNonce, ValueQuery>;
 
@@ -531,16 +532,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(().into())
 	}
 
-	/// Whitelist a chain ID for transfer
+	/// Whitelist a chain ID
 	pub fn whitelist(id: T::ChainId) -> DispatchResultWithPostInfo {
-		// Cannot whitelist this chain
-		ensure!(
-			id != T::ChainId::from(compute_chain_id_type(
-				T::ChainIdentifier::get(),
-				T::ChainType::get()
-			)),
-			Error::<T, I>::InvalidChainId
-		);
 		// Cannot whitelist with an existing entry
 		ensure!(!Self::chain_whitelisted(id), Error::<T, I>::ChainAlreadyWhitelisted);
 		ChainNonces::<T, I>::insert(&id, T::ProposalNonce::from(0u32));
