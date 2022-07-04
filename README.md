@@ -76,6 +76,16 @@ Great! Now your Rust environment is ready! 🚀🚀
 
 ### Installation 💻
 
+Install protobuf-compiler
+
+```bash
+# For linux
+apt install -y protobuf-compiler
+
+# For macos 
+brew install protobuf
+```
+
 Clone the submodules:
 
 ```bash

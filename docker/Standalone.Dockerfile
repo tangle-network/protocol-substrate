@@ -7,6 +7,9 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 COPY . .
 
+# Install protobuf
+RUN apt-get install -y protobuf-compiler
+
 # Build Standalone Node.
 RUN git submodule update --init && \
   cargo build --release -p webb-standalone-node
