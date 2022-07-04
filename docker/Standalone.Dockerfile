@@ -3,12 +3,9 @@ WORKDIR /webb
 
 # Install Required Packages
 RUN apt-get update && \
-  apt-get install -y git pkg-config clang curl libssl-dev llvm libudev-dev libgmp3-dev && \
+  apt-get install -y git pkg-config clang curl libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler && \
   rm -rf /var/lib/apt/lists/*
 COPY . .
-
-# Install protobuf
-RUN apt-get install -y protobuf-compiler
 
 # Build Standalone Node.
 RUN git submodule update --init && \
