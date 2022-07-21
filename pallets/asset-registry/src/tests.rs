@@ -126,8 +126,11 @@ fn location_mapping_works() {
 			},
 		);
 
-		let asset_location =
-			AssetLocation(X3(Parent, Parachain(200), GeneralKey(asset_id.encode())));
+		let asset_location = AssetLocation(X3(
+			Parent,
+			Parachain(200),
+			GeneralKey(asset_id.encode().try_into().unwrap()),
+		));
 
 		assert_ok!(AssetRegistryPallet::set_location(
 			Origin::root(),

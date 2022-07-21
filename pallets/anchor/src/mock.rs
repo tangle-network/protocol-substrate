@@ -238,6 +238,7 @@ parameter_types! {
 impl pallet_treasury::Config for Test {
 	type ApproveOrigin = frame_system::EnsureRoot<AccountId>;
 	type Burn = Burn;
+	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 	type BurnDestination = ();
 	type Currency = pallet_balances::Pallet<Test>;
 	type Event = Event;

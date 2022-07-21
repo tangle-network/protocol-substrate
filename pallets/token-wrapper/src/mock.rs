@@ -162,6 +162,7 @@ impl pallet_treasury::Config for Test {
 	type RejectOrigin = frame_system::EnsureRoot<u64>;
 	type SpendFunds = ();
 	type SpendPeriod = SpendPeriod;
+	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 	// Just gets burned.
 	type WeightInfo = ();
 	type ProposalBondMaximum = ();
