@@ -156,6 +156,7 @@ impl pallet_treasury::Config for Test {
 	type Currency = pallet_balances::Pallet<Test>;
 	type Event = Event;
 	type MaxApprovals = MaxApprovals;
+	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 	type OnSlash = ();
 	type PalletId = TreasuryPalletId;
 	type ProposalBond = ProposalBond;
