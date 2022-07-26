@@ -10698,7 +10698,9 @@ dependencies = [
 
 [[package]]
 name = "webb-proposals"
-version = "0.4.1"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08083f65d0b5b744a19225653431ee329c2988c93a9cdc957dc9a7aa3279c8b4"
 dependencies = [
  "cosmwasm-std",
  "num-traits",
