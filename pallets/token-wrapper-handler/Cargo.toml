@@ -1,6 +1,6 @@
 [package]
 authors = ["Webb Technologies Inc."]
-description = "FRAME pallet template for defining custom runtime logic."
+description = "A token wrapper handler for the bridging system"
 edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
@@ -38,7 +38,7 @@ pallet-balances = { git = "https://github.com/paritytech/substrate",  branch = "
 pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.26" }
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
-webb-proposals = { version = "0.3.6", default-features = false, features = ["scale", "substrate"] }
+webb-proposals = { path = "../../../webb-rs/proposals", default-features = false, features = ["scale", "substrate"] }
 
 
 [features]
