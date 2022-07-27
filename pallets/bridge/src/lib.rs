@@ -85,7 +85,7 @@ use sp_runtime::{
 	RuntimeDebug,
 };
 use sp_std::{convert::TryInto, prelude::*};
-use webb_primitives::{utils::compute_chain_id_type, ResourceId};
+use webb_primitives::{utils::compute_chain_id_type, webb_proposals::ResourceId};
 
 #[frame_support::pallet]
 pub mod pallet {
