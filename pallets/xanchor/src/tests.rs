@@ -7,7 +7,7 @@ use arkworks_setups::{common::setup_params, Curve};
 use codec::Encode;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
-use pallet_anchor::BalanceOf;
+use pallet_vanchor::BalanceOf;
 use pallet_democracy::{AccountVote, Conviction, Vote};
 use std::convert::TryInto;
 use webb_primitives::{

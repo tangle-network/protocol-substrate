@@ -1,7 +1,6 @@
 use ark_std::collections::BTreeMap;
 use core::fmt::Debug;
 use subxt::{DefaultConfig, Event, TransactionProgress};
-use webb_client::webb_runtime::{runtime_types::webb_standalone_runtime, system::storage::Events};
 
 use subxt::sp_runtime::AccountId32;
 use webb_client::webb_runtime;
@@ -21,14 +20,14 @@ use arkworks_setups::{
 	common::{setup_params, Leaf},
 	r1cs::{anchor::AnchorR1CSProver, mixer::MixerR1CSProver, vanchor::VAnchorR1CSProver},
 	utxo::Utxo,
-	AnchorProver, Curve, MixerProver, VAnchorProver,
+	Curve, MixerProver, VAnchorProver,
 };
 use webb_primitives::types::{ElementTrait, IntoAbiToken, Token};
 
 // wasm-utils dependencies
 use ark_std::{rand::thread_rng, UniformRand};
 use wasm_utils::{
-	proof::{generate_proof_js, AnchorProofInput, JsProofInput, MixerProofInput, ProofInput},
+	proof::{generate_proof_js, JsProofInput, MixerProofInput, ProofInput},
 	types::{Backend, Curve as WasmCurve},
 };
 
@@ -161,8 +160,6 @@ pub const DEFAULT_LEAF: [u8; 32] = [
 ];
 
 #[allow(non_camel_case_types)]
-type AnchorProver_Bn254_30_2 = AnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT>;
-#[allow(non_camel_case_types)]
 type MixerProver_Bn254_30 = MixerR1CSProver<Bn254, TREE_DEPTH>;
 #[allow(non_camel_case_types)]
 type VAnchorProver_Bn254_30_2_2_2 =
@@ -175,23 +172,6 @@ pub fn setup_mixer_leaf() -> (Element, Element, Element, Element) {
 	let nullifier = Bn254Fr::rand(rng).into_repr().to_bytes_le();
 	let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes, .. } =
 		MixerProver_Bn254_30::create_leaf_with_privates(curve, secret, nullifier).unwrap();
-
-	let leaf_element = Element::from_bytes(&leaf_bytes);
-	let secret_element = Element::from_bytes(&secret_bytes);
-	let nullifier_element = Element::from_bytes(&nullifier_bytes);
-	let nullifier_hash_element = Element::from_bytes(&nullifier_hash_bytes);
-
-	(leaf_element, secret_element, nullifier_element, nullifier_hash_element)
-}
-
-pub fn setup_anchor_leaf(chain_id: u64) -> (Element, Element, Element, Element) {
-	let rng = &mut thread_rng();
-	let curve = Curve::Bn254;
-	let secret = Bn254Fr::rand(rng).into_repr().to_bytes_le();
-	let nullifier = Bn254Fr::rand(rng).into_repr().to_bytes_le();
-	let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes, .. } =
-		AnchorProver_Bn254_30_2::create_leaf_with_privates(curve, chain_id, secret, nullifier)
-			.unwrap();
 
 	let leaf_element = Element::from_bytes(&leaf_bytes);
 	let secret_element = Element::from_bytes(&secret_bytes);
@@ -232,51 +212,6 @@ pub fn setup_mixer_circuit(
 		leaf_index,
 	};
 	let js_proof_inputs = JsProofInput { inner: ProofInput::Mixer(mixer_proof_input) };
-	let proof = generate_proof_js(js_proof_inputs).unwrap();
-
-	let root_array: [u8; 32] = proof.root.try_into().unwrap();
-	let root_element = Element(root_array);
-
-	(proof.proof, root_element)
-}
-
-pub fn setup_anchor_circuit(
-	roots: Vec<Vec<u8>>,
-	leaves: Vec<Vec<u8>>,
-	leaf_index: u64,
-	chain_id: u64,
-	secret: Vec<u8>,
-	nullifier: Vec<u8>,
-	recipient_bytes: Vec<u8>,
-	relayer_bytes: Vec<u8>,
-	fee_value: u128,
-	refund_value: u128,
-	commitment_bytes: Vec<u8>,
-	pk_bytes: Vec<u8>,
-) -> (
-	Vec<u8>, // proof bytes
-	Element, // root
-) {
-	let commitment: [u8; 32] = commitment_bytes.try_into().unwrap();
-	let anchor_proof_input = AnchorProofInput {
-		exponentiation: 5,
-		width: 4,
-		curve: WasmCurve::Bn254,
-		backend: Backend::Arkworks,
-		secret,
-		nullifier,
-		recipient: recipient_bytes,
-		relayer: relayer_bytes,
-		pk: pk_bytes,
-		refund: refund_value,
-		fee: fee_value,
-		chain_id,
-		leaves,
-		leaf_index,
-		roots,
-		refresh_commitment: commitment,
-	};
-	let js_proof_inputs = JsProofInput { inner: ProofInput::Anchor(anchor_proof_input) };
 	let proof = generate_proof_js(js_proof_inputs).unwrap();
 
 	let root_array: [u8; 32] = proof.root.try_into().unwrap();

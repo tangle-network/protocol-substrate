@@ -74,6 +74,8 @@
 
 mod benchmarking;
 #[cfg(test)]
+pub mod mock;
+#[cfg(test)]
 mod tests;
 
 pub mod types;

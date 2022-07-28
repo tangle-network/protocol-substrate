@@ -1155,12 +1155,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "245097e9a4535ee1e3e3931fcfcd55a796a44c643e8596ff6566d68f09b87bbc"
 
 [[package]]
-name = "convert_case"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
-
-[[package]]
 name = "core-foundation"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1432,39 +1426,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-pallet-xcm"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.26#e43b8b878a6fd0ca8b5e88d19822c4d777d3c677"
-dependencies = [
- "cumulus-primitives-core",
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "xcm",
-]
-
-[[package]]
-name = "cumulus-primitives-core"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.26#e43b8b878a6fd0ca8b5e88d19822c4d777d3c677"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-primitives",
- "sp-api",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-trie 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
-]
-
-[[package]]
 name = "curve25519-dalek"
 version = "2.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1590,10 +1551,8 @@ version = "0.99.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4fb810d30a7c1953f91334de7244731fc3f3c10d7fe163338a35b9f640960321"
 dependencies = [
- "convert_case",
  "proc-macro2",
  "quote",
- "rustc_version 0.4.0",
  "syn",
 ]
 
@@ -4534,85 +4493,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-anchor"
-version = "1.0.0"
-dependencies = [
- "ark-bls12-381",
- "ark-bn254",
- "ark-crypto-primitives",
- "ark-ec",
- "ark-ff",
- "ark-relations",
- "ark-serialize",
- "ark-std",
- "arkworks-native-gadgets",
- "arkworks-setups",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "frame-system-benchmarking",
- "hex",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
- "pallet-asset-registry",
- "pallet-balances",
- "pallet-hasher",
- "pallet-linkable-tree",
- "pallet-mt",
- "pallet-token-wrapper",
- "pallet-treasury",
- "pallet-verifier",
- "parity-scale-codec",
- "rand 0.8.5",
- "scale-info",
- "serde",
- "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "wasm-utils",
- "webb-primitives",
-]
-
-[[package]]
-name = "pallet-anchor-handler"
-version = "1.0.0"
-dependencies = [
- "ark-bn254",
- "ark-crypto-primitives",
- "arkworks-setups",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "frame-system-benchmarking",
- "hex-literal 0.3.4",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
- "pallet-anchor",
- "pallet-asset-registry",
- "pallet-balances",
- "pallet-bridge",
- "pallet-hasher",
- "pallet-linkable-tree",
- "pallet-mixer",
- "pallet-mt",
- "pallet-signature-bridge",
- "pallet-verifier",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "webb-primitives",
- "webb-proposals",
-]
-
-[[package]]
 name = "pallet-asset-registry"
 version = "0.1.0"
 dependencies = [
@@ -5614,89 +5494,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-vesting"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26#e8a7d161f39db70cb27fdad6c6e215cf493ebc3b"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
-]
-
-[[package]]
-name = "pallet-xanchor"
-version = "0.1.0"
-dependencies = [
- "ark-bls12-381",
- "ark-bn254",
- "ark-crypto-primitives",
- "ark-ec",
- "ark-ff",
- "ark-relations",
- "ark-serialize",
- "ark-std",
- "arkworks-native-gadgets",
- "arkworks-setups",
- "cumulus-pallet-xcm",
- "cumulus-primitives-core",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
- "pallet-anchor",
- "pallet-asset-registry",
- "pallet-balances",
- "pallet-democracy",
- "pallet-hasher",
- "pallet-linkable-tree",
- "pallet-mt",
- "pallet-preimage",
- "pallet-scheduler",
- "pallet-verifier",
- "pallet-xcm",
- "parity-scale-codec",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-runtime-parachains",
- "rand 0.8.5",
- "scale-info",
- "serde",
- "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "webb-primitives",
- "webb-proposals",
- "xcm",
- "xcm-builder",
- "xcm-executor",
- "xcm-simulator",
-]
-
-[[package]]
-name = "pallet-xcm"
-version = "0.9.26"
-source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.26#d8785970175dce344f2a6ad1cd88297529a6dd59"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "parity-scale-codec",
- "scale-info",
- "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "xcm",
- "xcm-executor",
-]
-
-[[package]]
 name = "parity-db"
 version = "0.3.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5981,118 +5778,6 @@ name = "platforms"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "989d43012e2ca1c4a02507c67282691a0a3207f9dc67cec596b43fe925b3d325"
-
-[[package]]
-name = "polkadot-core-primitives"
-version = "0.9.26"
-source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.26#d8785970175dce344f2a6ad1cd88297529a6dd59"
-dependencies = [
- "parity-scale-codec",
- "parity-util-mem",
- "scale-info",
- "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
-]
-
-[[package]]
-name = "polkadot-parachain"
-version = "0.9.26"
-source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.26#d8785970175dce344f2a6ad1cd88297529a6dd59"
-dependencies = [
- "derive_more",
- "frame-support",
- "parity-scale-codec",
- "parity-util-mem",
- "polkadot-core-primitives",
- "scale-info",
- "serde",
- "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
-]
-
-[[package]]
-name = "polkadot-primitives"
-version = "0.9.26"
-source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.26#d8785970175dce344f2a6ad1cd88297529a6dd59"
-dependencies = [
- "bitvec",
- "frame-system",
- "hex-literal 0.3.4",
- "parity-scale-codec",
- "parity-util-mem",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "scale-info",
- "serde",
- "sp-api",
- "sp-application-crypto 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-arithmetic 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-authority-discovery",
- "sp-consensus-slots",
- "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-inherents",
- "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-keystore 0.12.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-staking",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-trie 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-version",
-]
-
-[[package]]
-name = "polkadot-runtime-metrics"
-version = "0.9.26"
-source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.26#d8785970175dce344f2a6ad1cd88297529a6dd59"
-dependencies = [
- "bs58",
- "parity-scale-codec",
- "polkadot-primitives",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-tracing 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
-]
-
-[[package]]
-name = "polkadot-runtime-parachains"
-version = "0.9.26"
-source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.26#d8785970175dce344f2a6ad1cd88297529a6dd59"
-dependencies = [
- "bitflags",
- "bitvec",
- "derive_more",
- "frame-support",
- "frame-system",
- "log",
- "pallet-authority-discovery",
- "pallet-authorship",
- "pallet-babe",
- "pallet-balances",
- "pallet-session",
- "pallet-staking",
- "pallet-timestamp",
- "pallet-vesting",
- "parity-scale-codec",
- "polkadot-primitives",
- "polkadot-runtime-metrics",
- "rand 0.8.5",
- "rand_chacha 0.3.1",
- "rustc-hex",
- "scale-info",
- "serde",
- "sp-api",
- "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-inherents",
- "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-keystore 0.12.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-session",
- "sp-staking",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "xcm",
- "xcm-executor",
-]
 
 [[package]]
 name = "polling"
@@ -10599,9 +10284,7 @@ dependencies = [
 
 [[package]]
 name = "webb-proposals"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c60247d1c5faa97122408138ebaaab6b69bbae8cc502f229fa122a194db83d29"
+version = "0.4.4"
 dependencies = [
  "num-traits",
  "parity-scale-codec",
@@ -10711,8 +10394,6 @@ dependencies = [
  "orml-currencies",
  "orml-tokens",
  "orml-traits",
- "pallet-anchor",
- "pallet-anchor-handler",
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
@@ -10988,43 +10669,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "xcm-builder"
-version = "0.9.26"
-source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.26#d8785970175dce344f2a6ad1cd88297529a6dd59"
-dependencies = [
- "frame-support",
- "frame-system",
- "log",
- "pallet-transaction-payment",
- "parity-scale-codec",
- "polkadot-parachain",
- "scale-info",
- "sp-arithmetic 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "xcm",
- "xcm-executor",
-]
-
-[[package]]
-name = "xcm-executor"
-version = "0.9.26"
-source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.26#d8785970175dce344f2a6ad1cd88297529a6dd59"
-dependencies = [
- "frame-support",
- "impl-trait-for-tuples",
- "log",
- "parity-scale-codec",
- "sp-arithmetic 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "xcm",
-]
-
-[[package]]
 name = "xcm-procedural"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.26#d8785970175dce344f2a6ad1cd88297529a6dd59"
@@ -11033,23 +10677,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "xcm-simulator"
-version = "0.9.26"
-source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.26#d8785970175dce344f2a6ad1cd88297529a6dd59"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "paste",
- "polkadot-core-primitives",
- "polkadot-parachain",
- "polkadot-runtime-parachains",
- "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "xcm",
- "xcm-executor",
 ]
 
 [[package]]

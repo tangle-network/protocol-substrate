@@ -12,12 +12,11 @@ use sp_runtime::{
 	Perbill,
 };
 use webb_runtime::{
-	constants::currency::*, wasm_binary_unwrap, AnchorBn254Config, AnchorVerifierBn254Config,
-	AssetRegistryConfig, AuthorityDiscoveryConfig, BabeConfig, Block, CouncilConfig,
-	DemocracyConfig, ElectionsConfig, GenesisConfig, GrandpaConfig, HasherBn254Config,
-	ImOnlineConfig, IndicesConfig, MerkleTreeBn254Config, MixerBn254Config,
-	MixerVerifierBn254Config, SessionConfig, StakerStatus, StakingConfig, SudoConfig,
-	VAnchorBn254Config, VAnchorVerifier2x2Bn254Config,
+	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
+	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
+	GrandpaConfig, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBn254Config,
+	MixerBn254Config, MixerVerifierBn254Config, SessionConfig, StakerStatus, StakingConfig,
+	SudoConfig, VAnchorBn254Config, VAnchorVerifier2x2Bn254Config,
 };
 
 // ImOnline consensus authority.
@@ -205,14 +204,6 @@ fn testnet_genesis(
 		vk_bytes.to_vec()
 	};
 
-	log::info!("Verifier params for anchor");
-	let anchor_verifier_bn254_params = {
-		let vk_bytes = include_bytes!(
-			"../../../protocol-substrate-fixtures/fixed-anchor/bn254/x5/2/verifying_key.bin"
-		);
-		vk_bytes.to_vec()
-	};
-
 	log::info!("Verifier params for vanchor");
 	let vanchor_verifier_bn254_params = {
 		let vk_bytes = include_bytes!(
@@ -312,10 +303,6 @@ fn testnet_genesis(
 			parameters: Some(mixer_verifier_bn254_params),
 			phantom: Default::default(),
 		},
-		anchor_verifier_bn_254: AnchorVerifierBn254Config {
-			parameters: Some(anchor_verifier_bn254_params),
-			phantom: Default::default(),
-		},
 		v_anchor_verifier_2x_2_bn_254: VAnchorVerifier2x2Bn254Config {
 			parameters: Some(vanchor_verifier_bn254_params),
 			phantom: Default::default(),
@@ -332,9 +319,6 @@ fn testnet_genesis(
 				(1, 10 * UNITS),
 				(1, 100 * UNITS),
 			],
-		},
-		anchor_bn_254: AnchorBn254Config {
-			anchors: vec![(0, 10 * UNITS, 1), (0, 100 * UNITS, 1), (0, 1000 * UNITS, 1)],
 		},
 		v_anchor_bn_254: VAnchorBn254Config {
 			max_deposit_amount: 1_000_000 * UNITS,

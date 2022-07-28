@@ -93,14 +93,14 @@ benchmarks_instance_pallet! {
 	}
 
 	set_resource {
-		let id: ResourceId = [1; 32];
+		let id: ResourceId = ResourceId([1; 32]);
 	}: _(RawOrigin::Root, id)
 	verify {
 	   assert_eq!(Resources::<T, I>::get(id), Some(()));
 	}
 
 	remove_resource {
-		let id: ResourceId = [1; 32];
+		let id: ResourceId = ResourceId([1; 32]);
 		let _ = crate::Pallet::<T,I>::set_resource(RawOrigin::Root.into(), id);
 	}: _(RawOrigin::Root, id)
 	verify {

@@ -40,16 +40,16 @@ jobs:
           SKIP_WASM_BUILD=1 cargo +nightly tarpaulin --out Xml \
               -p pallet-token-wrapper-handler \
               -p pallet-token-wrapper \
-              -p pallet-anchor-handler \
               -p pallet-signature-bridge \
-              -p pallet-anchor \
               -p pallet-vanchor \
+              -p pallet-vanchor-handler \
               -p pallet-mixer \
               -p pallet-linkable-tree \
               -p pallet-mt \
               -p pallet-verifier \
               -p pallet-hasher \
               -p pallet-asset-registry \
+              -p pallet-bridge-registry \
               --timeout 3600
 
       - name: Upload to codecov.io

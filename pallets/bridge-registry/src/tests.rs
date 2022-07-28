@@ -2,9 +2,7 @@ use super::*;
 use crate::mock::*;
 use frame_support::{assert_err, assert_ok, BoundedVec};
 use std::convert::TryFrom;
-use webb_primitives::webb_proposals::{
-	self, evm, substrate, FunctionSignature, Nonce, ProposalHeader,
-};
+use webb_primitives::webb_proposals::{self, evm, FunctionSignature, Nonce, ProposalHeader};
 
 #[test]
 fn should_init() {

@@ -79,7 +79,7 @@ fn complete_proposal_bad_threshold() {
 #[test]
 fn setup_resources() {
 	new_test_ext().execute_with(|| {
-		let id: ResourceId = [1; 32];
+		let id: ResourceId = ResourceId([1; 32]);
 		let method = "Pallet.do_something".as_bytes().to_vec();
 		let method2 = "Pallet.do_somethingElse".as_bytes().to_vec();
 
@@ -175,7 +175,7 @@ fn make_proposal(r: Vec<u8>) -> mock::Call {
 fn create_sucessful_proposal() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(1u32, 1u32).into();
+	let r_id: ResourceId = derive_resource_id(1u32, 1u32).into();
 
 	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let prop_id = 1;
@@ -264,7 +264,7 @@ fn create_sucessful_proposal() {
 fn create_unsucessful_proposal() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(1u32, 1u32).into();
+	let r_id: ResourceId = derive_resource_id(1u32, 1u32).into();
 
 	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let prop_id = 1;
@@ -352,7 +352,7 @@ fn create_unsucessful_proposal() {
 fn execute_after_threshold_change() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(1u32, 1u32).into();
+	let r_id: ResourceId = derive_resource_id(1u32, 1u32).into();
 
 	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let prop_id = 1;
@@ -421,7 +421,7 @@ fn execute_after_threshold_change() {
 fn proposal_expires() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id = derive_resource_id(1u32, 1u32).into();
+	let r_id: ResourceId = derive_resource_id(1u32, 1u32).into();
 
 	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
 		let prop_id = 1;

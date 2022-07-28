@@ -1,9 +1,7 @@
 #![cfg(test)]
 
 use super::{
-	mock::{
-		assert_events, new_test_ext, Bridge, Call, ChainIdentifier, Event, Origin, Test, RELAYER_A,
-	},
+	mock::{assert_events, new_test_ext, Bridge, Call, Event, Origin, Test, RELAYER_A},
 	*,
 };
 use crate::{
@@ -17,7 +15,6 @@ use sp_core::{
 	keccak_256, Pair,
 };
 use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
-const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
 
 // const SEED: String =
 // "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60";
@@ -40,7 +37,7 @@ fn derive_ids() {
 #[test]
 fn setup_resources() {
 	new_test_ext().execute_with(|| {
-		let id: ResourceId = [1; 32];
+		let id: ResourceId = ResourceId([1; 32]);
 		assert_ok!(Bridge::set_resource(Origin::root(), id));
 		assert_eq!(Bridge::resources(id), Some(()));
 		assert_ok!(Bridge::remove_resource(Origin::root(), id));

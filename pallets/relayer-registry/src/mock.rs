@@ -85,10 +85,17 @@ parameter_types! {
 	pub const StringLimit: u32 = 50;
 	pub const MetadataDepositBase: u64 = 1;
 	pub const MetadataDepositPerByte: u64 = 1;
+	pub const MaxAdditionalFields: u32 = 10;
+	pub const FieldDeposit: u64 = 1;
+	pub const BasicDeposit: u64 = 1;
 }
 
 impl pallet_relayer_registry::Config for Test {
 	type Event = Event;
+	type Currency = Balances;
+	type BasicDeposit = BasicDeposit;
+	type FieldDeposit = FieldDeposit;
+	type MaxAdditionalFields = MaxAdditionalFields;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 }
 

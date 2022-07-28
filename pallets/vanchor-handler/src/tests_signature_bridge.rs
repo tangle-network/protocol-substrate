@@ -14,9 +14,8 @@ use sp_core::{
 	keccak_256, Pair,
 };
 
-use webb_primitives::utils::{
-	compute_chain_id_type, derive_resource_id, get_typed_chain_id_in_u64,
-};
+use webb_primitives::utils::{derive_resource_id, get_typed_chain_id_in_u64};
+use webb_proposals::ResourceId;
 
 const TEST_MAX_EDGES: u32 = 100;
 const TEST_TREE_DEPTH: u8 = 32;
@@ -59,7 +58,7 @@ fn create_vanchor() {
 }
 
 // helper function to create anchor using Anchor pallet call
-fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[u8; 32]) {
+fn mock_vanchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &ResourceId) {
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
@@ -73,7 +72,7 @@ fn mock_anchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[
 	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test>>::get(0));
 }
 
-fn make_vanchor_create_proposal(src_chain_id: ChainId, resource_id: &[u8; 32]) -> Call {
+fn make_vanchor_create_proposal(src_chain_id: ChainId, resource_id: &ResourceId) -> Call {
 	Call::VAnchorHandler(crate::Call::execute_vanchor_create_proposal {
 		src_chain_id,
 		r_id: *resource_id,
@@ -83,8 +82,8 @@ fn make_vanchor_create_proposal(src_chain_id: ChainId, resource_id: &[u8; 32]) -
 	})
 }
 
-fn make_anchor_update_proposal(
-	resource_id: &[u8; 32],
+fn make_vanchor_update_proposal(
+	resource_id: &ResourceId,
 	vanchor_metadata: EdgeMetadata<
 		ChainId,
 		<Test as pallet_mt::Config>::Element,
@@ -108,11 +107,11 @@ fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u
 // Signature Bridge Tests
 
 #[test]
-fn should_create_anchor_with_sig_succeed() {
+fn should_create_vanchor_with_sig_succeed() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 
@@ -164,15 +163,15 @@ fn should_create_anchor_with_sig_succeed() {
 }
 
 // Test
-// 1. Create an anchor using `pallet-anchor` intrinsic call
-// 2. Add an edge to the anchor using `pallet-anchor-handler` proposal through
+// 1. Create an anchor using `pallet-vanchor` intrinsic call
+// 2. Add an edge to the anchor using `pallet-vanchor-handler` proposal through
 // `pallet-signature-bridge`
 #[test]
-fn should_add_anchor_edge_with_sig_succeed() {
+fn should_add_vanchor_edge_with_sig_succeed() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 
@@ -186,7 +185,7 @@ fn should_add_anchor_edge_with_sig_succeed() {
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
 
-		mock_anchor_creation_using_pallet_call(src_id, &r_id);
+		mock_vanchor_creation_using_pallet_call(src_id, &r_id);
 
 		let root = Element::from_bytes(&[1; 32]);
 		let latest_leaf_index = 5;
@@ -194,7 +193,7 @@ fn should_add_anchor_edge_with_sig_succeed() {
 		let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
 		assert_eq!(0, Counts::<Test>::get(src_id));
 
-		let anchor_update_call = make_anchor_update_proposal(&r_id, edge_metadata.clone());
+		let anchor_update_call = make_vanchor_update_proposal(&r_id, edge_metadata.clone());
 		let anchor_update_call_encoded = anchor_update_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_update_call_encoded);
@@ -239,17 +238,17 @@ fn should_add_anchor_edge_with_sig_succeed() {
 }
 
 // Test
-// 1. Create an anchor using `pallet-anchor` intrinsic call
-// 2. Add an edge to the anchor using `pallet-anchor-handler` proposal through
+// 1. Create an anchor using `pallet-vanchor` intrinsic call
+// 2. Add an edge to the anchor using `pallet-vanchor-handler` proposal through
 // `pallet-signature-bridge`
 // 3. Update the edge of the anchor using
-// `pallet-anchor-handler` proposal through `pallet-signature-bridge`
+// `pallet-vanchor-handler` proposal through `pallet-signature-bridge`
 #[test]
-fn should_update_anchor_edge_with_sig_succeed() {
+fn should_update_vanchor_edge_with_sig_succeed() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 
@@ -263,7 +262,7 @@ fn should_update_anchor_edge_with_sig_succeed() {
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
 
-		mock_anchor_creation_using_pallet_call(src_id, &r_id);
+		mock_vanchor_creation_using_pallet_call(src_id, &r_id);
 
 		let root = Element::from_bytes(&[1; 32]);
 		let latest_leaf_index = 5;
@@ -271,7 +270,7 @@ fn should_update_anchor_edge_with_sig_succeed() {
 		let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
 		assert_eq!(0, Counts::<Test>::get(src_id));
 
-		let anchor_update_call = make_anchor_update_proposal(&r_id, edge_metadata.clone());
+		let anchor_update_call = make_vanchor_update_proposal(&r_id, edge_metadata.clone());
 		let anchor_update_call_encoded = anchor_update_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_update_call_encoded);
@@ -320,7 +319,7 @@ fn should_update_anchor_edge_with_sig_succeed() {
 		let target = Element::from_bytes(&[0u8; 32]);
 		let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
 
-		let anchor_update_call = make_anchor_update_proposal(&r_id, edge_metadata.clone());
+		let anchor_update_call = make_vanchor_update_proposal(&r_id, edge_metadata.clone());
 		let anchor_update_call_encoded = anchor_update_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 2u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_update_call_encoded);
@@ -362,7 +361,7 @@ fn should_fail_to_whitelist_chain_already_whitelisted() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
 
 	new_test_ext_initialized(
 		src_id,
@@ -382,7 +381,7 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 	new_test_ext_initialized(
@@ -422,7 +421,7 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 
@@ -465,7 +464,7 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 
