@@ -10303,6 +10303,7 @@ version = "1.0.0"
 dependencies = [
  "ark-bn254",
  "arkworks-setups",
+ "clap",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-system",

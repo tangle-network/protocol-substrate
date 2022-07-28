@@ -25,6 +25,7 @@ substrate-build-script-utils = "3.0.0"
 
 [dependencies]
 futures = { version = "0.3.16" }
+clap = { version = "3.0", features = ["derive"] }
 log = "0.4.8"
 serde = { version = "1.0.101", features = ["derive"] }
 rand = "0.7.2"
