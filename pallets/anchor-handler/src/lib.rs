@@ -61,9 +61,7 @@ use sp_std::convert::TryInto;
 use webb_primitives::{
 	anchor::AnchorConfig,
 	traits::anchor::{AnchorInspector, AnchorInterface},
-	webb_proposals,
-	webb_proposals::TargetSystem,
-	ResourceId,
+	webb_proposals::{self, ResourceId, TargetSystem},
 };
 
 pub mod types;
@@ -221,7 +219,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	fn create_anchor(
 		deposit_size: BalanceOf<T, I>,
-		src_chain_id: T::ChainId,
+		_src_chain_id: T::ChainId,
 		r_id: ResourceId,
 		max_edges: u32,
 		tree_depth: u8,

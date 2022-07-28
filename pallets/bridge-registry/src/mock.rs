@@ -95,7 +95,6 @@ impl pallet_bridge_registry::Config for Test {
 	type MaxAdditionalFields = MaxAdditionalFields;
 	type MaxResources = MaxResources;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.

@@ -23,7 +23,7 @@ webb-primitives = { path = "../../primitives", default-features = false, feature
 
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
-pallet-identity = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+pallet-identity = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", default-features = false }
 
 [dev-dependencies]
 serde = { version = "1.0.119" }

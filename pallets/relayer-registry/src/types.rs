@@ -17,18 +17,11 @@
 
 use super::*;
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{
-	traits::{ConstU32, Get},
-	BoundedVec, CloneNoBound, PartialEqNoBound, RuntimeDebugNoBound,
-};
+use frame_support::{traits::Get, BoundedVec, CloneNoBound, PartialEqNoBound, RuntimeDebugNoBound};
 use pallet_identity::Data;
-use scale_info::{
-	build::{Fields, Variants},
-	meta_type, Path, Type, TypeInfo, TypeParameter,
-};
-use sp_runtime::{traits::Zero, RuntimeDebug};
-use sp_std::{fmt::Debug, iter::once, ops::Add, prelude::*};
-use webb_proposals::{TargetSystem, TypedChainId};
+use scale_info::TypeInfo;
+use sp_std::{fmt::Debug, prelude::*};
+use webb_primitives::webb_proposals::{TargetSystem, TypedChainId};
 
 /// Information concerning the identity of the controller of an account.
 ///

@@ -51,22 +51,18 @@ mod types;
 
 use types::*;
 
-use sp_std::convert::TryInto;
-pub mod weights;
-use sp_std::prelude::*;
+use sp_std::{convert::TryInto, prelude::*};
 
 use frame_support::{
 	bounded_vec,
 	pallet_prelude::{ensure, DispatchError},
 };
 use sp_runtime::traits::{AtLeast32Bit, One, Zero};
-use webb_primitives::{
-	proposals::OnSignedProposal,
-	webb_proposals::{evm::AnchorUpdateProposal, Proposal, ProposalKind, ResourceId},
+use webb_primitives::webb_proposals::{
+	evm::AnchorUpdateProposal, OnSignedProposal, Proposal, ProposalKind, ResourceId,
 };
 
 pub use pallet::*;
-pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -103,9 +99,6 @@ pub mod pallet {
 		/// required to access a metadata object, but can be pretty high.
 		#[pallet::constant]
 		type MaxResources: Get<u32>;
-
-		/// WeightInfo for pallet
-		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::genesis_config]
@@ -195,7 +188,7 @@ pub mod pallet {
 			let extra_fields = info.additional.len() as u32;
 			ensure!(extra_fields <= T::MaxAdditionalFields::get(), Error::<T, I>::TooManyFields);
 
-			let mut metadata = match <Bridges<T, I>>::get(&bridge_index) {
+			let metadata = match <Bridges<T, I>>::get(&bridge_index) {
 				Some(mut id) => {
 					id.info = *info;
 					id
@@ -224,7 +217,16 @@ pub mod pallet {
 	}
 }
 
-impl<T: Config<I>, I: 'static> OnSignedProposal for Pallet<T, I> {
+/// A signed proposal handler implementation based on building bridge metadata.
+///
+/// This handler assumes that the bridge is being built incrementally as a single
+/// connected component. If the bridge is built over a set of anchors and at any point
+/// in the construction there are MORE than one connected component, this will throw
+/// an error and the extrinsic will be rejected.
+///
+/// Note: There MUST only be a single connected component unless the end-user/developer wants
+/// to utilize governance to fix the issue. This can be done using `force_reset_indices`.
+impl<T: Config<I>, I: 'static> OnSignedProposal<DispatchError> for Pallet<T, I> {
 	fn on_signed_proposal(proposal: Proposal) -> Result<(), DispatchError> {
 		ensure!(proposal.is_signed(), Error::<T, I>::ProposalNotSigned);
 
@@ -261,7 +263,7 @@ impl<T: Config<I>, I: 'static> OnSignedProposal for Pallet<T, I> {
 						// Assign the bridge index to the destination resource
 						ResourceToBridgeIndex::<T, I>::insert(dest_resource_id, next_bridge_index);
 						// Create the bridge record
-						let mut bridge_metadata = BridgeMetadata {
+						let bridge_metadata = BridgeMetadata {
 							info: Default::default(),
 							resource_ids: bounded_vec![src_resource_id, dest_resource_id],
 						};

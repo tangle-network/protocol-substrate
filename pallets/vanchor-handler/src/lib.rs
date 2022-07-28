@@ -60,9 +60,7 @@ use pallet_vanchor::{BalanceOf as VAnchorBalanceOf, CurrencyIdOf as VAnchorCurre
 use sp_std::convert::TryInto;
 use webb_primitives::{
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
-	webb_proposals,
-	webb_proposals::TargetSystem,
-	ResourceId,
+	webb_proposals::{self, ResourceId, TargetSystem},
 };
 pub mod types;
 use types::*;
@@ -218,7 +216,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	fn create_vanchor(
-		src_chain_id: T::ChainId,
+		_src_chain_id: T::ChainId,
 		r_id: ResourceId,
 		max_edges: u32,
 		tree_depth: u8,

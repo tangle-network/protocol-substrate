@@ -18,19 +18,12 @@
 use super::*;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
-	traits::{ConstU32, Get},
-	BoundedVec, CloneNoBound, DefaultNoBound, PartialEqNoBound, RuntimeDebugNoBound,
+	traits::Get, BoundedVec, CloneNoBound, DefaultNoBound, PartialEqNoBound, RuntimeDebugNoBound,
 };
 use pallet_identity::Data;
-use scale_info::{
-	build::{Fields, Variants},
-	meta_type, Path, Type, TypeInfo, TypeParameter,
-};
-use sp_runtime::{
-	traits::{AppendZerosInput, Zero},
-	RuntimeDebug,
-};
-use sp_std::{fmt::Debug, iter::once, ops::Add, prelude::*};
+use scale_info::TypeInfo;
+use sp_runtime::traits::AppendZerosInput;
+use sp_std::prelude::*;
 
 /// Information concerning the identity of the controller of an account.
 ///

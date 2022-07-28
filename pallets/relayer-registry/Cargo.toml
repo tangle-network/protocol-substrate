@@ -20,7 +20,6 @@ frame-system = { default-features = false, git = "https://github.com/paritytech/
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 webb-primitives = { path = "../../primitives", default-features = false, features = ["verifying"] }
-webb-proposals = { version = "0.4.2", default-features = false, features = ["scale", "substrate", "max-encoded-len"] }
 
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
@@ -43,7 +42,6 @@ std = [
     "sp-runtime/std",
     "sp-std/std",
     "webb-primitives/std",
-    "webb-proposals/std",
     "pallet-identity/std",
 ]
 runtime-benchmarks = [

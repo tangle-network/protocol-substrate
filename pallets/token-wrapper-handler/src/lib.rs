@@ -64,7 +64,7 @@ use sp_std::convert::TryInto;
 ///TODO: Define BalanceOf
 use pallet_token_wrapper::BalanceOf;
 
-use webb_primitives::ResourceId;
+use webb_primitives::webb_proposals::ResourceId;
 
 use pallet_token_wrapper::traits::TokenWrapperInterface;
 

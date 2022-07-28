@@ -5,6 +5,22 @@ codegen-units = 1
 [workspace]
 members = [
 	"client",
-	"pallets/*",
+	"primitives",
+	"pallets/asset-registry",
+	"pallets/hasher",
+	"pallets/verifier",
+	"pallets/mt",
+	"pallets/linkable-tree",
+	"pallets/mixer",
+	"pallets/anchor",
+	"pallets/signature-bridge",
+	"pallets/vanchor",
+	"pallets/xanchor",
+	"pallets/anchor-handler",
+	"pallets/vanchor-handler",
+	"pallets/token-wrapper",
+	"pallets/token-wrapper-handler",
+	"pallets/bridge-registry",
+	"pallets/relayer-registry",
 	"standalone/*",
 ]

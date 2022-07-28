@@ -90,7 +90,6 @@ parameter_types! {
 impl pallet_relayer_registry::Config for Test {
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.

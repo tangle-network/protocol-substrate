@@ -77,31 +77,24 @@ mod benchmarking;
 mod tests;
 
 pub mod types;
-pub mod weights;
 
 use types::*;
 
-use frame_support::traits::{BalanceStatus, Currency, OnUnbalanced, ReservableCurrency};
-use sp_runtime::traits::{AppendZerosInput, Saturating, StaticLookup, Zero};
+use frame_support::traits::{Currency, ReservableCurrency};
+use sp_runtime::traits::{AppendZerosInput, Zero};
 use sp_std::{convert::TryInto, prelude::*};
 
-pub use weights::WeightInfo;
-
 pub use pallet::*;
-use pallet_identity::Data;
 
 type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
-	<T as frame_system::Config>::AccountId,
->>::NegativeImbalance;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use frame_support::{pallet_prelude::*, Blake2_128Concat};
 	use frame_system::pallet_prelude::*;
-	use webb_proposals::ResourceId;
+	use webb_primitives::webb_proposals::ResourceId;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -126,9 +119,6 @@ pub mod pallet {
 
 		/// The origin which may forcibly set or remove a name. Root can always do this.
 		type ForceOrigin: EnsureOrigin<Self::Origin>;
-
-		/// Weight information for extrinsics in this pallet.
-		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::pallet]
