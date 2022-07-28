@@ -4,12 +4,13 @@ use frame_support::assert_ok;
 use pallet_bridge::types::{ProposalStatus, ProposalVotes};
 use pallet_linkable_tree::types::EdgeMetadata;
 use webb_primitives::utils::{derive_resource_id, get_typed_chain_id_in_u64};
+use webb_proposals::ResourceId;
 
 const TEST_THRESHOLD: u32 = 2;
 const TEST_MAX_EDGES: u32 = 2;
 const TEST_TREE_DEPTH: u8 = 32;
 
-fn make_vanchor_create_proposal(src_chain_id: ChainId, resource_id: &[u8; 32]) -> Call {
+fn make_vanchor_create_proposal(src_chain_id: ChainId, resource_id: &ResourceId) -> Call {
 	Call::VAnchorHandler(crate::Call::execute_vanchor_create_proposal {
 		src_chain_id,
 		r_id: *resource_id,
@@ -19,8 +20,8 @@ fn make_vanchor_create_proposal(src_chain_id: ChainId, resource_id: &[u8; 32]) -
 	})
 }
 
-fn make_anchor_update_proposal(
-	resource_id: &[u8; 32],
+fn make_vanchor_update_proposal(
+	resource_id: &ResourceId,
 	vanchor_metadata: EdgeMetadata<
 		ChainId,
 		<Test as pallet_mt::Config>::Element,
@@ -45,7 +46,7 @@ fn setup_relayers(src_id: ChainId) {
 	assert_ok!(Bridge::whitelist_chain(Origin::root(), src_id));
 }
 // helper function to create anchor using Anchor pallet call
-fn mock_vanchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &[u8; 32]) {
+fn mock_vanchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &ResourceId) {
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
@@ -61,15 +62,15 @@ fn mock_vanchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &
 }
 
 // helper function to add relayers and then make a proposal
-fn relay_anchor_update_proposal(
+fn relay_vanchor_update_proposal(
 	src_chain_id: ChainId,
-	resource_id: &[u8; 32],
+	resource_id: &ResourceId,
 	prop_id: u64,
 	edge_metadata: EdgeMetadata<ChainId, Element, <Test as pallet_mt::Config>::LeafIndex>,
 ) {
 	// create anchor update proposal
 	let resource = b"VAnchorHandler.execute_vanchor_update_proposal".to_vec();
-	let update_proposal = make_anchor_update_proposal(resource_id, edge_metadata);
+	let update_proposal = make_vanchor_update_proposal(resource_id, edge_metadata);
 	// set resource id
 	assert_ok!(Bridge::set_resource(Origin::root(), *resource_id, resource));
 	// make proposals
@@ -91,7 +92,7 @@ fn relay_anchor_update_proposal(
 
 #[test]
 // Test
-// 1. Create an anchor using `pallet-anchor-handler` proposal through
+// 1. Create an anchor using `pallet-vanchor-handler` proposal through
 // `pallet-bridge`
 fn anchor_create_proposal() {
 	new_test_ext().execute_with(|| {
@@ -108,7 +109,7 @@ fn anchor_create_proposal() {
 		let create_proposal = make_vanchor_create_proposal(src_chain_id, &resource_id);
 		let resource = b"VAnchorHandler.execute_vanchor_create_proposal".to_vec();
 		// set resource id
-		assert_ok!(Bridge::set_resource(Origin::root(), resource_id, resource.clone()));
+		assert_ok!(Bridge::set_resource(Origin::root(), resource_id.into(), resource.clone()));
 		assert_eq!(Some(resource), Bridge::resources(resource_id));
 
 		// upon successful execution, Tree(with id=0) will be created in `pallet_mt`,
@@ -149,8 +150,8 @@ fn anchor_create_proposal() {
 
 #[test]
 // Test
-// 1. Create an anchor using `pallet-anchor` intrinsic call
-// 2. Add an edge to the anchor using `pallet-anchor-handler` proposal through
+// 1. Create an anchor using `pallet-vanchor` intrinsic call
+// 2. Add an edge to the anchor using `pallet-vanchor-handler` proposal through
 // `pallet-bridge`
 fn anchor_update_proposal_edge_add_success() {
 	new_test_ext().execute_with(|| {
@@ -173,7 +174,7 @@ fn anchor_update_proposal_edge_add_success() {
 		let target = Element::from_bytes(&expected_tree_id.to_le_bytes());
 		let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
 		assert_eq!(0, Counts::<Test>::get(src_chain_id));
-		relay_anchor_update_proposal(src_chain_id, &resource_id, prop_id, edge_metadata.clone());
+		relay_vanchor_update_proposal(src_chain_id, &resource_id, prop_id, edge_metadata.clone());
 		assert_eq!(1, Counts::<Test>::get(src_chain_id));
 
 		// proposal should have been voted successfully
@@ -202,11 +203,11 @@ fn anchor_update_proposal_edge_add_success() {
 
 #[test]
 // Test
-// 1. Create an anchor using `pallet-anchor` intrinsic call
-// 2. Add an edge to the anchor using `pallet-anchor-handler` proposal through
+// 1. Create an anchor using `pallet-vanchor` intrinsic call
+// 2. Add an edge to the anchor using `pallet-vanchor-handler` proposal through
 // `pallet-bridge`
 // 3. Update the edge of the anchor using
-// `pallet-anchor-handler` proposal through `pallet-bridge`
+// `pallet-vanchor-handler` proposal through `pallet-bridge`
 fn anchor_update_proposal_edge_update_success() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
@@ -225,7 +226,7 @@ fn anchor_update_proposal_edge_update_success() {
 		let target = Element::from_bytes(&expected_tree_id.to_le_bytes());
 		let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
 		assert_eq!(0, Counts::<Test>::get(src_chain_id));
-		relay_anchor_update_proposal(src_chain_id, &resource_id, prop_id, edge_metadata.clone());
+		relay_vanchor_update_proposal(src_chain_id, &resource_id, prop_id, edge_metadata.clone());
 		assert_eq!(1, Counts::<Test>::get(src_chain_id));
 		// proposal should have been voted successfully
 		// the anchor-handler callback must have been called by bridge
@@ -251,7 +252,7 @@ fn anchor_update_proposal_edge_update_success() {
 		let root = Element::from_bytes(&[2; 32]);
 		let latest_leaf_index = 10;
 		let edge_metadata = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
-		relay_anchor_update_proposal(
+		relay_vanchor_update_proposal(
 			src_chain_id,
 			&resource_id,
 			prop_id + 1,

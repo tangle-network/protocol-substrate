@@ -13,7 +13,7 @@ pub mod impls;
 mod voter_bags;
 use frame_election_provider_support::{onchain, ExtendedBalance, SequentialPhragmen, VoteWeight};
 use frame_support::{
-	traits::{EnsureOneOf, EqualPrivilegeOnly},
+	traits::{EitherOfDiverse, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier},
 };
 use impls::{Author, CreditToBlockAuthor};
@@ -415,7 +415,7 @@ impl pallet_staking::Config for Runtime {
 	type BondingDuration = BondingDuration;
 	type SlashDeferDuration = SlashDeferDuration;
 	/// A super-majority of the council can cancel the slash.
-	type SlashCancelOrigin = EnsureOneOf<
+	type SlashCancelOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>,
 	>;
@@ -634,7 +634,7 @@ impl pallet_democracy::Config for Runtime {
 	type BlacklistOrigin = EnsureRoot<AccountId>;
 	// To cancel a proposal before it has been passed, the technical committee must
 	// be unanimous or Root must agree.
-	type CancelProposalOrigin = EnsureOneOf<
+	type CancelProposalOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
 	>;
@@ -756,11 +756,11 @@ parameter_types! {
 impl pallet_treasury::Config for Runtime {
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
-	type ApproveOrigin = EnsureOneOf<
+	type ApproveOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
 	>;
-	type RejectOrigin = EnsureOneOf<
+	type RejectOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
 	>;
@@ -1154,13 +1154,6 @@ impl pallet_verifier::Config<pallet_verifier::Instance2> for Runtime {
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
-impl pallet_verifier::Config<pallet_verifier::Instance3> for Runtime {
-	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Verifier = ArkworksVerifierBn254;
-	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
-}
-
 impl pallet_asset_registry::Config for Runtime {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = u32;
@@ -1239,24 +1232,6 @@ impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance1> for Runtime {
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTreeBn254;
 	type WeightInfo = ();
-}
-
-impl pallet_anchor::Config<pallet_anchor::Instance1> for Runtime {
-	type Currency = Currencies;
-	type Event = Event;
-	type LinkableTree = LinkableTreeBn254;
-	type NativeCurrencyId = GetNativeCurrencyId;
-	type PalletId = AnchorPalletId;
-	type PostDepositHook = ();
-	type Verifier = AnchorVerifierBn254;
-	type ArbitraryHasher = Keccak256HasherBn254;
-	type WeightInfo = pallet_anchor::weights::WebbWeight<Runtime>;
-}
-
-impl pallet_anchor_handler::Config<pallet_anchor_handler::Instance1> for Runtime {
-	type Anchor = AnchorBn254;
-	type BridgeOrigin = pallet_bridge::EnsureBridge<Runtime, BridgeInstance>;
-	type Event = Event;
 }
 
 parameter_types! {
@@ -1391,11 +1366,8 @@ construct_runtime!(
 		// Mixer Verifier
 		MixerVerifierBn254: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
-		// Anchor Verifier
-		AnchorVerifierBn254: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
-
 		// VAnchor Verifier 2x2
-		VAnchorVerifier2x2Bn254: pallet_verifier::<Instance3>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		VAnchorVerifier2x2Bn254: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		// Merkle Tree
 		MerkleTreeBn254: pallet_mt::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
@@ -1405,12 +1377,6 @@ construct_runtime!(
 
 		// Mixer
 		MixerBn254: pallet_mixer::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
-
-		// Anchor
-		AnchorBn254: pallet_anchor::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
-
-		// Anchor Handler
-		AnchorHandlerBn254: pallet_anchor_handler::<Instance1>::{Pallet, Call, Storage, Event<T>},
 
 		// VAnchor
 		VAnchorBn254: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
@@ -1693,8 +1659,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_hasher, HasherBn254);
 			list_benchmark!(list, extra, pallet_mt, MerkleTreeBn254);
 			list_benchmark!(list, extra, pallet_linkable_tree, LinkableTreeBn254);
-			//list_benchmark!(list, extra, pallet_vanchor, VAnchorBn254);
-			list_benchmark!(list, extra, pallet_anchor, AnchorBn254);
+			list_benchmark!(list, extra, pallet_vanchor, VAnchorBn254);
 			list_benchmark!(list, extra, pallet_mixer, MixerBn254);
 			list_benchmark!(list, extra, pallet_verifier, MixerVerifierBn254);
 			list_benchmark!(list, extra, pallet_token_wrapper, TokenWrapper);
@@ -1731,8 +1696,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_hasher, HasherBn254);
 			add_benchmark!(params, batches, pallet_mt, MerkleTreeBn254);
 			add_benchmark!(params, batches, pallet_linkable_tree, LinkableTreeBn254);
-			//add_benchmark!(params, batches, pallet_vanchor, VAnchorBn254);
-			add_benchmark!(params, batches, pallet_anchor, AnchorBn254);
+			add_benchmark!(params, batches, pallet_vanchor, VAnchorBn254);
 			add_benchmark!(params, batches, pallet_mixer, MixerBn254);
 			add_benchmark!(params, batches, pallet_verifier, MixerVerifierBn254);
 			add_benchmark!(params, batches, pallet_token_wrapper, TokenWrapper);

@@ -18,14 +18,14 @@ CMD git submodule update --init && \
         -p webb-standalone-runtime \
         -p pallet-token-wrapper-handler \
         -p pallet-token-wrapper \
-        -p pallet-anchor-handler \
-        # -p pallet-vanchor \
+        -p pallet-vanchor \
+        -p pallet-vanchor-handler \
         -p pallet-signature-bridge \
-        -p pallet-anchor \
         -p pallet-mixer \
         -p pallet-linkable-tree \
         -p pallet-mt \
         -p pallet-verifier \
         -p pallet-hasher \
         -p pallet-asset-registry \
+        -p pallet-bridge-registry \
         --timeout 3600

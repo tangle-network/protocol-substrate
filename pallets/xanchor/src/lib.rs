@@ -78,7 +78,7 @@ use frame_support::{
 	pallet_prelude::*,
 };
 use frame_system::{pallet_prelude::*, Config as SystemConfig};
-use pallet_anchor::{AnchorConfigration, PostDepositHook};
+use pallet_vanchor::{VAnchorConfigration, PostDepositHook};
 use pallet_linkable_tree::types::EdgeMetadata;
 use sp_std::prelude::*;
 use webb_primitives::{
@@ -113,7 +113,7 @@ pub type LinkProposalOf<T, I> = LinkProposal<ChainIdOf<T, I>, TreeIdOf<T, I>>;
 pub mod pallet {
 	use super::*;
 	use frame_support::transactional;
-	use pallet_anchor::BalanceOf;
+	use pallet_vanchor::BalanceOf;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -122,7 +122,7 @@ pub mod pallet {
 
 	/// The module configuration trait.
 	#[pallet::config]
-	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_anchor::Config<I> {
+	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_vanchor::Config<I> {
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -141,8 +141,8 @@ pub mod pallet {
 		>;
 		type DemocracyOrigin: EnsureOrigin<<Self as SystemConfig>::Origin>;
 		/// Anchor Interface
-		type Anchor: AnchorInterface<AnchorConfigration<Self, I>>
-			+ AnchorInspector<AnchorConfigration<Self, I>>;
+		type Anchor: AnchorInterface<VAnchorConfigration<Self, I>>
+			+ AnchorInspector<VAnchorConfigration<Self, I>>;
 	}
 	/// The map of *eventually* linked anchors cross other chains.
 	///
@@ -554,8 +554,8 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn sync_anchors(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
-			let anchors = pallet_anchor::Anchors::<T, I>::iter_keys();
-			for anchor in anchors {
+			let vanchors = pallet_vanchor::Anchors::<T, I>::iter_keys();
+			for anchor in vanchors {
 				Self::sync_anchor(anchor)?;
 			}
 			Ok(().into())

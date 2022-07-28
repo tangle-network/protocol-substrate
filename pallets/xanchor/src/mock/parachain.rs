@@ -13,7 +13,7 @@ use frame_support::{
 };
 use frame_system::{pallet_prelude::OriginFor, EnsureRoot, EnsureSignedBy};
 use orml_currencies::BasicCurrencyAdapter;
-use pallet_anchor::BalanceOf;
+use pallet_vanchor::BalanceOf;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -486,7 +486,7 @@ impl pallet_linkable_tree::Config for Runtime {
 	type WeightInfo = ();
 }
 
-impl pallet_anchor::Config for Runtime {
+impl pallet_vanchor::Config for Runtime {
 	type Currency = Currencies;
 	type Event = Event;
 	type LinkableTree = LinkableTree;
@@ -641,7 +641,7 @@ construct_runtime!(
 		Currencies: orml_currencies::{Pallet, Call},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
-		Anchor: pallet_anchor::{Pallet, Call, Storage, Event<T>},
+		VAnchor: pallet_vanchor::{Pallet, Call, Storage, Event<T>},
 		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
 		XAnchor: pallet_xanchor::{Pallet, Call, Storage, Event<T>},
 	}

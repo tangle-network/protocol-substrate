@@ -1,6 +1,6 @@
 [package]
 authors = ["Webb Technologies Inc."]
-description = "FRAME pallet template for defining custom runtime logic."
+description = "Pallet that provides a single hash function + parameters for use in other pallets."
 edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"

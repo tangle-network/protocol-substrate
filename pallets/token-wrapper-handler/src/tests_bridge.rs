@@ -5,6 +5,7 @@ use crate::mock_bridge::*;
 use asset_registry::AssetType;
 use frame_support::{assert_err, assert_ok, dispatch::DispatchResultWithPostInfo};
 use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
+use webb_proposals::ResourceId;
 
 const TEST_THRESHOLD: u32 = 2;
 const SUBSTRATE_CHAIN_TYPE: [u8; 2] = [2, 0];
@@ -18,7 +19,7 @@ fn get_remove_token_resource() -> Vec<u8> {
 }
 
 fn make_wrapping_fee_proposal(
-	resource_id: &[u8; 32],
+	resource_id: &ResourceId,
 	wrapping_fee_percent: u128,
 	into_pool_share_id: u32,
 ) -> Call {
@@ -29,7 +30,7 @@ fn make_wrapping_fee_proposal(
 	})
 }
 
-fn make_add_token_proposal(resource_id: &[u8; 32], name: Vec<u8>, asset_id: u32) -> Call {
+fn make_add_token_proposal(resource_id: &ResourceId, name: Vec<u8>, asset_id: u32) -> Call {
 	Call::TokenWrapperHandler(crate::Call::execute_add_token_to_pool_share {
 		r_id: *resource_id,
 		name,
@@ -37,7 +38,7 @@ fn make_add_token_proposal(resource_id: &[u8; 32], name: Vec<u8>, asset_id: u32)
 	})
 }
 
-fn make_remove_token_proposal(resource_id: &[u8; 32], name: Vec<u8>, asset_id: u32) -> Call {
+fn make_remove_token_proposal(resource_id: &ResourceId, name: Vec<u8>, asset_id: u32) -> Call {
 	Call::TokenWrapperHandler(crate::Call::execute_remove_token_from_pool_share {
 		r_id: *resource_id,
 		name,
@@ -59,7 +60,7 @@ fn setup_relayers(src_id: u64) {
 
 fn relay_fee_update_proposal(
 	src_chain_id: u64,
-	resource_id: &[u8; 32],
+	resource_id: &ResourceId,
 	prop_id: u64,
 	wrapping_fee_percent: u128,
 	pool_share_id: u32,
@@ -92,7 +93,7 @@ fn relay_token_update_proposal(
 	src_chain_id: u64,
 	resource: Vec<u8>,
 	update_proposal: Call,
-	resource_id: &[u8; 32],
+	resource_id: &ResourceId,
 	prop_id: u64,
 ) -> DispatchResultWithPostInfo {
 	// set resource id

@@ -70,7 +70,9 @@ use sp_runtime::{
 	DispatchError, RuntimeDebug,
 };
 use sp_std::{convert::TryInto, prelude::*};
-use webb_primitives::{signing::SigningSystem, utils::compute_chain_id_type, ResourceId};
+use webb_primitives::{
+	signing::SigningSystem, utils::compute_chain_id_type, webb_proposals::ResourceId,
+};
 pub use weights::WeightInfo;
 
 #[frame_support::pallet]
@@ -483,9 +485,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Self::chains(id) != None
 	}
 
-	pub fn parse_r_id_from_proposal_data(proposal_data: &[u8]) -> Result<[u8; 32], DispatchError> {
+	pub fn parse_r_id_from_proposal_data(
+		proposal_data: &[u8],
+	) -> Result<ResourceId, DispatchError> {
 		ensure!(proposal_data.len() >= 40, Error::<T, I>::InvalidProposalData);
-		Ok(proposal_data[0..32].try_into().unwrap_or_default())
+		Ok(ResourceId(proposal_data[0..32].try_into().unwrap_or_default()))
 	}
 
 	pub fn parse_nonce_from_proposal_data(
@@ -508,12 +512,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub fn parse_chain_id_type_from_r_id(r_id: ResourceId) -> u64 {
 		let mut chain_id_type = [0u8; 8];
-		chain_id_type[2] = r_id[26];
-		chain_id_type[3] = r_id[27];
-		chain_id_type[4] = r_id[28];
-		chain_id_type[5] = r_id[29];
-		chain_id_type[6] = r_id[30];
-		chain_id_type[7] = r_id[31];
+		let raw = r_id.0;
+		chain_id_type[2] = raw[26];
+		chain_id_type[3] = raw[27];
+		chain_id_type[4] = raw[28];
+		chain_id_type[5] = raw[29];
+		chain_id_type[6] = raw[30];
+		chain_id_type[7] = raw[31];
 
 		u64::from_be_bytes(chain_id_type)
 	}

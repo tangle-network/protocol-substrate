@@ -15,7 +15,7 @@ use sp_runtime::{
 };
 use sp_std::convert::{TryFrom, TryInto};
 use webb_primitives::{
-	field_ops::ArkworksIntoFieldBn254, verifying::ArkworksVerifierBn254, ResourceId,
+	field_ops::ArkworksIntoFieldBn254, verifying::ArkworksVerifierBn254, webb_proposals::ResourceId,
 };
 pub use webb_primitives::{hashing::ethereum::Keccak256HasherBn254, ElementTrait, InstanceHasher};
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;

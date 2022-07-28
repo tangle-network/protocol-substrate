@@ -40,14 +40,13 @@ For additional information, please refer to the [Webb Protocol-Substrate Rust Do
 
 ```
 pallets/
-  |____anchor/              # A simple module for building Anchors.
-  |____anchor-handler/      # A module for executing the creation and modification of anchors.
   |____linkable-tree/       # A module for constructing, modifying and inspecting linkable trees.
   |____hasher/              # A module for abstracting over arbitrary hash functions primarily for zero-knowledge friendly hash functions that have potentially large parameters to deal with.
   |____mixer/               # A simple module for building Mixers. 
   |____signature-bridge/    # A module for managing voting, resource, and maintainer composition through signature verification.
   |____token-wrapper/       # A module for wrapping pooled assets and minting pool share tokens
   |____vanchor/             # A simple module for building variable Anchors.  
+  |____vanchor-handler/     # A module for executing the modification of vanchors.
   |____verifier/            # A module for abstracting over arbitrary zero-knowledge verifiers for arbitrary zero-knowledge gadgets
   |____xanchor/             # A module for managing the linking process between anchors.
 ```

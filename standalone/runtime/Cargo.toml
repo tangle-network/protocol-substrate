@@ -28,8 +28,6 @@ orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-modul
 orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 pallet-vanchor = {path = "../../pallets/vanchor", default-features = false}
-pallet-anchor = {path = "../../pallets/anchor", default-features = false}
-pallet-anchor-handler = {path = "../../pallets/anchor-handler", default-features = false}
 pallet-vanchor-handler = {path = "../../pallets/vanchor-handler", default-features = false}
 pallet-asset-registry = {path = "../../pallets/asset-registry", default-features = false}
 pallet-bridge = {path = "../../pallets/bridge", default-features = false}
@@ -121,9 +119,8 @@ runtime-benchmarks = [
   "pallet-mt/runtime-benchmarks",
   "pallet-linkable-tree/runtime-benchmarks",
   "pallet-mixer/runtime-benchmarks",
-  "pallet-anchor/runtime-benchmarks",
   "pallet-vanchor/runtime-benchmarks",
-  "pallet-anchor-handler/runtime-benchmarks",
+  "pallet-vanchor-handler/runtime-benchmarks",
   "pallet-asset-registry/runtime-benchmarks",
   "pallet-bridge/runtime-benchmarks",
   "pallet-signature-bridge/runtime-benchmarks",
@@ -192,12 +189,10 @@ std = [
   "pallet-mt/std",
   "pallet-linkable-tree/std",
   "pallet-mixer/std",
-  "pallet-anchor/std",
   "pallet-vanchor/std",
   "pallet-bridge/std",
   "pallet-signature-bridge/std",
   "pallet-asset-registry/std",
-  "pallet-anchor-handler/std",
   "webb-primitives/std",
   "pallet-mt-rpc-runtime-api/std",
   "pallet-linkable-tree-rpc-runtime-api/std",

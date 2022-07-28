@@ -1,6 +1,6 @@
 [package]
 authors = ["Webb Technologies Inc."]
-description = "FRAME pallet template for defining custom runtime logic."
+description = "A pallet for maintaing wrapping relationships for various tokens."
 edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
