@@ -18,7 +18,7 @@ pub use arkworks_setups::common::{
 };
 use arkworks_setups::{
 	common::{setup_params, Leaf},
-	r1cs::{anchor::AnchorR1CSProver, mixer::MixerR1CSProver, vanchor::VAnchorR1CSProver},
+	r1cs::{mixer::MixerR1CSProver, vanchor::VAnchorR1CSProver},
 	utxo::Utxo,
 	Curve, MixerProver, VAnchorProver,
 };

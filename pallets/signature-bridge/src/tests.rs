@@ -8,7 +8,7 @@ use crate::{
 	mock::new_test_ext_initialized,
 	{self as pallet_bridge},
 };
-use frame_support::{assert_err, assert_noop, assert_ok};
+use frame_support::{assert_err, assert_ok};
 use hex_literal::hex;
 use sp_core::{
 	ecdsa::{self, Signature},
