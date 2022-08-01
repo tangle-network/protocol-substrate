@@ -49,13 +49,16 @@ mod tests;
 mod benchmarking;
 mod types;
 
+mod weights;
+use weights::WeightInfo;
+
 use types::*;
 
 use sp_std::{convert::TryInto, prelude::*};
 
 use frame_support::{
-	bounded_vec,
 	pallet_prelude::{ensure, DispatchError},
+	storage::bounded_vec,
 };
 use sp_runtime::traits::{AtLeast32Bit, One, Zero};
 use webb_primitives::webb_proposals::{
@@ -99,6 +102,9 @@ pub mod pallet {
 		/// required to access a metadata object, but can be pretty high.
 		#[pallet::constant]
 		type MaxResources: Get<u32>;
+
+		/// Weight information for the extrinsics
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::genesis_config]
@@ -178,7 +184,7 @@ pub mod pallet {
 		/// - `info`: The identity information.
 		///
 		/// Emits `ResourceSet` if successful.
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::set_metadata())]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			bridge_index: T::BridgeIndex,
@@ -201,7 +207,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::force_reset_indices())]
 		pub fn force_reset_indices(
 			origin: OriginFor<T>,
 			resource_ids: Vec<ResourceId>,
@@ -265,7 +271,9 @@ impl<T: Config<I>, I: 'static> OnSignedProposal<DispatchError> for Pallet<T, I> 
 						// Create the bridge record
 						let bridge_metadata = BridgeMetadata {
 							info: Default::default(),
-							resource_ids: bounded_vec![src_resource_id, dest_resource_id],
+							resource_ids: vec![src_resource_id, dest_resource_id]
+								.try_into()
+								.unwrap(),
 						};
 						Bridges::<T, I>::insert(next_bridge_index, bridge_metadata);
 						// Increment the next bridge index

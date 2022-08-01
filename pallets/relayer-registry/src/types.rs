@@ -28,10 +28,17 @@ use webb_primitives::webb_proposals::{TargetSystem, TypedChainId};
 /// NOTE: This should be stored at the end of the storage item to facilitate the addition of extra
 /// fields in a backwards compatible way through a specialized `Decode` impl.
 #[derive(
-	CloneNoBound, Encode, Decode, Eq, MaxEncodedLen, PartialEqNoBound, RuntimeDebugNoBound, TypeInfo,
+	CloneNoBound,
+	Encode,
+	Decode,
+	Eq,
+	MaxEncodedLen,
+	PartialEqNoBound,
+	RuntimeDebugNoBound,
+	TypeInfo,
+	frame_support::DefaultNoBound,
 )]
 #[codec(mel_bound())]
-#[cfg_attr(test, derive(frame_support::DefaultNoBound))]
 #[scale_info(skip_type_params(FieldLimit))]
 pub struct ResourceInfo<FieldLimit: Get<u32>> {
 	/// Additional fields of the identity that are not catered for with the struct's explicit

@@ -80,6 +80,9 @@ mod tests;
 
 pub mod types;
 
+mod weights;
+use weights::WeightInfo;
+
 use types::*;
 
 use frame_support::traits::{Currency, ReservableCurrency};
@@ -121,6 +124,8 @@ pub mod pallet {
 
 		/// The origin which may forcibly set or remove a name. Root can always do this.
 		type ForceOrigin: EnsureOrigin<Self::Origin>;
+
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::pallet]
@@ -173,7 +178,7 @@ pub mod pallet {
 		/// - `info`: The resource information.
 		///
 		/// Emits `ResourceSet` if successful.
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::set_resource())]
 		pub fn set_resource(
 			origin: OriginFor<T>,
 			resource_id: ResourceId,
@@ -216,7 +221,7 @@ pub mod pallet {
 		/// resource.
 		///
 		/// Emits `ResourceCleared` if successful.
-		#[pallet::weight(0)]
+		#[pallet::weight(T::WeightInfo::clear_resource())]
 		pub fn clear_resource(
 			origin: OriginFor<T>,
 			resource_id: ResourceId,

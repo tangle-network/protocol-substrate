@@ -21,42 +21,37 @@
 
 use super::*;
 
-use frame_benchmarking::{
-	account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account,
-	whitelisted_caller,
-};
-use frame_support::traits::Currency;
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_support::traits::Get;
 use frame_system::RawOrigin;
-use sp_runtime::traits::Bounded;
-use webb_primitives::types::DepositDetails;
-type BalanceOf<T, I> =
-	<<T as Config<I>>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+use webb_primitives::webb_proposals::ResourceId;
 
-fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
+fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
-const SEED: u32 = 0;
-// Based on verifier bytes generated from the zero knowledge setup for anchor
-// pallet and mixer pallet, Max verifier bytes length generated ranged between
-// 456 - 552
-const MAX_VERIFIER_LENGTH: u32 = 1024;
-
-benchmarks_instance_pallet! {
-	force_set_parameters {
-		let c in 0..MAX_VERIFIER_LENGTH;
-		let depositor: T::AccountId = account("depositor", 0, SEED);
-		let parameters = vec![0u8;c as usize];
-
-		Deposit::<T, I>::put::<Option<DepositDetails<T::AccountId, DepositBalanceOf<T, I>>>>(Some(DepositDetails{
-			depositor,
-			deposit:1_000u32.into()
-		}));
-
-
-	}: _(RawOrigin::Root, parameters.clone())
+benchmarks! {
+	set_resource {
+		let caller: T::AccountId = whitelisted_caller();
+		let bridge_index = 0_u32;
+		let resource_id : ResourceId = [0u8;32].into();
+		let metadata : ResourceInfo<T::MaxAdditionalFields> = Default::default();
+		T::Currency::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
+	}: _(RawOrigin::Signed(caller.clone()), resource_id, Box::new(metadata))
 	verify {
-		assert_last_event::<T, I>(Event::ParametersSet{who: Default::default(), parameters}.into());
+		assert_last_event::<T>(Event::ResourceSet{ who : caller}.into())
+	}
+
+	clear_resource {
+		let caller: T::AccountId = whitelisted_caller();
+		let bridge_index = 0_u32;
+		let resource_id : ResourceId = [0u8;32].into();
+		let metadata : ResourceInfo<T::MaxAdditionalFields> = Default::default();
+		T::Currency::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
+		Pallet::<T>::set_resource(RawOrigin::Signed(caller.clone()).into(), resource_id, Box::new(metadata)).unwrap();
+	}: _(RawOrigin::Signed(caller.clone()), resource_id)
+	verify {
+		assert_last_event::<T>(Event::ResourceCleared{ who : caller, deposit : T::BasicDeposit::get() }.into())
 	}
 }
 
