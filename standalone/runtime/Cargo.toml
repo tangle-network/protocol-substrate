@@ -40,6 +40,8 @@ pallet-mt-rpc-runtime-api = {path = "../../pallets/mt/rpc/runtime-api", default-
 pallet-linkable-tree-rpc-runtime-api = {path = "../../pallets/linkable-tree/rpc/runtime-api", default-features = false}
 pallet-token-wrapper = {path = "../../pallets/token-wrapper", default-features = false}
 pallet-verifier = {path = "../../pallets/verifier", default-features = false}
+pallet-bridge-registry = {path = "../../pallets/bridge-registry", default-features = false}
+pallet-relayer-registry = {path = "../../pallets/relayer-registry", default-features = false}
 
 # Substrate dependencies
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.26", default-features = false }
@@ -126,7 +128,9 @@ runtime-benchmarks = [
   "pallet-signature-bridge/runtime-benchmarks",
   "pallet-timestamp/runtime-benchmarks",
   "pallet-collective/runtime-benchmarks",
-  "pallet-token-wrapper/runtime-benchmarks"
+  "pallet-token-wrapper/runtime-benchmarks",
+  "pallet-bridge-registry/runtime-benchmarks",
+  "pallet-relayer-registry/runtime-benchmarks"
 ]
 
 std = [
@@ -197,4 +201,6 @@ std = [
   "pallet-mt-rpc-runtime-api/std",
   "pallet-linkable-tree-rpc-runtime-api/std",
   "pallet-token-wrapper/std",
+  "pallet-bridge-registry/std",
+  "pallet-relayer-registry/std"
 ]

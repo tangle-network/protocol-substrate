@@ -81,10 +81,6 @@ impl pallet_balances::Config for Test {
 }
 
 parameter_types! {
-	pub const ParameterDeposit: u64 = 1;
-	pub const StringLimit: u32 = 50;
-	pub const MetadataDepositBase: u64 = 1;
-	pub const MetadataDepositPerByte: u64 = 1;
 	pub const MaxAdditionalFields: u32 = 5;
 	pub const MaxResources: u32 = 32;
 }
@@ -95,6 +91,7 @@ impl pallet_bridge_registry::Config for Test {
 	type MaxAdditionalFields = MaxAdditionalFields;
 	type MaxResources = MaxResources;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.

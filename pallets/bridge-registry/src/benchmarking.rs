@@ -21,42 +21,37 @@
 
 use super::*;
 
-use frame_benchmarking::{
-	account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account,
-	whitelisted_caller,
-};
-use frame_support::traits::Currency;
+use frame_benchmarking::{benchmarks_instance_pallet, impl_benchmark_test_suite};
 use frame_system::RawOrigin;
-use sp_runtime::traits::Bounded;
-use webb_primitives::types::DepositDetails;
-type BalanceOf<T, I> =
-	<<T as Config<I>>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-
-fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
-	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
-}
-
-const SEED: u32 = 0;
-// Based on verifier bytes generated from the zero knowledge setup for anchor
-// pallet and mixer pallet, Max verifier bytes length generated ranged between
-// 456 - 552
-const MAX_VERIFIER_LENGTH: u32 = 1024;
+use webb_primitives::webb_proposals::ResourceId;
 
 benchmarks_instance_pallet! {
-	force_set_parameters {
-		let c in 0..MAX_VERIFIER_LENGTH;
-		let depositor: T::AccountId = account("depositor", 0, SEED);
-		let parameters = vec![0u8;c as usize];
-
-		Deposit::<T, I>::put::<Option<DepositDetails<T::AccountId, DepositBalanceOf<T, I>>>>(Some(DepositDetails{
-			depositor,
-			deposit:1_000u32.into()
-		}));
-
-
-	}: _(RawOrigin::Root, parameters.clone())
+	set_metadata {
+		let bridge_index = 0_u32;
+		let metadata : BridgeInfo<T::MaxAdditionalFields> = Default::default();
+	}: _(RawOrigin::Root, bridge_index.into(), Box::new(metadata))
 	verify {
-		assert_last_event::<T, I>(Event::ParametersSet{who: Default::default(), parameters}.into());
+		assert_eq!(
+			Bridges::<T, I>::get::<T::BridgeIndex>(bridge_index.into()).unwrap(),
+			BridgeMetadata {
+				resource_ids: Default::default(),
+				info: Default::default()
+			}
+		);
+	}
+
+	force_reset_indices {
+		let mut resource_ids : Vec<ResourceId> = vec![];
+		for i in 0..1000 {
+			resource_ids.push([0u8;32].into())
+		}
+		let bridge_index = 1_u32;
+	}: _(RawOrigin::Root, resource_ids, bridge_index.into())
+	verify {
+		assert_eq!(
+			ResourceToBridgeIndex::<T, I>::get::<ResourceId>([0u8; 32].into()).unwrap(),
+			bridge_index.into()
+		);
 	}
 }
 

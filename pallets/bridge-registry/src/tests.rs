@@ -1,6 +1,6 @@
 use super::*;
 use crate::mock::*;
-use frame_support::{assert_err, assert_ok, BoundedVec};
+use frame_support::{assert_err, assert_ok, bounded_vec, BoundedVec};
 use std::convert::TryFrom;
 use webb_primitives::webb_proposals::{self, evm, FunctionSignature, Nonce, ProposalHeader};
 
