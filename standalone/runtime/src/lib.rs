@@ -1256,25 +1256,14 @@ impl pallet_vanchor::Config<pallet_vanchor::Instance1> for Runtime {
 
 impl pallet_vanchor_handler::Config<pallet_vanchor_handler::Instance1> for Runtime {
 	type VAnchor = VAnchorBn254;
-	type BridgeOrigin = pallet_bridge::EnsureBridge<Runtime, BridgeInstance>;
+	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Runtime, SignatureBridgeInstance>;
+	type ProposalNonce = u32;
 	type Event = Event;
 }
 
 parameter_types! {
 	pub const ProposalLifetime: BlockNumber = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
-}
-
-type BridgeInstance = pallet_bridge::Instance1;
-impl pallet_bridge::Config<BridgeInstance> for Runtime {
-	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
-	type BridgeAccountId = BridgeAccountId;
-	type ChainId = ChainId;
-	type ChainIdentifier = ChainIdentifier;
-	type ChainType = ChainType;
-	type Event = Event;
-	type Proposal = Call;
-	type ProposalLifetime = ProposalLifetime;
 }
 
 type SignatureBridgeInstance = pallet_signature_bridge::Instance1;
@@ -1304,6 +1293,7 @@ impl pallet_token_wrapper::Config for Runtime {
 	type Event = Event;
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TreasuryPalletId;
+	type ProposalNonce = u32;
 	type WeightInfo = pallet_token_wrapper::weights::WebbWeight<Runtime>;
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
@@ -1413,8 +1403,6 @@ construct_runtime!(
 
 		// VAnchor Handler
 		VAnchorHandlerBn254: pallet_vanchor_handler::<Instance1>::{Pallet, Call, Storage, Event<T>},
-
-		Bridge: pallet_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 
 		// Signature Bridge
 		SignatureBridge: pallet_signature_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},

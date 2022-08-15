@@ -21,7 +21,6 @@ frame-system = {default-features = false, git = "https://github.com/paritytech/s
 orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
 pallet-signature-bridge = { path = "../signature-bridge", default-features = false }
-pallet-bridge = { path = "../bridge", default-features = false }
 sp-arithmetic = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
@@ -38,7 +37,7 @@ pallet-balances = { git = "https://github.com/paritytech/substrate",  branch = "
 pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.26" }
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
-webb-proposals = { version = "0.4.4", default-features = false, features = ["scale", "substrate"] }
+webb-proposals = { version = "0.5.1", default-features = false, features = ["scale", "substrate"] }
 
 [features]
 default = ["std"]
@@ -60,7 +59,6 @@ std = [
   "frame-benchmarking/std",
   "sp-arithmetic/std",
   "pallet-token-wrapper/std",
-  "pallet-bridge/std",
   "pallet-signature-bridge/std"
 ]
 

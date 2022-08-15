@@ -15,7 +15,7 @@ use sp_core::{
 };
 
 use webb_primitives::utils::{derive_resource_id, get_typed_chain_id_in_u64};
-use webb_proposals::ResourceId;
+use webb_proposals::{ResourceId, SubstrateTargetSystem};
 
 const TEST_MAX_EDGES: u32 = 100;
 const TEST_TREE_DEPTH: u8 = 32;
@@ -28,9 +28,6 @@ fn make_set_resource_proposal(
 	let set_resource_proposal = webb_proposals::substrate::ResourceIdUpdateProposal::builder()
 		.header(header)
 		.new_resource_id(new_resource)
-		.target_system(target_system)
-		.pallet_index(10)
-		.call_index(2)
 		.build();
 	set_resource_proposal.to_bytes()
 }
@@ -72,13 +69,18 @@ fn mock_vanchor_creation_using_pallet_call(src_chain_id: ChainId, resource_id: &
 	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test>>::get(0));
 }
 
-fn make_vanchor_create_proposal(src_chain_id: ChainId, resource_id: &ResourceId) -> Call {
+fn make_vanchor_create_proposal(
+	src_chain_id: ChainId,
+	resource_id: &ResourceId,
+	nonce: u32,
+) -> Call {
 	Call::VAnchorHandler(crate::Call::execute_vanchor_create_proposal {
 		src_chain_id,
 		r_id: *resource_id,
 		max_edges: TEST_MAX_EDGES,
 		tree_depth: TEST_TREE_DEPTH,
 		asset: NativeCurrencyId::get(),
+		nonce,
 	})
 }
 
@@ -89,10 +91,12 @@ fn make_vanchor_update_proposal(
 		<Test as pallet_mt::Config>::Element,
 		<Test as pallet_mt::Config>::LeafIndex,
 	>,
+	nonce: u32,
 ) -> Call {
 	Call::VAnchorHandler(crate::Call::execute_vanchor_update_proposal {
 		r_id: *resource_id,
 		vanchor_metadata,
+		nonce,
 	})
 }
 
@@ -111,7 +115,11 @@ fn should_create_vanchor_with_sig_succeed() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(
+		this_chain_id_u32,
+		SubstrateTargetSystem { pallet_index: 10, call_index: 0, tree_id: 5 },
+	)
+	.into();
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 
@@ -124,8 +132,8 @@ fn should_create_vanchor_with_sig_succeed() {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
-
-		let anchor_create_call = make_vanchor_create_proposal(src_id, &r_id);
+		let nonce = 1;
+		let anchor_create_call = make_vanchor_create_proposal(src_id, &r_id, nonce);
 		let anchor_create_call_encoded = anchor_create_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_create_call_encoded);
@@ -171,7 +179,8 @@ fn should_add_vanchor_edge_with_sig_succeed() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
+	let this_system = SubstrateTargetSystem { pallet_index: 10, call_index: 0, tree_id: 0 };
+	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, this_system).into();
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 
@@ -192,8 +201,8 @@ fn should_add_vanchor_edge_with_sig_succeed() {
 		let target = Element::from_bytes(&[0u8; 32]);
 		let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
 		assert_eq!(0, Counts::<Test>::get(src_id));
-
-		let anchor_update_call = make_vanchor_update_proposal(&r_id, edge_metadata.clone());
+		let nonce = 1;
+		let anchor_update_call = make_vanchor_update_proposal(&r_id, edge_metadata.clone(), nonce);
 		let anchor_update_call_encoded = anchor_update_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_update_call_encoded);
@@ -248,7 +257,11 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(
+		this_chain_id_u32,
+		SubstrateTargetSystem { pallet_index: 10, call_index: 0, tree_id: 5 },
+	)
+	.into();
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 
@@ -270,7 +283,8 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 		let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
 		assert_eq!(0, Counts::<Test>::get(src_id));
 
-		let anchor_update_call = make_vanchor_update_proposal(&r_id, edge_metadata.clone());
+		let nonce = 1;
+		let anchor_update_call = make_vanchor_update_proposal(&r_id, edge_metadata.clone(), nonce);
 		let anchor_update_call_encoded = anchor_update_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_update_call_encoded);
@@ -319,7 +333,8 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 		let target = Element::from_bytes(&[0u8; 32]);
 		let edge_metadata = EdgeMetadata { src_chain_id: src_id, root, latest_leaf_index, target };
 
-		let anchor_update_call = make_vanchor_update_proposal(&r_id, edge_metadata.clone());
+		let nonce = 1;
+		let anchor_update_call = make_vanchor_update_proposal(&r_id, edge_metadata.clone(), nonce);
 		let anchor_update_call_encoded = anchor_update_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 2u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_update_call_encoded);
@@ -361,7 +376,11 @@ fn should_fail_to_whitelist_chain_already_whitelisted() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(
+		this_chain_id_u32,
+		SubstrateTargetSystem { pallet_index: 10, call_index: 0, tree_id: 5 },
+	)
+	.into();
 
 	new_test_ext_initialized(
 		src_id,
@@ -381,7 +400,11 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(
+		this_chain_id_u32,
+		SubstrateTargetSystem { pallet_index: 10, call_index: 0, tree_id: 5 },
+	)
+	.into();
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 	new_test_ext_initialized(
@@ -390,7 +413,8 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 		b"VAnchorHandler.execute_vanchor_create_proposal".to_vec(),
 	)
 	.execute_with(|| {
-		let anchor_create_call = make_vanchor_create_proposal(src_id, &r_id);
+		let nonce = 1;
+		let anchor_create_call = make_vanchor_create_proposal(src_id, &r_id, nonce);
 		let anchor_create_call_encoded = anchor_create_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_create_call_encoded);
@@ -421,7 +445,11 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(
+		this_chain_id_u32,
+		SubstrateTargetSystem { pallet_index: 10, call_index: 0, tree_id: 5 },
+	)
+	.into();
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 
@@ -431,8 +459,13 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 		b"VAnchorHandler.execute_vanchor_create_proposal".to_vec(),
 	)
 	.execute_with(|| {
-		let non_existent_r_id = derive_resource_id(this_chain_id_u32, 1).into();
-		let anchor_create_call = make_vanchor_create_proposal(src_id, &non_existent_r_id);
+		let nonce = 1;
+		let non_existent_r_id = derive_resource_id(
+			this_chain_id_u32,
+			SubstrateTargetSystem { pallet_index: 10, call_index: 0, tree_id: 1 },
+		)
+		.into();
+		let anchor_create_call = make_vanchor_create_proposal(src_id, &non_existent_r_id, nonce);
 		let anchor_create_call_encoded = anchor_create_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data =
@@ -464,7 +497,11 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 	let src_id_u32 = 1u32;
 	let src_id = get_typed_chain_id_in_u64(src_id_u32);
 	let this_chain_id_u32 = 5u32;
-	let r_id: ResourceId = derive_resource_id(this_chain_id_u32, 5).into();
+	let r_id: ResourceId = derive_resource_id(
+		this_chain_id_u32,
+		SubstrateTargetSystem { pallet_index: 10, call_index: 0, tree_id: 5 },
+	)
+	.into();
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 
@@ -474,7 +511,8 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 		b"VAnchorHandler.execute_vanchor_create_proposal".to_vec(),
 	)
 	.execute_with(|| {
-		let anchor_create_call = make_vanchor_create_proposal(src_id, &r_id);
+		let nonce = 1;
+		let anchor_create_call = make_vanchor_create_proposal(src_id, &r_id, nonce);
 		let anchor_create_call_encoded = anchor_create_call.encode();
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, anchor_create_call_encoded);
@@ -507,7 +545,11 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 // Test ResourceIdProposal
 #[test]
 fn should_add_resource_sig_succeed_using_webb_proposals() {
-	let target_system = webb_proposals::TargetSystem::new_tree_id(5);
+	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
+		pallet_index: 10,
+		call_index: 0,
+		tree_id: 5,
+	});
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let resource = webb_proposals::ResourceId::new(target_system, this_chain_id);
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
@@ -524,7 +566,11 @@ fn should_add_resource_sig_succeed_using_webb_proposals() {
 		let header = make_proposal_header(resource, nonce);
 		//create anchor
 		create_vanchor();
-		let anchor_target_system = webb_proposals::TargetSystem::new_tree_id(0);
+		let anchor_target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
+			pallet_index: 10,
+			call_index: 0,
+			tree_id: 0,
+		});
 
 		// Anchorlist should be 0 and will be updated after exectuing set resource proposal
 		assert_eq!(0, AnchorList::<Test>::iter_keys().count());

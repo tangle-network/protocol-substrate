@@ -69,6 +69,7 @@ use frame_support::{
 	PalletId,
 };
 use orml_traits::MultiCurrency;
+use sp_runtime::traits::AtLeast32Bit;
 use sp_std::convert::TryInto;
 use traits::TokenWrapperInterface;
 use weights::WeightInfo;
@@ -110,6 +111,15 @@ pub mod pallet {
 		type AssetRegistry: Registry<Self::AssetId, Vec<u8>, Self::Balance, DispatchError>
 			+ ShareTokenRegistry<Self::AssetId, Vec<u8>, Self::Balance, DispatchError>;
 
+		/// Proposal nonce type
+		type ProposalNonce: Encode
+			+ Decode
+			+ Parameter
+			+ AtLeast32Bit
+			+ Default
+			+ Copy
+			+ MaxEncodedLen;
+
 		#[pallet::constant]
 		type WrappingFeeDivider: Get<BalanceOf<Self>>;
 
@@ -121,6 +131,11 @@ pub mod pallet {
 	/// Percentage of amount to be used as wrapping fee
 	pub type WrappingFeePercent<T: Config> =
 		StorageMap<_, Blake2_128Concat, T::AssetId, BalanceOf<T>, OptionQuery>;
+
+	/// The proposal nonce used to prevent replay attacks on execute_proposal
+	#[pallet::storage]
+	#[pallet::getter(fn proposal_nonce)]
+	pub type ProposalNonce<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, T::ProposalNonce>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -153,9 +168,10 @@ pub mod pallet {
 		NotFoundInPool,
 		/// Insufficient Balance for an asset
 		InsufficientBalance,
-
 		// No wrapping fee percentage found for the pool share
 		NoWrappingFeePercentFound,
+		/// Invalid nonce
+		InvalidNonce,
 	}
 
 	#[pallet::call]
@@ -165,9 +181,15 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			fee: BalanceOf<T>,
 			into_pool_share_id: T::AssetId,
+			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			<Self as TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>>>::set_wrapping_fee(into_pool_share_id, fee)?;
+			<Self as TokenWrapperInterface<
+				T::AccountId,
+				T::AssetId,
+				BalanceOf<T>,
+				T::ProposalNonce,
+			>>::set_wrapping_fee(into_pool_share_id, fee, nonce)?;
 			Ok(().into())
 		}
 
@@ -181,13 +203,12 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 
-			<Self as TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>>>::wrap(
-				origin,
-				from_asset_id,
-				into_pool_share_id,
-				amount,
-				recipient,
-			)?;
+			<Self as TokenWrapperInterface<
+				T::AccountId,
+				T::AssetId,
+				BalanceOf<T>,
+				T::ProposalNonce,
+			>>::wrap(origin, from_asset_id, into_pool_share_id, amount, recipient)?;
 			Ok(().into())
 		}
 
@@ -201,13 +222,12 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 
-			<Self as TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>>>::unwrap(
-				origin,
-				from_pool_share_id,
-				into_asset_id,
-				amount,
-				recipient,
-			)?;
+			<Self as TokenWrapperInterface<
+				T::AccountId,
+				T::AssetId,
+				BalanceOf<T>,
+				T::ProposalNonce,
+			>>::unwrap(origin, from_pool_share_id, into_asset_id, amount, recipient)?;
 			Ok(().into())
 		}
 	}
@@ -264,10 +284,13 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> for Pallet<T> {
+impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T::ProposalNonce>
+	for Pallet<T>
+{
 	fn set_wrapping_fee(
 		into_pool_share_id: T::AssetId,
 		fee: BalanceOf<T>,
+		nonce: T::ProposalNonce,
 	) -> Result<(), DispatchError> {
 		WrappingFeePercent::<T>::insert(into_pool_share_id, fee);
 
@@ -377,6 +400,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 	fn add_asset_to_existing_pool(
 		name: &Vec<u8>,
 		asset_id: T::AssetId,
+		nonce: T::ProposalNonce,
 	) -> Result<T::AssetId, DispatchError> {
 		<T::AssetRegistry as ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::add_asset_to_existing_pool(name, asset_id)
 	}
@@ -384,7 +408,20 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>> fo
 	fn delete_asset_from_existing_pool(
 		name: &Vec<u8>,
 		asset_id: T::AssetId,
+		nonce: T::ProposalNonce,
 	) -> Result<T::AssetId, DispatchError> {
+		// Nonce should be greater than the proposal nonce in storage
+		let proposal_nonce = ProposalNonce::<T>::get(name).unwrap_or_default();
+		ensure!(proposal_nonce < nonce, Error::<T>::InvalidNonce);
+
+		// Nonce should increment by a maximum of 1,048
+		ensure!(
+			nonce <= proposal_nonce + T::ProposalNonce::from(1_048u32),
+			Error::<T>::InvalidNonce
+		);
+		// Set the new nonce
+		ProposalNonce::<T>::insert(name, nonce);
+
 		<T::AssetRegistry as ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::delete_asset_from_existing_pool(name, asset_id)
 	}
 }

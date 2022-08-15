@@ -44,11 +44,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
-pub mod mock_bridge;
-#[cfg(test)]
-mod tests_bridge;
-
-#[cfg(test)]
 pub mod mock_signature_bridge;
 #[cfg(test)]
 mod tests_signature_bridge;
@@ -57,6 +52,7 @@ use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::Ensure
 use frame_system::pallet_prelude::OriginFor;
 use pallet_linkable_tree::types::EdgeMetadata;
 use pallet_vanchor::{BalanceOf as VAnchorBalanceOf, CurrencyIdOf as VAnchorCurrencyIdOf};
+use sp_runtime::traits::AtLeast32Bit;
 use sp_std::convert::TryInto;
 use webb_primitives::{
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
@@ -91,7 +87,22 @@ pub mod pallet {
 		/// VAnchor Interface
 		type VAnchor: VAnchorInterface<VAnchorConfigration<Self, I>>
 			+ VAnchorInspector<VAnchorConfigration<Self, I>>;
+
+		/// Proposal nonce type
+		type ProposalNonce: Encode
+			+ Decode
+			+ Parameter
+			+ AtLeast32Bit
+			+ Default
+			+ Copy
+			+ MaxEncodedLen;
 	}
+
+	#[pallet::storage]
+	#[pallet::getter(fn counts)]
+	/// The number of updates
+	pub(super) type Counts<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::ChainId, u64, ValueQuery>;
 
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
@@ -111,12 +122,6 @@ pub mod pallet {
 		UpdateRecord<T::TreeId, ResourceId, T::ChainId, T::Element, T::LeafIndex>,
 		ValueQuery,
 	>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn counts)]
-	/// The number of updates
-	pub(super) type Counts<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, T::ChainId, u64, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -139,6 +144,8 @@ pub mod pallet {
 		SourceChainIdNotFound,
 		/// Storage overflowed.
 		StorageOverflow,
+		/// Invalid nonce
+		InvalidNonce,
 	}
 
 	#[pallet::hooks]
@@ -156,6 +163,7 @@ pub mod pallet {
 			max_edges: u32,
 			tree_depth: u8,
 			asset: VAnchorCurrencyIdOf<T, I>,
+			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
 			T::BridgeOrigin::ensure_origin(origin)?;
 			Self::create_vanchor(src_chain_id, r_id, max_edges, tree_depth, asset)
@@ -168,13 +176,14 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			r_id: ResourceId,
 			vanchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
+			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
 			T::BridgeOrigin::ensure_origin(origin)?;
 			Self::update_vanchor(r_id, vanchor_metadata)
 		}
 
 		/// This will by called by bridge when proposal to set new resource for
-		/// handler has been successfully voted on
+		/// handler has been successfully voted on.
 		#[pallet::weight(195_000_000)]
 		pub fn execute_set_resource_proposal(
 			origin: OriginFor<T>,
@@ -183,7 +192,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::BridgeOrigin::ensure_origin(origin)?;
 			let tree_id: T::TreeId = match target {
-				TargetSystem::TreeId(id) => id.into(),
+				TargetSystem::Substrate(system) => system.tree_id.into(),
 				_ => 0u32.into(),
 			};
 			Self::set_resource(r_id, tree_id)
@@ -253,9 +262,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			.map_err(|_| Error::<T, I>::SourceChainIdNotFound)?;
 		let record = UpdateRecord { tree_id, resource_id: r_id, edge_metadata: anchor_metadata };
 		UpdateRecords::<T, I>::insert(src_chain_id, nonce, record);
-		Counts::<T, I>::mutate(src_chain_id, |val| -> DispatchResultWithPostInfo {
-			*val = val.checked_add(1).ok_or(Error::<T, I>::StorageOverflow)?;
-			Ok(().into())
-		})
+		Ok(().into())
 	}
 }

@@ -48,20 +48,15 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
-pub mod mock_bridge;
-#[cfg(test)]
-mod tests_bridge;
-
-#[cfg(test)]
 pub mod mock_signature_bridge;
 #[cfg(test)]
 mod tests_signature_bridge;
 
 use frame_support::traits::EnsureOrigin;
 use frame_system::pallet_prelude::OriginFor;
+use sp_runtime::traits::AtLeast32Bit;
 use sp_std::convert::TryInto;
 
-///TODO: Define BalanceOf
 use pallet_token_wrapper::BalanceOf;
 
 use webb_primitives::webb_proposals::ResourceId;
@@ -73,7 +68,9 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+	use frame_support::{
+		dispatch::DispatchResultWithPostInfo, pallet_prelude::*, Blake2_128Concat,
+	};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_token_wrapper::Config {
@@ -83,7 +80,12 @@ pub mod pallet {
 		type BridgeOrigin: EnsureOrigin<Self::Origin, Success = Self::AccountId>;
 
 		/// TokenWrapper Interface
-		type TokenWrapper: TokenWrapperInterface<Self::AccountId, Self::AssetId, BalanceOf<Self>>;
+		type TokenWrapper: TokenWrapperInterface<
+			Self::AccountId,
+			Self::AssetId,
+			BalanceOf<Self>,
+			Self::ProposalNonce,
+		>;
 	}
 
 	#[pallet::pallet]
@@ -113,42 +115,42 @@ pub mod pallet {
 		#[pallet::weight(195_000_000)]
 		pub fn execute_wrapping_fee_proposal(
 			origin: OriginFor<T>,
-			// TODO: param not being used
-			_r_id: ResourceId,
+			r_id: ResourceId,
 			wrapping_fee_percent: BalanceOf<T>,
 			into_pool_share_id: T::AssetId,
+			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
-			// TODO: Define and check validity conditions.
 			T::BridgeOrigin::ensure_origin(origin)?;
-			T::TokenWrapper::set_wrapping_fee(into_pool_share_id, wrapping_fee_percent)?;
+			// Set the wrapping fee
+			T::TokenWrapper::set_wrapping_fee(into_pool_share_id, wrapping_fee_percent, nonce)?;
 			Ok(().into())
 		}
 
 		#[pallet::weight(195_000_000)]
 		pub fn execute_add_token_to_pool_share(
 			origin: OriginFor<T>,
-			// TODO: param is not used
-			_r_id: ResourceId,
+			r_id: ResourceId,
 			name: Vec<u8>,
 			asset_id: T::AssetId,
+			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
-			// TODO: Define and check validity conditions.
 			T::BridgeOrigin::ensure_origin(origin)?;
-			T::TokenWrapper::add_asset_to_existing_pool(&name, asset_id)?;
+			// Add asset to the pool share
+			T::TokenWrapper::add_asset_to_existing_pool(&name, asset_id, nonce)?;
 			Ok(().into())
 		}
 
 		#[pallet::weight(195_000_000)]
 		pub fn execute_remove_token_from_pool_share(
 			origin: OriginFor<T>,
-			// TODO: param not being used
-			_r_id: ResourceId,
+			r_id: ResourceId,
 			name: Vec<u8>,
 			asset_id: T::AssetId,
+			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
-			// TODO: Define and check validity conditions.
 			T::BridgeOrigin::ensure_origin(origin)?;
-			T::TokenWrapper::delete_asset_from_existing_pool(&name, asset_id)?;
+			// Remove asset from the pool share
+			T::TokenWrapper::delete_asset_from_existing_pool(&name, asset_id, nonce)?;
 			Ok(().into())
 		}
 	}

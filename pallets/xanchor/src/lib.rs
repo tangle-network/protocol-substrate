@@ -631,7 +631,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Sync Anchor Edge with other parachains that linked to that anchor
 	/// using XCM.
 	fn sync_anchor(tree_id: T::TreeId) -> DispatchResult {
-		// we get the current anchor tree
+		// get the current parachain id
+		let my_para_id = T::ParaId::get();
+		let src_chain_id = u32::from(my_para_id);
+		let typed_src_chain_id = TypedChainId::Substrate(src_chain_id);
+		// get the current anchor tree
 		let tree = match pallet_mt::Trees::<T, I>::get(tree_id) {
 			Some(t) => t,
 			None => return Err(Error::<T, I>::AnchorNotFound.into()),
@@ -641,13 +645,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// and the latest leaf index
 		let latest_leaf_index = tree.leaf_count;
 		// and the target system
-		let target_system = TargetSystem::new_tree_id(tree_id.try_into().unwrap_or_default());
-		// get the current parachain id
-		let my_para_id = T::ParaId::get();
-		let src_chain_id = u32::from(my_para_id);
-		let latest_leaf_index_u32: u32 = latest_leaf_index.try_into().unwrap_or_default();
-		let typed_src_chain_id = TypedChainId::Substrate(src_chain_id);
+		let src_target_system = TargetSystem::new_tree_id(tree_id.try_into().unwrap_or_default());
+		let src_resource_id = webb_proposals::ResourceId::new(src_target_system, typed_chain_id).into();		
 		let function_signature = FunctionSignature::new([0; 4]);
+		let latest_leaf_index_u32: u32 = latest_leaf_index.try_into().unwrap_or_default();
 		let nonce = Nonce::new(latest_leaf_index_u32);
 
 		let mut merkle_root = [0; 32];
@@ -672,16 +673,14 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				utils::get_underlying_chain_id(other_chain_id.try_into().unwrap_or_default());
 
 			let typed_other_chain_id = TypedChainId::Substrate(other_chain_underlying_chain_id);
-			let r_id = ResourceId::new(edge_target_system, typed_other_chain_id);
-			let proposal_header = ProposalHeader::new(r_id, function_signature, nonce);
+			let target_resource_id = ResourceId::new(edge_target_system, typed_other_chain_id);
+			let proposal_header = ProposalHeader::new(target_resource_id, function_signature, nonce);
 
 			// construct the anchor update proposal
 			let anchor_update_proposal = AnchorUpdateProposal::builder()
 				.header(proposal_header)
-				.src_chain(typed_src_chain_id)
 				.merkle_root(merkle_root)
-				.latest_leaf_index(latest_leaf_index_u32)
-				.target(target_system.into_fixed_bytes())
+				.src_resource_id(src_resource_id)
 				.pallet_index(42)
 				.build();
 

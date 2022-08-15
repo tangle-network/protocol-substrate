@@ -109,7 +109,7 @@ benchmarks! {
 			balance.into()
 		);
 
-		<TokenWrapper<T> as TokenWrapperInterface<T::AccountId, <T as asset_registry::Config>::AssetId, BalanceOf<T>>>::wrap(recipient.clone(), first_token_id, pool_share_id, 5_000u32.into(), recipient.clone());
+		<TokenWrapper<T> as TokenWrapperInterface<T::AccountId, <T as asset_registry::Config>::AssetId, BalanceOf<T>>, T::ProposalNonce>::wrap(recipient.clone(), first_token_id, pool_share_id, 5_000u32.into(), recipient.clone());
 
 	}:_(RawOrigin::Signed(recipient.clone()), pool_share_id, first_token_id, 5_000u32.into(), recipient.clone())
 	verify {

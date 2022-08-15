@@ -14,7 +14,10 @@ use hex_literal::hex;
 use crate::mock_signature_bridge::*;
 use asset_registry::AssetType;
 use frame_support::{assert_err, assert_ok};
-use webb_proposals::substrate::{TokenAddProposal, TokenRemoveProposal, WrappingFeeUpdateProposal};
+use webb_proposals::{
+	substrate::{TokenAddProposal, TokenRemoveProposal, WrappingFeeUpdateProposal},
+	SubstrateTargetSystem,
+};
 
 fn get_add_token_resource() -> Vec<u8> {
 	b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec()
@@ -42,7 +45,6 @@ fn make_wrapping_fee_proposal(
 		.header(header)
 		.wrapping_fee_percent(wrapping_fee_percent)
 		.into_pool_share_id(into_pool_share_id)
-		.pallet_index(7)
 		.build();
 	wrapping_fee_proposal.to_bytes()
 }
@@ -52,12 +54,8 @@ fn make_add_token_proposal(
 	name: String,
 	asset_id: u32,
 ) -> Vec<u8> {
-	let add_token_proposal = TokenAddProposal::builder()
-		.header(header)
-		.name(name)
-		.asset_id(asset_id)
-		.pallet_index(7)
-		.build();
+	let add_token_proposal =
+		TokenAddProposal::builder().header(header).name(name).asset_id(asset_id).build();
 	add_token_proposal.to_bytes()
 }
 
@@ -70,7 +68,6 @@ fn make_remove_token_proposal(
 		.header(header)
 		.name(name)
 		.asset_id(asset_id)
-		.pallet_index(7)
 		.build();
 
 	remove_token_proposal.to_bytes()
@@ -91,7 +88,11 @@ fn make_proposal_header(
 fn should_update_fee_with_sig_succeed() {
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
-	let target_system = webb_proposals::TargetSystem::new_tree_id(1);
+	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
+		pallet_index: 7,
+		call_index: 0,
+		tree_id: 0,
+	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
 
 	let src_id = src_chain.chain_id();
@@ -153,7 +154,11 @@ fn should_update_fee_with_sig_succeed() {
 fn should_add_token_with_sig_succeed() {
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
-	let target_system = webb_proposals::TargetSystem::new_tree_id(1);
+	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
+		pallet_index: 7,
+		call_index: 0,
+		tree_id: 0,
+	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
 
 	let src_id = src_chain.chain_id();
@@ -209,7 +214,11 @@ fn should_add_token_with_sig_succeed() {
 fn should_remove_token_with_sig_succeed() {
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
-	let target_system = webb_proposals::TargetSystem::new_tree_id(1);
+	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
+		pallet_index: 7,
+		call_index: 0,
+		tree_id: 0,
+	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
 	let r_id_add_token = webb_proposals::ResourceId::new(target_system, this_chain_id);
 	let r_id_remove_token = webb_proposals::ResourceId::new(target_system, this_chain_id);
@@ -289,7 +298,11 @@ fn should_remove_token_with_sig_succeed() {
 fn should_fail_to_remove_token_not_in_pool_with_sig() {
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
-	let target_system = webb_proposals::TargetSystem::new_tree_id(1);
+	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
+		pallet_index: 7,
+		call_index: 0,
+		tree_id: 0,
+	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
 
 	let src_id = src_chain.chain_id();
@@ -344,7 +357,11 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 fn should_add_many_tokens_with_sig_succeed() {
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
-	let target_system = webb_proposals::TargetSystem::new_tree_id(1);
+	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
+		pallet_index: 7,
+		call_index: 0,
+		tree_id: 0,
+	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
 
 	let src_id = src_chain.chain_id();
@@ -453,7 +470,11 @@ fn should_add_many_tokens_with_sig_succeed() {
 fn should_fail_to_add_same_token_with_sig() {
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
-	let target_system = webb_proposals::TargetSystem::new_tree_id(1);
+	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
+		pallet_index: 7,
+		call_index: 0,
+		tree_id: 0,
+	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
 
 	let src_id = src_chain.chain_id();
@@ -529,7 +550,11 @@ fn should_fail_to_add_same_token_with_sig() {
 fn should_fail_to_add_non_existent_token_with_sig() {
 	let src_chain = webb_proposals::TypedChainId::Substrate(1);
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
-	let target_system = webb_proposals::TargetSystem::new_tree_id(1);
+	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
+		pallet_index: 7,
+		call_index: 0,
+		tree_id: 0,
+	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
 
 	let src_id = src_chain.chain_id();

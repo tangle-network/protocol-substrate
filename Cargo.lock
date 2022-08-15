@@ -4649,24 +4649,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-bridge"
-version = "1.0.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "frame-system-benchmarking",
- "pallet-balances",
- "parity-scale-codec",
- "scale-info",
- "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "webb-primitives",
-]
-
-[[package]]
 name = "pallet-bridge-registry"
 version = "1.0.0"
 dependencies = [
@@ -5306,7 +5288,6 @@ dependencies = [
  "orml-traits",
  "pallet-asset-registry",
  "pallet-balances",
- "pallet-bridge",
  "pallet-signature-bridge",
  "pallet-token-wrapper",
  "pallet-treasury",
@@ -5452,7 +5433,6 @@ dependencies = [
  "orml-traits",
  "pallet-asset-registry",
  "pallet-balances",
- "pallet-bridge",
  "pallet-hasher",
  "pallet-linkable-tree",
  "pallet-mixer",
@@ -10284,9 +10264,9 @@ dependencies = [
 
 [[package]]
 name = "webb-proposals"
-version = "0.4.4"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b9869641d13a639c137fd1b54b9e3b6d80b5cb0b10caac6dc00d6a9c1228590"
+checksum = "09833ccb2a7b65b47b9b3c922b11d972ad8bf5a66568550af7f0fded02af9709"
 dependencies = [
  "num-traits",
  "parity-scale-codec",
@@ -10392,7 +10372,6 @@ dependencies = [
  "pallet-bags-list",
  "pallet-balances",
  "pallet-bounties",
- "pallet-bridge",
  "pallet-bridge-registry",
  "pallet-child-bounties",
  "pallet-collective",
