@@ -216,7 +216,7 @@ fn should_remove_token_with_sig_succeed() {
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
 		pallet_index: 7,
-		call_index: 0,
+		call_index: 2,
 		tree_id: 0,
 	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
@@ -359,7 +359,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
 		pallet_index: 7,
-		call_index: 0,
+		call_index: 1,
 		tree_id: 0,
 	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);

@@ -24,6 +24,9 @@ sp-core = { default-features = false, git = "https://github.com/paritytech/subst
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+pallet-token-wrapper-handler = { path = "../token-wrapper-handler", default-features = false }
+pallet-vanchor-handler = { path = "../vanchor-handler", default-features = false }
+
 
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
@@ -47,6 +50,8 @@ std = [
 	"frame-support/std",
 	"frame-system/std",
 	"pallet-balances/std",
+	"pallet-token-wrapper-handler/std",
+	"pallet-vanchor-handler/std",
 	"webb-primitives/std",
 ]
 runtime-benchmarks = [

@@ -212,6 +212,8 @@ pub mod pallet {
 		InvalidNonce,
 		/// Invalid proposal data
 		InvalidProposalData,
+		/// Invalid call - calls must be delegated to handler pallets
+		InvalidCall,
 	}
 
 	#[pallet::hooks]
@@ -371,7 +373,10 @@ pub mod pallet {
 			// Ensure that call is consistent with parsed_call
 			let encoded_call = call.encode();
 			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
-
+			match call {
+				pallet_vanchor_handler::Call::execute_set_resource_proposal { .. } => {},
+				_ => Err(Error::<T, I>::InvalidCall)?,
+			};
 			// Ensure this chain id matches the r_id
 			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
 			let this_chain_id_type =
@@ -433,11 +438,11 @@ pub mod pallet {
 			);
 			ensure!(Self::chain_whitelisted(src_id), Error::<T, I>::ChainNotWhitelisted);
 			ensure!(Self::resource_exists(r_id), Error::<T, I>::ResourceDoesNotExist);
-
 			// Ensure that call is consistent with parsed_call
 			let encoded_call = call.encode();
 			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
-
+			// Ensure the call is for a handler
+			println!("{:?}", call.name());
 			// Ensure this chain id matches the r_id
 			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
 			let this_chain_id_type =

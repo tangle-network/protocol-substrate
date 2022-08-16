@@ -71,8 +71,8 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>) {
 	assert_ok!(Balances::set_balance(Origin::root(), bigger_transactor, BIGGER_DEFAULT_BALANCE, 0));
 
 	// set configurable storage
-	assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 10));
-	assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 3));
+	assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 10, 1));
+	assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 3, 2));
 
 	// finally return the provingkey bytes
 	(pk_bytes, vk_bytes)
@@ -1114,10 +1114,10 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 #[test]
 fn set_get_max_deposit_amount() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 1));
+		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 1, 1));
 		assert_eq!(MaxDepositAmount::<Test>::get(), 1);
 
-		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 5));
+		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 5, 2));
 		assert_eq!(MaxDepositAmount::<Test>::get(), 5);
 	})
 }
@@ -1125,10 +1125,23 @@ fn set_get_max_deposit_amount() {
 #[test]
 fn set_get_min_withdraw_amount() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 2));
+		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 2, 1));
 		assert_eq!(MinWithdrawAmount::<Test>::get(), 2);
 
-		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 5));
+		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 5, 2));
 		assert_eq!(MinWithdrawAmount::<Test>::get(), 5);
+	})
+}
+
+#[test]
+fn should_fail_to_set_amounts_with_invalid_nonces() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 2, 1));
+		assert_eq!(MinWithdrawAmount::<Test>::get(), 2);
+
+		assert_err!(
+			VAnchor::set_min_withdraw_amount(Origin::root(), 5, 1),
+			Error::<Test, _>::InvalidNonce
+		);
 	})
 }

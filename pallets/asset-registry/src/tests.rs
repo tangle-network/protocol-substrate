@@ -381,6 +381,7 @@ fn add_asset_to_pool() {
 			<Test as crate::Config>::AssetId,
 			Vec<u8>,
 			<Test as crate::Config>::Balance,
+			BoundedVec<u8, <Test as crate::Config>::StringLimit>,
 			DispatchError,
 		>>::contains_asset(pool_share_id, second_token_id))
 	})
@@ -420,6 +421,7 @@ fn delete_asset_from_pool() {
 			<Test as crate::Config>::AssetId,
 			Vec<u8>,
 			<Test as crate::Config>::Balance,
+			BoundedVec<u8, <Test as crate::Config>::StringLimit>,
 			DispatchError,
 		>>::contains_asset(pool_share_id, second_token_id),)
 	})

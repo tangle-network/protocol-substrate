@@ -1251,13 +1251,13 @@ impl pallet_vanchor::Config<pallet_vanchor::Instance1> for Runtime {
 	type MaxFee = MaxFee;
 	type MaxExtAmount = MaxExtAmount;
 	type PostDepositHook = ();
+	type ProposalNonce = u32;
 	type NativeCurrencyId = GetNativeCurrencyId;
 }
 
 impl pallet_vanchor_handler::Config<pallet_vanchor_handler::Instance1> for Runtime {
 	type VAnchor = VAnchorBn254;
 	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Runtime, SignatureBridgeInstance>;
-	type ProposalNonce = u32;
 	type Event = Event;
 }
 

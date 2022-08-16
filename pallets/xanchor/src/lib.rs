@@ -500,7 +500,7 @@ pub mod pallet {
 			let anchor_update_proposal =
 				AnchorUpdateProposal::try_from(anchor_update_proposal_bytes).unwrap();
 
-			let (tree_id, r_chain_id) = utils::parse_resource_id::<T::TreeId, T::ChainId>(
+			let (src_system, src_chain_id) = utils::parse_resource_id::<T::ChainId>(
 				anchor_update_proposal.header().resource_id().into(),
 			);
 
@@ -513,7 +513,7 @@ pub mod pallet {
 					.unwrap_or_default();
 
 			let typed_chain_id_of_caller: u64 =
-				utils::get_typed_chain_id_in_u64(r_chain_id.try_into().unwrap_or_default());
+				utils::get_typed_chain_id_in_u64(src_chain_id.try_into().unwrap_or_default());
 
 			// verify that the chain id and the one from the parsed resource id matches
 			ensure!(my_chain_id == typed_chain_id_of_caller, Error::<T, I>::InvalidPermissions);
@@ -524,7 +524,8 @@ pub mod pallet {
 				//src_chain_id: my
 				root: ElementOf::<T, I>::from_bytes(anchor_update_proposal.merkle_root()),
 				latest_leaf_index: anchor_update_proposal.latest_leaf_index().into(),
-				target: ElementOf::<T, I>::from_bytes(&tree_id.encode()),
+				// TODO: Fix with propoer src resource id creation
+				src_resource_id: ResourceId::default(),
 			};
 
 			// and finally, ensure that the anchor exists
@@ -591,15 +592,18 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	fn update_anchor(
 		tree_id: T::TreeId,
-		metadata: EdgeMetadataOf<T, I>,
+		merkle_root: T::Element,
+		src_resource_id: ResourceId,
+		latest_leaf_index: T::LeafIndex,
 	) -> DispatchResultWithPostInfo {
+		let src_chain_id = src_resource_id.typed_chain_id().chain_id().into();
 		if T::Anchor::has_edge(tree_id, metadata.src_chain_id) {
 			T::Anchor::update_edge(
 				tree_id,
-				metadata.src_chain_id,
-				metadata.root,
-				metadata.latest_leaf_index,
-				metadata.target,
+				src_chain_id,
+				merkle_root,
+				latest_leaf_index,
+				src_resource_id,
 			)?;
 
 			Self::deposit_event(Event::AnchorEdgeAdded);
@@ -607,10 +611,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		} else {
 			T::Anchor::add_edge(
 				tree_id,
-				metadata.src_chain_id,
-				metadata.root,
-				metadata.latest_leaf_index,
-				metadata.target,
+				src_chain_id,
+				merkle_root,
+				latest_leaf_index,
+				src_resource_id,
 			)?;
 
 			Self::deposit_event(Event::AnchorEdgeAdded);

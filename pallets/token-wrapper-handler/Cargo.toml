@@ -20,7 +20,6 @@ frame-support = {default-features = false, git = "https://github.com/paritytech/
 frame-system = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
-pallet-signature-bridge = { path = "../signature-bridge", default-features = false }
 sp-arithmetic = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
@@ -31,13 +30,15 @@ hex-literal = "0.3.4"
 frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
 
 [dev-dependencies]
+pallet-signature-bridge = { path = "../signature-bridge", default-features = false }
 orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate",  branch = "polkadot-v0.9.26" }
 pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.26" }
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-io = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
-webb-proposals = { version = "0.5.1", default-features = false, features = ["scale", "substrate"] }
+# webb-proposals = { version = "0.5.3", default-features = false, features = ["scale", "substrate"] }
+webb-proposals = { path = "../../../webb-rs/proposals", default-features = false, features = ["scale", "substrate"] }
 
 [features]
 default = ["std"]
@@ -59,6 +60,5 @@ std = [
   "frame-benchmarking/std",
   "sp-arithmetic/std",
   "pallet-token-wrapper/std",
-  "pallet-signature-bridge/std"
 ]
 

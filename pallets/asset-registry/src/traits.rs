@@ -1,6 +1,8 @@
 use crate::*;
 
-pub trait Registry<AssetId, AssetName, Balance, Error> {
+pub trait Registry<AssetId, AssetName, Balance, BoundedString, Error> {
+	fn get_by_id(id: AssetId) -> Result<AssetDetails<AssetId, Balance, BoundedString>, Error>;
+
 	fn exists(name: AssetId) -> bool;
 
 	fn retrieve_asset(name: &AssetName) -> Result<AssetId, Error>;
@@ -19,8 +21,8 @@ pub trait Registry<AssetId, AssetName, Balance, Error> {
 	}
 }
 
-pub trait ShareTokenRegistry<AssetId, AssetName, Balance, Error>:
-	Registry<AssetId, AssetName, Balance, Error>
+pub trait ShareTokenRegistry<AssetId, AssetName, Balance, BoundedString, Error>:
+	Registry<AssetId, AssetName, Balance, BoundedString, Error>
 {
 	fn retrieve_shared_asset(name: &AssetName, assets: &[AssetId]) -> Result<AssetId, Error>;
 

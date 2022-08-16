@@ -397,8 +397,8 @@ impl<T: Config<I>, I: 'static>
 		NullifierHashes::<T, I>::contains_key(tree_id, nullifier_hash)
 	}
 
-	fn ensure_known_root(id: T::TreeId, target: T::Element) -> Result<(), DispatchError> {
-		let is_known: bool = Self::is_known_root(id, target)?;
+	fn ensure_known_root(id: T::TreeId, target_root: T::Element) -> Result<(), DispatchError> {
+		let is_known: bool = Self::is_known_root(id, target_root)?;
 		ensure!(is_known, Error::<T, I>::UnknownRoot);
 		Ok(())
 	}

@@ -54,23 +54,16 @@ mod tests_signature_bridge;
 
 use frame_support::traits::EnsureOrigin;
 use frame_system::pallet_prelude::OriginFor;
-use sp_runtime::traits::AtLeast32Bit;
-use sp_std::convert::TryInto;
+use sp_std::{vec::Vec, convert::TryInto};
 
-use pallet_token_wrapper::BalanceOf;
-
-use webb_primitives::webb_proposals::ResourceId;
-
-use pallet_token_wrapper::traits::TokenWrapperInterface;
+use pallet_token_wrapper::{traits::TokenWrapperInterface, BalanceOf};
 
 pub use pallet::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{
-		dispatch::DispatchResultWithPostInfo, pallet_prelude::*, Blake2_128Concat,
-	};
+	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_token_wrapper::Config {
@@ -115,7 +108,6 @@ pub mod pallet {
 		#[pallet::weight(195_000_000)]
 		pub fn execute_wrapping_fee_proposal(
 			origin: OriginFor<T>,
-			r_id: ResourceId,
 			wrapping_fee_percent: BalanceOf<T>,
 			into_pool_share_id: T::AssetId,
 			nonce: T::ProposalNonce,
@@ -129,7 +121,6 @@ pub mod pallet {
 		#[pallet::weight(195_000_000)]
 		pub fn execute_add_token_to_pool_share(
 			origin: OriginFor<T>,
-			r_id: ResourceId,
 			name: Vec<u8>,
 			asset_id: T::AssetId,
 			nonce: T::ProposalNonce,
@@ -143,7 +134,6 @@ pub mod pallet {
 		#[pallet::weight(195_000_000)]
 		pub fn execute_remove_token_from_pool_share(
 			origin: OriginFor<T>,
-			r_id: ResourceId,
 			name: Vec<u8>,
 			asset_id: T::AssetId,
 			nonce: T::ProposalNonce,

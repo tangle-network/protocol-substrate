@@ -50,16 +50,12 @@ mod tests_signature_bridge;
 
 use frame_support::{dispatch::DispatchResultWithPostInfo, ensure, traits::EnsureOrigin};
 use frame_system::pallet_prelude::OriginFor;
-use pallet_linkable_tree::types::EdgeMetadata;
 use pallet_vanchor::{BalanceOf as VAnchorBalanceOf, CurrencyIdOf as VAnchorCurrencyIdOf};
-use sp_runtime::traits::AtLeast32Bit;
 use sp_std::convert::TryInto;
 use webb_primitives::{
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
-	webb_proposals::{self, ResourceId, TargetSystem},
+	webb_proposals::{ResourceId, TargetSystem},
 };
-pub mod types;
-use types::*;
 
 pub use pallet::*;
 
@@ -68,7 +64,6 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use pallet_linkable_tree::types::EdgeMetadata;
 	use pallet_vanchor::VAnchorConfigration;
 
 	#[pallet::pallet]
@@ -87,41 +82,13 @@ pub mod pallet {
 		/// VAnchor Interface
 		type VAnchor: VAnchorInterface<VAnchorConfigration<Self, I>>
 			+ VAnchorInspector<VAnchorConfigration<Self, I>>;
-
-		/// Proposal nonce type
-		type ProposalNonce: Encode
-			+ Decode
-			+ Parameter
-			+ AtLeast32Bit
-			+ Default
-			+ Copy
-			+ MaxEncodedLen;
 	}
-
-	#[pallet::storage]
-	#[pallet::getter(fn counts)]
-	/// The number of updates
-	pub(super) type Counts<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, T::ChainId, u64, ValueQuery>;
 
 	/// The map of trees to their anchor metadata
 	#[pallet::storage]
 	#[pallet::getter(fn anchor_list)]
 	pub type AnchorList<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, ResourceId, T::TreeId, ValueQuery>;
-
-	#[pallet::storage]
-	#[pallet::getter(fn update_records)]
-	/// sourceChainID => nonce => Update Record
-	pub type UpdateRecords<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		T::ChainId,
-		Blake2_128Concat,
-		u64,
-		UpdateRecord<T::TreeId, ResourceId, T::ChainId, T::Element, T::LeafIndex>,
-		ValueQuery,
-	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -146,6 +113,8 @@ pub mod pallet {
 		StorageOverflow,
 		/// Invalid nonce
 		InvalidNonce,
+		/// Invalid resource ID
+		InvalidResourceId,
 	}
 
 	#[pallet::hooks]
@@ -166,7 +135,7 @@ pub mod pallet {
 			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
 			T::BridgeOrigin::ensure_origin(origin)?;
-			Self::create_vanchor(src_chain_id, r_id, max_edges, tree_depth, asset)
+			Self::create_vanchor(src_chain_id, r_id, max_edges, tree_depth, asset, nonce)
 		}
 
 		/// This will be called by bridge when proposal to add/update edge of a
@@ -175,11 +144,19 @@ pub mod pallet {
 		pub fn execute_vanchor_update_proposal(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
-			vanchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
+			merkle_root: T::Element,
+			src_resource_id: ResourceId,
 			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
 			T::BridgeOrigin::ensure_origin(origin)?;
-			Self::update_vanchor(r_id, vanchor_metadata)
+			let tree_id: T::TreeId = match r_id.target_system() {
+				TargetSystem::Substrate(system) => system.tree_id.into(),
+				_ => {
+					ensure!(false, Error::<T, I>::InvalidResourceId);
+					T::TreeId::default()
+				},
+			};
+			Self::update_vanchor(tree_id, merkle_root, src_resource_id, nonce.into())
 		}
 
 		/// This will by called by bridge when proposal to set new resource for
@@ -188,10 +165,9 @@ pub mod pallet {
 		pub fn execute_set_resource_proposal(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
-			target: TargetSystem,
 		) -> DispatchResultWithPostInfo {
 			T::BridgeOrigin::ensure_origin(origin)?;
-			let tree_id: T::TreeId = match target {
+			let tree_id: T::TreeId = match r_id.target_system() {
 				TargetSystem::Substrate(system) => system.tree_id.into(),
 				_ => 0u32.into(),
 			};
@@ -211,15 +187,13 @@ impl<T: Config<I>, I: 'static> VAnchorConfig for Pallet<T, I> {
 	type Element = T::Element;
 	type LeafIndex = T::LeafIndex;
 	type TreeId = T::TreeId;
+	type ProposalNonce = T::ProposalNonce;
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	fn set_resource(r_id: ResourceId, tree_id: T::TreeId) -> DispatchResultWithPostInfo {
 		ensure!(!AnchorList::<T, I>::contains_key(r_id), Error::<T, I>::ResourceIsAlreadyAnchored);
 		AnchorList::<T, I>::insert(r_id, tree_id);
-		let resource = webb_proposals::ResourceId::from(r_id);
-		let src_chain_id: T::ChainId = resource.typed_chain_id().chain_id().into();
-		Counts::<T, I>::insert(src_chain_id, 0);
 		Self::deposit_event(Event::ResourceAnchored);
 		Ok(().into())
 	}
@@ -230,38 +204,41 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		max_edges: u32,
 		tree_depth: u8,
 		asset: VAnchorCurrencyIdOf<T, I>,
+		nonce: T::ProposalNonce,
 	) -> DispatchResultWithPostInfo {
 		ensure!(!AnchorList::<T, I>::contains_key(r_id), Error::<T, I>::ResourceIsAlreadyAnchored);
-		let tree_id = T::VAnchor::create(None, tree_depth, max_edges, asset)?;
+		let tree_id = T::VAnchor::create(None, tree_depth, max_edges, asset, nonce)?;
 		_ = Self::set_resource(r_id, tree_id);
 		Self::deposit_event(Event::AnchorCreated);
 		Ok(().into())
 	}
 
 	fn update_vanchor(
-		r_id: ResourceId,
-		anchor_metadata: EdgeMetadata<T::ChainId, T::Element, T::LeafIndex>,
+		tree_id: T::TreeId,
+		merkle_root: T::Element,
+		src_resource_id: ResourceId,
+		latest_leaf_index: T::LeafIndex,
 	) -> DispatchResultWithPostInfo {
-		let tree_id =
-			AnchorList::<T, I>::try_get(r_id).map_err(|_| Error::<T, I>::AnchorHandlerNotFound)?;
-		let (src_chain_id, merkle_root, latest_leaf_index, target) = (
-			anchor_metadata.src_chain_id,
-			anchor_metadata.root,
-			anchor_metadata.latest_leaf_index,
-			anchor_metadata.target,
-		);
-
+		let src_chain_id = src_resource_id.typed_chain_id().chain_id().into();
 		if T::VAnchor::has_edge(tree_id, src_chain_id) {
-			T::VAnchor::update_edge(tree_id, src_chain_id, merkle_root, latest_leaf_index, target)?;
+			T::VAnchor::update_edge(
+				tree_id,
+				src_chain_id,
+				merkle_root,
+				latest_leaf_index,
+				src_resource_id,
+			)?;
 			Self::deposit_event(Event::AnchorEdgeUpdated);
 		} else {
-			T::VAnchor::add_edge(tree_id, src_chain_id, merkle_root, latest_leaf_index, target)?;
+			T::VAnchor::add_edge(
+				tree_id,
+				src_chain_id,
+				merkle_root,
+				latest_leaf_index,
+				src_resource_id,
+			)?;
 			Self::deposit_event(Event::AnchorEdgeAdded);
 		}
-		let nonce = Counts::<T, I>::try_get(src_chain_id)
-			.map_err(|_| Error::<T, I>::SourceChainIdNotFound)?;
-		let record = UpdateRecord { tree_id, resource_id: r_id, edge_metadata: anchor_metadata };
-		UpdateRecords::<T, I>::insert(src_chain_id, nonce, record);
 		Ok(().into())
 	}
 }

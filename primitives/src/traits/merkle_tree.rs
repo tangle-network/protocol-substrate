@@ -15,7 +15,7 @@ pub trait TreeInspector<AccountId, TreeId, Element> {
 	fn get_root(id: TreeId) -> Result<Element, dispatch::DispatchError>;
 	/// Checks if a merkle root is in a tree's cached history or returns
 	/// `TreeDoesntExist
-	fn is_known_root(id: TreeId, target: Element) -> Result<bool, dispatch::DispatchError>;
+	fn is_known_root(id: TreeId, root: Element) -> Result<bool, dispatch::DispatchError>;
 	/// Gets the default merkle root for a tree or returns `TreeDoesntExist`
 	fn get_default_root(id: TreeId) -> Result<Element, dispatch::DispatchError>;
 }

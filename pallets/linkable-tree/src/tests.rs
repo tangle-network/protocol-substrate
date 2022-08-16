@@ -1,7 +1,10 @@
 use arkworks_setups::{common::setup_params, Curve};
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, error::BadOrigin};
-use webb_primitives::{AccountId, ElementTrait};
+use webb_primitives::{
+	webb_proposals::{SubstrateTargetSystem, TargetSystem, TypedChainId},
+	AccountId, ElementTrait,
+};
 
 use super::*;
 use crate::mock::*;
@@ -61,40 +64,53 @@ fn should_be_able_to_add_neighbors_and_check_history() {
 		let depth = TREE_DEPTH as u8;
 		assert_ok!(LinkableTree::create(Origin::root(), max_edges, depth));
 		let tree_id = MerkleTree::next_tree_id() - 1;
-		let src_chain_id = 1;
+		let src_tree_id = 3;
+		let src_chain_id = TypedChainId::Substrate(1);
+		let src_resource_id = ResourceId::new(
+			TargetSystem::Substrate(
+				SubstrateTargetSystem::builder()
+					.pallet_index(4)
+					.call_index(0)
+					.tree_id(src_tree_id)
+					.build(),
+			),
+			src_chain_id,
+		);
 		let root = Element::from_bytes(&[1u8; 32]);
-		let height = 1;
+		let mut latest_leaf_index = 1;
 		let neighbor_index_before: u32 =
-			LinkableTree::curr_neighbor_root_index((tree_id, src_chain_id));
-		let target = Element::from_bytes(&tree_id.to_le_bytes());
+			LinkableTree::curr_neighbor_root_index((tree_id, src_chain_id.chain_id()));
 		assert_ok!(<LinkableTree as LinkableTreeInterface<_>>::add_edge(
 			tree_id,
-			src_chain_id,
+			src_chain_id.chain_id(),
 			root,
-			height,
-			target,
+			latest_leaf_index,
+			src_resource_id,
 		));
 		let neighbor_index_after: u32 =
-			LinkableTree::curr_neighbor_root_index((tree_id, src_chain_id));
+			LinkableTree::curr_neighbor_root_index((tree_id, src_chain_id.chain_id()));
 		assert_eq!(neighbor_index_after, neighbor_index_before + 1);
 
 		for _ in 0..(HistoryLength::get() - 1) {
-			assert!(LinkableTree::is_known_neighbor_root(tree_id, src_chain_id, root).unwrap(),);
-
+			assert!(LinkableTree::is_known_neighbor_root(tree_id, src_chain_id.chain_id(), root)
+				.unwrap(),);
+			latest_leaf_index += 1;
 			let val = thread_rng().gen::<[u8; 32]>();
 			let elt = Element::from_bytes(&val);
-			let target = Element::from_bytes(&tree_id.to_le_bytes());
 			assert_ok!(<LinkableTree as LinkableTreeInterface<_>>::update_edge(
 				tree_id,
-				src_chain_id,
+				src_chain_id.chain_id(),
 				elt,
-				height,
-				target
+				latest_leaf_index,
+				src_resource_id
 			));
 
-			assert!(LinkableTree::is_known_neighbor_root(tree_id, src_chain_id, elt).unwrap(),);
+			assert!(LinkableTree::is_known_neighbor_root(tree_id, src_chain_id.chain_id(), elt)
+				.unwrap(),);
 		}
 
-		assert!(!LinkableTree::is_known_neighbor_root(tree_id, src_chain_id, root).unwrap(),);
+		assert!(
+			!LinkableTree::is_known_neighbor_root(tree_id, src_chain_id.chain_id(), root).unwrap(),
+		);
 	});
 }

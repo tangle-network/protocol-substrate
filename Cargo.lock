@@ -5178,6 +5178,8 @@ dependencies = [
  "hex-literal 0.3.4",
  "libsecp256k1",
  "pallet-balances",
+ "pallet-token-wrapper-handler",
+ "pallet-vanchor-handler",
  "parity-scale-codec",
  "scale-info",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
@@ -10264,9 +10266,7 @@ dependencies = [
 
 [[package]]
 name = "webb-proposals"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09833ccb2a7b65b47b9b3c922b11d972ad8bf5a66568550af7f0fded02af9709"
+version = "0.5.3"
 dependencies = [
  "num-traits",
  "parity-scale-codec",

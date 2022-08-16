@@ -12,6 +12,7 @@ use sp_runtime::{
 	Permill,
 };
 use sp_std::convert::{TryFrom, TryInto};
+use webb_proposals::ResourceId;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;

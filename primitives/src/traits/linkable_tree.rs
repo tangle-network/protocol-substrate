@@ -1,6 +1,7 @@
 //! All the traits exposed to be used in other custom pallets
 use frame_support::dispatch;
 use sp_std::vec::Vec;
+use webb_proposals::ResourceId;
 
 pub trait LinkableTreeConfig {
 	type LeafIndex;
@@ -29,7 +30,7 @@ pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 		src_chain_id: C::ChainId,
 		root: C::Element,
 		last_leaf_index: C::LeafIndex,
-		target: C::Element,
+		src_resource_id: ResourceId,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this tree
 	fn update_edge(
@@ -37,7 +38,7 @@ pub trait LinkableTreeInterface<C: LinkableTreeConfig> {
 		src_chain_id: C::ChainId,
 		root: C::Element,
 		last_leaf_index: C::LeafIndex,
-		target: C::Element,
+		src_resource_id: ResourceId,
 	) -> Result<(), dispatch::DispatchError>;
 }
 
@@ -59,7 +60,7 @@ pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 	fn is_known_neighbor_root(
 		id: C::TreeId,
 		src_chain_id: C::ChainId,
-		target: C::Element,
+		target_root: C::Element,
 	) -> Result<bool, dispatch::DispatchError>;
 	/// Checks if each root from passed root array is in tree's cached history
 	/// or returns `InvalidNeighborWithdrawRoot`
@@ -73,7 +74,7 @@ pub trait LinkableTreeInspector<C: LinkableTreeConfig> {
 	fn ensure_known_neighbor_root(
 		id: C::TreeId,
 		src_chain_id: C::ChainId,
-		target: C::Element,
+		target_root: C::Element,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Check if this linked tree has this edge
 	fn has_edge(id: C::TreeId, src_chain_id: C::ChainId) -> bool;

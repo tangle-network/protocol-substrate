@@ -1,6 +1,7 @@
 //! All the traits exposed to be used in other custom pallets
 use frame_support::dispatch;
 use sp_std::vec::Vec;
+use webb_proposals::ResourceId;
 
 pub trait AnchorConfig {
 	type LeafIndex;
@@ -52,7 +53,7 @@ pub trait AnchorInterface<C: AnchorConfig> {
 		src_chain_id: C::ChainId,
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
-		target: C::Element,
+		src_resource_id: ResourceId,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this tree
 	fn update_edge(
@@ -60,7 +61,7 @@ pub trait AnchorInterface<C: AnchorConfig> {
 		src_chain_id: C::ChainId,
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
-		target: C::Element,
+		src_resource_id: ResourceId,
 	) -> Result<(), dispatch::DispatchError>;
 }
 

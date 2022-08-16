@@ -56,10 +56,7 @@ use types::*;
 
 use sp_std::{convert::TryInto, prelude::*};
 
-use frame_support::{
-	pallet_prelude::{ensure, DispatchError},
-	storage::bounded_vec,
-};
+use frame_support::pallet_prelude::{ensure, DispatchError};
 use sp_runtime::traits::{AtLeast32Bit, One, Zero};
 use webb_primitives::webb_proposals::{
 	evm::AnchorUpdateProposal, OnSignedProposal, Proposal, ProposalKind, ResourceId,

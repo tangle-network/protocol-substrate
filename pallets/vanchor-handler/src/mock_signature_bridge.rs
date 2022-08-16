@@ -289,13 +289,13 @@ impl pallet_vanchor::Config for Test {
 	type MaxFee = MaxFee;
 	type MaxExtAmount = MaxExtAmount;
 	type PostDepositHook = ();
+	type ProposalNonce = u32;
 	type Verifier2x2 = VerifierPallet;
 }
 
 impl pallet_vanchor_handler::Config for Test {
 	type VAnchor = VAnchor;
 	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Test, BridgeInstance>;
-	type ProposalNonce = u32;
 	type Event = Event;
 }
 

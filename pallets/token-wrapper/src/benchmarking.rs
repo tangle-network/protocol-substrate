@@ -40,18 +40,18 @@ benchmarks! {
 		let existential_balance: u32 = 1000;
 		let balance: u32 = 10_000;
 		let recipient: T::AccountId = whitelisted_caller();
-		let first_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, DispatchError>>::create_asset(
+		let first_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_asset(
 			&b"shib".to_vec(),
 			existential_balance.into(),
 		)
 		.unwrap();
-		let second_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, DispatchError>>::create_asset(
+		let second_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_asset(
 			&b"doge".to_vec(),
 			existential_balance.into(),
 		)
 		.unwrap();
 
-		let pool_share_id = <<T as Config>::AssetRegistry as ShareTokenRegistry<<T as asset_registry::Config>::AssetId, Vec<u8>, T::Balance, DispatchError>>::create_shared_asset(
+		let pool_share_id = <<T as Config>::AssetRegistry as ShareTokenRegistry<<T as asset_registry::Config>::AssetId, Vec<u8>, T::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_shared_asset(
 			&b"meme".to_vec(),
 			&vec![second_token_id, first_token_id],
 			existential_balance.into(),
@@ -85,18 +85,18 @@ benchmarks! {
 		let existential_balance: u32 = 1000;
 		let balance: u32 = 10_000;
 		let recipient: T::AccountId = whitelisted_caller();
-		let first_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, DispatchError>>::create_asset(
+		let first_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_asset(
 			&b"shib".to_vec(),
 			existential_balance.into(),
 		)
 		.unwrap();
-		let second_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, DispatchError>>::create_asset(
+		let second_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_asset(
 			&b"doge".to_vec(),
 			existential_balance.into(),
 		)
 		.unwrap();
 
-		let pool_share_id = <<T as Config>::AssetRegistry as ShareTokenRegistry<<T as asset_registry::Config>::AssetId, Vec<u8>, T::Balance, DispatchError>>::create_shared_asset(
+		let pool_share_id = <<T as Config>::AssetRegistry as ShareTokenRegistry<<T as asset_registry::Config>::AssetId, Vec<u8>, T::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_shared_asset(
 			&b"meme".to_vec(),
 			&vec![second_token_id, first_token_id],
 			existential_balance.into(),
@@ -127,18 +127,18 @@ benchmarks! {
 		let existential_balance: u32 = 1000;
 		let balance: u32 = 10_000;
 		let recipient: T::AccountId = whitelisted_caller();
-		let first_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, DispatchError>>::create_asset(
+		let first_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_asset(
 			&b"shib".to_vec(),
 			existential_balance.into(),
 		)
 		.unwrap();
-		let second_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, DispatchError>>::create_asset(
+		let second_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_asset(
 			&b"doge".to_vec(),
 			existential_balance.into(),
 		)
 		.unwrap();
 
-		let pool_share_id = <<T as Config>::AssetRegistry as ShareTokenRegistry<<T as asset_registry::Config>::AssetId, Vec<u8>, T::Balance, DispatchError>>::create_shared_asset(
+		let pool_share_id = <<T as Config>::AssetRegistry as ShareTokenRegistry<<T as asset_registry::Config>::AssetId, Vec<u8>, T::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_shared_asset(
 			&b"meme".to_vec(),
 			&vec![second_token_id, first_token_id],
 			existential_balance.into(),
