@@ -34,8 +34,8 @@
 //!
 //! ### Dispatchable Functions
 //! * execute_wrapping_fee_proposal
-//! * execute_add_token_proposal
-//! * execute_remove_token_proposal
+//! * execute_add_token_to_pool_share
+//! * execute_remove_token_from_pool_share
 //!
 //! ## Interface
 //!

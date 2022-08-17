@@ -38,6 +38,7 @@ pallet-linkable-tree = {path = "../../pallets/linkable-tree", default-features =
 pallet-mt-rpc-runtime-api = {path = "../../pallets/mt/rpc/runtime-api", default-features = false}
 pallet-linkable-tree-rpc-runtime-api = {path = "../../pallets/linkable-tree/rpc/runtime-api", default-features = false}
 pallet-token-wrapper = {path = "../../pallets/token-wrapper", default-features = false}
+pallet-token-wrapper-handler = {path = "../../pallets/token-wrapper-handler", default-features = false}
 pallet-verifier = {path = "../../pallets/verifier", default-features = false}
 pallet-bridge-registry = {path = "../../pallets/bridge-registry", default-features = false}
 pallet-relayer-registry = {path = "../../pallets/relayer-registry", default-features = false}
@@ -127,6 +128,7 @@ runtime-benchmarks = [
   "pallet-timestamp/runtime-benchmarks",
   "pallet-collective/runtime-benchmarks",
   "pallet-token-wrapper/runtime-benchmarks",
+  "pallet-token-wrapper-handler/runtime-benchmarks",
   "pallet-bridge-registry/runtime-benchmarks",
   "pallet-relayer-registry/runtime-benchmarks"
 ]
@@ -198,6 +200,7 @@ std = [
   "pallet-mt-rpc-runtime-api/std",
   "pallet-linkable-tree-rpc-runtime-api/std",
   "pallet-token-wrapper/std",
+  "pallet-token-wrapper-handler/std",
   "pallet-bridge-registry/std",
   "pallet-relayer-registry/std"
 ]

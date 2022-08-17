@@ -1,9 +1,8 @@
 #![allow(clippy::zero_prefixed_literal)]
 
 use crate as pallet_vanchor_handler;
-use codec::{Decode, Encode, MaxEncodedLen};
-use sp_runtime::RuntimeDebug;
-use frame_support::{assert_ok, ord_parameter_types, parameter_types, traits::{Nothing, InstanceFilter}, PalletId};
+use codec::{Decode, Encode};
+use frame_support::{assert_ok, ord_parameter_types, parameter_types, traits::{Nothing, Contains}, PalletId};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 pub use pallet_balances;
@@ -253,32 +252,30 @@ parameter_types! {
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
 
-#[derive(
-	Copy,
-	Clone,
-	Eq,
-	PartialEq,
-	Ord,
-	PartialOrd,
-	Encode,
-	Decode,
-	RuntimeDebug,
-	MaxEncodedLen,
-	scale_info::TypeInfo,
-)]
-pub struct CallFilterType;
-
-impl Default for CallFilterType {
-	fn default() -> Self {
-		Self
+pub struct SetResourceProposalFilter;
+impl Contains<Call> for SetResourceProposalFilter {
+	fn contains(c: &Call) -> bool {
+		match c {
+			Call::VAnchorHandler(method) => match method {
+				pallet_vanchor_handler::Call::execute_set_resource_proposal { .. } => true,
+				_ => false,
+			},
+			_ => false,
+		}
 	}
 }
-impl InstanceFilter<Call> for CallFilterType {
-	fn filter(&self, c: &Call) -> bool {
-		false
-	}
-	fn is_superset(&self, o: &Self) -> bool {
-		false
+
+pub struct ExecuteProposalFilter;
+impl Contains<Call> for ExecuteProposalFilter {
+	fn contains(c: &Call) -> bool {
+		match c {
+			Call::VAnchorHandler(method) => match method {
+				pallet_vanchor_handler::Call::execute_vanchor_create_proposal { .. } => true,
+				pallet_vanchor_handler::Call::execute_vanchor_update_proposal { .. } => true,
+				_ => false,
+			}
+			_ => false,
+		}
 	}
 }
 
@@ -297,7 +294,8 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
-	type ProposalCallFilter = CallFilterType;
+	type SetResourceProposalFilter = SetResourceProposalFilter;
+	type ExecuteProposalFilter = ExecuteProposalFilter;
 	type MaintainerNonce = MaintainerNonce;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();

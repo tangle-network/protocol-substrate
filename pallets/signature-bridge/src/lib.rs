@@ -81,7 +81,7 @@ pub mod pallet {
 	use frame_support::{
 		dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
 		pallet_prelude::*,
-		PalletId, traits::{GetCallName, GetCallMetadata, InstanceFilter, Contains},
+		PalletId, traits::Contains,
 	};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::traits::AtLeast32Bit;
@@ -105,7 +105,7 @@ pub mod pallet {
 			+ Decode
 			+ GetDispatchInfo;
 		/// Call filter for proposals
-		type SetResourceFilter: Contains<Self::Proposal>;
+		type SetResourceProposalFilter: Contains<Self::Proposal>;
 		type ExecuteProposalFilter: Contains<Self::Proposal>;
 		/// ChainID for anchor edges
 		type ChainId: Encode

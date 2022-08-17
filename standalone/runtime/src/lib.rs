@@ -13,7 +13,7 @@ pub mod impls;
 mod voter_bags;
 use frame_election_provider_support::{onchain, ExtendedBalance, SequentialPhragmen, VoteWeight};
 use frame_support::{
-	traits::{EitherOfDiverse, EqualPrivilegeOnly},
+	traits::{EitherOfDiverse, EqualPrivilegeOnly, Contains},
 	weights::{constants::RocksDbWeight, ConstantMultiplier},
 };
 use impls::{Author, CreditToBlockAuthor};
@@ -1261,33 +1261,39 @@ impl pallet_vanchor_handler::Config<pallet_vanchor_handler::Instance1> for Runti
 	type Event = Event;
 }
 
-/// The type used to represent the kinds of proxying allowed.
-#[derive(
-	Copy,
-	Clone,
-	Eq,
-	PartialEq,
-	Ord,
-	PartialOrd,
-	Encode,
-	Decode,
-	RuntimeDebug,
-	MaxEncodedLen,
-	scale_info::TypeInfo,
-)]
-pub struct CallFilterType;
-
-impl Default for CallFilterType {
-	fn default() -> Self {
-		Self
+pub struct SetResourceProposalFilter;
+impl Contains<Call> for SetResourceProposalFilter {
+	fn contains(c: &Call) -> bool {
+		match c {
+			Call::VAnchorHandlerBn254(method) => match method {
+				pallet_vanchor_handler::Call::execute_set_resource_proposal { .. } => true,
+				_ => false,
+			},
+			Call::TokenWrapperHandler(method) => match method {
+				_ => false,
+			},
+			_ => false,
+		}
 	}
 }
-impl InstanceFilter<Call> for CallFilterType {
-	fn filter(&self, c: &Call) -> bool {
-		false
-	}
-	fn is_superset(&self, o: &Self) -> bool {
-		false
+
+pub struct ExecuteProposalFilter;
+impl Contains<Call> for ExecuteProposalFilter {
+	fn contains(c: &Call) -> bool {
+		match c {
+			Call::VAnchorHandlerBn254(method) => match method {
+				pallet_vanchor_handler::Call::execute_vanchor_create_proposal { .. } => true,
+				pallet_vanchor_handler::Call::execute_vanchor_update_proposal { .. } => true,
+				_ => false,
+			},
+			Call::TokenWrapperHandler(method) => match method {
+				pallet_token_wrapper_handler::Call::execute_add_token_to_pool_share { .. } => true,
+				pallet_token_wrapper_handler::Call::execute_remove_token_from_pool_share { .. } => true,
+				pallet_token_wrapper_handler::Call::execute_wrapping_fee_proposal { .. } => true,
+				_ => false,
+			},
+			_ => false,
+		}
 	}
 }
 
@@ -1307,7 +1313,8 @@ impl pallet_signature_bridge::Config<SignatureBridgeInstance> for Runtime {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = u32;
-	type ProposalCallFilter = CallFilterType;
+	type SetResourceProposalFilter = SetResourceProposalFilter;
+	type ExecuteProposalFilter = ExecuteProposalFilter;
 	type MaintainerNonce = u32;
 	type SignatureVerifier = SignatureVerifier;
 	type WeightInfo = ();
@@ -1327,6 +1334,12 @@ impl pallet_token_wrapper::Config for Runtime {
 	type ProposalNonce = u32;
 	type WeightInfo = pallet_token_wrapper::weights::WebbWeight<Runtime>;
 	type WrappingFeeDivider = WrappingFeeDivider;
+}
+
+impl pallet_token_wrapper_handler::Config for Runtime {
+	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Runtime, SignatureBridgeInstance>;
+	type Event = Event;
+	type TokenWrapper = TokenWrapper;
 }
 
 parameter_types! {
@@ -1413,6 +1426,7 @@ construct_runtime!(
 		Currencies: orml_currencies::{Pallet, Call},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>, Config<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Storage, Call, Event<T>},
+		TokenWrapperHandler: pallet_token_wrapper_handler::{Pallet, Storage, Call, Event<T>},
 
 		// Mixer Verifier
 		MixerVerifierBn254: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
@@ -1715,9 +1729,11 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_mt, MerkleTreeBn254);
 			list_benchmark!(list, extra, pallet_linkable_tree, LinkableTreeBn254);
 			list_benchmark!(list, extra, pallet_vanchor, VAnchorBn254);
+			list_benchmark!(list, extra, pallet_vanchor_handler, VAnchorHandlerBn254);
 			list_benchmark!(list, extra, pallet_mixer, MixerBn254);
 			list_benchmark!(list, extra, pallet_verifier, MixerVerifierBn254);
 			list_benchmark!(list, extra, pallet_token_wrapper, TokenWrapper);
+			list_benchmark!(list, extra, pallet_token_wrapper_handler, TokenWrapperHandler);
 			list_benchmark!(list, extra, pallet_signature_bridge, SignatureBridge);
 			list_benchmark!(list, extra, pallet_bridge_registry, BridgeRegistry);
 			list_benchmark!(list, extra, pallet_relayer_registry, RelayerRegistry);
@@ -1754,9 +1770,11 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_mt, MerkleTreeBn254);
 			add_benchmark!(params, batches, pallet_linkable_tree, LinkableTreeBn254);
 			add_benchmark!(params, batches, pallet_vanchor, VAnchorBn254);
+			add_benchmark!(params, batches, pallet_vanchor_handler, VAnchorHandlerBn254);
 			add_benchmark!(params, batches, pallet_mixer, MixerBn254);
 			add_benchmark!(params, batches, pallet_verifier, MixerVerifierBn254);
 			add_benchmark!(params, batches, pallet_token_wrapper, TokenWrapper);
+			add_benchmark!(params, batches, pallet_token_wrapper_handler, TokenWrapperHandler);
 			add_benchmark!(params, batches, pallet_signature_bridge, SignatureBridge);
 			add_benchmark!(params, batches, pallet_bridge_registry, BridgeRegistry);
 			add_benchmark!(params, batches, pallet_relayer_registry, RelayerRegistry);

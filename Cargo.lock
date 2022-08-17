@@ -10403,6 +10403,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-token-wrapper",
+ "pallet-token-wrapper-handler",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",

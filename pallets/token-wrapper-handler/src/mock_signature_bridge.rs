@@ -2,9 +2,7 @@
 
 use super::*;
 use crate as pallet_token_wrapper_handler;
-use sp_runtime::RuntimeDebug;
-use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{assert_ok, parameter_types, traits::{Nothing, InstanceFilter}, PalletId};
+use frame_support::{assert_ok, parameter_types, traits::{Nothing, Contains}, PalletId};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 use sp_core::H256;
@@ -191,23 +189,9 @@ pub type ChainId = u64;
 pub type ProposalNonce = u32;
 pub type MaintainerNonce = u32;
 
-#[derive(
-	Copy,
-	Clone,
-	Eq,
-	PartialEq,
-	Ord,
-	PartialOrd,
-	Encode,
-	Decode,
-	RuntimeDebug,
-	MaxEncodedLen,
-	scale_info::TypeInfo,
-)]
-
 pub struct SetResourceProposalFilter;
 impl Contains<Call> for SetResourceProposalFilter {
-	fn contains(c: &Call) -> bool {
+	fn contains(_c: &Call) -> bool {
 		false
 	}
 }
@@ -220,7 +204,9 @@ impl Contains<Call> for ExecuteProposalFilter {
 				pallet_token_wrapper_handler::Call::execute_add_token_to_pool_share { .. } => true,
 				pallet_token_wrapper_handler::Call::execute_remove_token_from_pool_share { .. } => true,
 				pallet_token_wrapper_handler::Call::execute_wrapping_fee_proposal { .. } => true,
+				_ => false,
 			}
+			_ => false,
 		}
 	}
 }
