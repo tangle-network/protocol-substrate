@@ -204,29 +204,26 @@ pub type MaintainerNonce = u32;
 	MaxEncodedLen,
 	scale_info::TypeInfo,
 )]
-pub enum CallFilterType {
-	SetResource,
-	ExecuteProposal,
-}
 
-impl Default for CallFilterType {
-	fn default() -> Self {
-		Self::ExecuteProposal
-	}
-}
-impl InstanceFilter<Call> for CallFilterType {
-	fn filter(&self, c: &Call) -> bool {
-		match self {
-			CallFilterType::SetResource => false,
-			CallFilterType::ExecuteProposal => !matches!(c,
-				Call::TokenWrapperHandler { .. }),
-		}
-	}
-	fn is_superset(&self, o: &Self) -> bool {
+pub struct SetResourceProposalFilter;
+impl Contains<Call> for SetResourceProposalFilter {
+	fn contains(c: &Call) -> bool {
 		false
 	}
 }
 
+pub struct ExecuteProposalFilter;
+impl Contains<Call> for ExecuteProposalFilter {
+	fn contains(c: &Call) -> bool {
+		match c {
+			Call::TokenWrapperHandler(method) => match method {
+				pallet_token_wrapper_handler::Call::execute_add_token_to_pool_share { .. } => true,
+				pallet_token_wrapper_handler::Call::execute_remove_token_from_pool_share { .. } => true,
+				pallet_token_wrapper_handler::Call::execute_wrapping_fee_proposal { .. } => true,
+			}
+		}
+	}
+}
 
 parameter_types! {
 	pub const ProposalLifetime: u64 = 50;
@@ -246,7 +243,8 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
-	type ProposalCallFilter = CallFilterType;
+	type SetResourceProposalFilter = SetResourceProposalFilter;
+	type ExecuteProposalFilter = ExecuteProposalFilter;
 	type MaintainerNonce = MaintainerNonce;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();

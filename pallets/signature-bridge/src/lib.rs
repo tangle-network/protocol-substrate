@@ -81,7 +81,7 @@ pub mod pallet {
 	use frame_support::{
 		dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
 		pallet_prelude::*,
-		PalletId, traits::{GetCallName, GetCallMetadata, InstanceFilter},
+		PalletId, traits::{GetCallName, GetCallMetadata, InstanceFilter, Contains},
 	};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::traits::AtLeast32Bit;
@@ -105,13 +105,8 @@ pub mod pallet {
 			+ Decode
 			+ GetDispatchInfo;
 		/// Call filter for proposals
-		type ProposalCallFilter: Parameter
-			+ Member
-			+ Ord
-			+ PartialOrd
-			+ InstanceFilter<Self::Proposal>
-			+ Default
-			+ MaxEncodedLen;
+		type SetResourceFilter: Contains<Self::Proposal>;
+		type ExecuteProposalFilter: Contains<Self::Proposal>;
 		/// ChainID for anchor edges
 		type ChainId: Encode
 			+ Decode
@@ -173,10 +168,6 @@ pub mod pallet {
 	pub type MaintainerNonce<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, T::MaintainerNonce, ValueQuery>;
 
-	#[pallet::storage]
-	pub type ProposalFilter<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, T::ProposalCallFilter, ValueQuery>;
-
 	// Pallets use events to inform users when important changes are made.
 	#[pallet::event]
 	#[pallet::generate_deposit(pub fn deposit_event)]
@@ -226,27 +217,6 @@ pub mod pallet {
 		InvalidProposalData,
 		/// Invalid call - calls must be delegated to handler pallets
 		InvalidCall,
-	}
-
-	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {
-		phantom: PhantomData<T>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			GenesisConfig::<T> {
-				phantom: PhantomData::default(),
-			}
-		}
-	}
-
-	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-		fn build(&self) {
-			ProposalFilter::put(T::ProposalCallFilter::default());
-		}
 	}
 
 	#[pallet::hooks]
@@ -406,8 +376,7 @@ pub mod pallet {
 			// Ensure that call is consistent with parsed_call
 			let encoded_call = call.encode();
 			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
-			let filter = ProposalFilter::<T, I>::get();
-			filter.filter(&call);
+			ensure!(T::SetResourceProposalFilter::contains(&call), Error::<T, I>::InvalidCall);
 			// Ensure this chain id matches the r_id
 			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
 			let this_chain_id_type =
@@ -467,6 +436,7 @@ pub mod pallet {
 					.unwrap_or(false),
 				Error::<T, I>::InvalidPermissions,
 			);
+			ensure!(T::ExecuteProposalFilter::contains(&call), Error::<T, I>::InvalidCall);
 			ensure!(Self::chain_whitelisted(src_id), Error::<T, I>::ChainNotWhitelisted);
 			ensure!(Self::resource_exists(r_id), Error::<T, I>::ResourceDoesNotExist);
 			// Ensure that call is consistent with parsed_call
