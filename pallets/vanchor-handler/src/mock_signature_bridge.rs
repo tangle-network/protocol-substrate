@@ -2,7 +2,11 @@
 
 use crate as pallet_vanchor_handler;
 use codec::{Decode, Encode};
-use frame_support::{assert_ok, ord_parameter_types, parameter_types, traits::{Nothing, Contains}, PalletId};
+use frame_support::{
+	assert_ok, ord_parameter_types, parameter_types,
+	traits::{Contains, Nothing},
+	PalletId,
+};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 pub use pallet_balances;
@@ -273,12 +277,11 @@ impl Contains<Call> for ExecuteProposalFilter {
 				pallet_vanchor_handler::Call::execute_vanchor_create_proposal { .. } => true,
 				pallet_vanchor_handler::Call::execute_vanchor_update_proposal { .. } => true,
 				_ => false,
-			}
+			},
 			_ => false,
 		}
 	}
 }
-
 
 pub type ProposalNonce = u32;
 pub type MaintainerNonce = u32;

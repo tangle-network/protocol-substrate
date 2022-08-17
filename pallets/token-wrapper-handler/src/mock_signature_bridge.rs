@@ -2,7 +2,11 @@
 
 use super::*;
 use crate as pallet_token_wrapper_handler;
-use frame_support::{assert_ok, parameter_types, traits::{Nothing, Contains}, PalletId};
+use frame_support::{
+	assert_ok, parameter_types,
+	traits::{Contains, Nothing},
+	PalletId,
+};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 use sp_core::H256;
@@ -202,10 +206,12 @@ impl Contains<Call> for ExecuteProposalFilter {
 		match c {
 			Call::TokenWrapperHandler(method) => match method {
 				pallet_token_wrapper_handler::Call::execute_add_token_to_pool_share { .. } => true,
-				pallet_token_wrapper_handler::Call::execute_remove_token_from_pool_share { .. } => true,
+				pallet_token_wrapper_handler::Call::execute_remove_token_from_pool_share {
+					..
+				} => true,
 				pallet_token_wrapper_handler::Call::execute_wrapping_fee_proposal { .. } => true,
 				_ => false,
-			}
+			},
 			_ => false,
 		}
 	}

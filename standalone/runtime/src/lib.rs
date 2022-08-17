@@ -13,7 +13,7 @@ pub mod impls;
 mod voter_bags;
 use frame_election_provider_support::{onchain, ExtendedBalance, SequentialPhragmen, VoteWeight};
 use frame_support::{
-	traits::{EitherOfDiverse, EqualPrivilegeOnly, Contains},
+	traits::{Contains, EitherOfDiverse, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier},
 };
 use impls::{Author, CreditToBlockAuthor};
@@ -1288,7 +1288,9 @@ impl Contains<Call> for ExecuteProposalFilter {
 			},
 			Call::TokenWrapperHandler(method) => match method {
 				pallet_token_wrapper_handler::Call::execute_add_token_to_pool_share { .. } => true,
-				pallet_token_wrapper_handler::Call::execute_remove_token_from_pool_share { .. } => true,
+				pallet_token_wrapper_handler::Call::execute_remove_token_from_pool_share {
+					..
+				} => true,
 				pallet_token_wrapper_handler::Call::execute_wrapping_fee_proposal { .. } => true,
 				_ => false,
 			},

@@ -54,7 +54,7 @@ mod tests_signature_bridge;
 
 use frame_support::traits::EnsureOrigin;
 use frame_system::pallet_prelude::OriginFor;
-use sp_std::{vec::Vec, convert::TryInto};
+use sp_std::{convert::TryInto, vec::Vec};
 
 use pallet_token_wrapper::{traits::TokenWrapperInterface, BalanceOf};
 

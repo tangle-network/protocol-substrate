@@ -66,7 +66,7 @@ use frame_support::{
 	pallet_prelude::{ensure, DispatchError},
 	sp_runtime::traits::AccountIdConversion,
 	traits::Get,
-	PalletId, BoundedVec,
+	BoundedVec, PalletId,
 };
 use orml_traits::MultiCurrency;
 use sp_runtime::traits::AtLeast32Bit;
@@ -417,7 +417,8 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 			DispatchError,
 		>>::get_by_id(into_pool_share_id)?;
 		// Nonce should be greater than the proposal nonce in storage
-		let proposal_nonce = ProposalNonce::<T>::get(asset_details.name.clone()).unwrap_or_default();
+		let proposal_nonce =
+			ProposalNonce::<T>::get(asset_details.name.clone()).unwrap_or_default();
 		ensure!(proposal_nonce < nonce, Error::<T>::InvalidNonce);
 
 		// Nonce should increment by a maximum of 1,048

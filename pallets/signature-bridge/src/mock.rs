@@ -2,7 +2,7 @@
 
 use super::*;
 
-use frame_support::{assert_ok, parameter_types, PalletId, traits::Contains};
+use frame_support::{assert_ok, parameter_types, traits::Contains, PalletId};
 use frame_system::{self as system};
 use sp_core::H256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
