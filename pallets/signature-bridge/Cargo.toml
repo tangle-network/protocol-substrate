@@ -27,13 +27,13 @@ pallet-balances = { default-features = false, git = "https://github.com/parityte
 pallet-token-wrapper-handler = { path = "../token-wrapper-handler", default-features = false }
 pallet-vanchor-handler = { path = "../vanchor-handler", default-features = false }
 
-
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26", optional = true }
 
 webb-primitives = { path = "../../primitives", default-features = false }
 libsecp256k1 = { version = "0.7.0", default-features = false, optional = true }
 hex-literal = "0.3.4"
+impl-trait-for-tuples = "0.2.2"
 
 [dev-dependencies]
 libsecp256k1 = "0.7.0"

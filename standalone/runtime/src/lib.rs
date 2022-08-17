@@ -1261,6 +1261,36 @@ impl pallet_vanchor_handler::Config<pallet_vanchor_handler::Instance1> for Runti
 	type Event = Event;
 }
 
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+	Copy,
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	MaxEncodedLen,
+	scale_info::TypeInfo,
+)]
+pub struct CallFilterType;
+
+impl Default for CallFilterType {
+	fn default() -> Self {
+		Self
+	}
+}
+impl InstanceFilter<Call> for CallFilterType {
+	fn filter(&self, c: &Call) -> bool {
+		false
+	}
+	fn is_superset(&self, o: &Self) -> bool {
+		false
+	}
+}
+
 parameter_types! {
 	pub const ProposalLifetime: BlockNumber = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
@@ -1277,6 +1307,7 @@ impl pallet_signature_bridge::Config<SignatureBridgeInstance> for Runtime {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = u32;
+	type ProposalCallFilter = CallFilterType;
 	type MaintainerNonce = u32;
 	type SignatureVerifier = SignatureVerifier;
 	type WeightInfo = ();

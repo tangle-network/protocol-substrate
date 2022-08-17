@@ -12,6 +12,8 @@ use sp_runtime::{
 };
 use sp_std::convert::{TryFrom, TryInto};
 use std::{sync::Arc, vec};
+use frame_support::traits::InstanceFilter;
+use codec::MaxEncodedLen;
 
 use crate::{self as pallet_signature_bridge, Config};
 pub use pallet_balances;
@@ -87,6 +89,41 @@ parameter_types! {
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
 
+#[derive(
+	Copy,
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	MaxEncodedLen,
+	scale_info::TypeInfo,
+)]
+pub enum CallFilterType {
+	SetResource,
+	ExecuteProposal,
+}
+
+impl Default for CallFilterType {
+	fn default() -> Self {
+		Self::ExecuteProposal
+	}
+}
+impl InstanceFilter<Call> for CallFilterType {
+	fn filter(&self, c: &Call) -> bool {
+		match self {
+			CallFilterType::SetResource => false,
+			CallFilterType::ExecuteProposal => false,
+		}
+	}
+	fn is_superset(&self, o: &Self) -> bool {
+		false
+	}
+}
+
 impl Config for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
@@ -97,6 +134,7 @@ impl Config for Test {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = u32;
+	type ProposalCallFilter = CallFilterType;
 	type MaintainerNonce = u32;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();

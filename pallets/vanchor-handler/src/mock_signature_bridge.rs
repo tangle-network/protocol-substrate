@@ -1,9 +1,9 @@
 #![allow(clippy::zero_prefixed_literal)]
 
 use crate as pallet_vanchor_handler;
-use codec::{Decode, Encode};
-
-use frame_support::{assert_ok, ord_parameter_types, parameter_types, traits::Nothing, PalletId};
+use codec::{Decode, Encode, MaxEncodedLen};
+use sp_runtime::RuntimeDebug;
+use frame_support::{assert_ok, ord_parameter_types, parameter_types, traits::{Nothing, InstanceFilter}, PalletId};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 pub use pallet_balances;
@@ -253,6 +253,36 @@ parameter_types! {
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
 
+#[derive(
+	Copy,
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	MaxEncodedLen,
+	scale_info::TypeInfo,
+)]
+pub struct CallFilterType;
+
+impl Default for CallFilterType {
+	fn default() -> Self {
+		Self
+	}
+}
+impl InstanceFilter<Call> for CallFilterType {
+	fn filter(&self, c: &Call) -> bool {
+		false
+	}
+	fn is_superset(&self, o: &Self) -> bool {
+		false
+	}
+}
+
+
 pub type ProposalNonce = u32;
 pub type MaintainerNonce = u32;
 
@@ -267,6 +297,7 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
+	type ProposalCallFilter = CallFilterType;
 	type MaintainerNonce = MaintainerNonce;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();

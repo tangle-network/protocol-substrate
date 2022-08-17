@@ -81,7 +81,7 @@ pub mod pallet {
 	use frame_support::{
 		dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
 		pallet_prelude::*,
-		PalletId,
+		PalletId, traits::{GetCallName, GetCallMetadata, InstanceFilter},
 	};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::traits::AtLeast32Bit;
@@ -104,6 +104,14 @@ pub mod pallet {
 			+ EncodeLike
 			+ Decode
 			+ GetDispatchInfo;
+		/// Call filter for proposals
+		type ProposalCallFilter: Parameter
+			+ Member
+			+ Ord
+			+ PartialOrd
+			+ InstanceFilter<Self::Proposal>
+			+ Default
+			+ MaxEncodedLen;
 		/// ChainID for anchor edges
 		type ChainId: Encode
 			+ Decode
@@ -165,6 +173,10 @@ pub mod pallet {
 	pub type MaintainerNonce<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, T::MaintainerNonce, ValueQuery>;
 
+	#[pallet::storage]
+	pub type ProposalFilter<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::ProposalCallFilter, ValueQuery>;
+
 	// Pallets use events to inform users when important changes are made.
 	#[pallet::event]
 	#[pallet::generate_deposit(pub fn deposit_event)]
@@ -214,6 +226,27 @@ pub mod pallet {
 		InvalidProposalData,
 		/// Invalid call - calls must be delegated to handler pallets
 		InvalidCall,
+	}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		phantom: PhantomData<T>,
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T> {
+		fn default() -> Self {
+			GenesisConfig::<T> {
+				phantom: PhantomData::default(),
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+			ProposalFilter::put(T::ProposalCallFilter::default());
+		}
 	}
 
 	#[pallet::hooks]
@@ -373,10 +406,8 @@ pub mod pallet {
 			// Ensure that call is consistent with parsed_call
 			let encoded_call = call.encode();
 			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
-			match call {
-				pallet_vanchor_handler::Call::execute_set_resource_proposal { .. } => {},
-				_ => Err(Error::<T, I>::InvalidCall)?,
-			};
+			let filter = ProposalFilter::<T, I>::get();
+			filter.filter(&call);
 			// Ensure this chain id matches the r_id
 			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
 			let this_chain_id_type =
@@ -441,8 +472,6 @@ pub mod pallet {
 			// Ensure that call is consistent with parsed_call
 			let encoded_call = call.encode();
 			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
-			// Ensure the call is for a handler
-			println!("{:?}", call.name());
 			// Ensure this chain id matches the r_id
 			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
 			let this_chain_id_type =

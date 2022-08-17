@@ -5176,6 +5176,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "hex-literal 0.3.4",
+ "impl-trait-for-tuples",
  "libsecp256k1",
  "pallet-balances",
  "pallet-token-wrapper-handler",

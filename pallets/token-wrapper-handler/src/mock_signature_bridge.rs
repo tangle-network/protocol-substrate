@@ -2,7 +2,9 @@
 
 use super::*;
 use crate as pallet_token_wrapper_handler;
-use frame_support::{assert_ok, parameter_types, traits::Nothing, PalletId};
+use sp_runtime::RuntimeDebug;
+use codec::{Decode, Encode, MaxEncodedLen};
+use frame_support::{assert_ok, parameter_types, traits::{Nothing, InstanceFilter}, PalletId};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 use sp_core::H256;
@@ -189,6 +191,43 @@ pub type ChainId = u64;
 pub type ProposalNonce = u32;
 pub type MaintainerNonce = u32;
 
+#[derive(
+	Copy,
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	MaxEncodedLen,
+	scale_info::TypeInfo,
+)]
+pub enum CallFilterType {
+	SetResource,
+	ExecuteProposal,
+}
+
+impl Default for CallFilterType {
+	fn default() -> Self {
+		Self::ExecuteProposal
+	}
+}
+impl InstanceFilter<Call> for CallFilterType {
+	fn filter(&self, c: &Call) -> bool {
+		match self {
+			CallFilterType::SetResource => false,
+			CallFilterType::ExecuteProposal => !matches!(c,
+				Call::TokenWrapperHandler { .. }),
+		}
+	}
+	fn is_superset(&self, o: &Self) -> bool {
+		false
+	}
+}
+
+
 parameter_types! {
 	pub const ProposalLifetime: u64 = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
@@ -207,6 +246,7 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
+	type ProposalCallFilter = CallFilterType;
 	type MaintainerNonce = MaintainerNonce;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();
