@@ -10268,6 +10268,7 @@ dependencies = [
 [[package]]
 name = "webb-proposals"
 version = "0.5.3"
+source = "git+https://github.com/webb-tools/webb-rs?branch=drew/update-substrate-proposals#13d6d858cf65c0339c4effb72a94e0c296dc10b6"
 dependencies = [
  "num-traits",
  "parity-scale-codec",

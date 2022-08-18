@@ -40,7 +40,8 @@ ethabi = { version = "15.0.0", default-features = false }
 hex-literal = { version = "0.3.4", default-features = false }
 
 # webb-proposals = { version = "0.5.3", default-features = false, features = ["scale", "substrate", "evm"] }
-webb-proposals = { path = "../../webb-rs/proposals", default-features = false, features = ["scale", "substrate", "evm"] }
+webb-proposals = { git = "https://github.com/webb-tools/webb-rs", branch = "drew/update-substrate-proposals", default-features = false, features = ["scale", "substrate", "evm"] }
+# webb-proposals = { path = "../../webb-rs/proposals", default-features = false, features = ["scale", "substrate", "evm"] }
 
 [features]
 default = ["std", "hashing", "verifying", "field_ops"]

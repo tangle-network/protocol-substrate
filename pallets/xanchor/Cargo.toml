@@ -23,7 +23,8 @@ orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-li
 webb-primitives = { path = "../../primitives", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
 # webb-proposals = { version = "0.5.3", default-features = false, features = ["scale", "substrate"] }
-webb-proposals = { path = "../../../webb-rs/proposals", default-features = false, features = ["scale", "substrate"] }
+webb-proposals = { git = "https://github.com/webb-tools/webb-rs", branch = "drew/update-substrate-proposals", default-features = false, features = ["scale", "substrate"] }
+# webb-proposals = { path = "../../../webb-rs/proposals", default-features = false, features = ["scale", "substrate"] }
 
 # XCM dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.26", default-features = false }
