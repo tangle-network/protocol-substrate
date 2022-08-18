@@ -59,11 +59,7 @@ where
 
 	let system: SubstrateTargetSystem = match resource_id.target_system() {
 		TargetSystem::Substrate(system) => system,
-		_ => SubstrateTargetSystem::builder()
-			.pallet_index(0)
-			.call_index(0)
-			.tree_id(0)
-			.build(),
+		_ => SubstrateTargetSystem::builder().pallet_index(0).tree_id(0).build(),
 	};
 
 	// returns the underlying chain id
@@ -113,7 +109,7 @@ mod tests {
 		let tree_id = 0u32;
 		let chain_id = 2000u32;
 		compute_chain_id_type(chain_id, [2, 0]);
-		let system = SubstrateTargetSystem { pallet_index: 0, call_index: 0, tree_id };
+		let system = SubstrateTargetSystem { pallet_index: 0, tree_id };
 		let resource_id = derive_resource_id(chain_id, system);
 		let (system2, chain_id2): (SubstrateTargetSystem, u64) = parse_resource_id(resource_id);
 		assert_eq!(chain_id as u64, chain_id2);

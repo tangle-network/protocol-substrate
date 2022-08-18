@@ -68,11 +68,7 @@ fn should_be_able_to_add_neighbors_and_check_history() {
 		let src_chain_id = TypedChainId::Substrate(1);
 		let src_resource_id = ResourceId::new(
 			TargetSystem::Substrate(
-				SubstrateTargetSystem::builder()
-					.pallet_index(4)
-					.call_index(0)
-					.tree_id(src_tree_id)
-					.build(),
+				SubstrateTargetSystem::builder().pallet_index(4).tree_id(src_tree_id).build(),
 			),
 			src_chain_id,
 		);

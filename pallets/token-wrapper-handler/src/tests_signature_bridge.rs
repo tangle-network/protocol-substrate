@@ -16,8 +16,12 @@ use asset_registry::AssetType;
 use frame_support::{assert_err, assert_ok};
 use webb_proposals::{
 	substrate::{TokenAddProposal, TokenRemoveProposal, WrappingFeeUpdateProposal},
-	SubstrateTargetSystem,
+	FunctionSignature, SubstrateTargetSystem,
 };
+
+const WRAPPING_FEE_FUNCTION_SIG: FunctionSignature = FunctionSignature(0u32.to_be_bytes());
+const ADD_TOKEN_FUNCTION_SIG: FunctionSignature = FunctionSignature(1u32.to_be_bytes());
+const REMOVE_TOKEN_FUNCTION_SIG: FunctionSignature = FunctionSignature(2u32.to_be_bytes());
 
 fn get_add_token_resource() -> Vec<u8> {
 	b"TokenWrapperHandler.execute_add_token_to_pool_share".to_vec()
@@ -75,9 +79,9 @@ fn make_remove_token_proposal(
 
 fn make_proposal_header(
 	resource_id: webb_proposals::ResourceId,
+	function_signature: webb_proposals::FunctionSignature,
 	nonce: webb_proposals::Nonce,
 ) -> webb_proposals::ProposalHeader {
-	let function_signature = webb_proposals::FunctionSignature::new([0u8; 4]);
 	let header = webb_proposals::ProposalHeader::new(resource_id, function_signature, nonce);
 	header
 }
@@ -90,7 +94,6 @@ fn should_update_fee_with_sig_succeed() {
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
 		pallet_index: 7,
-		call_index: 0,
 		tree_id: 0,
 	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
@@ -114,7 +117,7 @@ fn should_update_fee_with_sig_succeed() {
 		)
 		.unwrap();
 		let nonce = webb_proposals::Nonce::from(0x0001);
-		let header = make_proposal_header(r_id, nonce);
+		let header = make_proposal_header(r_id, WRAPPING_FEE_FUNCTION_SIG, nonce);
 		let wrapping_fee_proposal_bytes = make_wrapping_fee_proposal(header, 5, pool_share_id);
 		let msg = keccak_256(&wrapping_fee_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
@@ -156,7 +159,6 @@ fn should_add_token_with_sig_succeed() {
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
 		pallet_index: 7,
-		call_index: 0,
 		tree_id: 0,
 	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
@@ -184,7 +186,7 @@ fn should_add_token_with_sig_succeed() {
 		.unwrap();
 		// create add token proposal bytes
 		let nonce = webb_proposals::Nonce::from(0x0001);
-		let header = make_proposal_header(r_id, nonce);
+		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 		let msg = keccak_256(&add_token_proposal_bytes);
@@ -216,7 +218,6 @@ fn should_remove_token_with_sig_succeed() {
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
 		pallet_index: 7,
-		call_index: 2,
 		tree_id: 0,
 	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
@@ -247,7 +248,7 @@ fn should_remove_token_with_sig_succeed() {
 		)
 		.unwrap();
 		let nonce = webb_proposals::Nonce::from(0x0001);
-		let header = make_proposal_header(r_id, nonce);
+		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 
@@ -273,7 +274,7 @@ fn should_remove_token_with_sig_succeed() {
 		// Check that first_token_id is part of pool
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
 		let nonce = webb_proposals::Nonce::from(0x0002);
-		let header = make_proposal_header(r_id, nonce);
+		let header = make_proposal_header(r_id, REMOVE_TOKEN_FUNCTION_SIG, nonce);
 		let remove_token_proposal_bytes =
 			make_remove_token_proposal(header, "meme".to_string(), first_token_id);
 		let msg = keccak_256(&remove_token_proposal_bytes);
@@ -300,7 +301,6 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
 		pallet_index: 7,
-		call_index: 0,
 		tree_id: 0,
 	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
@@ -333,7 +333,7 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 			public_uncompressed.to_vec()
 		));
 		let nonce = webb_proposals::Nonce::from(0x0001);
-		let header = make_proposal_header(r_id, nonce);
+		let header = make_proposal_header(r_id, REMOVE_TOKEN_FUNCTION_SIG, nonce);
 		let remove_token_proposal_bytes =
 			make_remove_token_proposal(header, "meme".to_string(), first_token_id);
 		let msg = keccak_256(&remove_token_proposal_bytes);
@@ -359,7 +359,6 @@ fn should_add_many_tokens_with_sig_succeed() {
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
 		pallet_index: 7,
-		call_index: 1,
 		tree_id: 0,
 	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
@@ -405,7 +404,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 			public_uncompressed.to_vec()
 		));
 		let nonce = webb_proposals::Nonce::from(0x0001);
-		let header = make_proposal_header(r_id, nonce);
+		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 		let add_token_call: Call =
@@ -421,7 +420,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 			sig.0.to_vec(),
 		));
 		let nonce = webb_proposals::Nonce::from(0x0002);
-		let header = make_proposal_header(r_id, nonce);
+		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), second_token_id);
 		let add_token_call: Call =
@@ -438,7 +437,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 			sig.0.to_vec(),
 		));
 		let nonce = webb_proposals::Nonce::from(0x0003);
-		let header = make_proposal_header(r_id, nonce);
+		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), third_token_id);
 		let add_token_call: Call =
@@ -472,7 +471,6 @@ fn should_fail_to_add_same_token_with_sig() {
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
 		pallet_index: 7,
-		call_index: 0,
 		tree_id: 0,
 	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
@@ -499,7 +497,7 @@ fn should_fail_to_add_same_token_with_sig() {
 		)
 		.unwrap();
 		let nonce = webb_proposals::Nonce::from(0x0001);
-		let header = make_proposal_header(r_id, nonce);
+		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 		let add_token_call: Call =
@@ -525,7 +523,7 @@ fn should_fail_to_add_same_token_with_sig() {
 
 		// Have to remake prop_data with incremented nonce
 		let nonce = webb_proposals::Nonce::from(0x0002);
-		let header = make_proposal_header(r_id, nonce);
+		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 		let add_token_call: Call =
@@ -552,7 +550,6 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);
 	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
 		pallet_index: 7,
-		call_index: 0,
 		tree_id: 0,
 	});
 	let r_id = webb_proposals::ResourceId::new(target_system, this_chain_id);
@@ -579,7 +576,7 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 		)
 		.unwrap();
 		let nonce = webb_proposals::Nonce::from(0x0001);
-		let header = make_proposal_header(r_id, nonce);
+		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 		let add_token_call: Call =
