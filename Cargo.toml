@@ -18,7 +18,6 @@ members = [
 	# "pallets/xanchor",
 	"pallets/token-wrapper",
 	"pallets/token-wrapper-handler",
-	"pallets/bridge-registry",
 	"pallets/relayer-registry",
 	"standalone/*",
 ]

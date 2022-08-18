@@ -1345,23 +1345,9 @@ impl pallet_token_wrapper_handler::Config for Runtime {
 }
 
 parameter_types! {
-	pub const MaxAdditionalFields: u32 = 5;
-	pub const MaxResources: u32 = 32;
-}
-
-type BridgeRegistryInstance = pallet_bridge_registry::Instance1;
-impl pallet_bridge_registry::Config<BridgeRegistryInstance> for Runtime {
-	type Event = Event;
-	type BridgeIndex = u32;
-	type MaxAdditionalFields = MaxAdditionalFields;
-	type MaxResources = MaxResources;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type WeightInfo = ();
-}
-
-parameter_types! {
 	pub const FieldDeposit: u64 = 1;
 	pub const BasicDeposit: u64 = 1;
+	pub const MaxAdditionalFields: u32 = 5;
 }
 
 impl pallet_relayer_registry::Config for Runtime {
@@ -1453,9 +1439,6 @@ construct_runtime!(
 
 		// Signature Bridge
 		SignatureBridge: pallet_signature_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
-
-		// Bridge Registry
-		BridgeRegistry: pallet_bridge_registry::<Instance1>::{Pallet, Call, Storage, Event<T>},
 
 		// Relayer Registry
 		RelayerRegistry: pallet_relayer_registry::{Pallet, Call, Storage, Event<T>},
@@ -1737,7 +1720,6 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_token_wrapper, TokenWrapper);
 			list_benchmark!(list, extra, pallet_token_wrapper_handler, TokenWrapperHandler);
 			list_benchmark!(list, extra, pallet_signature_bridge, SignatureBridge);
-			list_benchmark!(list, extra, pallet_bridge_registry, BridgeRegistry);
 			list_benchmark!(list, extra, pallet_relayer_registry, RelayerRegistry);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
@@ -1778,7 +1760,6 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_token_wrapper, TokenWrapper);
 			add_benchmark!(params, batches, pallet_token_wrapper_handler, TokenWrapperHandler);
 			add_benchmark!(params, batches, pallet_signature_bridge, SignatureBridge);
-			add_benchmark!(params, batches, pallet_bridge_registry, BridgeRegistry);
 			add_benchmark!(params, batches, pallet_relayer_registry, RelayerRegistry);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
