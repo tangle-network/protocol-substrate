@@ -374,10 +374,8 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 
 		let anchor_update_proposal = AnchorUpdateProposal::builder()
 			.header(proposal_header)
-			.src_chain(typed_chain_id)
 			.merkle_root(merkle_root)
-			.latest_leaf_index(latest_leaf_index_u32)
-			.target(target_system.into_fixed_bytes())
+			.src_resource_id(r_id)
 			.pallet_index(10)
 			.build();
 
@@ -823,10 +821,8 @@ fn should_fail_to_call_update_as_signed_account() {
 
 		let anchor_update_proposal = AnchorUpdateProposal::builder()
 			.header(proposal_header)
-			.src_chain(typed_chain_id)
 			.merkle_root(merkle_root)
-			.latest_leaf_index(latest_leaf_index_u32)
-			.target(target_system.into_fixed_bytes())
+			.src_resource_id(target_system.into_fixed_bytes())
 			.pallet_index(10)
 			.build();
 

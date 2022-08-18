@@ -570,14 +570,32 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn contains_asset(pool_share_id: T::AssetId, asset_id: T::AssetId) -> bool {
-		<Self as ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError>>::contains_asset(
-			pool_share_id,
-			asset_id,
-		)
+		<Self as ShareTokenRegistry<
+			T::AssetId,
+			Vec<u8>,
+			T::Balance,
+			BoundedVec<u8, T::StringLimit>,
+			DispatchError,
+		>>::contains_asset(pool_share_id, asset_id)
 	}
 }
 
-impl<T: Config> Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError> for Pallet<T> {
+impl<T: Config>
+	Registry<
+		T::AssetId,
+		Vec<u8>,
+		T::Balance,
+		BoundedVec<u8, <T as Config>::StringLimit>,
+		DispatchError,
+	> for Pallet<T>
+{
+	fn get_by_id(asset_id: T::AssetId) -> Result<AssetDetailsT<T>, DispatchError> {
+		match Assets::<T>::get(asset_id) {
+			Some(asset_details) => Ok(asset_details),
+			None => Err(Error::<T>::AssetNotFound.into()),
+		}
+	}
+
 	fn exists(asset_id: T::AssetId) -> bool {
 		Assets::<T>::contains_key(&asset_id)
 	}
@@ -599,7 +617,15 @@ impl<T: Config> Registry<T::AssetId, Vec<u8>, T::Balance, DispatchError> for Pal
 	}
 }
 
-impl<T: Config> ShareTokenRegistry<T::AssetId, Vec<u8>, T::Balance, DispatchError> for Pallet<T> {
+impl<T: Config>
+	ShareTokenRegistry<
+		T::AssetId,
+		Vec<u8>,
+		T::Balance,
+		BoundedVec<u8, <T as Config>::StringLimit>,
+		DispatchError,
+	> for Pallet<T>
+{
 	fn retrieve_shared_asset(
 		name: &Vec<u8>,
 		_assets: &[T::AssetId],

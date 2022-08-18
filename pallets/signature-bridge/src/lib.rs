@@ -81,6 +81,7 @@ pub mod pallet {
 	use frame_support::{
 		dispatch::{DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo},
 		pallet_prelude::*,
+		traits::Contains,
 		PalletId,
 	};
 	use frame_system::pallet_prelude::*;
@@ -104,6 +105,9 @@ pub mod pallet {
 			+ EncodeLike
 			+ Decode
 			+ GetDispatchInfo;
+		/// Call filter for proposals
+		type SetResourceProposalFilter: Contains<Self::Proposal>;
+		type ExecuteProposalFilter: Contains<Self::Proposal>;
 		/// ChainID for anchor edges
 		type ChainId: Encode
 			+ Decode
@@ -212,6 +216,8 @@ pub mod pallet {
 		InvalidNonce,
 		/// Invalid proposal data
 		InvalidProposalData,
+		/// Invalid call - calls must be delegated to handler pallets
+		InvalidCall,
 	}
 
 	#[pallet::hooks]
@@ -351,11 +357,13 @@ pub mod pallet {
 			let proposal_nonce = ProposalNonce::<T, I>::get();
 			ensure!(proposal_nonce < nonce, Error::<T, I>::InvalidNonce);
 
-			// Nonce should increment by 1
+			// Nonce should increment by a maximum of 1,048
 			ensure!(
-				nonce <= proposal_nonce + T::ProposalNonce::from(1u32),
+				nonce <= proposal_nonce + T::ProposalNonce::from(1_048u32),
 				Error::<T, I>::InvalidNonce
 			);
+			// Set the new nonce
+			ProposalNonce::<T, I>::set(nonce);
 
 			// Verify proposal signature
 			ensure!(
@@ -369,7 +377,7 @@ pub mod pallet {
 			// Ensure that call is consistent with parsed_call
 			let encoded_call = call.encode();
 			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
-
+			ensure!(T::SetResourceProposalFilter::contains(&call), Error::<T, I>::InvalidCall);
 			// Ensure this chain id matches the r_id
 			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
 			let this_chain_id_type =
@@ -381,8 +389,8 @@ pub mod pallet {
 			);
 			// check if resource already exists
 			ensure!(!Self::resource_exists(r_id), Error::<T, I>::ResourceAlreadyExists);
-			//add resource
-			_ = Self::register_resource(r_id);
+			// add resource
+			Self::register_resource(r_id)?;
 
 			Self::finalize_execution(src_id, nonce, call)
 		}
@@ -423,29 +431,18 @@ pub mod pallet {
 			let r_id = Self::parse_r_id_from_proposal_data(&proposal_data)?;
 			let nonce = Self::parse_nonce_from_proposal_data(&proposal_data)?;
 			let parsed_call = Self::parse_call_from_proposal_data(&proposal_data);
-
-			// Nonce should be greater than the proposal nonce in storage
-			let proposal_nonce = ProposalNonce::<T, I>::get();
-			ensure!(proposal_nonce < nonce, Error::<T, I>::InvalidNonce);
-
-			// Nonce should increment by 1
-			ensure!(
-				nonce <= proposal_nonce + T::ProposalNonce::from(1u32),
-				Error::<T, I>::InvalidNonce
-			);
-
+			// Verify signature of proposal data
 			ensure!(
 				T::SignatureVerifier::verify(&Self::maintainer(), &proposal_data[..], &signature)
 					.unwrap_or(false),
 				Error::<T, I>::InvalidPermissions,
 			);
+			ensure!(T::ExecuteProposalFilter::contains(&call), Error::<T, I>::InvalidCall);
 			ensure!(Self::chain_whitelisted(src_id), Error::<T, I>::ChainNotWhitelisted);
 			ensure!(Self::resource_exists(r_id), Error::<T, I>::ResourceDoesNotExist);
-
 			// Ensure that call is consistent with parsed_call
 			let encoded_call = call.encode();
 			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
-
 			// Ensure this chain id matches the r_id
 			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
 			let this_chain_id_type =
@@ -504,10 +501,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn parse_call_from_proposal_data(proposal_data: &[u8]) -> Vec<u8> {
 		// Not [36..] because there are 4 byte of zero padding to match Solidity side
 		proposal_data[40..].to_vec()
-	}
-
-	pub fn parse_method_from_call(parsed_call: Vec<u8>) -> Vec<u8> {
-		parsed_call
 	}
 
 	pub fn parse_chain_id_type_from_r_id(r_id: ResourceId) -> u64 {

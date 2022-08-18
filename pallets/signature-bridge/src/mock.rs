@@ -2,7 +2,7 @@
 
 use super::*;
 
-use frame_support::{assert_ok, parameter_types, PalletId};
+use frame_support::{assert_ok, parameter_types, traits::Contains, PalletId};
 use frame_system::{self as system};
 use sp_core::H256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
@@ -87,6 +87,20 @@ parameter_types! {
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
 
+pub struct SetResourceProposalFilter;
+impl Contains<Call> for SetResourceProposalFilter {
+	fn contains(_c: &Call) -> bool {
+		false
+	}
+}
+
+pub struct ExecuteAllProposalsFilter;
+impl Contains<Call> for ExecuteAllProposalsFilter {
+	fn contains(_c: &Call) -> bool {
+		true
+	}
+}
+
 impl Config for Test {
 	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type BridgeAccountId = BridgeAccountId;
@@ -97,6 +111,8 @@ impl Config for Test {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = u32;
+	type SetResourceProposalFilter = SetResourceProposalFilter;
+	type ExecuteProposalFilter = ExecuteAllProposalsFilter;
 	type MaintainerNonce = u32;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();

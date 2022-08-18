@@ -2,7 +2,7 @@ use codec::{Decode, Encode};
 use scale_info::prelude::fmt::Debug;
 use sp_runtime::traits::AtLeast32Bit;
 use sp_std::vec::Vec;
-use webb_proposals::{ResourceId, TargetSystem, TypedChainId};
+use webb_proposals::{ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId};
 
 /// Takes an (ideally u32) ChainIdentifier and a chain type and re-computes
 /// an updated chain id with the chain type prepended to it. The resulting
@@ -40,8 +40,8 @@ pub fn element_encoder(v: &[u8]) -> [u8; 32] {
 }
 
 /// gets the chain id and tree id to derive resource id
-pub fn derive_resource_id(chain_id: u32, tree_id: u32) -> ResourceId {
-	let target_system = TargetSystem::TreeId(tree_id);
+pub fn derive_resource_id(chain_id: u32, system: SubstrateTargetSystem) -> ResourceId {
+	let target_system = TargetSystem::Substrate(system);
 	let typed_chain_id = TypedChainId::Substrate(chain_id);
 
 	let resource_id = webb_proposals::ResourceId::new(target_system, typed_chain_id);
@@ -49,26 +49,24 @@ pub fn derive_resource_id(chain_id: u32, tree_id: u32) -> ResourceId {
 }
 
 /// Gets the resource id and parses it to tree id and chain id
-pub fn parse_resource_id<TreeId, ChainId>(
+pub fn parse_resource_id<ChainId>(
 	resource_id: webb_proposals::ResourceId,
-) -> (TreeId, ChainId)
+) -> (SubstrateTargetSystem, ChainId)
 where
-	TreeId: Encode + Decode + AtLeast32Bit + Default + Copy + Debug,
 	ChainId: Encode + Decode + AtLeast32Bit + Default + Copy + Debug,
 {
 	let typed_chain_id = resource_id.typed_chain_id();
 
-	let tree_id_u32: u32 = match resource_id.target_system() {
-		TargetSystem::TreeId(tree_id) => tree_id,
-		_ => 0,
+	let system: SubstrateTargetSystem = match resource_id.target_system() {
+		TargetSystem::Substrate(system) => system,
+		_ => SubstrateTargetSystem::builder().pallet_index(0).tree_id(0).build(),
 	};
-	let tree_id = TreeId::try_from(tree_id_u32).unwrap_or_default();
 
 	// returns the underlying chain id
 	// the underlying chain id will be used to get the actual chain id(Substrate)
 	let chain_id = ChainId::try_from(typed_chain_id.underlying_chain_id()).unwrap_or_default();
 
-	(tree_id, chain_id)
+	(system, chain_id)
 }
 
 /// takes an input of the underlying chain id and
@@ -111,9 +109,10 @@ mod tests {
 		let tree_id = 0u32;
 		let chain_id = 2000u32;
 		compute_chain_id_type(chain_id, [2, 0]);
-		let resource_id = derive_resource_id(chain_id, tree_id);
-		let (tree_id2, chain_id2): (u32, u64) = parse_resource_id(resource_id);
+		let system = SubstrateTargetSystem { pallet_index: 0, tree_id };
+		let resource_id = derive_resource_id(chain_id, system);
+		let (system2, chain_id2): (SubstrateTargetSystem, u64) = parse_resource_id(resource_id);
 		assert_eq!(chain_id as u64, chain_id2);
-		assert_eq!(tree_id, tree_id2);
+		assert_eq!(system, system2);
 	}
 }

@@ -2,7 +2,11 @@
 
 use super::*;
 use crate as pallet_token_wrapper_handler;
-use frame_support::{assert_ok, parameter_types, traits::Nothing, PalletId};
+use frame_support::{
+	assert_ok, parameter_types,
+	traits::{Contains, Nothing},
+	PalletId,
+};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 use sp_core::H256;
@@ -12,6 +16,7 @@ use sp_runtime::{
 	Permill,
 };
 use sp_std::convert::{TryFrom, TryInto};
+use webb_proposals::ResourceId;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -181,11 +186,36 @@ impl pallet_token_wrapper::Config for Test {
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TreasuryPalletId;
 	type WeightInfo = ();
+	type ProposalNonce = u32;
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
 pub type ChainId = u64;
 pub type ProposalNonce = u32;
 pub type MaintainerNonce = u32;
+
+pub struct SetResourceProposalFilter;
+impl Contains<Call> for SetResourceProposalFilter {
+	fn contains(_c: &Call) -> bool {
+		false
+	}
+}
+
+pub struct ExecuteProposalFilter;
+impl Contains<Call> for ExecuteProposalFilter {
+	fn contains(c: &Call) -> bool {
+		match c {
+			Call::TokenWrapperHandler(method) => match method {
+				pallet_token_wrapper_handler::Call::execute_add_token_to_pool_share { .. } => true,
+				pallet_token_wrapper_handler::Call::execute_remove_token_from_pool_share {
+					..
+				} => true,
+				pallet_token_wrapper_handler::Call::execute_wrapping_fee_proposal { .. } => true,
+				_ => false,
+			},
+			_ => false,
+		}
+	}
+}
 
 parameter_types! {
 	pub const ProposalLifetime: u64 = 50;
@@ -205,6 +235,8 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
+	type SetResourceProposalFilter = SetResourceProposalFilter;
+	type ExecuteProposalFilter = ExecuteProposalFilter;
 	type MaintainerNonce = MaintainerNonce;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();

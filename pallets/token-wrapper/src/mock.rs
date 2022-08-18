@@ -180,6 +180,7 @@ impl Config for Test {
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TreasuryPalletId;
 	type WeightInfo = ();
+	type ProposalNonce = u32;
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
 

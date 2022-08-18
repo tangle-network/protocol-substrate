@@ -16,20 +16,19 @@ fn should_init() {
 fn should_handle_signed_evm_anchor_update_proposals() {
 	new_test_ext().execute_with(|| {
 		// Create src info
-		let src_chain = webb_proposals::TypedChainId::Evm(1);
-		let src_target_system = webb_proposals::TargetSystem::new_contract_address([1u8; 20]);
-		let src_resource_id = webb_proposals::ResourceId::new(src_target_system, src_chain);
+		let target_chain_id = webb_proposals::TypedChainId::Evm(1);
+		let target_target_system = webb_proposals::TargetSystem::new_contract_address([1u8; 20]);
+		let target_resource_id =
+			webb_proposals::ResourceId::new(target_target_system, target_chain_id);
 		// Create dest info
-		let dest_chain = webb_proposals::TypedChainId::Evm(2);
-		let dest_target_system = webb_proposals::TargetSystem::new_contract_address([2u8; 20]);
-		let dest_resource_id = webb_proposals::ResourceId::new(dest_target_system, dest_chain);
+		let src_chain_id = webb_proposals::TypedChainId::Evm(2);
+		let src_target_system = webb_proposals::TargetSystem::new_contract_address([2u8; 20]);
+		let src_resource_id = webb_proposals::ResourceId::new(src_target_system, src_chain_id);
 		// Create mocked signed EVM anchor update proposals
 		let proposal = evm::AnchorUpdateProposal::new(
-			ProposalHeader::new(src_resource_id, FunctionSignature([0u8; 4]), Nonce(1)),
-			src_chain,
-			1,
+			ProposalHeader::new(target_resource_id, FunctionSignature([0u8; 4]), Nonce(1)),
 			[1u8; 32],
-			dest_resource_id.0,
+			src_resource_id,
 		);
 		let signed_proposal = Proposal::Signed {
 			kind: ProposalKind::AnchorUpdate,
@@ -39,12 +38,12 @@ fn should_handle_signed_evm_anchor_update_proposals() {
 		// Handle signed proposal
 		assert_ok!(BridgeRegistry::on_signed_proposal(signed_proposal));
 		// Verify the storage system updates correctly
+		assert_eq!(ResourceToBridgeIndex::<Test>::get(&target_resource_id), Some(1));
 		assert_eq!(ResourceToBridgeIndex::<Test>::get(&src_resource_id), Some(1));
-		assert_eq!(ResourceToBridgeIndex::<Test>::get(&dest_resource_id), Some(1));
 		assert_eq!(
 			Bridges::<Test>::get(1).unwrap(),
 			BridgeMetadata {
-				resource_ids: bounded_vec![src_resource_id, dest_resource_id],
+				resource_ids: bounded_vec![target_resource_id, src_resource_id],
 				info: Default::default()
 			}
 		);
@@ -56,23 +55,22 @@ fn should_handle_signed_evm_anchor_update_proposals() {
 fn should_handle_multiple_signed_evm_anchor_update_proposals() {
 	new_test_ext().execute_with(|| {
 		// Create src info
-		let src_chain = webb_proposals::TypedChainId::Evm(1);
-		let src_target_system = webb_proposals::TargetSystem::new_contract_address([1u8; 20]);
-		let src_resource_id = webb_proposals::ResourceId::new(src_target_system, src_chain);
+		let target_chain_id = webb_proposals::TypedChainId::Evm(1);
+		let target_target_system = webb_proposals::TargetSystem::new_contract_address([1u8; 20]);
+		let target_resource_id =
+			webb_proposals::ResourceId::new(target_target_system, target_chain_id);
 		// Create dest info
-		let mut resources = vec![src_resource_id];
+		let mut resources = vec![target_resource_id];
 		for i in 1..7 {
-			let dest_chain = webb_proposals::TypedChainId::Evm(i);
-			let dest_target_system =
+			let src_chain_id = webb_proposals::TypedChainId::Evm(i);
+			let src_target_system =
 				webb_proposals::TargetSystem::new_contract_address([i as u8; 20]);
-			let dest_resource_id = webb_proposals::ResourceId::new(dest_target_system, dest_chain);
+			let src_resource_id = webb_proposals::ResourceId::new(src_target_system, src_chain_id);
 			// Create mocked signed EVM anchor update proposals
 			let proposal = evm::AnchorUpdateProposal::new(
-				ProposalHeader::new(src_resource_id, FunctionSignature([0u8; 4]), Nonce(1)),
-				src_chain,
-				1,
+				ProposalHeader::new(target_resource_id, FunctionSignature([0u8; 4]), Nonce(1)),
 				[1u8; 32],
-				dest_resource_id.0,
+				src_resource_id,
 			);
 			let signed_proposal = Proposal::Signed {
 				kind: ProposalKind::AnchorUpdate,
@@ -80,7 +78,7 @@ fn should_handle_multiple_signed_evm_anchor_update_proposals() {
 				signature: vec![],
 			};
 			assert_ok!(BridgeRegistry::on_signed_proposal(signed_proposal));
-			resources.push(dest_resource_id);
+			resources.push(src_resource_id);
 		}
 		// Check that all resources point to the same bridge
 		for r in resources.clone() {
@@ -100,54 +98,49 @@ fn should_handle_multiple_signed_evm_anchor_update_proposals() {
 #[test]
 fn should_fail_to_link_resources_from_different_bridges() {
 	new_test_ext().execute_with(|| {
+		// Create target info
+		let target_chain_id = webb_proposals::TypedChainId::Evm(1);
+		let target_target_system = webb_proposals::TargetSystem::new_contract_address([1u8; 20]);
+		let target_resource_id =
+			webb_proposals::ResourceId::new(target_target_system, target_chain_id);
+		{
+			// Connect target with itself
+			let target_dummy_proposal = evm::AnchorUpdateProposal::new(
+				ProposalHeader::new(target_resource_id, FunctionSignature([0u8; 4]), Nonce(1)),
+				[1u8; 32],
+				target_resource_id,
+			);
+			assert_ok!(BridgeRegistry::on_signed_proposal(Proposal::Signed {
+				kind: ProposalKind::AnchorUpdate,
+				data: target_dummy_proposal.into_bytes().to_vec(),
+				signature: vec![],
+			}));
+			assert_eq!(NextBridgeIndex::<Test>::get(), 2);
+		}
+
 		// Create src info
-		let src_chain = webb_proposals::TypedChainId::Evm(1);
-		let src_target_system = webb_proposals::TargetSystem::new_contract_address([1u8; 20]);
-		let src_resource_id = webb_proposals::ResourceId::new(src_target_system, src_chain);
+		let src_chain_id = webb_proposals::TypedChainId::Evm(2);
+		let src_target_system = webb_proposals::TargetSystem::new_contract_address([2u8; 20]);
+		let src_resource_id = webb_proposals::ResourceId::new(src_target_system, src_chain_id);
 		{
 			// Connect src with itself
 			let src_dummy_proposal = evm::AnchorUpdateProposal::new(
 				ProposalHeader::new(src_resource_id, FunctionSignature([0u8; 4]), Nonce(1)),
-				src_chain,
-				1,
 				[1u8; 32],
-				src_resource_id.0,
+				src_resource_id,
 			);
 			assert_ok!(BridgeRegistry::on_signed_proposal(Proposal::Signed {
 				kind: ProposalKind::AnchorUpdate,
 				data: src_dummy_proposal.into_bytes().to_vec(),
 				signature: vec![],
 			}));
-			assert_eq!(NextBridgeIndex::<Test>::get(), 2);
-		}
-
-		// Create dest info
-		let dest_chain = webb_proposals::TypedChainId::Evm(2);
-		let dest_target_system = webb_proposals::TargetSystem::new_contract_address([2u8; 20]);
-		let dest_resource_id = webb_proposals::ResourceId::new(dest_target_system, dest_chain);
-		{
-			// Connect dest with itself
-			let dest_dummy_proposal = evm::AnchorUpdateProposal::new(
-				ProposalHeader::new(dest_resource_id, FunctionSignature([0u8; 4]), Nonce(1)),
-				dest_chain,
-				1,
-				[1u8; 32],
-				dest_resource_id.0,
-			);
-			assert_ok!(BridgeRegistry::on_signed_proposal(Proposal::Signed {
-				kind: ProposalKind::AnchorUpdate,
-				data: dest_dummy_proposal.into_bytes().to_vec(),
-				signature: vec![],
-			}));
 			assert_eq!(NextBridgeIndex::<Test>::get(), 3);
 		}
 
 		let bad_proposal = evm::AnchorUpdateProposal::new(
-			ProposalHeader::new(src_resource_id, FunctionSignature([0u8; 4]), Nonce(1)),
-			src_chain,
-			1,
+			ProposalHeader::new(target_resource_id, FunctionSignature([0u8; 4]), Nonce(1)),
 			[1u8; 32],
-			dest_resource_id.0,
+			src_resource_id,
 		);
 
 		assert_err!(

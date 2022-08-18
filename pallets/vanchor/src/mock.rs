@@ -294,6 +294,7 @@ impl pallet_token_wrapper::Config for Test {
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TreasuryPalletId;
 	type WeightInfo = ();
+	type ProposalNonce = u32;
 	type WrappingFeeDivider = WrappingFeeDivider;
 }
 
@@ -313,6 +314,7 @@ impl pallet_vanchor::Config for Test {
 	type PalletId = VAnchorPalletId;
 	type MaxFee = MaxFee;
 	type MaxExtAmount = MaxExtAmount;
+	type ProposalNonce = u32;
 	type PostDepositHook = ();
 	type Verifier2x2 = VerifierPallet;
 }

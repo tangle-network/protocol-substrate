@@ -2,6 +2,7 @@
 use crate::*;
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
+use webb_primitives::webb_proposals::ResourceId;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -16,5 +17,5 @@ pub struct EdgeMetadata<ChainID, Element, LastLeafIndex> {
 	/// height of source chain anchor's native merkle tree
 	pub latest_leaf_index: LastLeafIndex,
 	/// Target contract address or tree identifier
-	pub target: Element,
+	pub src_resource_id: ResourceId,
 }

@@ -2,6 +2,7 @@
 use crate::types::vanchor::{ExtData, ProofData};
 use codec::Encode;
 use frame_support::dispatch;
+use webb_proposals::ResourceId;
 
 pub trait VAnchorConfig {
 	type LeafIndex;
@@ -12,6 +13,7 @@ pub trait VAnchorConfig {
 	type ChainId;
 	type TreeId;
 	type Element: Encode;
+	type ProposalNonce: Encode;
 }
 
 /// Anchor trait definition to be used in other pallets
@@ -22,6 +24,7 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		depth: u8,
 		max_edges: u32,
 		asset: C::CurrencyId,
+		nonce: C::ProposalNonce,
 	) -> Result<C::TreeId, dispatch::DispatchError>;
 	/// Transaction
 	fn transact(
@@ -41,7 +44,7 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		src_chain_id: C::ChainId,
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
-		target: C::Element,
+		src_resource_id: ResourceId,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Update an edge for this tree
 	fn update_edge(
@@ -49,15 +52,17 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		src_chain_id: C::ChainId,
 		root: C::Element,
 		latest_leaf_index: C::LeafIndex,
-		target: C::Element,
+		src_resource_id: ResourceId,
 	) -> Result<(), dispatch::DispatchError>;
 
 	fn set_max_deposit_amount(
 		max_deposit_amount: C::Balance,
+		nonce: C::ProposalNonce,
 	) -> Result<(), dispatch::DispatchError>;
 
 	fn set_min_withdraw_amount(
 		min_withdraw_amount: C::Balance,
+		nonce: C::ProposalNonce,
 	) -> Result<(), dispatch::DispatchError>;
 }
 

@@ -2,8 +2,11 @@
 
 use crate as pallet_vanchor_handler;
 use codec::{Decode, Encode};
-
-use frame_support::{assert_ok, ord_parameter_types, parameter_types, traits::Nothing, PalletId};
+use frame_support::{
+	assert_ok, ord_parameter_types, parameter_types,
+	traits::{Contains, Nothing},
+	PalletId,
+};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 pub use pallet_balances;
@@ -253,6 +256,33 @@ parameter_types! {
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
 
+pub struct SetResourceProposalFilter;
+impl Contains<Call> for SetResourceProposalFilter {
+	fn contains(c: &Call) -> bool {
+		match c {
+			Call::VAnchorHandler(method) => match method {
+				pallet_vanchor_handler::Call::execute_set_resource_proposal { .. } => true,
+				_ => false,
+			},
+			_ => false,
+		}
+	}
+}
+
+pub struct ExecuteProposalFilter;
+impl Contains<Call> for ExecuteProposalFilter {
+	fn contains(c: &Call) -> bool {
+		match c {
+			Call::VAnchorHandler(method) => match method {
+				pallet_vanchor_handler::Call::execute_vanchor_create_proposal { .. } => true,
+				pallet_vanchor_handler::Call::execute_vanchor_update_proposal { .. } => true,
+				_ => false,
+			},
+			_ => false,
+		}
+	}
+}
+
 pub type ProposalNonce = u32;
 pub type MaintainerNonce = u32;
 
@@ -267,6 +297,8 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
+	type SetResourceProposalFilter = SetResourceProposalFilter;
+	type ExecuteProposalFilter = ExecuteProposalFilter;
 	type MaintainerNonce = MaintainerNonce;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();
@@ -289,6 +321,7 @@ impl pallet_vanchor::Config for Test {
 	type MaxFee = MaxFee;
 	type MaxExtAmount = MaxExtAmount;
 	type PostDepositHook = ();
+	type ProposalNonce = u32;
 	type Verifier2x2 = VerifierPallet;
 }
 

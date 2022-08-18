@@ -54,6 +54,7 @@ use orml_traits::{
 	currency::transactional,
 	MultiCurrency, MultiCurrencyExtended,
 };
+use sp_runtime::traits::Saturating;
 use webb_primitives::{
 	field_ops::IntoPrimeField,
 	hasher::InstanceHasher,
@@ -65,9 +66,10 @@ use webb_primitives::{
 	},
 	utils::element_encoder,
 	verifier::*,
+	webb_proposals::ResourceId,
 };
 
-use sp_runtime::traits::AccountIdConversion;
+use sp_runtime::traits::{AccountIdConversion, AtLeast32Bit};
 use sp_std::{
 	convert::{TryFrom, TryInto},
 	prelude::*,
@@ -111,6 +113,17 @@ pub mod pallet {
 		/// The tree type
 		type LinkableTree: LinkableTreeInterface<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>
 			+ LinkableTreeInspector<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>;
+
+		/// Proposal nonce type
+		type ProposalNonce: Encode
+			+ Decode
+			+ Parameter
+			+ AtLeast32Bit
+			+ Default
+			+ Copy
+			+ MaxEncodedLen
+			+ From<Self::LeafIndex>
+			+ Into<Self::LeafIndex>;
 
 		/// The verifier
 		type Verifier2x2: VerifierModule;
@@ -169,6 +182,12 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
+	/// The proposal nonce used to prevent replay attacks on execute_proposal
+	#[pallet::storage]
+	#[pallet::getter(fn proposal_nonce)]
+	pub type ProposalNonce<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::ProposalNonce, ValueQuery>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
@@ -222,6 +241,8 @@ pub mod pallet {
 		InvalidFee,
 		// Invalid public amount
 		InvalidPublicAmount,
+		/// Invalid nonce
+		InvalidNonce,
 	}
 
 	#[pallet::hooks]
@@ -253,10 +274,17 @@ pub mod pallet {
 			MaxDepositAmount::<T, I>::put(self.max_deposit_amount);
 			MinWithdrawAmount::<T, I>::put(self.min_withdraw_amount);
 
+			let mut ctr: u32 = 1;
 			self.vanchors.iter().for_each(|(asset_id, max_edges)| {
-				let _ =
-					<Pallet<T, I> as VAnchorInterface<_>>::create(None, 30, *max_edges, *asset_id)
-						.map_err(|_| panic!("Failed to create vanchor"));
+				let _ = <Pallet<T, I> as VAnchorInterface<_>>::create(
+					None,
+					30,
+					*max_edges,
+					*asset_id,
+					T::ProposalNonce::from(ctr),
+				)
+				.map_err(|_| panic!("Failed to create vanchor"));
+				ctr += 1;
 			});
 		}
 	}
@@ -271,7 +299,13 @@ pub mod pallet {
 			asset: CurrencyIdOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			let tree_id = <Self as VAnchorInterface<_>>::create(None, depth, max_edges, asset)?;
+			let tree_id = <Self as VAnchorInterface<_>>::create(
+				None,
+				depth,
+				max_edges,
+				asset,
+				ProposalNonce::<T, I>::get().saturating_add(T::ProposalNonce::from(1u32)),
+			)?;
 			Self::deposit_event(Event::VAnchorCreation { tree_id });
 			Ok(().into())
 		}
@@ -293,9 +327,10 @@ pub mod pallet {
 		pub fn set_max_deposit_amount(
 			origin: OriginFor<T>,
 			max_deposit_amount: BalanceOf<T, I>,
+			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			<Self as VAnchorInterface<_>>::set_max_deposit_amount(max_deposit_amount)?;
+			<Self as VAnchorInterface<_>>::set_max_deposit_amount(max_deposit_amount, nonce)?;
 			Ok(().into())
 		}
 
@@ -303,9 +338,10 @@ pub mod pallet {
 		pub fn set_min_withdraw_amount(
 			origin: OriginFor<T>,
 			min_withdraw_amount: BalanceOf<T, I>,
+			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
-			<Self as VAnchorInterface<_>>::set_min_withdraw_amount(min_withdraw_amount)?;
+			<Self as VAnchorInterface<_>>::set_min_withdraw_amount(min_withdraw_amount, nonce)?;
 			Ok(().into())
 		}
 	}
@@ -325,6 +361,7 @@ impl<T: Config<I>, I: 'static> VAnchorConfig for VAnchorConfigration<T, I> {
 	type Element = T::Element;
 	type LeafIndex = T::LeafIndex;
 	type TreeId = T::TreeId;
+	type ProposalNonce = T::ProposalNonce;
 }
 
 impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for Pallet<T, I> {
@@ -333,7 +370,10 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		depth: u8,
 		max_edges: u32,
 		asset: CurrencyIdOf<T, I>,
+		nonce: T::ProposalNonce,
 	) -> Result<T::TreeId, DispatchError> {
+		// Nonce should be greater than the proposal nonce in storage
+		Self::validate_and_set_nonce(nonce)?;
 		let id = T::LinkableTree::create(creator.clone(), max_edges, depth)?;
 		VAnchors::<T, I>::insert(id, VAnchorMetadata { creator, asset });
 		Ok(id)
@@ -489,9 +529,9 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		src_chain_id: T::ChainId,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
-		target: T::Element,
+		src_resource_id: ResourceId,
 	) -> Result<(), DispatchError> {
-		T::LinkableTree::add_edge(id, src_chain_id, root, latest_leaf_index, target)
+		T::LinkableTree::add_edge(id, src_chain_id, root, latest_leaf_index, src_resource_id)
 	}
 
 	fn update_edge(
@@ -499,18 +539,28 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		src_chain_id: T::ChainId,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
-		target: T::Element,
+		src_resource_id: ResourceId,
 	) -> Result<(), DispatchError> {
-		T::LinkableTree::update_edge(id, src_chain_id, root, latest_leaf_index, target)
+		T::LinkableTree::update_edge(id, src_chain_id, root, latest_leaf_index, src_resource_id)
 	}
 
-	fn set_max_deposit_amount(max_deposit_amount: BalanceOf<T, I>) -> Result<(), DispatchError> {
+	fn set_max_deposit_amount(
+		max_deposit_amount: BalanceOf<T, I>,
+		nonce: T::ProposalNonce,
+	) -> Result<(), DispatchError> {
+		// Nonce should be greater than the proposal nonce in storage
+		Self::validate_and_set_nonce(nonce)?;
 		MaxDepositAmount::<T, I>::put(max_deposit_amount);
 		Self::deposit_event(Event::MaxDepositAmountChanged { max_deposit_amount });
 		Ok(())
 	}
 
-	fn set_min_withdraw_amount(min_withdraw_amount: BalanceOf<T, I>) -> Result<(), DispatchError> {
+	fn set_min_withdraw_amount(
+		min_withdraw_amount: BalanceOf<T, I>,
+		nonce: T::ProposalNonce,
+	) -> Result<(), DispatchError> {
+		// Nonce should be greater than the proposal nonce in storage
+		Self::validate_and_set_nonce(nonce)?;
 		MinWithdrawAmount::<T, I>::put(min_withdraw_amount);
 		Self::deposit_event(Event::MinWithdrawAmountChanged { min_withdraw_amount });
 		Ok(())
@@ -543,6 +593,21 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let vanchor = VAnchors::<T, I>::get(id);
 		ensure!(vanchor.is_some(), Error::<T, I>::NoVAnchorFound);
 		Ok(vanchor.unwrap())
+	}
+
+	pub fn validate_and_set_nonce(nonce: T::ProposalNonce) -> Result<(), DispatchError> {
+		// Nonce should be greater than the proposal nonce in storage
+		let proposal_nonce = ProposalNonce::<T, I>::get();
+		ensure!(proposal_nonce < nonce, Error::<T, I>::InvalidNonce);
+
+		// Nonce should increment by a maximum of 1,048
+		ensure!(
+			nonce <= proposal_nonce + T::ProposalNonce::from(1_048u32),
+			Error::<T, I>::InvalidNonce
+		);
+		// Set the new nonce
+		ProposalNonce::<T, I>::set(nonce);
+		Ok(())
 	}
 }
 

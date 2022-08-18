@@ -4649,24 +4649,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-bridge"
-version = "1.0.0"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "frame-system-benchmarking",
- "pallet-balances",
- "parity-scale-codec",
- "scale-info",
- "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
- "webb-primitives",
-]
-
-[[package]]
 name = "pallet-bridge-registry"
 version = "1.0.0"
 dependencies = [
@@ -5194,8 +5176,11 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "hex-literal 0.3.4",
+ "impl-trait-for-tuples",
  "libsecp256k1",
  "pallet-balances",
+ "pallet-token-wrapper-handler",
+ "pallet-vanchor-handler",
  "parity-scale-codec",
  "scale-info",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.26)",
@@ -5306,7 +5291,6 @@ dependencies = [
  "orml-traits",
  "pallet-asset-registry",
  "pallet-balances",
- "pallet-bridge",
  "pallet-signature-bridge",
  "pallet-token-wrapper",
  "pallet-treasury",
@@ -5452,7 +5436,6 @@ dependencies = [
  "orml-traits",
  "pallet-asset-registry",
  "pallet-balances",
- "pallet-bridge",
  "pallet-hasher",
  "pallet-linkable-tree",
  "pallet-mixer",
@@ -10284,9 +10267,8 @@ dependencies = [
 
 [[package]]
 name = "webb-proposals"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b9869641d13a639c137fd1b54b9e3b6d80b5cb0b10caac6dc00d6a9c1228590"
+version = "0.5.3"
+source = "git+https://github.com/webb-tools/webb-rs?branch=drew/update-substrate-proposals#13d6d858cf65c0339c4effb72a94e0c296dc10b6"
 dependencies = [
  "num-traits",
  "parity-scale-codec",
@@ -10392,7 +10374,6 @@ dependencies = [
  "pallet-bags-list",
  "pallet-balances",
  "pallet-bounties",
- "pallet-bridge",
  "pallet-bridge-registry",
  "pallet-child-bounties",
  "pallet-collective",
@@ -10423,6 +10404,7 @@ dependencies = [
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-token-wrapper",
+ "pallet-token-wrapper-handler",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",

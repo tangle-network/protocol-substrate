@@ -41,9 +41,9 @@ pub trait MixerInspector<AccountId, CurrencyId, TreeId, Element> {
 	fn get_root(id: TreeId) -> Result<Element, dispatch::DispatchError>;
 	/// Checks if a merkle root is in a tree's cached history or returns
 	/// `TreeDoesntExist
-	fn is_known_root(id: TreeId, target: Element) -> Result<bool, dispatch::DispatchError>;
-
-	fn ensure_known_root(id: TreeId, target: Element) -> Result<(), dispatch::DispatchError>;
+	fn is_known_root(id: TreeId, root: Element) -> Result<bool, dispatch::DispatchError>;
+	/// Ensures the root is known or throws an error if false
+	fn ensure_known_root(id: TreeId, root: Element) -> Result<(), dispatch::DispatchError>;
 	/// Check if a nullifier has been used in a tree or returns
 	/// `InvalidNullifier`
 	fn is_nullifier_used(id: TreeId, nullifier: Element) -> bool;

@@ -85,6 +85,7 @@ use types::*;
 use webb_primitives::{
 	traits::{linkable_tree::*, merkle_tree::*},
 	utils::compute_chain_id_type,
+	webb_proposals::ResourceId,
 	ElementTrait,
 };
 pub use weights::WeightInfo;
@@ -203,6 +204,8 @@ pub mod pallet {
 		EdgeAlreadyExists,
 		/// Edge does not exist
 		EdgeDoesntExists,
+		/// Invalid latest leaf index
+		InvalidLatestLeafIndex,
 	}
 
 	#[pallet::hooks]
@@ -247,6 +250,10 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 	) -> Result<T::TreeId, DispatchError> {
 		let id = T::Tree::create(creator, depth)?;
 		MaxEdges::<T, I>::insert(id, max_edges);
+		#[cfg(feature = "std")]
+		{
+			println!("Created tree with id: {:?}, {:?}", id, max_edges);
+		}
 		Ok(id)
 	}
 
@@ -259,7 +266,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		src_chain_id: T::ChainId,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
-		target: T::Element,
+		src_resource_id: ResourceId,
 	) -> Result<(), DispatchError> {
 		// ensure edge doesn't exists
 		ensure!(
@@ -271,7 +278,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		let curr_length = EdgeList::<T, I>::iter_prefix_values(id).into_iter().count();
 		ensure!(max_edges > curr_length as u32, Error::<T, I>::TooManyEdges);
 		// craft edge
-		let e_meta = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
+		let e_meta = EdgeMetadata { src_chain_id, root, latest_leaf_index, src_resource_id };
 		// update historical neighbor list for this edge's root
 		let neighbor_root_inx = CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id));
 		CurrentNeighborRootIndex::<T, I>::insert(
@@ -289,10 +296,21 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 		src_chain_id: T::ChainId,
 		root: T::Element,
 		latest_leaf_index: T::LeafIndex,
-		target: T::Element,
+		src_resource_id: ResourceId,
 	) -> Result<(), DispatchError> {
 		ensure!(EdgeList::<T, I>::contains_key(id, src_chain_id), Error::<T, I>::EdgeDoesntExists);
-		let e_meta = EdgeMetadata { src_chain_id, root, latest_leaf_index, target };
+		ensure!(
+			EdgeList::<T, I>::get(id, src_chain_id).latest_leaf_index < latest_leaf_index,
+			Error::<T, I>::InvalidLatestLeafIndex
+		);
+		ensure!(
+			latest_leaf_index <
+				EdgeList::<T, I>::get(id, src_chain_id)
+					.latest_leaf_index
+					.saturating_add(T::LeafIndex::from(1_048u32)),
+			Error::<T, I>::InvalidLatestLeafIndex
+		);
+		let e_meta = EdgeMetadata { src_chain_id, root, latest_leaf_index, src_resource_id };
 		let neighbor_root_inx = (CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id)) +
 			T::RootIndex::one()) %
 			T::HistoryLength::get();
@@ -414,9 +432,9 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 	fn ensure_known_neighbor_root(
 		id: T::TreeId,
 		src_chain_id: T::ChainId,
-		target: T::Element,
+		target_root: T::Element,
 	) -> Result<(), DispatchError> {
-		let is_known = Self::is_known_neighbor_root(id, src_chain_id, target)?;
+		let is_known = Self::is_known_neighbor_root(id, src_chain_id, target_root)?;
 		ensure!(is_known, Error::<T, I>::InvalidNeighborWithdrawRoot);
 		Ok(())
 	}
@@ -438,7 +456,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				src_chain_id: T::ChainId::default(),
 				root: default_root,
 				latest_leaf_index: T::LeafIndex::default(),
-				target: T::Element::from_bytes(&[0; 32]),
+				src_resource_id: ResourceId::default(),
 			});
 		}
 
