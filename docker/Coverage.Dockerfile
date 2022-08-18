@@ -27,5 +27,4 @@ CMD git submodule update --init && \
         -p pallet-verifier \
         -p pallet-hasher \
         -p pallet-asset-registry \
-        -p pallet-bridge-registry \
         --timeout 3600
