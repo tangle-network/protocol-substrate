@@ -58,7 +58,6 @@ pub mod traits;
 pub mod weights;
 
 use codec::{Decode, Encode};
-use sp_runtime::traits::Saturating;
 use sp_std::prelude::*;
 
 use asset_registry::{Registry, ShareTokenRegistry};
@@ -69,6 +68,7 @@ use frame_support::{
 	BoundedVec, PalletId,
 };
 use orml_traits::MultiCurrency;
+use sp_arithmetic::traits::Saturating;
 use sp_runtime::traits::AtLeast32Bit;
 use sp_std::convert::TryInto;
 use traits::TokenWrapperInterface;
