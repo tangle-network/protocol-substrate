@@ -1,0 +1,35 @@
+name: Container Image Release
+
+on:
+  push:
+    # Publish container `stable` when updates happen to branch `stable`
+    branches:
+      - stable
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Image
+        run: ./scripts/build-standalone-docker-stable.sh
+      - name: Install docker-slim
+        run: curl -sL https://raw.githubusercontent.com/docker-slim/docker-slim/master/scripts/install-dockerslim.sh | sudo -E bash -
+      - name: Slim down the Image
+        run: docker-slim build --target webb-tools/protocol-substrate-standalone-node:stable --http-probe-off --entrypoint webb-standalone-node
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Push image
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/protocol-substrate-standalone-node
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          VERSION=stable
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+          docker tag webb-tools/protocol-substrate-standalone-node.slim $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
