@@ -589,6 +589,8 @@ fn should_add_resource_sig_succeed_using_webb_proposals() {
 		));
 		let set_resource_call: Call =
 			codec::Decode::decode(&mut &set_resource_proposal_bytes[40..]).unwrap();
+		println!("set_resource_call: {:?}", set_resource_proposal_bytes[40..].to_vec());
+		println!("set_resource_encoded_call: {:?}", set_resource_call);
 		assert_ok!(SignatureBridge::set_resource_with_signature(
 			Origin::signed(RELAYER_A),
 			src_id.chain_id(),

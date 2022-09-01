@@ -352,11 +352,9 @@ pub mod pallet {
 			let r_id = Self::parse_r_id_from_proposal_data(&proposal_data)?;
 			let nonce = Self::parse_nonce_from_proposal_data(&proposal_data)?;
 			let parsed_call = Self::parse_call_from_proposal_data(&proposal_data);
-
 			// Nonce should be greater than the proposal nonce in storage
 			let proposal_nonce = ProposalNonce::<T, I>::get();
 			ensure!(proposal_nonce < nonce, Error::<T, I>::InvalidNonce);
-
 			// Nonce should increment by a maximum of 1,048
 			ensure!(
 				nonce <= proposal_nonce + T::ProposalNonce::from(1_048u32),
@@ -364,7 +362,6 @@ pub mod pallet {
 			);
 			// Set the new nonce
 			ProposalNonce::<T, I>::set(nonce);
-
 			// Verify proposal signature
 			ensure!(
 				T::SignatureVerifier::verify(&Self::maintainer(), &proposal_data[..], &signature)
