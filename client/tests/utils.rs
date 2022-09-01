@@ -27,8 +27,7 @@ use webb_primitives::types::{ElementTrait, IntoAbiToken, Token};
 // wasm-utils dependencies
 use ark_std::{rand::thread_rng, UniformRand};
 use wasm_utils::{
-	proof::{generate_proof_js, JsProofInput, ProofInput},
-	proof::mixer::{MixerProofPayload},
+	proof::{generate_proof_js, mixer::MixerProofPayload, JsProofInput, ProofInput},
 	types::{Backend, Curve as WasmCurve},
 };
 
@@ -127,7 +126,7 @@ impl<I: Encode, A: Encode, B: Encode> ExtData<I, A, B> {
 			refund,
 			token,
 			encrypted_output1,
-			encrypted_output2
+			encrypted_output2,
 		}
 	}
 }
