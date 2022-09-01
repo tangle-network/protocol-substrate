@@ -35,10 +35,6 @@ jobs:
             target/release
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Fetch submodules
-        run: |
-          git submodule update --init --recursive
-
       - name: Build documentation
         run: cargo doc --release --no-deps
       - name: Publish documentation

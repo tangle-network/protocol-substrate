@@ -25,6 +25,12 @@ jobs:
       - name: Set-Up
         run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
 
+      - name: Setup DVC
+        uses: iterative/setup-dvc@v1
+
+      - name: Fetch Fixtures
+        run: dvc pull
+
       - name: Install toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -51,10 +57,10 @@ jobs:
 
       - name: Check Format
         run: |
-          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo fmt --all -- --check
+          SKIP_WASM_BUILD=1 cargo fmt --all -- --check
       - name: Check Build
         run: |
-          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo check --release
+          SKIP_WASM_BUILD=1 cargo check --release
       - name: Test
         run: |
-          git submodule update --init --recursive && SKIP_WASM_BUILD=1 cargo nextest run --release --workspace --exclude webb-client
+          SKIP_WASM_BUILD=1 cargo nextest run --release --workspace --exclude webb-client
