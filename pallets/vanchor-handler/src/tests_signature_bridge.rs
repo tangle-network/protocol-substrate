@@ -115,7 +115,7 @@ fn should_create_vanchor_with_sig_succeed() {
 	let src_id = TypedChainId::Substrate(1);
 	let target_id = TypedChainId::Substrate(5);
 	let target_system =
-		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 10, tree_id: 5 });
+		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 5 });
 	let r_id: ResourceId = ResourceId::new(target_system, target_id);
 
 	let public_uncompressed = get_public_uncompressed_key();
@@ -182,7 +182,7 @@ fn should_add_vanchor_edge_with_sig_succeed() {
 	let src_id = TypedChainId::Substrate(1);
 	let target_id = TypedChainId::Substrate(5);
 	let target_system =
-		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 10, tree_id: 0 });
+		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
 	let r_id: ResourceId = ResourceId::new(target_system, target_id);
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
@@ -261,7 +261,7 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 	let src_id = TypedChainId::Substrate(1);
 	let target_id = TypedChainId::Substrate(5);
 	let target_system =
-		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 10, tree_id: 0 });
+		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
 	let r_id: ResourceId = ResourceId::new(target_system, target_id);
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
@@ -380,7 +380,7 @@ fn should_fail_to_whitelist_chain_already_whitelisted() {
 	let src_id = TypedChainId::Substrate(1);
 	let target_id = TypedChainId::Substrate(5);
 	let target_system =
-		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 10, tree_id: 5 });
+		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 5 });
 	let r_id: ResourceId = ResourceId::new(target_system, target_id);
 
 	new_test_ext_initialized(
@@ -401,7 +401,7 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 	let src_id = TypedChainId::Substrate(1);
 	let target_id = TypedChainId::Substrate(5);
 	let target_system =
-		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 10, tree_id: 5 });
+		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 5 });
 	let r_id: ResourceId = ResourceId::new(target_system, target_id);
 
 	let public_uncompressed = get_public_uncompressed_key();
@@ -449,7 +449,7 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 	let src_id = TypedChainId::Substrate(1);
 	let target_id = TypedChainId::Substrate(5);
 	let target_system =
-		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 10, tree_id: 5 });
+		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 5 });
 	let r_id: ResourceId = ResourceId::new(target_system, target_id);
 
 	let public_uncompressed = get_public_uncompressed_key();
@@ -464,7 +464,7 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 		let nonce = 1;
 
 		let non_existent_r_id = ResourceId::new(
-			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 10, tree_id: 5 }),
+			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 5 }),
 			TypedChainId::Substrate(500),
 		);
 		let anchor_create_call =
@@ -504,7 +504,7 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 	let src_id = TypedChainId::Substrate(1);
 	let target_id = TypedChainId::Substrate(5);
 	let target_system =
-		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 10, tree_id: 5 });
+		TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 5 });
 	let r_id: ResourceId = ResourceId::new(target_system, target_id);
 
 	let public_uncompressed = get_public_uncompressed_key();
@@ -556,7 +556,7 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 #[test]
 fn should_add_resource_sig_succeed_using_webb_proposals() {
 	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
-		pallet_index: 10,
+		pallet_index: 11,
 		tree_id: 5,
 	});
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);

@@ -37,7 +37,7 @@ pub fn get_account(id: u32) -> AccountId {
 	account::<AccountId>("", id, SEED)
 }
 
-fn setup_environment() -> (Vec<u8>, Vec<u8>) {
+fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	let curve = Curve::Bn254;
 	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 	// 1. Setup The Hasher Pallet.
@@ -47,16 +47,26 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>) {
 	// 3. Setup the VerifierPallet
 	//    but to do so, we need to have a VerifyingKey
 
-	let pk_bytes = include_bytes!(
+	let pk_2x2_bytes = include_bytes!(
 		"../../../protocol-substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
-	let vk_bytes = include_bytes!(
+	let vk_2x2_bytes = include_bytes!(
 		"../../../protocol-substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin"
 	)
 	.to_vec();
 
-	assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.clone()));
+	let pk_16x2_bytes = include_bytes!(
+		"../../../protocol-substrate-fixtures/vanchor/bn254/x5/2-16-2/proving_key_uncompressed.bin"
+	)
+	.to_vec();
+	let vk_16x2_bytes = include_bytes!(
+		"../../../protocol-substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin"
+	)
+	.to_vec();
+
+	assert_ok!(Verifier2x2Pallet::force_set_parameters(Origin::root(), vk_2x2_bytes.clone()));
+	assert_ok!(Verifier16x2Pallet::force_set_parameters(Origin::root(), vk_16x2_bytes.clone()));
 
 	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
 	let big_transactor = account::<AccountId>("", BIG_TRANSACTOR_ACCOUNT_ID, SEED);
@@ -75,7 +85,7 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>) {
 	assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 3, 2));
 
 	// finally return the provingkey bytes
-	(pk_bytes, vk_bytes)
+	(pk_2x2_bytes, vk_2x2_bytes, pk_16x2_bytes, vk_16x2_bytes)
 }
 
 fn create_vanchor(asset_id: u32) -> u32 {
@@ -85,7 +95,7 @@ fn create_vanchor(asset_id: u32) -> u32 {
 	MerkleTree::next_tree_id() - 1
 }
 
-fn create_vanchor_with_deposits(proving_key_bytes: Vec<u8>) -> (u32, [Utxo<Bn254Fr>; 2]) {
+fn create_vanchor_with_deposits(proving_key_2x2_bytes: Vec<u8>) -> (u32, [Utxo<Bn254Fr>; 2]) {
 	let tree_id = create_vanchor(0);
 
 	let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -116,6 +126,8 @@ fn create_vanchor_with_deposits(proving_key_bytes: Vec<u8>) -> (u32, [Utxo<Bn254
 		relayer.clone(),
 		ext_amount,
 		fee,
+		0,
+		[255u8; 32].into(),
 		// Mock encryption value, not meant to be used in production
 		Element::from_bytes(&output1).to_vec(),
 		// Mock encryption value, not meant to be used in production
@@ -137,7 +149,7 @@ fn create_vanchor_with_deposits(proving_key_bytes: Vec<u8>) -> (u32, [Utxo<Bn254
 		ext_data_hash.to_vec(),
 		in_utxos,
 		out_utxos.clone(),
-		proving_key_bytes,
+		proving_key_2x2_bytes,
 		neighbor_roots,
 		custom_root,
 	);
@@ -158,7 +170,7 @@ fn create_vanchor_with_deposits(proving_key_bytes: Vec<u8>) -> (u32, [Utxo<Bn254
 #[test]
 fn should_complete_2x2_transaction_with_deposit() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, _) = setup_environment();
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -187,6 +199,8 @@ fn should_complete_2x2_transaction_with_deposit() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -208,7 +222,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			proving_key_bytes,
+			proving_key_2x2_bytes,
 			neighbor_roots,
 			custom_root,
 		);
@@ -225,6 +239,8 @@ fn should_complete_2x2_transaction_with_deposit() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -254,8 +270,8 @@ fn should_complete_2x2_transaction_with_deposit() {
 #[test]
 fn should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, _) = setup_environment();
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_bytes.clone());
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone());
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -281,6 +297,8 @@ fn should_complete_2x2_transaction_with_withdraw() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -301,7 +319,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			proving_key_bytes,
+			proving_key_2x2_bytes,
 			neighbor_roots,
 			custom_root,
 		);
@@ -318,6 +336,8 @@ fn should_complete_2x2_transaction_with_withdraw() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -346,7 +366,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 #[test]
 fn should_not_complete_transaction_if_ext_data_is_invalid() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, _) = setup_environment();
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -375,6 +395,8 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -396,7 +418,7 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			proving_key_bytes,
+			proving_key_2x2_bytes,
 			neighbor_roots,
 			custom_root,
 		);
@@ -415,6 +437,8 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -447,8 +471,8 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 #[cfg(not(tarpaulin))]
 fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, _) = setup_environment();
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_bytes.clone());
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone());
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -474,6 +498,8 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -494,7 +520,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			proving_key_bytes,
+			proving_key_2x2_bytes,
 			neighbor_roots,
 			custom_root,
 		);
@@ -511,6 +537,8 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -544,8 +572,8 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 #[cfg(not(tarpaulin))]
 fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, _) = setup_environment();
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_bytes.clone());
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone());
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -572,6 +600,8 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -592,7 +622,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			proving_key_bytes,
+			proving_key_2x2_bytes,
 			neighbor_roots,
 			custom_root,
 		);
@@ -609,6 +639,8 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -641,8 +673,8 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 #[test]
 fn should_not_be_able_to_double_spend() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, _) = setup_environment();
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_bytes.clone());
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone());
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -668,6 +700,8 @@ fn should_not_be_able_to_double_spend() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -688,7 +722,7 @@ fn should_not_be_able_to_double_spend() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			proving_key_bytes,
+			proving_key_2x2_bytes,
 			neighbor_roots,
 			custom_root,
 		);
@@ -705,6 +739,8 @@ fn should_not_be_able_to_double_spend() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -741,7 +777,7 @@ fn should_not_be_able_to_double_spend() {
 #[test]
 fn should_not_be_able_to_exceed_max_fee() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, _) = setup_environment();
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -770,6 +806,8 @@ fn should_not_be_able_to_exceed_max_fee() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -791,7 +829,7 @@ fn should_not_be_able_to_exceed_max_fee() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			proving_key_bytes,
+			proving_key_2x2_bytes,
 			neighbor_roots,
 			custom_root,
 		);
@@ -808,6 +846,8 @@ fn should_not_be_able_to_exceed_max_fee() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -834,7 +874,7 @@ fn should_not_be_able_to_exceed_max_fee() {
 #[test]
 fn should_not_be_able_to_exceed_max_deposit() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, _) = setup_environment();
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(BIG_TRANSACTOR_ACCOUNT_ID);
@@ -863,6 +903,8 @@ fn should_not_be_able_to_exceed_max_deposit() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -884,7 +926,7 @@ fn should_not_be_able_to_exceed_max_deposit() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			proving_key_bytes,
+			proving_key_2x2_bytes,
 			neighbor_roots,
 			custom_root,
 		);
@@ -901,6 +943,8 @@ fn should_not_be_able_to_exceed_max_deposit() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -927,7 +971,7 @@ fn should_not_be_able_to_exceed_max_deposit() {
 #[test]
 fn should_not_be_able_to_exceed_external_amount() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, _) = setup_environment();
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(BIGGER_TRANSACTOR_ACCOUNT_ID);
@@ -957,6 +1001,8 @@ fn should_not_be_able_to_exceed_external_amount() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -978,7 +1024,7 @@ fn should_not_be_able_to_exceed_external_amount() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			proving_key_bytes,
+			proving_key_2x2_bytes,
 			neighbor_roots,
 			custom_root,
 		);
@@ -995,6 +1041,8 @@ fn should_not_be_able_to_exceed_external_amount() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -1021,8 +1069,8 @@ fn should_not_be_able_to_exceed_external_amount() {
 #[test]
 fn should_not_be_able_to_withdraw_less_than_minimum() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_bytes, _) = setup_environment();
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_bytes.clone());
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone());
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -1048,6 +1096,8 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -1068,7 +1118,7 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 			ext_data_hash.to_vec(),
 			in_utxos,
 			out_utxos,
-			proving_key_bytes,
+			proving_key_2x2_bytes,
 			neighbor_roots,
 			custom_root,
 		);
@@ -1085,6 +1135,8 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 			relayer.clone(),
 			ext_amount,
 			fee,
+			0,
+			[255u8; 32].into(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);

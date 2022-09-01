@@ -127,6 +127,7 @@ pub mod pallet {
 
 		/// The verifier
 		type Verifier2x2: VerifierModule;
+		type Verifier16x2: VerifierModule;
 
 		type EthereumHasher: InstanceHasher;
 
@@ -385,20 +386,18 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		proof_data: ProofData<T::Element>,
 		ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
 	) -> Result<(), DispatchError> {
-		// double check the number of roots
+		// Double check the number of roots
 		T::LinkableTree::ensure_max_edges(id, proof_data.roots.len())?;
 		// Check if local root is known
 		T::LinkableTree::ensure_known_root(id, proof_data.roots[0])?;
 		// Check if neighbor roots are known
 		T::LinkableTree::ensure_known_neighbor_roots(id, &proof_data.roots[1..].to_vec())?;
-
-		// Check nullifier and add or return `InvalidNullifier`
+		// Ensure all input nullifiers are unused
 		for nullifier in &proof_data.input_nullifiers {
 			Self::ensure_nullifier_unused(id, *nullifier)?;
 		}
-
+		// Get the vanchor
 		let vanchor = Self::get_vanchor(id)?;
-
 		// Compute hash of abi encoded ext_data, reduced into field from config
 		let computed_ext_data_hash = T::EthereumHasher::hash(&ext_data.encode_abi(), &[])
 			.map_err(|_| Error::<T, I>::InvalidExtData)?;
@@ -407,7 +406,6 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			proof_data.ext_data_hash.to_bytes() == computed_ext_data_hash,
 			Error::<T, I>::InvalidExtData
 		);
-
 		// Making sure that public amount and fee are correct
 		ensure!(ext_data.fee < T::MaxFee::get(), Error::<T, I>::InvalidFee);
 		let ext_amount_unsigned: BalanceOf<T, I> = ext_data
@@ -416,7 +414,6 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			.try_into()
 			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
 		ensure!(ext_amount_unsigned < T::MaxExtAmount::get(), Error::<T, I>::InvalidExtAmount);
-
 		// Public amounnt can also be negative, in which
 		// case it would wrap around the field, so we should check if FIELD_SIZE -
 		// public_amount == proof_data.public_amount, in case of a negative ext_amount
@@ -431,7 +428,6 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		);
 
 		let chain_id_type = T::LinkableTree::get_chain_id_type();
-
 		// Construct public inputs
 		let mut bytes = Vec::new();
 		bytes.extend_from_slice(proof_data.public_amount.to_bytes());
@@ -443,37 +439,39 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			bytes.extend_from_slice(comm.to_bytes());
 		}
 		bytes.extend_from_slice(&chain_id_type.using_encoded(element_encoder));
-		for root in proof_data.roots {
+		for root in &proof_data.roots {
 			bytes.extend_from_slice(root.to_bytes());
 		}
-
-		let res = match (proof_data.input_nullifiers.len(), proof_data.output_commitments.len()) {
-			(2, 2) => T::Verifier2x2::verify(&bytes, &proof_data.proof)?,
+		// Verify the zero-knowledge proof, currently supported 2-2 and 16-2 txes
+		let res = match (
+			proof_data.roots.len(),
+			proof_data.input_nullifiers.len(),
+			proof_data.output_commitments.len(),
+		) {
+			(2, 2, 2) => T::Verifier2x2::verify(&bytes, &proof_data.proof)?,
+			(2, 16, 2) => T::Verifier16x2::verify(&bytes, &proof_data.proof)?,
 			_ => false,
 		};
 		ensure!(res, Error::<T, I>::InvalidTransactionProof);
-
 		// Flag nullifiers as used
 		for nullifier in &proof_data.input_nullifiers {
 			Self::add_nullifier_hash(id, *nullifier)?;
 		}
-
+		// Handle the deposit / withdrawal shield/unshield portions
 		let is_deposit = ext_data.ext_amount.is_positive();
 		let is_negative = ext_data.ext_amount.is_negative();
-
 		let abs_amount: BalanceOf<T, I> = ext_data
 			.ext_amount
 			.abs()
 			.try_into()
 			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
-
+		// Check if the transaction is a deposit or a withdrawal
 		if is_deposit {
 			ensure!(
 				abs_amount <= MaxDepositAmount::<T, I>::get(),
 				Error::<T, I>::InvalidDepositAmount
 			);
-
-			// deposit tokens to the pallet from the transactor's account
+			// Deposit tokens to the pallet from the transactor's account
 			<T as Config<I>>::Currency::transfer(
 				vanchor.asset,
 				&transactor,
@@ -483,7 +481,6 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		} else if is_negative {
 			let min_withdraw = MinWithdrawAmount::<T, I>::get();
 			ensure!(abs_amount >= min_withdraw, Error::<T, I>::InvalidWithdrawAmount);
-
 			// Withdraw to recipient account
 			<T as Config<I>>::Currency::transfer(
 				vanchor.asset,
@@ -492,9 +489,8 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 				abs_amount,
 			)?;
 		}
-
+		// Check if the fee is non-zero
 		let fee_exists = ext_data.fee > BalanceOf::<T, I>::zero();
-
 		if fee_exists {
 			// Send fee to the relayer
 			<T as Config<I>>::Currency::transfer(
@@ -504,12 +500,22 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 				ext_data.fee,
 			)?;
 		}
-
+		// Check if the gas-refund is non-zero
+		let refund_exists = ext_data.refund > BalanceOf::<T, I>::zero();
+		if refund_exists {
+			// Send gas-refund to the recipient
+			<T as Config<I>>::Currency::transfer(
+				T::NativeCurrencyId::get(),
+				&transactor,
+				&ext_data.recipient,
+				ext_data.refund,
+			)?;
+		}
 		// Insert output commitments into the tree
 		for comm in &proof_data.output_commitments {
 			T::LinkableTree::insert_in_order(id, *comm)?;
 		}
-
+		// Deposit transaction event
 		Self::deposit_event(Event::Transaction {
 			transactor,
 			tree_id: id,

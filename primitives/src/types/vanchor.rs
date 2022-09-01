@@ -41,6 +41,8 @@ pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode> {
 	pub relayer: AccountId,
 	pub ext_amount: Amount,
 	pub fee: Balance,
+	pub refund: Balance,
+	pub token: AccountId,
 	pub encrypted_output1: Vec<u8>,
 	pub encrypted_output2: Vec<u8>,
 }
@@ -51,20 +53,32 @@ impl<I: Encode, A: Encode, B: Encode> ExtData<I, A, B> {
 		relayer: I,
 		ext_amount: A,
 		fee: B,
+		refund: B,
+		token: I,
 		encrypted_output1: Vec<u8>,
 		encrypted_output2: Vec<u8>,
 	) -> Self {
-		Self { recipient, relayer, ext_amount, fee, encrypted_output1, encrypted_output2 }
+		Self {
+			recipient,
+			relayer,
+			ext_amount,
+			fee,
+			refund,
+			token,
+			encrypted_output1,
+			encrypted_output2,
+		}
 	}
 }
 
 impl<I: Encode, A: Encode, B: Encode> IntoAbiToken for ExtData<I, A, B> {
 	fn into_abi(&self) -> Token {
-		// TODO: Make sure the encodings match the solidity side
 		let recipient = Token::Bytes(self.recipient.encode());
 		let ext_amount = Token::Bytes(self.ext_amount.encode());
 		let relayer = Token::Bytes(self.relayer.encode());
 		let fee = Token::Bytes(self.fee.encode());
+		let refund = Token::Bytes(self.refund.encode());
+		let token = Token::Bytes(self.token.encode());
 		let encrypted_output1 = Token::Bytes(self.encrypted_output1.clone());
 		let encrypted_output2 = Token::Bytes(self.encrypted_output2.clone());
 		let mut ext_data_args = Vec::new();
@@ -72,6 +86,8 @@ impl<I: Encode, A: Encode, B: Encode> IntoAbiToken for ExtData<I, A, B> {
 		ext_data_args.push(relayer);
 		ext_data_args.push(ext_amount);
 		ext_data_args.push(fee);
+		ext_data_args.push(refund);
+		ext_data_args.push(token);
 		ext_data_args.push(encrypted_output1);
 		ext_data_args.push(encrypted_output2);
 		Token::Tuple(ext_data_args)

@@ -8,7 +8,7 @@ use webb_primitives::ElementTrait;
 
 // wasm-utils dependencies
 use wasm_utils::{
-	proof::{generate_proof_js, JsProofInput, MixerProofInput, ProofInput},
+	proof::{generate_proof_js, mixer::MixerProofPayload, JsProofInput, ProofInput},
 	types::{Backend, Curve as WasmCurve},
 };
 
@@ -101,7 +101,7 @@ pub fn setup_wasm_utils_zk_circuit(
 
 			let leaves = vec![leaf.leaf_bytes];
 
-			let mixer_proof_input = MixerProofInput {
+			let mixer_proof_input = MixerProofPayload {
 				exponentiation: 5,
 				width: 3,
 				curve: WasmCurve::Bn254,
@@ -117,8 +117,9 @@ pub fn setup_wasm_utils_zk_circuit(
 				leaves,
 				leaf_index: 0,
 			};
-			let js_proof_inputs = JsProofInput { inner: ProofInput::Mixer(mixer_proof_input) };
-			let proof = generate_proof_js(js_proof_inputs).unwrap();
+			let js_proof_inputs =
+				JsProofInput { inner: ProofInput::Mixer(Box::new(mixer_proof_input)) };
+			let proof = generate_proof_js(js_proof_inputs).unwrap().mixer_proof().unwrap();
 
 			let root_element = Element::from_bytes(&proof.root);
 			let nullifier_hash_element = Element::from_bytes(&proof.nullifier_hash);

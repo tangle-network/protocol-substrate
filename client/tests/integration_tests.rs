@@ -144,6 +144,8 @@ async fn make_vanchor_tx(
 	let chain_id = compute_chain_id_type(1080u32, chain_type);
 	let ext_amount = public_amount;
 	let fee = 0u128;
+	let refund = 0u128;
+	let token = AccountId32::from([255u8; 32]);
 
 	let output1: [u8; 32] = out_utxos[0].commitment.into_repr().to_bytes_le().try_into().unwrap();
 	let output2: [u8; 32] = out_utxos[1].commitment.into_repr().to_bytes_le().try_into().unwrap();
@@ -152,6 +154,8 @@ async fn make_vanchor_tx(
 		relayer.clone(),
 		ext_amount,
 		fee,
+		refund,
+		token,
 		Element(output1).to_vec(),
 		Element(output2).to_vec(),
 	);

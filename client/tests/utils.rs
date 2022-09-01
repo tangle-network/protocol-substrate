@@ -27,7 +27,7 @@ use webb_primitives::types::{ElementTrait, IntoAbiToken, Token};
 // wasm-utils dependencies
 use ark_std::{rand::thread_rng, UniformRand};
 use wasm_utils::{
-	proof::{generate_proof_js, JsProofInput, MixerProofInput, ProofInput},
+	proof::{generate_proof_js, mixer::MixerProofPayload, JsProofInput, ProofInput},
 	types::{Backend, Curve as WasmCurve},
 };
 
@@ -101,6 +101,8 @@ pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode> {
 	pub relayer: AccountId,
 	pub ext_amount: Amount,
 	pub fee: Balance,
+	pub refund: Balance,
+	pub token: AccountId,
 	pub encrypted_output1: Vec<u8>,
 	pub encrypted_output2: Vec<u8>,
 }
@@ -111,20 +113,32 @@ impl<I: Encode, A: Encode, B: Encode> ExtData<I, A, B> {
 		relayer: I,
 		ext_amount: A,
 		fee: B,
+		refund: B,
+		token: I,
 		encrypted_output1: Vec<u8>,
 		encrypted_output2: Vec<u8>,
 	) -> Self {
-		Self { recipient, relayer, ext_amount, fee, encrypted_output1, encrypted_output2 }
+		Self {
+			recipient,
+			relayer,
+			ext_amount,
+			fee,
+			refund,
+			token,
+			encrypted_output1,
+			encrypted_output2,
+		}
 	}
 }
 
 impl<I: Encode, A: Encode, B: Encode> IntoAbiToken for ExtData<I, A, B> {
 	fn into_abi(&self) -> Token {
-		// TODO: Make sure the encodings match the solidity side
 		let recipient = Token::Bytes(self.recipient.encode());
 		let ext_amount = Token::Bytes(self.ext_amount.encode());
 		let relayer = Token::Bytes(self.relayer.encode());
 		let fee = Token::Bytes(self.fee.encode());
+		let refund = Token::Bytes(self.refund.encode());
+		let token = Token::Bytes(self.token.encode());
 		let encrypted_output1 = Token::Bytes(self.encrypted_output1.clone());
 		let encrypted_output2 = Token::Bytes(self.encrypted_output2.clone());
 		let mut ext_data_args = Vec::new();
@@ -132,6 +146,8 @@ impl<I: Encode, A: Encode, B: Encode> IntoAbiToken for ExtData<I, A, B> {
 		ext_data_args.push(relayer);
 		ext_data_args.push(ext_amount);
 		ext_data_args.push(fee);
+		ext_data_args.push(refund);
+		ext_data_args.push(token);
 		ext_data_args.push(encrypted_output1);
 		ext_data_args.push(encrypted_output2);
 		Token::Tuple(ext_data_args)
@@ -145,6 +161,8 @@ impl Into<WebbExtData<AccountId32, i128, u128>> for ExtData<AccountId32, i128, u
 			relayer: self.relayer.clone(),
 			ext_amount: self.ext_amount,
 			fee: self.fee,
+			refund: self.refund,
+			token: self.token,
 			encrypted_output1: self.encrypted_output1,
 			encrypted_output2: self.encrypted_output2,
 		}
@@ -195,7 +213,7 @@ pub fn setup_mixer_circuit(
 	Vec<u8>, // proof bytes
 	Element, // root
 ) {
-	let mixer_proof_input = MixerProofInput {
+	let mixer_proof_input = MixerProofPayload {
 		exponentiation: 5,
 		width: 3,
 		curve: WasmCurve::Bn254,
@@ -211,7 +229,7 @@ pub fn setup_mixer_circuit(
 		leaves,
 		leaf_index,
 	};
-	let js_proof_inputs = JsProofInput { inner: ProofInput::Mixer(mixer_proof_input) };
+	let js_proof_inputs = JsProofInput { inner: ProofInput::Mixer(Box::new(mixer_proof_input)) };
 	let proof = generate_proof_js(js_proof_inputs).unwrap();
 
 	let root_array: [u8; 32] = proof.root.try_into().unwrap();
