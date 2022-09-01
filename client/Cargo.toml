@@ -14,7 +14,7 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 hex = "0.4"
 serde = { version = "1.0.119" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
-sp-keyring = { default-features = false, version = "6.0.0" }
+sp-keyring = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
 tokio = { version = "1.17.0", features = ["full"] }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
