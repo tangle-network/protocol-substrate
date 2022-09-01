@@ -51,19 +51,17 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 		"../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
-	let vk_2x2_bytes = include_bytes!(
-		"../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin"
-	)
-	.to_vec();
+	let vk_2x2_bytes =
+		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin")
+			.to_vec();
 
 	let pk_16x2_bytes = include_bytes!(
 		"../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
-	let vk_16x2_bytes = include_bytes!(
-		"../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin"
-	)
-	.to_vec();
+	let vk_16x2_bytes =
+		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin")
+			.to_vec();
 
 	assert_ok!(Verifier2x2Pallet::force_set_parameters(Origin::root(), vk_2x2_bytes.clone()));
 	assert_ok!(Verifier16x2Pallet::force_set_parameters(Origin::root(), vk_16x2_bytes.clone()));

@@ -27,12 +27,10 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 
 	let signer = PairSigner::<DefaultConfig, Pair>::new(AccountKeyring::Alice.pair());
 
-	let pk_bytes = include_bytes!(
-		"../../substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin"
-	);
-	let vk_bytes = include_bytes!(
-		"../../substrate-fixtures/mixer/bn254/x5/verifying_key_uncompressed.bin"
-	);
+	let pk_bytes =
+		include_bytes!("../../substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin");
+	let vk_bytes =
+		include_bytes!("../../substrate-fixtures/mixer/bn254/x5/verifying_key_uncompressed.bin");
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();
 	let recipient_bytes = truncate_and_pad(&&recipient.encode());
