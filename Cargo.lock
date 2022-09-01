@@ -9449,6 +9449,8 @@ dependencies = [
 [[package]]
 name = "wasm-utils"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c9454e1432ba048425cada12d26d2522132266459ecc065a11d3fae224774b6"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",

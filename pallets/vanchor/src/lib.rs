@@ -439,13 +439,17 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			bytes.extend_from_slice(comm.to_bytes());
 		}
 		bytes.extend_from_slice(&chain_id_type.using_encoded(element_encoder));
-		for root in proof_data.roots {
+		for root in &proof_data.roots {
 			bytes.extend_from_slice(root.to_bytes());
 		}
 		// Verify the zero-knowledge proof, currently supported 2-2 and 16-2 txes
-		let res = match (proof_data.input_nullifiers.len(), proof_data.output_commitments.len()) {
-			(2, 2) => T::Verifier2x2::verify(&bytes, &proof_data.proof)?,
-			(16, 2) => T::Verifier16x2::verify(&bytes, &proof_data.proof)?,
+		let res = match (
+			proof_data.roots.len(),
+			proof_data.input_nullifiers.len(),
+			proof_data.output_commitments.len(),
+		) {
+			(2, 2, 2) => T::Verifier2x2::verify(&bytes, &proof_data.proof)?,
+			(2, 16, 2) => T::Verifier16x2::verify(&bytes, &proof_data.proof)?,
 			_ => false,
 		};
 		ensure!(res, Error::<T, I>::InvalidTransactionProof);
