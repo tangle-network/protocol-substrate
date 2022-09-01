@@ -19,7 +19,7 @@ serde = { features = ["derive"], optional = true, version = "1.0.101" }
 webb-primitives = { path = "../../primitives", default-features = false }
 
 # ORML dependencies
-orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false, branch = "polkadot-v0.9.27" }
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 
 # Substrate dependencies
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.27" }
