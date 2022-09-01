@@ -343,10 +343,17 @@ parameter_types! {
 	pub const MetadataDepositPerByte: u64 = 1;
 }
 
-impl pallet_verifier::Config for Runtime {
+impl pallet_verifier::Config<pallet_verifier::Instance1> for Test {
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Verifier = webb_primitives::verifying::ArkworksVerifierBn254;
+	type Verifier = ArkworksVerifierBn254;
+	type WeightInfo = ();
+}
+
+impl pallet_verifier::Config<pallet_verifier::Instance2> for Test {
+	type Event = Event;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
@@ -493,9 +500,10 @@ impl pallet_vanchor::Config for Runtime {
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
 	type PostDepositHook = XAnchor;
-	type Verifier = VerifierPallet;
 	type ArbitraryHasher = Keccak256HasherBn254;
 	type WeightInfo = ();
+	type Verifier2x2 = Verifier2x2Pallet;
+	type Verifier16x2 = Verifier16x2Pallet;
 }
 
 impl pallet_xanchor::Config for Runtime {
@@ -636,7 +644,8 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin},
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
-		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
+		Verifier2x2Pallet: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		Verifier16x2Pallet: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
