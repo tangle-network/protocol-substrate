@@ -3,12 +3,15 @@ WORKDIR /webb
 
 # Install Required Packages
 RUN apt-get update && \
-  apt-get install -y git pkg-config clang curl libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler && \
+  apt-get install -y git python3 python3-pip pkg-config clang curl libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler && \
   rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install dvc
+
 COPY . .
 
 # Build Standalone Node.
-RUN git submodule update --init && \
+RUN dvc pull && \
   cargo build --release -p webb-standalone-node
 
 # This is the 2nd stage: a very small image where we copy the Node binary."
