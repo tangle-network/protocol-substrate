@@ -47,7 +47,7 @@ mod test_utils;
 #[cfg(test)]
 mod tests;
 
-use codec::Encode;
+use codec::{Encode, Decode};
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::{
 	arithmetic::{Signed, Zero},
@@ -55,6 +55,7 @@ use orml_traits::{
 	MultiCurrency, MultiCurrencyExtended,
 };
 use sp_runtime::traits::Saturating;
+use pallet_token_wrapper::traits::TokenWrapperInterface;
 use webb_primitives::{
 	field_ops::IntoPrimeField,
 	hasher::InstanceHasher,
@@ -126,8 +127,7 @@ pub mod pallet {
 			+ Into<Self::LeafIndex>;
 
 		/// The verifier
-		type Verifier2x2: VerifierModule;
-		type Verifier16x2: VerifierModule;
+		type VAnchorVerifier: VAnchorVerifierModule;
 
 		type EthereumHasher: InstanceHasher;
 
@@ -143,6 +143,17 @@ pub mod pallet {
 
 		/// Max fee amount
 		type MaxFee: Get<BalanceOf<Self, I>>;
+
+		/// Max currency ID value for signaling a strict transact without unwrapping
+		type MaxCurrencyId: Get<CurrencyIdOf<Self, I>>;
+
+		/// TokenWrapper Interface
+		type TokenWrapper: TokenWrapperInterface<
+			Self::AccountId,
+			CurrencyIdOf<Self, I>,
+			BalanceOf<Self, I>,
+			Self::ProposalNonce,
+		>;
 
 		/// Native currency id
 		#[pallet::constant]
@@ -443,15 +454,12 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			bytes.extend_from_slice(root.to_bytes());
 		}
 		// Verify the zero-knowledge proof, currently supported 2-2 and 16-2 txes
-		let res = match (
-			proof_data.roots.len(),
-			proof_data.input_nullifiers.len(),
-			proof_data.output_commitments.len(),
-		) {
-			(2, 2, 2) => T::Verifier2x2::verify(&bytes, &proof_data.proof)?,
-			(2, 16, 2) => T::Verifier16x2::verify(&bytes, &proof_data.proof)?,
-			_ => false,
-		};
+		let res = T::VAnchorVerifier::verify(
+			&bytes,
+			&proof_data.proof,
+			proof_data.roots.len().try_into().unwrap_or_default(),
+			proof_data.input_nullifiers.len().try_into().unwrap_or_default(),
+		)?;
 		ensure!(res, Error::<T, I>::InvalidTransactionProof);
 		// Flag nullifiers as used
 		for nullifier in &proof_data.input_nullifiers {
@@ -481,13 +489,25 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		} else if is_negative {
 			let min_withdraw = MinWithdrawAmount::<T, I>::get();
 			ensure!(abs_amount >= min_withdraw, Error::<T, I>::InvalidWithdrawAmount);
-			// Withdraw to recipient account
-			<T as Config<I>>::Currency::transfer(
-				vanchor.asset,
-				&Self::account_id(),
-				&ext_data.recipient,
-				abs_amount,
-			)?;
+			let asset_id = Self::to_currency_id(ext_data.token)?;
+			if asset_id == T::MaxCurrencyId::get() {
+				// Unwrap to recipient account
+				T::TokenWrapper::unwrap(
+					Self::account_id(),
+					vanchor.asset,
+					asset_id,
+					abs_amount,
+					ext_data.recipient.clone(),
+				)?;
+			} else {
+				// Withdraw to recipient account
+				<T as Config<I>>::Currency::transfer(
+					vanchor.asset,
+					&Self::account_id(),
+					&ext_data.recipient,
+					abs_amount,
+				)?;
+			}
 		}
 		// Check if the fee is non-zero
 		let fee_exists = ext_data.fee > BalanceOf::<T, I>::zero();
@@ -591,6 +611,12 @@ impl<T: Config<I>, I: 'static> VAnchorInspector<VAnchorConfigration<T, I>> for P
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn account_id() -> T::AccountId {
 		T::PalletId::get().into_account_truncating()
+	}
+
+	pub fn to_currency_id(asset_id: T::AccountId) -> Result<CurrencyIdOf<T, I>, &'static str> {
+		let bytes = asset_id.encode();
+		CurrencyIdOf::<T, I>::decode(&mut &bytes[..])
+			.map_err(|_| "Error converting asset_id to currency id")
 	}
 
 	pub fn get_vanchor(

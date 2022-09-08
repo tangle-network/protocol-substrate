@@ -1252,6 +1252,7 @@ parameter_types! {
 	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
 	pub const MaxFee: Balance = Balance::MAX - 1;
 	pub const MaxExtAmount: Balance = Balance::MAX - 1;
+	pub const MaxCurrencyId: webb_primitives::AssetId = webb_primitives::AssetId::MAX - 1;
 }
 
 impl pallet_vanchor::Config<pallet_vanchor::Instance1> for Runtime {
@@ -1265,9 +1266,11 @@ impl pallet_vanchor::Config<pallet_vanchor::Instance1> for Runtime {
 	type Currency = Currencies;
 	type MaxFee = MaxFee;
 	type MaxExtAmount = MaxExtAmount;
+	type MaxCurrencyId = MaxCurrencyId;
 	type PostDepositHook = ();
 	type ProposalNonce = u32;
 	type NativeCurrencyId = GetNativeCurrencyId;
+	type TokenWrapper = TokenWrapper;
 }
 
 impl pallet_vanchor_handler::Config<pallet_vanchor_handler::Instance1> for Runtime {

@@ -109,18 +109,18 @@ pub mod pallet {
 
 		/// Asset registry
 		type AssetRegistry: Registry<
-				Self::AssetId,
-				Vec<u8>,
-				Self::Balance,
-				BoundedVec<u8, Self::StringLimit>,
-				DispatchError,
-			> + ShareTokenRegistry<
-				Self::AssetId,
-				Vec<u8>,
-				Self::Balance,
-				BoundedVec<u8, Self::StringLimit>,
-				DispatchError,
-			>;
+			Self::AssetId,
+			Vec<u8>,
+			Self::Balance,
+			BoundedVec<u8, Self::StringLimit>,
+			DispatchError,
+		> + ShareTokenRegistry<
+			Self::AssetId,
+			Vec<u8>,
+			Self::Balance,
+			BoundedVec<u8, Self::StringLimit>,
+			DispatchError,
+		>;
 
 		/// Proposal nonce type
 		type ProposalNonce: Encode

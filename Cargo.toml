@@ -15,6 +15,7 @@ members = [
 	"pallets/signature-bridge",
 	"pallets/vanchor",
 	"pallets/vanchor-handler",
+	"pallets/vanchor-verifier",
 	# "pallets/xanchor",
 	"pallets/token-wrapper",
 	"pallets/token-wrapper-handler",
