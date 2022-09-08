@@ -41,11 +41,10 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			// 3. Setup the VerifierPallet
 			//    but to do so, we need to have a VerifyingKey
 			let pk_bytes = include_bytes!(
-				"../../../protocol-substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin"
+				"../../../substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin"
 			);
-			let vk_bytes = include_bytes!(
-				"../../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key.bin"
-			);
+			let vk_bytes =
+				include_bytes!("../../../substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
 
 			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
 
