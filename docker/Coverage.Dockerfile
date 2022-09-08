@@ -13,8 +13,7 @@ RUN rustup default nightly
 RUN cargo install cargo-tarpaulin
 
 # Build Standalone Node.
-CMD git submodule update --init && \
-    SKIP_WASM_BUILD=1 cargo +nightly tarpaulin --out Xml \
+CMD SKIP_WASM_BUILD=1 cargo +nightly tarpaulin --out Xml \
         -p webb-standalone-runtime \
         -p pallet-token-wrapper-handler \
         -p pallet-token-wrapper \

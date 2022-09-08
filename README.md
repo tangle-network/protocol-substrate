@@ -85,14 +85,14 @@ apt install -y protobuf-compiler
 brew install protobuf
 ```
 
-Clone the submodules:
+Repo environment setup:
 
 ```bash
 # clone the repo
 git clone git@github.com:webb-tools/protocol-substrate.git
 
-# Fetch submodules
-git submodule update --init
+# Fetch fixtures
+dvc pull
 ```
 
 Build the node in `release mode`:
