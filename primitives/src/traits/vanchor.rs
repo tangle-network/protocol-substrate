@@ -26,6 +26,15 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		asset: C::CurrencyId,
 		nonce: C::ProposalNonce,
 	) -> Result<C::TreeId, dispatch::DispatchError>;
+	/// Register and Transact
+	fn register_and_transact(
+		owner: C::AccountId,
+		public_key: Vec<u8>,
+		transactor: C::AccountId,
+		id: C::TreeId,
+		proof_data: ProofData<C::Element>,
+		ext_data: ExtData<C::AccountId, C::Amount, C::Balance>,
+	) -> Result<(), dispatch::DispatchError>;
 	/// Transaction
 	fn transact(
 		transactor: C::AccountId,

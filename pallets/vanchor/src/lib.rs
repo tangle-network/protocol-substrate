@@ -59,6 +59,7 @@ use webb_primitives::{
 	field_ops::IntoPrimeField,
 	hasher::InstanceHasher,
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
+	key_storage::KeyStorageInterface,
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
 	types::{
 		vanchor::{ExtData, ProofData, VAnchorMetadata},
@@ -102,7 +103,7 @@ pub mod pallet {
 	#[pallet::config]
 	/// The module configuration trait.
 	pub trait Config<I: 'static = ()>:
-		frame_system::Config + pallet_linkable_tree::Config<I>
+		frame_system::Config + pallet_linkable_tree::Config<I> + pallet_key_storage::Config<I>
 	{
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
@@ -113,6 +114,9 @@ pub mod pallet {
 		/// The tree type
 		type LinkableTree: LinkableTreeInterface<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>
 			+ LinkableTreeInspector<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>;
+
+		/// The key storage type
+		type KeyStorage: KeyStorageInterface<pallet_key_storage::KeyStorageConfiguration<Self, I>>;
 
 		/// Proposal nonce type
 		type ProposalNonce: Encode
@@ -324,6 +328,21 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[transactional]
+		#[pallet::weight(0)]
+		pub fn register_and_transact(
+			origin: OriginFor<T>,
+			owner: T::AccountId,
+			public_key: Vec<u8>,
+			id: T::TreeId,
+			proof_data: ProofData<T::Element>,
+			ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+			<Self as VAnchorInterface<_>>::register_and_transact(owner, public_key, sender, id, proof_data, ext_data)?;
+			Ok(().into())
+		}
+
 		#[pallet::weight(0)]
 		pub fn set_max_deposit_amount(
 			origin: OriginFor<T>,
@@ -378,6 +397,21 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		let id = T::LinkableTree::create(creator.clone(), max_edges, depth)?;
 		VAnchors::<T, I>::insert(id, VAnchorMetadata { creator, asset });
 		Ok(id)
+	}
+
+	fn register_and_transact(
+		owner: T::AccountId,
+		public_key: Vec<u8>,
+		transactor: T::AccountId,
+		id: T::TreeId,
+		proof_data: ProofData<T::Element>,
+		ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+	) -> Result<(), DispatchError> {
+		// First Register
+		T::KeyStorage::register(owner, public_key)?;
+		// Then Transact
+		<Self as VAnchorInterface<_>>::transact(transactor, id, proof_data, ext_data)?;
+		Ok(())
 	}
 
 	fn transact(

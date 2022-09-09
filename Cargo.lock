@@ -4860,6 +4860,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-key-storage"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.28)",
+ "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.28)",
+ "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.28)",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.28)",
+ "webb-primitives",
+]
+
+[[package]]
 name = "pallet-linkable-tree"
 version = "1.0.0"
 dependencies = [
@@ -5398,6 +5417,7 @@ dependencies = [
  "pallet-asset-registry",
  "pallet-balances",
  "pallet-hasher",
+ "pallet-key-storage",
  "pallet-linkable-tree",
  "pallet-mt",
  "pallet-token-wrapper",
