@@ -47,15 +47,15 @@ mod test_utils;
 #[cfg(test)]
 mod tests;
 
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::{
 	arithmetic::{Signed, Zero},
 	currency::transactional,
 	MultiCurrency, MultiCurrencyExtended,
 };
-use sp_runtime::traits::Saturating;
 use pallet_token_wrapper::traits::TokenWrapperInterface;
+use sp_runtime::traits::Saturating;
 use webb_primitives::{
 	field_ops::IntoPrimeField,
 	hasher::InstanceHasher,
@@ -129,13 +129,16 @@ pub mod pallet {
 		/// The verifier
 		type VAnchorVerifier: VAnchorVerifierModule;
 
+		/// The ethereum hash function for hashing external data (to match Solidity protocol)
 		type EthereumHasher: InstanceHasher;
 
+		/// A trait to map amount elements into a prime field.
 		type IntoField: IntoPrimeField<AmountOf<Self, I>>;
 
 		/// Currency type for taking deposits
 		type Currency: MultiCurrencyExtended<Self::AccountId>;
 
+		/// An arbitrary execution function to execute after deposits/insertions are made
 		type PostDepositHook: PostDepositHook<Self, I>;
 
 		/// Max external amount

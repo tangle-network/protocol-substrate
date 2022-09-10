@@ -117,7 +117,7 @@ parameter_types! {
 impl pallet_vanchor_verifier::Config for Test {
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type VAnchorVerifier = ArkworksVerifierBn254;
+	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
@@ -302,6 +302,7 @@ parameter_types! {
 	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
 	pub const MaxFee: Balance = 5;
 	pub const MaxExtAmount: Balance = 21;
+	pub const MaxCurrencyId: AssetId = AssetId::MAX - 1;
 }
 
 impl pallet_vanchor::Config for Test {
@@ -314,8 +315,9 @@ impl pallet_vanchor::Config for Test {
 	type PalletId = VAnchorPalletId;
 	type MaxFee = MaxFee;
 	type MaxExtAmount = MaxExtAmount;
+	type MaxCurrencyId = MaxCurrencyId;
 	type ProposalNonce = u32;
-	type TokenWrapperInterface = TokenWrapper;
+	type TokenWrapper = TokenWrapper;
 	type PostDepositHook = ();
 	type VAnchorVerifier = VAnchorVerifier;
 }

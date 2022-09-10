@@ -75,7 +75,9 @@ pub use weights::WeightInfo;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, Blake2_128Concat};
+	use frame_support::{
+		dispatch::DispatchResultWithPostInfo, pallet_prelude::*, Blake2_128Concat,
+	};
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
@@ -163,7 +165,12 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> VAnchorVerifierModule for Pallet<T, I> {
-	fn verify(public_inp_bytes: &[u8], proof: &[u8], max_edges: u8, num_inputs: u8) -> Result<bool, DispatchError> {
+	fn verify(
+		public_inp_bytes: &[u8],
+		proof: &[u8],
+		max_edges: u8,
+		num_inputs: u8,
+	) -> Result<bool, DispatchError> {
 		let params = Self::parameters((max_edges, num_inputs));
 		ensure!(!params.is_empty(), Error::<T, I>::ParametersNotInitialized);
 		match T::Verifier::verify(public_inp_bytes, proof, &params) {

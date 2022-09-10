@@ -230,7 +230,7 @@ pub fn setup_mixer_circuit(
 		leaf_index,
 	};
 	let js_proof_inputs = JsProofInput { inner: ProofInput::Mixer(Box::new(mixer_proof_input)) };
-	let proof = generate_proof_js(js_proof_inputs).unwrap();
+	let proof = generate_proof_js(js_proof_inputs).unwrap().mixer_proof().unwrap();
 
 	let root_array: [u8; 32] = proof.root.try_into().unwrap();
 	let root_element = Element(root_array);

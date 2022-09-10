@@ -12,5 +12,10 @@ pub trait VerifierModule {
 }
 
 pub trait VAnchorVerifierModule {
-	fn verify(pub_inps: &[u8], data: &[u8], max_instances: u8, num_inputs: u8) -> Result<bool, DispatchError>;
+	fn verify(
+		pub_inps: &[u8],
+		data: &[u8],
+		max_instances: u8,
+		num_inputs: u8,
+	) -> Result<bool, DispatchError>;
 }

@@ -47,24 +47,28 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	// 3. Setup the VerifierPallet
 	//    but to do so, we need to have a VerifyingKey
 
-	let pk_2x2_bytes = include_bytes!(
+	let pk_2_2_bytes = include_bytes!(
 		"../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
-	let vk_2x2_bytes =
+	let vk_2_2_bytes =
 		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin")
 			.to_vec();
 
-	let pk_16x2_bytes = include_bytes!(
+	let pk_2_16_bytes = include_bytes!(
 		"../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
-	let vk_16x2_bytes =
+	let vk_2_16_bytes =
 		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin")
 			.to_vec();
 
-	assert_ok!(Verifier2x2Pallet::force_set_parameters(Origin::root(), vk_2x2_bytes.clone()));
-	assert_ok!(Verifier16x2Pallet::force_set_parameters(Origin::root(), vk_16x2_bytes.clone()));
+	assert_ok!(VAnchorVerifier::force_set_parameters(Origin::root(), (2, 2), vk_2_2_bytes.clone()));
+	assert_ok!(VAnchorVerifier::force_set_parameters(
+		Origin::root(),
+		(2, 16),
+		vk_2_16_bytes.clone()
+	));
 
 	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
 	let big_transactor = account::<AccountId>("", BIG_TRANSACTOR_ACCOUNT_ID, SEED);
@@ -83,7 +87,7 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 3, 2));
 
 	// finally return the provingkey bytes
-	(pk_2x2_bytes, vk_2x2_bytes, pk_16x2_bytes, vk_16x2_bytes)
+	(pk_2_2_bytes, vk_2_2_bytes, pk_2_16_bytes, vk_2_16_bytes)
 }
 
 fn create_vanchor(asset_id: u32) -> u32 {
