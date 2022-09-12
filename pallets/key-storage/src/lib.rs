@@ -19,13 +19,16 @@
 //! ## KeyStorageInterface Interface
 //!
 //! `register`: Registers a public key to it's account.
-//!
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
+mod benchmarking;
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+pub mod tests;
 
-use sp_std::convert::TryInto;
-use frame_support::{ pallet_prelude::DispatchError};
-use sp_std::prelude::*;
+use frame_support::pallet_prelude::DispatchError;
+use sp_std::{convert::TryInto, prelude::*};
 use webb_primitives::traits::key_storage::*;
 
 pub use pallet::*;
@@ -48,18 +51,34 @@ pub mod pallet {
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
 	}
 
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+		pub phantom: (PhantomData<T>, PhantomData<I>),
+	}
+
+	#[cfg(feature = "std")]
+	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
+		fn default() -> Self {
+			Self { phantom: Default::default() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
+		fn build(&self) {}
+	}
+
 	/// The map of owners to public keys
 	#[pallet::storage]
 	#[pallet::getter(fn public_key_owners)]
 	pub type PublicKeyOwners<T: Config<I>, I: 'static = ()> =
-	StorageMap<_, Blake2_128Concat, T::AccountId, Vec<u8>, ValueQuery>;
-
+		StorageValue<_, Vec<(T::AccountId, Vec<u8>)>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		/// New tree created
-		PublicKeyRegisteration { owner: T::AccountId, public_key: Vec<u8> },
+		/// Public key registration
+		PublicKeyRegistration { owner: T::AccountId, public_key: Vec<u8> },
 	}
 
 	#[pallet::error]
@@ -78,11 +97,10 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 			<Self as KeyStorageInterface<_>>::register(owner.clone(), public_key.clone())?;
-			Self::deposit_event(Event::PublicKeyRegisteration { owner, public_key });
+			Self::deposit_event(Event::PublicKeyRegistration { owner, public_key });
 			Ok(().into())
 		}
 	}
-
 }
 
 pub struct KeyStorageConfiguration<T: Config<I>, I: 'static>(
@@ -94,18 +112,14 @@ impl<T: Config<I>, I: 'static> KeyStorageConfig for KeyStorageConfiguration<T, I
 	type AccountId = T::AccountId;
 }
 
-impl<T: Config<I>, I: 'static> KeyStorageInterface<KeyStorageConfiguration<T, I>>
-for Pallet<T, I>
-{
-	fn register(
-		owner: T::AccountId,
-		public_key: Vec<u8>,
-	) -> Result<(), DispatchError> {
-		PublicKeyOwners::<T, I>::insert(owner.clone(), public_key.clone());
+impl<T: Config<I>, I: 'static> KeyStorageInterface<KeyStorageConfiguration<T, I>> for Pallet<T, I> {
+	fn register(owner: T::AccountId, public_key: Vec<u8>) -> Result<(), DispatchError> {
+		let mut public_key_owners = <PublicKeyOwners<T, I>>::get();
+		public_key_owners.push((owner.clone(), public_key.clone()));
 		#[cfg(feature = "std")]
-			{
-				println!("Registered public key with owner: {:?}, {:?}", owner, public_key);
-			}
+		{
+			println!("Registered public key with owner: {:?}, {:?}", owner, public_key);
+		}
 		Ok(())
 	}
 }

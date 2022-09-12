@@ -40,9 +40,8 @@ pallet-linkable-tree-rpc-runtime-api = {path = "../../pallets/linkable-tree/rpc/
 pallet-token-wrapper = {path = "../../pallets/token-wrapper", default-features = false}
 pallet-token-wrapper-handler = {path = "../../pallets/token-wrapper-handler", default-features = false}
 pallet-verifier = {path = "../../pallets/verifier", default-features = false}
-
 pallet-relayer-registry = {path = "../../pallets/relayer-registry", default-features = false}
-
+pallet-key-storage = {path = "../../pallets/key-storage", default-features = false}
 # Substrate dependencies
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }
 sp-authority-discovery = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }

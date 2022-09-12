@@ -2,6 +2,7 @@
 use crate::types::vanchor::{ExtData, ProofData};
 use codec::Encode;
 use frame_support::dispatch;
+use sp_std::vec::Vec;
 use webb_proposals::ResourceId;
 
 pub trait VAnchorConfig {

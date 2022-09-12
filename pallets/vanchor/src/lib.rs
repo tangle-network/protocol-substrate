@@ -58,8 +58,8 @@ use sp_runtime::traits::Saturating;
 use webb_primitives::{
 	field_ops::IntoPrimeField,
 	hasher::InstanceHasher,
-	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
 	key_storage::KeyStorageInterface,
+	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
 	types::{
 		vanchor::{ExtData, ProofData, VAnchorMetadata},
@@ -339,7 +339,9 @@ pub mod pallet {
 			ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
-			<Self as VAnchorInterface<_>>::register_and_transact(owner, public_key, sender, id, proof_data, ext_data)?;
+			<Self as VAnchorInterface<_>>::register_and_transact(
+				owner, public_key, sender, id, proof_data, ext_data,
+			)?;
 			Ok(().into())
 		}
 

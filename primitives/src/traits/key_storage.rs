@@ -9,8 +9,5 @@ pub trait KeyStorageConfig {
 /// KeyStorage trait definition to be used in other pallets
 pub trait KeyStorageInterface<C: KeyStorageConfig> {
 	/// Registers a new public key to the owner
-	fn register(
-		owner: C::AccountId,
-		key: Vec<u8>,
-	) -> Result<(), dispatch::DispatchError>;
+	fn register(owner: C::AccountId, key: Vec<u8>) -> Result<(), dispatch::DispatchError>;
 }

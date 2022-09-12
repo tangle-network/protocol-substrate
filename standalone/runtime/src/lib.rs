@@ -1260,6 +1260,7 @@ impl pallet_vanchor::Config<pallet_vanchor::Instance1> for Runtime {
 	type LinkableTree = LinkableTreeBn254;
 	type Verifier2x2 = VAnchorVerifier2x2Bn254;
 	type Verifier16x2 = VAnchorVerifier16x2Bn254;
+	type KeyStorage = KeyStorage;
 	type EthereumHasher = Keccak256HasherBn254;
 	type IntoField = ArkworksIntoFieldBn254;
 	type Currency = Currencies;
@@ -1375,6 +1376,10 @@ impl pallet_relayer_registry::Config for Runtime {
 	type WeightInfo = ();
 }
 
+impl pallet_key_storage::Config<pallet_key_storage::Instance1> for Runtime {
+	type Event = Event;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously
 // configured.
 construct_runtime!(
@@ -1459,6 +1464,8 @@ construct_runtime!(
 		// Relayer Registry
 		RelayerRegistry: pallet_relayer_registry::{Pallet, Call, Storage, Event<T>},
 
+		// Key Storage
+		KeyStorage: pallet_key_storage::<Instance1>::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
