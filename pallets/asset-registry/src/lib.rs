@@ -597,7 +597,7 @@ impl<T: Config>
 	}
 
 	fn exists(asset_id: T::AssetId) -> bool {
-		Assets::<T>::contains_key(&asset_id)
+		Assets::<T>::contains_key(&asset_id) || asset_id == T::NativeAssetId::get()
 	}
 
 	fn retrieve_asset(name: &Vec<u8>) -> Result<T::AssetId, DispatchError> {

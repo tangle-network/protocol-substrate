@@ -331,7 +331,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			id: T::TreeId,
 			proof_data: ProofData<T::Element>,
-			ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+			ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			<Self as VAnchorInterface<_>>::transact(sender, id, proof_data, ext_data)?;
@@ -398,7 +398,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		transactor: T::AccountId,
 		id: T::TreeId,
 		proof_data: ProofData<T::Element>,
-		ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+		ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>,
 	) -> Result<(), DispatchError> {
 		// Double check the number of roots
 		T::LinkableTree::ensure_max_edges(id, proof_data.roots.len())?;
@@ -528,12 +528,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::PalletId::get().into_account_truncating()
 	}
 
-	pub fn to_currency_id(asset_id: T::AccountId) -> Result<CurrencyIdOf<T, I>, &'static str> {
-		let bytes = asset_id.encode();
-		CurrencyIdOf::<T, I>::decode(&mut &bytes[..])
-			.map_err(|_| "Error converting asset_id to currency id")
-	}
-
 	pub fn get_vanchor(
 		id: T::TreeId,
 	) -> Result<VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>, DispatchError> {
@@ -558,7 +552,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	pub fn calculate_public_amount(
-		ext_data: &ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+		ext_data: &ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>,
 	) -> Result<(T::Element, AmountOf<T, I>), DispatchError> {
 		// Public amount can also be negative, in which
 		// case it would wrap around the field, so we should check if FIELD_SIZE -
@@ -602,7 +596,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub fn handle_fee(
 		vanchor: &VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>,
-		ext_data: &ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+		ext_data: &ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>,
 	) -> Result<(), DispatchError> {
 		let fee_exists = ext_data.fee > BalanceOf::<T, I>::zero();
 		if fee_exists {
@@ -620,7 +614,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	pub fn handle_refund(
 		transactor: &T::AccountId,
-		ext_data: &ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+		ext_data: &ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>,
 	) -> Result<(), DispatchError> {
 		let refund_exists = ext_data.refund > BalanceOf::<T, I>::zero();
 		if refund_exists {
@@ -639,7 +633,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn handle_asset_action(
 		transactor: &T::AccountId,
 		vanchor: &VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>,
-		ext_data: &ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+		ext_data: &ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>,
 	) -> Result<(), DispatchError> {
 		// If external amount is positive then we are depositing
 		let is_deposit = ext_data.ext_amount.is_positive();
@@ -669,13 +663,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				abs_amount >= MinWithdrawAmount::<T, I>::get(),
 				Error::<T, I>::InvalidWithdrawAmount
 			);
-			let asset_id = Self::to_currency_id(ext_data.token.clone())?;
-			if asset_id == T::MaxCurrencyId::get() {
+			if ext_data.token.clone() != T::MaxCurrencyId::get() {
 				// Unwrap to recipient account
 				T::TokenWrapper::unwrap(
 					Self::account_id(),
 					vanchor.asset,
-					asset_id,
+					ext_data.token.clone(),
 					abs_amount,
 					ext_data.recipient.clone(),
 				)?;
