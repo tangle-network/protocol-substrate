@@ -568,10 +568,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let calc_public_amount = ext_data.ext_amount - fee_amount;
 		let calc_public_amount_bytes = T::IntoField::into_field(calc_public_amount);
 		// Return the public amount as a field element
-		Ok((
-			T::Element::from_bytes(&calc_public_amount_bytes),
-			calc_public_amount
-		))
+		Ok((T::Element::from_bytes(&calc_public_amount_bytes), calc_public_amount))
 	}
 
 	pub fn handle_proof_verification(
