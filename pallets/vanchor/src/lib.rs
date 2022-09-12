@@ -428,16 +428,10 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			.try_into()
 			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
 		ensure!(ext_amount_unsigned < T::MaxExtAmount::get(), Error::<T, I>::InvalidExtAmount);
-		// Public amounnt can also be negative, in which
-		// case it would wrap around the field, so we should check if FIELD_SIZE -
-		// public_amount == proof_data.public_amount, in case of a negative ext_amount
-		let fee_amount =
-			AmountOf::<T, I>::try_from(ext_data.fee).map_err(|_| Error::<T, I>::InvalidFee)?;
-		let calc_public_amount = ext_data.ext_amount - fee_amount;
-		let calc_public_amount_bytes = T::IntoField::into_field(calc_public_amount);
-		let calc_public_amount_element = T::Element::from_bytes(&calc_public_amount_bytes);
+		// Verify public amount for proof
+		let (calculated_public_element, public_amount) = Self::calculate_public_amount(&ext_data)?;
 		ensure!(
-			proof_data.public_amount == calc_public_amount_element,
+			proof_data.public_amount == calculated_public_element,
 			Error::<T, I>::InvalidPublicAmount
 		);
 		// Handle proof verification
@@ -461,7 +455,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			transactor,
 			tree_id: id,
 			leafs: proof_data.output_commitments,
-			amount: calc_public_amount,
+			amount: public_amount,
 		});
 		Ok(())
 	}
@@ -561,6 +555,23 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// Set the new nonce
 		ProposalNonce::<T, I>::set(nonce);
 		Ok(())
+	}
+
+	pub fn calculate_public_amount(
+		ext_data: &ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+	) -> Result<(T::Element, AmountOf<T, I>), DispatchError> {
+		// Public amount can also be negative, in which
+		// case it would wrap around the field, so we should check if FIELD_SIZE -
+		// public_amount == proof_data.public_amount, in case of a negative ext_amount
+		let fee_amount =
+			AmountOf::<T, I>::try_from(ext_data.fee).map_err(|_| Error::<T, I>::InvalidFee)?;
+		let calc_public_amount = ext_data.ext_amount - fee_amount;
+		let calc_public_amount_bytes = T::IntoField::into_field(calc_public_amount);
+		// Return the public amount as a field element
+		Ok((
+			T::Element::from_bytes(&calc_public_amount_bytes),
+			calc_public_amount
+		))
 	}
 
 	pub fn handle_proof_verification(
