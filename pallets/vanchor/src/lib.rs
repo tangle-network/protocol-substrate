@@ -440,100 +440,18 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			proof_data.public_amount == calc_public_amount_element,
 			Error::<T, I>::InvalidPublicAmount
 		);
-
-		let chain_id_type = T::LinkableTree::get_chain_id_type();
-		// Construct public inputs
-		let mut bytes = Vec::new();
-		bytes.extend_from_slice(proof_data.public_amount.to_bytes());
-		bytes.extend_from_slice(proof_data.ext_data_hash.to_bytes());
-		for null in &proof_data.input_nullifiers {
-			bytes.extend_from_slice(null.to_bytes());
-		}
-		for comm in &proof_data.output_commitments {
-			bytes.extend_from_slice(comm.to_bytes());
-		}
-		bytes.extend_from_slice(&chain_id_type.using_encoded(element_encoder));
-		for root in &proof_data.roots {
-			bytes.extend_from_slice(root.to_bytes());
-		}
-		// Verify the zero-knowledge proof, currently supported 2-2 and 16-2 txes
-		let res = T::VAnchorVerifier::verify(
-			&bytes,
-			&proof_data.proof,
-			proof_data.roots.len().try_into().unwrap_or_default(),
-			proof_data.input_nullifiers.len().try_into().unwrap_or_default(),
-		)?;
-		ensure!(res, Error::<T, I>::InvalidTransactionProof);
+		// Handle proof verification
+		Self::handle_proof_verification(&proof_data)?;
 		// Flag nullifiers as used
 		for nullifier in &proof_data.input_nullifiers {
 			Self::add_nullifier_hash(id, *nullifier)?;
 		}
 		// Handle the deposit / withdrawal shield/unshield portions
-		let is_deposit = ext_data.ext_amount.is_positive();
-		let is_negative = ext_data.ext_amount.is_negative();
-		let abs_amount: BalanceOf<T, I> = ext_data
-			.ext_amount
-			.abs()
-			.try_into()
-			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
-		// Check if the transaction is a deposit or a withdrawal
-		if is_deposit {
-			ensure!(
-				abs_amount <= MaxDepositAmount::<T, I>::get(),
-				Error::<T, I>::InvalidDepositAmount
-			);
-			// Deposit tokens to the pallet from the transactor's account
-			<T as Config<I>>::Currency::transfer(
-				vanchor.asset,
-				&transactor,
-				&Self::account_id(),
-				abs_amount,
-			)?;
-		} else if is_negative {
-			let min_withdraw = MinWithdrawAmount::<T, I>::get();
-			ensure!(abs_amount >= min_withdraw, Error::<T, I>::InvalidWithdrawAmount);
-			let asset_id = Self::to_currency_id(ext_data.token)?;
-			if asset_id == T::MaxCurrencyId::get() {
-				// Unwrap to recipient account
-				T::TokenWrapper::unwrap(
-					Self::account_id(),
-					vanchor.asset,
-					asset_id,
-					abs_amount,
-					ext_data.recipient.clone(),
-				)?;
-			} else {
-				// Withdraw to recipient account
-				<T as Config<I>>::Currency::transfer(
-					vanchor.asset,
-					&Self::account_id(),
-					&ext_data.recipient,
-					abs_amount,
-				)?;
-			}
-		}
+		Self::handle_asset_action(&transactor, &vanchor, &ext_data)?;
 		// Check if the fee is non-zero
-		let fee_exists = ext_data.fee > BalanceOf::<T, I>::zero();
-		if fee_exists {
-			// Send fee to the relayer
-			<T as Config<I>>::Currency::transfer(
-				vanchor.asset,
-				&Self::account_id(),
-				&ext_data.relayer,
-				ext_data.fee,
-			)?;
-		}
+		Self::handle_fee(&vanchor, &ext_data)?;
 		// Check if the gas-refund is non-zero
-		let refund_exists = ext_data.refund > BalanceOf::<T, I>::zero();
-		if refund_exists {
-			// Send gas-refund to the recipient
-			<T as Config<I>>::Currency::transfer(
-				T::NativeCurrencyId::get(),
-				&transactor,
-				&ext_data.recipient,
-				ext_data.refund,
-			)?;
-		}
+		Self::handle_refund(&transactor, &ext_data)?;
 		// Insert output commitments into the tree
 		for comm in &proof_data.output_commitments {
 			T::LinkableTree::insert_in_order(id, *comm)?;
@@ -642,6 +560,128 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		);
 		// Set the new nonce
 		ProposalNonce::<T, I>::set(nonce);
+		Ok(())
+	}
+
+	pub fn handle_proof_verification(
+		proof_data: &ProofData<T::Element>,
+	) -> Result<(), DispatchError> {
+		let chain_id_type = T::LinkableTree::get_chain_id_type();
+		// Construct public inputs
+		let mut bytes = Vec::new();
+		bytes.extend_from_slice(proof_data.public_amount.to_bytes());
+		bytes.extend_from_slice(proof_data.ext_data_hash.to_bytes());
+		for null in &proof_data.input_nullifiers {
+			bytes.extend_from_slice(null.to_bytes());
+		}
+		for comm in &proof_data.output_commitments {
+			bytes.extend_from_slice(comm.to_bytes());
+		}
+		bytes.extend_from_slice(&chain_id_type.using_encoded(element_encoder));
+		for root in &proof_data.roots {
+			bytes.extend_from_slice(root.to_bytes());
+		}
+		// Verify the zero-knowledge proof
+		let res = T::VAnchorVerifier::verify(
+			&bytes,
+			&proof_data.proof,
+			proof_data.roots.len().try_into().unwrap_or_default(),
+			proof_data.input_nullifiers.len().try_into().unwrap_or_default(),
+		)?;
+		ensure!(res, Error::<T, I>::InvalidTransactionProof);
+		Ok(())
+	}
+
+	pub fn handle_fee(
+		vanchor: &VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>,
+		ext_data: &ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+	) -> Result<(), DispatchError> {
+		let fee_exists = ext_data.fee > BalanceOf::<T, I>::zero();
+		if fee_exists {
+			// Send fee to the relayer
+			<T as Config<I>>::Currency::transfer(
+				vanchor.asset,
+				&Self::account_id(),
+				&ext_data.relayer,
+				ext_data.fee,
+			)?;
+		}
+
+		Ok(())
+	}
+
+	pub fn handle_refund(
+		transactor: &T::AccountId,
+		ext_data: &ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+	) -> Result<(), DispatchError> {
+		let refund_exists = ext_data.refund > BalanceOf::<T, I>::zero();
+		if refund_exists {
+			// Send gas-refund to the recipient
+			<T as Config<I>>::Currency::transfer(
+				T::NativeCurrencyId::get(),
+				transactor,
+				&ext_data.recipient,
+				ext_data.refund,
+			)?;
+		}
+
+		Ok(())
+	}
+
+	pub fn handle_asset_action(
+		transactor: &T::AccountId,
+		vanchor: &VAnchorMetadata<T::AccountId, CurrencyIdOf<T, I>>,
+		ext_data: &ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+	) -> Result<(), DispatchError> {
+		// If external amount is positive then we are depositing
+		let is_deposit = ext_data.ext_amount.is_positive();
+		// If external amount is negative then we are withdrawing
+		let is_negative = ext_data.ext_amount.is_negative();
+		// Get the absolute amount for either action
+		let abs_amount: BalanceOf<T, I> = ext_data
+			.ext_amount
+			.abs()
+			.try_into()
+			.map_err(|_| Error::<T, I>::InvalidExtAmount)?;
+		// Check if the transaction is a deposit or a withdrawal
+		if is_deposit {
+			ensure!(
+				abs_amount <= MaxDepositAmount::<T, I>::get(),
+				Error::<T, I>::InvalidDepositAmount
+			);
+			// Deposit tokens to the pallet from the transactor's account
+			<T as Config<I>>::Currency::transfer(
+				vanchor.asset,
+				&transactor,
+				&Self::account_id(),
+				abs_amount,
+			)?;
+		} else if is_negative {
+			ensure!(
+				abs_amount >= MinWithdrawAmount::<T, I>::get(),
+				Error::<T, I>::InvalidWithdrawAmount
+			);
+			let asset_id = Self::to_currency_id(ext_data.token.clone())?;
+			if asset_id == T::MaxCurrencyId::get() {
+				// Unwrap to recipient account
+				T::TokenWrapper::unwrap(
+					Self::account_id(),
+					vanchor.asset,
+					asset_id,
+					abs_amount,
+					ext_data.recipient.clone(),
+				)?;
+			} else {
+				// Withdraw to recipient account
+				<T as Config<I>>::Currency::transfer(
+					vanchor.asset,
+					&Self::account_id(),
+					&ext_data.recipient,
+					abs_amount,
+				)?;
+			}
+		}
+
 		Ok(())
 	}
 }
