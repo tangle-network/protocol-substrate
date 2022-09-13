@@ -1378,6 +1378,7 @@ impl pallet_relayer_registry::Config for Runtime {
 
 impl pallet_key_storage::Config<pallet_key_storage::Instance1> for Runtime {
 	type Event = Event;
+	type WeightInfo = pallet_key_storage::weights::WebbWeight<Runtime>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously
@@ -1744,6 +1745,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_token_wrapper_handler, TokenWrapperHandler);
 			list_benchmark!(list, extra, pallet_signature_bridge, SignatureBridge);
 			list_benchmark!(list, extra, pallet_relayer_registry, RelayerRegistry);
+			list_benchmark!(list, extra, pallet_key_storage, KeyStorage);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1784,6 +1786,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_token_wrapper_handler, TokenWrapperHandler);
 			add_benchmark!(params, batches, pallet_signature_bridge, SignatureBridge);
 			add_benchmark!(params, batches, pallet_relayer_registry, RelayerRegistry);
+			add_benchmark!(params, batches, pallet_key_storage, KeyStorage);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

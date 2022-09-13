@@ -128,7 +128,8 @@ runtime-benchmarks = [
   "pallet-collective/runtime-benchmarks",
   "pallet-token-wrapper/runtime-benchmarks",
   "pallet-token-wrapper-handler/runtime-benchmarks",
-  "pallet-relayer-registry/runtime-benchmarks"
+  "pallet-relayer-registry/runtime-benchmarks",
+  "pallet-key-storage/runtime-benchmarks"
 ]
 
 std = [

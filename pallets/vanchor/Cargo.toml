@@ -70,6 +70,7 @@ std = [
     "pallet-linkable-tree/std",
     "pallet-verifier/std",
     "pallet-asset-registry/std",
+    "pallet-key-storage/std",
     "webb-primitives/std",
     "frame-benchmarking/std"
 ]

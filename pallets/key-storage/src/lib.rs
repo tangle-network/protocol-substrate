@@ -26,12 +26,14 @@ mod benchmarking;
 mod mock;
 #[cfg(test)]
 pub mod tests;
+pub mod weights;
 
 use frame_support::pallet_prelude::DispatchError;
 use sp_std::{convert::TryInto, prelude::*};
 use webb_primitives::traits::key_storage::*;
 
 pub use pallet::*;
+pub use weights::WeightInfo;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -49,6 +51,9 @@ pub mod pallet {
 	pub trait Config<I: 'static = ()>: frame_system::Config {
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
+
+		/// Weightinfo for pallet.
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::genesis_config]
@@ -89,13 +94,13 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		#[pallet::weight(50_000_000)]
+		#[pallet::weight(T::WeightInfo::register(public_key.len() as u32))]
 		pub fn register(
 			origin: OriginFor<T>,
 			owner: T::AccountId,
 			public_key: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
-			ensure_root(origin)?;
+			ensure_signed(origin)?;
 			<Self as KeyStorageInterface<_>>::register(owner.clone(), public_key.clone())?;
 			Self::deposit_event(Event::PublicKeyRegistration { owner, public_key });
 			Ok(().into())
