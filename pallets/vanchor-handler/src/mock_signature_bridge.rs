@@ -53,7 +53,7 @@ frame_support::construct_runtime!(
 		VAnchor: pallet_vanchor::{Pallet, Call, Storage, Event<T>},
 		VAnchorHandler: pallet_vanchor_handler::{Pallet, Call, Storage, Event<T>},
 		SignatureBridge: pallet_signature_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>}
+		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>},
 		KeyStorage: pallet_key_storage::{Pallet, Call, Storage, Event<T>, Config<T>}
 	}
 );
