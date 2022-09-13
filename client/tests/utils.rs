@@ -96,25 +96,25 @@ impl Into<WebbProofData<WebbElement>> for ProofData<Element> {
 }
 
 #[derive(Clone, Encode, Decode, Debug, Eq, PartialEq, TypeInfo)]
-pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode> {
+pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode, AssetId> {
 	pub recipient: AccountId,
 	pub relayer: AccountId,
 	pub ext_amount: Amount,
 	pub fee: Balance,
 	pub refund: Balance,
-	pub token: AccountId,
+	pub token: AssetId,
 	pub encrypted_output1: Vec<u8>,
 	pub encrypted_output2: Vec<u8>,
 }
 
-impl<I: Encode, A: Encode, B: Encode> ExtData<I, A, B> {
+impl<I: Encode, A: Encode, B: Encode, C: Encode> ExtData<I, A, B, C> {
 	pub fn new(
 		recipient: I,
 		relayer: I,
 		ext_amount: A,
 		fee: B,
 		refund: B,
-		token: I,
+		token: C,
 		encrypted_output1: Vec<u8>,
 		encrypted_output2: Vec<u8>,
 	) -> Self {
@@ -131,7 +131,7 @@ impl<I: Encode, A: Encode, B: Encode> ExtData<I, A, B> {
 	}
 }
 
-impl<I: Encode, A: Encode, B: Encode> IntoAbiToken for ExtData<I, A, B> {
+impl<I: Encode, A: Encode, B: Encode, C: Encode> IntoAbiToken for ExtData<I, A, B, C> {
 	fn into_abi(&self) -> Token {
 		let recipient = Token::Bytes(self.recipient.encode());
 		let ext_amount = Token::Bytes(self.ext_amount.encode());
@@ -154,8 +154,8 @@ impl<I: Encode, A: Encode, B: Encode> IntoAbiToken for ExtData<I, A, B> {
 	}
 }
 
-impl Into<WebbExtData<AccountId32, i128, u128>> for ExtData<AccountId32, i128, u128> {
-	fn into(self) -> WebbExtData<AccountId32, i128, u128> {
+impl Into<WebbExtData<AccountId32, i128, u128, u32>> for ExtData<AccountId32, i128, u128, u32> {
+	fn into(self) -> WebbExtData<AccountId32, i128, u128, u32> {
 		WebbExtData {
 			recipient: self.recipient.clone(),
 			relayer: self.relayer.clone(),
@@ -230,7 +230,7 @@ pub fn setup_mixer_circuit(
 		leaf_index,
 	};
 	let js_proof_inputs = JsProofInput { inner: ProofInput::Mixer(Box::new(mixer_proof_input)) };
-	let proof = generate_proof_js(js_proof_inputs).unwrap();
+	let proof = generate_proof_js(js_proof_inputs).unwrap().mixer_proof().unwrap();
 
 	let root_array: [u8; 32] = proof.root.try_into().unwrap();
 	let root_element = Element(root_array);

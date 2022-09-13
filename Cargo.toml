@@ -4,7 +4,7 @@ codegen-units = 1
 
 [workspace]
 members = [
-	"client",
+	# "client",
 	"primitives",
 	"pallets/asset-registry",
 	"pallets/hasher",
@@ -15,6 +15,7 @@ members = [
 	"pallets/signature-bridge",
 	"pallets/vanchor",
 	"pallets/vanchor-handler",
+	"pallets/vanchor-verifier",
 	# "pallets/xanchor",
 	"pallets/token-wrapper",
 	"pallets/token-wrapper-handler",

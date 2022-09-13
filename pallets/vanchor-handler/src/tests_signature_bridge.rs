@@ -556,7 +556,7 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 #[test]
 fn should_add_resource_sig_succeed_using_webb_proposals() {
 	let target_system = webb_proposals::TargetSystem::Substrate(SubstrateTargetSystem {
-		pallet_index: 11,
+		pallet_index: 10,
 		tree_id: 5,
 	});
 	let this_chain_id = webb_proposals::TypedChainId::Substrate(5);

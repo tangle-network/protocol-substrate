@@ -7,6 +7,8 @@ use ark_ff::{BigInteger, PrimeField};
 use arkworks_setups::{common::setup_params, utxo::Utxo, Curve};
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
+use orml_traits::MultiCurrency;
+use pallet_asset_registry::AssetType;
 use pallet_linkable_tree::LinkableTreeConfigration;
 use sp_core::hashing::keccak_256;
 use std::convert::TryInto;
@@ -23,9 +25,9 @@ type Bn254Fr = ark_bn254::Fr;
 const SEED: u32 = 0;
 const TREE_DEPTH: usize = 30;
 const EDGE_CT: usize = 1;
-const DEFAULT_BALANCE: u128 = 10;
-const BIG_DEFAULT_BALANCE: u128 = 20;
-const BIGGER_DEFAULT_BALANCE: u128 = 30;
+const DEFAULT_BALANCE: u128 = 10_000;
+const BIG_DEFAULT_BALANCE: u128 = 20_000;
+const BIGGER_DEFAULT_BALANCE: u128 = 30_000;
 
 const TRANSACTOR_ACCOUNT_ID: u32 = 0;
 const RECIPIENT_ACCOUNT_ID: u32 = 1;
@@ -47,35 +49,38 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	// 3. Setup the VerifierPallet
 	//    but to do so, we need to have a VerifyingKey
 
-	let pk_2x2_bytes = include_bytes!(
+	let pk_2_2_bytes = include_bytes!(
 		"../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
-	let vk_2x2_bytes =
+	let vk_2_2_bytes =
 		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin")
 			.to_vec();
 
-	let pk_16x2_bytes = include_bytes!(
+	let pk_2_16_bytes = include_bytes!(
 		"../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
-	let vk_16x2_bytes =
+	let vk_2_16_bytes =
 		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin")
 			.to_vec();
 
-	assert_ok!(Verifier2x2Pallet::force_set_parameters(Origin::root(), vk_2x2_bytes.clone()));
-	assert_ok!(Verifier16x2Pallet::force_set_parameters(Origin::root(), vk_16x2_bytes.clone()));
+	assert_ok!(VAnchorVerifier::force_set_parameters(Origin::root(), (2, 2), vk_2_2_bytes.clone()));
+	assert_ok!(VAnchorVerifier::force_set_parameters(
+		Origin::root(),
+		(2, 16),
+		vk_2_16_bytes.clone()
+	));
 
 	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
+	let relayer = account::<AccountId>("", RELAYER_ACCOUNT_ID, SEED);
 	let big_transactor = account::<AccountId>("", BIG_TRANSACTOR_ACCOUNT_ID, SEED);
 	let bigger_transactor = account::<AccountId>("", BIGGER_TRANSACTOR_ACCOUNT_ID, SEED);
 
-	// Transactor should have some amount
+	// Set balances
 	assert_ok!(Balances::set_balance(Origin::root(), transactor, DEFAULT_BALANCE, 0));
-
-	// Big transactor should have even more amount
+	assert_ok!(Balances::set_balance(Origin::root(), relayer, DEFAULT_BALANCE, 0));
 	assert_ok!(Balances::set_balance(Origin::root(), big_transactor, BIG_DEFAULT_BALANCE, 0));
-
 	assert_ok!(Balances::set_balance(Origin::root(), bigger_transactor, BIGGER_DEFAULT_BALANCE, 0));
 
 	// set configurable storage
@@ -83,7 +88,7 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 3, 2));
 
 	// finally return the provingkey bytes
-	(pk_2x2_bytes, vk_2x2_bytes, pk_16x2_bytes, vk_16x2_bytes)
+	(pk_2_2_bytes, vk_2_2_bytes, pk_2_16_bytes, vk_2_16_bytes)
 }
 
 fn create_vanchor(asset_id: u32) -> u32 {
@@ -93,16 +98,19 @@ fn create_vanchor(asset_id: u32) -> u32 {
 	MerkleTree::next_tree_id() - 1
 }
 
-fn create_vanchor_with_deposits(proving_key_2x2_bytes: Vec<u8>) -> (u32, [Utxo<Bn254Fr>; 2]) {
-	let tree_id = create_vanchor(0);
+fn create_vanchor_with_deposits(
+	proving_key_2x2_bytes: Vec<u8>,
+	asset_id: Option<u32>,
+) -> (u32, [Utxo<Bn254Fr>; 2]) {
+	let tree_id = create_vanchor(asset_id.unwrap_or_default());
 
 	let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
 	let recipient = get_account(RECIPIENT_ACCOUNT_ID);
 	let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
-	let ext_amount: Amount = DEFAULT_BALANCE as i128;
+	let ext_amount: Amount = 10 as i128;
 	let fee: Balance = 0;
 
-	let public_amount = DEFAULT_BALANCE as i128;
+	let public_amount = 10 as i128;
 
 	let chain_type = [2, 0];
 	let chain_id = compute_chain_id_type(0u32, chain_type);
@@ -110,26 +118,24 @@ fn create_vanchor_with_deposits(proving_key_2x2_bytes: Vec<u8>) -> (u32, [Utxo<B
 	let in_amounts = [0, 0];
 	let in_indices = [0, 1];
 	let out_chain_ids = [chain_id; 2];
-	let out_amounts = [DEFAULT_BALANCE, 0];
+	let out_amounts = [10, 0];
 
 	let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
-	// We are adding indecies to out utxos, since they will be used as an input utxos in next
+	// We are adding indicies to out utxos, since they will be used as an input utxos in next
 	// transaction
 	let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
 
 	let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 	let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-	let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+	let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 		recipient.clone(),
 		relayer.clone(),
 		ext_amount,
 		fee,
 		0,
-		[255u8; 32].into(),
-		// Mock encryption value, not meant to be used in production
-		Element::from_bytes(&output1).to_vec(),
-		// Mock encryption value, not meant to be used in production
-		Element::from_bytes(&output2).to_vec(),
+		MaxCurrencyId::get(),
+		output1.to_vec(), // Mock encryption value, not meant to be used in production
+		output2.to_vec(), // Mock encryption value, not meant to be used in production
 	);
 
 	let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -175,8 +181,8 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
 
-		let ext_amount: Amount = DEFAULT_BALANCE as i128;
-		let public_amount = DEFAULT_BALANCE as i128;
+		let ext_amount: Amount = 10 as i128;
+		let public_amount = 10 as i128;
 		let fee: Balance = 0;
 
 		let chain_type = [2, 0];
@@ -185,20 +191,20 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
 		let out_chain_ids = [chain_id; 2];
-		let out_amounts = [DEFAULT_BALANCE, 0];
+		let out_amounts = [10, 0];
 
 		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -232,13 +238,13 @@ fn should_complete_2x2_transaction_with_deposit() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -247,6 +253,9 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let recipient_balance_before = Balances::free_balance(recipient.clone());
+		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		assert_ok!(VAnchor::transact(
 			Origin::signed(transactor.clone()),
 			tree_id,
@@ -254,14 +263,18 @@ fn should_complete_2x2_transaction_with_deposit() {
 			ext_data
 		));
 
+		// Recipient balance should be ext amount since the fee was zero
+		let recipient_balance_after = Balances::free_balance(recipient);
+		assert_eq!(recipient_balance_after, recipient_balance_before);
+
 		// Relayer balance should be zero since the fee was zero
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, 0);
+		assert_eq!(relayer_balance_after, relayer_balance_before);
 
 		// Transactor balance should be zero, since they deposited all the
 		// money to the mixer
 		let transactor_balance_after = Balances::free_balance(transactor);
-		assert_eq!(transactor_balance_after, 0);
+		assert_eq!(transactor_balance_after, transactor_balance_before - ext_amount.unsigned_abs());
 	});
 }
 
@@ -269,7 +282,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 fn should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone());
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -290,17 +303,15 @@ fn should_complete_2x2_transaction_with_withdraw() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
-			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output1).to_vec(),
-			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output2).to_vec(),
+			MaxCurrencyId::get(),
+			output1.to_vec(),
+			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -329,13 +340,13 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -344,6 +355,8 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_ok!(VAnchor::transact(
 			Origin::signed(transactor.clone()),
 			tree_id,
@@ -353,11 +366,397 @@ fn should_complete_2x2_transaction_with_withdraw() {
 
 		// Should be equal to the `fee` since the transaction was sucessful
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, fee);
+		assert_eq!(relayer_balance_after, relayer_balance_before + fee);
 
 		// Should be equal to the amount that is withdrawn
 		let recipient_balance_after = Balances::free_balance(recipient);
-		assert_eq!(recipient_balance_after, ext_amount.unsigned_abs());
+		assert_eq!(recipient_balance_after, recipient_balance_before + ext_amount.unsigned_abs());
+	});
+}
+
+#[test]
+fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token() {
+	new_test_ext().execute_with(|| {
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
+		// Register a new wrapped asset / pool share over native assets
+		assert_ok!(AssetRegistry::register(
+			Origin::root(),
+			b"webbWEBB".to_vec(),
+			AssetType::PoolShare(vec![0]),
+			0
+		));
+		let asset_id = AssetRegistry::next_asset_id() - 1;
+		// Mint some wrapped asset / pool share by depositing the native asset
+		let alice = get_account(TRANSACTOR_ACCOUNT_ID);
+		assert_ok!(TokenWrapper::wrap(
+			Origin::signed(alice.clone()),
+			NativeCurrencyId::get(),
+			asset_id,
+			1_000,
+			alice.clone(),
+		));
+		assert_eq!(Currencies::free_balance(asset_id, &alice), 1_000);
+
+		/**** Create deposits with the newly wrapped token *** */
+
+		let tree_id = create_vanchor(asset_id);
+		let recipient = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+		let ext_amount: Amount = 10 as i128;
+		let fee: Balance = 0;
+		let refund: Balance = 0;
+		let public_amount = ext_amount - (fee as i128);
+		// Format other metdata: chain identifiers, input/output metadata
+		let chain_type = [2, 0];
+		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let in_chain_ids = [chain_id; 2];
+		let in_amounts = [0, 0];
+		let in_indices = [0, 1];
+		let out_chain_ids = [chain_id; 2];
+		let out_amounts = [10, 0];
+
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
+		// We are adding indicies to out utxos, since they will be used as an input utxos in next
+		// transaction
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			refund,
+			MaxCurrencyId::get(),
+			output1.to_vec(), // Mock encryption value, not meant to be used in production
+			output2.to_vec(), // Mock encryption value, not meant to be used in production
+		);
+
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
+
+		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			chain_id,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos.clone(),
+			proving_key_2x2_bytes.clone(),
+			neighbor_roots,
+			custom_root,
+		);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs);
+
+		// Constructing proof data
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		assert_ok!(VAnchor::transact(Origin::signed(alice.clone()), tree_id, proof_data, ext_data));
+
+		/**** Withdraw and unwrap **** */
+
+		let custom_root = MerkleTree::get_root(tree_id).unwrap();
+		let ext_amount: Amount = -5;
+		let fee: Balance = 2;
+		let refund: Balance = 10;
+		let public_amount = ext_amount - (fee as i128);
+		let chain_type = [2, 0];
+		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let out_chain_ids = [chain_id; 2];
+		// After withdrawing -7
+		let out_amounts = [1, 2];
+
+		let in_utxos = out_utxos.clone();
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			refund,
+			NativeCurrencyId::get(),
+			output1.to_vec(),
+			output2.to_vec(),
+		);
+
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
+
+		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			chain_id,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			proving_key_2x2_bytes,
+			neighbor_roots,
+			custom_root,
+		);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs);
+
+		// Constructing proof data
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		let recipient_balance_before = Balances::free_balance(recipient.clone());
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let relayer_balance_wrapped_token_before = Currencies::free_balance(asset_id, &relayer);
+		let recipient_balance_wrapped_token_before = Currencies::free_balance(asset_id, &recipient);
+		assert_ok!(VAnchor::transact(
+			Origin::signed(get_account(RELAYER_ACCOUNT_ID)),
+			tree_id,
+			proof_data,
+			ext_data
+		));
+
+		// Should be equal to the `fee` since the transaction was sucessful
+		let relayer_balance_after = Balances::free_balance(relayer.clone());
+		let relayer_balance_wrapped_token_after = Currencies::free_balance(asset_id, &relayer);
+		let recipient_balance_after = Balances::free_balance(recipient.clone());
+
+		// The relayer is paid a fee in the wrapped/pooled token. Therefore,
+		// we expect the relayer's wrapped token balance to be PLUS the fee.
+		assert_eq!(relayer_balance_wrapped_token_after, relayer_balance_wrapped_token_before + fee);
+		// The relayer pays a refund to the recipient on successful transaction. Therefore,
+		// we expect the relayer's native balance to be MINUS the refund.
+		assert_eq!(relayer_balance_after, relayer_balance_before - refund);
+
+		// For this test we are unwrapping into the native currency, therefore the
+		// total balance of the recipient is the refund + the ext_amount.unsigned_abs()
+		assert_eq!(
+			recipient_balance_after,
+			recipient_balance_before + refund + ext_amount.unsigned_abs()
+		);
+	});
+}
+
+#[test]
+fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_tokens() {
+	new_test_ext().execute_with(|| {
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
+		let alice = get_account(TRANSACTOR_ACCOUNT_ID);
+		// Register a new asset that will be wrapped
+		assert_ok!(AssetRegistry::register(Origin::root(), b"temp".to_vec(), AssetType::Token, 0));
+		let first_asset_id = AssetRegistry::next_asset_id() - 1;
+		assert_ok!(Tokens::set_balance(Origin::root(), alice.clone(), first_asset_id, 10_000, 0));
+		assert_ok!(AssetRegistry::register(
+			Origin::root(),
+			b"webbTemp".to_vec(),
+			AssetType::PoolShare(vec![first_asset_id]),
+			0
+		));
+		let pooled_asset_id = AssetRegistry::next_asset_id() - 1;
+		// Mint some wrapped asset / pool share by depositing the native asset
+		let alice = get_account(TRANSACTOR_ACCOUNT_ID);
+		assert_ok!(TokenWrapper::wrap(
+			Origin::signed(alice.clone()),
+			first_asset_id,
+			pooled_asset_id,
+			1_000,
+			alice.clone(),
+		));
+		assert_eq!(Currencies::free_balance(first_asset_id, &alice), 9_000);
+		assert_eq!(Currencies::free_balance(pooled_asset_id, &alice), 1_000);
+
+		/**** Create deposits with the newly wrapped token *** */
+
+		let tree_id = create_vanchor(pooled_asset_id);
+		let recipient = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+		let ext_amount: Amount = 10 as i128;
+		let fee: Balance = 0;
+		let refund: Balance = 0;
+		let public_amount = ext_amount - (fee as i128);
+		// Format other metdata: chain identifiers, input/output metadata
+		let chain_type = [2, 0];
+		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let in_chain_ids = [chain_id; 2];
+		let in_amounts = [0, 0];
+		let in_indices = [0, 1];
+		let out_chain_ids = [chain_id; 2];
+		let out_amounts = [10, 0];
+
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
+		// We are adding indicies to out utxos, since they will be used as an input utxos in next
+		// transaction
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			refund,
+			MaxCurrencyId::get(),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output1).to_vec(),
+			// Mock encryption value, not meant to be used in production
+			Element::from_bytes(&output2).to_vec(),
+		);
+
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
+
+		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			chain_id,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos.clone(),
+			proving_key_2x2_bytes.clone(),
+			neighbor_roots,
+			custom_root,
+		);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs);
+
+		// Constructing proof data
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		assert_ok!(VAnchor::transact(Origin::signed(alice.clone()), tree_id, proof_data, ext_data));
+
+		/**** Withdraw and unwrap **** */
+
+		let custom_root = MerkleTree::get_root(tree_id).unwrap();
+		let ext_amount: Amount = -5;
+		let fee: Balance = 2;
+		let refund: Balance = 10;
+		let public_amount = ext_amount - (fee as i128);
+		let chain_type = [2, 0];
+		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let out_chain_ids = [chain_id; 2];
+		// After withdrawing -7
+		let out_amounts = [1, 2];
+
+		let in_utxos = out_utxos.clone();
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			refund,
+			first_asset_id.clone(),
+			output1.to_vec(),
+			output2.to_vec(),
+		);
+
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
+
+		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			chain_id,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			proving_key_2x2_bytes,
+			neighbor_roots,
+			custom_root,
+		);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs);
+
+		// Constructing external data
+		let output1 = commitments[0].clone();
+		let output2 = commitments[1].clone();
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			refund,
+			first_asset_id.clone(),
+			output1.to_vec(),
+			output2.to_vec(),
+		);
+
+		// Constructing proof data
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		// Fetching balances of things before transaction occurs
+		let recipient_balance_before = Balances::free_balance(&recipient);
+		let relayer_balance_before = Balances::free_balance(&relayer);
+		let relayer_balance_wrapped_token_before =
+			Currencies::free_balance(pooled_asset_id, &relayer);
+		let recipient_balance_wrapped_token_before =
+			Currencies::free_balance(pooled_asset_id, &recipient);
+		let recipient_balance_unwrapped_token_before =
+			Currencies::free_balance(first_asset_id, &recipient);
+		assert_ok!(VAnchor::transact(
+			Origin::signed(get_account(RELAYER_ACCOUNT_ID)),
+			tree_id,
+			proof_data,
+			ext_data
+		));
+
+		// Native balances of relayer / recipient. Since refund is in native tokens
+		// we expect that the relayer's balance after is MINUS the refund amount.
+		// We expect that the recipient's balance after is PLUS the refund amount.
+		let relayer_balance_after = Balances::free_balance(&relayer);
+		let recipient_balance_after = Balances::free_balance(&recipient);
+		assert_eq!(relayer_balance_after, relayer_balance_before - refund);
+		assert_eq!(recipient_balance_after, recipient_balance_before + refund);
+
+		// Pooled token balances of relayer / recipient. Since the relayer receives a fee,
+		// we expect that the relayer's balance after is PLUS the fee amount in the pooled token.
+		// We expect that the recipient's balance after is PLUS the external amount in the pooled
+		// token. Together the EXT_AMOUNT + FEE = PUBLIC_AMOUNT.
+		let relayer_balance_wrapped_token_after =
+			Currencies::free_balance(pooled_asset_id, &relayer);
+		let recipient_balance_wrapped_token_after =
+			Currencies::free_balance(pooled_asset_id, &recipient);
+		let recipient_balance_unwrapped_token_after =
+			Currencies::free_balance(first_asset_id, &recipient);
+		assert_eq!(relayer_balance_wrapped_token_after, relayer_balance_wrapped_token_before + fee);
+		assert_eq!(recipient_balance_wrapped_token_after, recipient_balance_wrapped_token_before);
+		assert_eq!(
+			recipient_balance_unwrapped_token_after,
+			recipient_balance_unwrapped_token_before + ext_amount.unsigned_abs()
+		);
 	});
 }
 
@@ -371,8 +770,8 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
 
-		let ext_amount: Amount = DEFAULT_BALANCE as i128;
-		let public_amount = DEFAULT_BALANCE as i128;
+		let ext_amount: Amount = 10 as i128;
+		let public_amount = 10 as i128;
 		let fee: Balance = 0;
 
 		let chain_type = [2, 0];
@@ -381,20 +780,20 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
 		let out_chain_ids = [chain_id; 2];
-		let out_amounts = [DEFAULT_BALANCE, 0];
+		let out_amounts = [10, 0];
 
 		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -430,13 +829,13 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 
 		// INVALID output commitment
 		let output2 = Element::from_bytes(&[0u8; 32]);
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -445,6 +844,9 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let transactor_balance_before = Balances::free_balance(transactor.clone());
+		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_err!(
 			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
 			Error::<Test, _>::InvalidExtData,
@@ -453,15 +855,15 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		// Relayer balance should be zero since the fee was zero and the transaction
 		// failed
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, 0);
+		assert_eq!(relayer_balance_after, relayer_balance_before);
 
 		// Transactor balance should be the default one, since the deposit failed
 		let transactor_balance_after = Balances::free_balance(transactor);
-		assert_eq!(transactor_balance_after, DEFAULT_BALANCE);
+		assert_eq!(transactor_balance_after, transactor_balance_before);
 
 		// Recipient balance should be zero since the withdraw was not successful
 		let recipient_balance_after = Balances::free_balance(recipient);
-		assert_eq!(recipient_balance_after, 0);
+		assert_eq!(recipient_balance_after, recipient_balance_before);
 	});
 }
 
@@ -470,7 +872,7 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone());
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -491,13 +893,13 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -530,13 +932,13 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -545,6 +947,9 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let transactor_balance_before = Balances::free_balance(transactor.clone());
+		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		// Should fail with invalid external data error
 		assert_err!(
 			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
@@ -553,16 +958,16 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 
 		// Should be zero, since transaction failed
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, 0);
+		assert_eq!(relayer_balance_after, relayer_balance_before);
 
 		// Transactors balance is zero since they deposited all of their money to the
 		// mixer
 		let transactor_balance_after = Balances::free_balance(transactor);
-		assert_eq!(transactor_balance_after, 0);
+		assert_eq!(transactor_balance_after, transactor_balance_before);
 
 		// Recipient balance is zero, since the withdraw failed
 		let recipient_balance_after = Balances::free_balance(recipient);
-		assert_eq!(recipient_balance_after, 0);
+		assert_eq!(recipient_balance_after, recipient_balance_before);
 	});
 }
 
@@ -571,7 +976,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone());
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -593,13 +998,13 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -632,13 +1037,13 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -647,6 +1052,9 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let transactor_balance_before = Balances::free_balance(transactor.clone());
+		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		// Should fail with invalid external data error
 		assert_err!(
 			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
@@ -655,16 +1063,15 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 
 		// Should be zero, since transaction failed
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, 0);
+		assert_eq!(relayer_balance_after, relayer_balance_before);
 
-		// Transactors balance is zero since they deposited all of their money to the
-		// mixer
+		// Transactors balance is zero since they deposited all of their money to the mixer
 		let transactor_balance_after = Balances::free_balance(transactor);
-		assert_eq!(transactor_balance_after, 0);
+		assert_eq!(transactor_balance_after, transactor_balance_before);
 
 		// Recipient balance is zero, since the withdraw failed
 		let recipient_balance_after = Balances::free_balance(recipient);
-		assert_eq!(recipient_balance_after, 0);
+		assert_eq!(recipient_balance_after, recipient_balance_before);
 	});
 }
 
@@ -672,7 +1079,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 fn should_not_be_able_to_double_spend() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone());
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -693,13 +1100,13 @@ fn should_not_be_able_to_double_spend() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -732,13 +1139,13 @@ fn should_not_be_able_to_double_spend() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -747,6 +1154,9 @@ fn should_not_be_able_to_double_spend() {
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let transactor_balance_before = Balances::free_balance(transactor.clone());
+		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_ok!(VAnchor::transact(
 			Origin::signed(transactor.clone()),
 			tree_id,
@@ -760,15 +1170,15 @@ fn should_not_be_able_to_double_spend() {
 
 		// Fee is paid out once
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, fee);
+		assert_eq!(relayer_balance_after, relayer_balance_before + fee);
 
 		// Recipient is paid out once
 		let recipient_balance_after = Balances::free_balance(recipient);
-		assert_eq!(recipient_balance_after, (-ext_amount as u128));
+		assert_eq!(recipient_balance_after, recipient_balance_before + ext_amount.unsigned_abs());
 
 		// Transactor is 0 after one deposit
 		let transactor_balance_after = Balances::free_balance(transactor);
-		assert_eq!(transactor_balance_after, 0);
+		assert_eq!(transactor_balance_after, transactor_balance_before);
 	});
 }
 
@@ -782,7 +1192,7 @@ fn should_not_be_able_to_exceed_max_fee() {
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
 
-		let ext_amount: Amount = DEFAULT_BALANCE as i128;
+		let ext_amount: Amount = 10 as i128;
 		let public_amount = 4;
 		let fee: Balance = 6;
 
@@ -799,13 +1209,13 @@ fn should_not_be_able_to_exceed_max_fee() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -839,13 +1249,13 @@ fn should_not_be_able_to_exceed_max_fee() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -854,6 +1264,8 @@ fn should_not_be_able_to_exceed_max_fee() {
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		assert_err!(
 			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
 			Error::<Test, _>::InvalidFee
@@ -861,11 +1273,11 @@ fn should_not_be_able_to_exceed_max_fee() {
 
 		// Relayer balance should be zero since the fee was zero
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, 0);
+		assert_eq!(relayer_balance_after, relayer_balance_before);
 
 		// Transactor balance should not be changed, since the transaction has failed
 		let transactor_balance_after = Balances::free_balance(transactor);
-		assert_eq!(transactor_balance_after, DEFAULT_BALANCE);
+		assert_eq!(transactor_balance_after, transactor_balance_before);
 	});
 }
 
@@ -879,8 +1291,9 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
 
-		let ext_amount: Amount = BIG_DEFAULT_BALANCE as i128;
-		let public_amount = BIG_DEFAULT_BALANCE as i128;
+		let more_than_max_balance = 20;
+		let ext_amount: Amount = more_than_max_balance as i128;
+		let public_amount = ext_amount as i128;
 		let fee: Balance = 0;
 
 		let chain_type = [2, 0];
@@ -889,20 +1302,20 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
 		let out_chain_ids = [chain_id; 2];
-		let out_amounts = [BIG_DEFAULT_BALANCE, 0];
+		let out_amounts = [more_than_max_balance, 0];
 
 		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -936,13 +1349,13 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -951,6 +1364,8 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		assert_err!(
 			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
 			Error::<Test, _>::InvalidDepositAmount
@@ -958,11 +1373,11 @@ fn should_not_be_able_to_exceed_max_deposit() {
 
 		// Relayer balance should be zero since the fee was zero
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, 0);
+		assert_eq!(relayer_balance_after, relayer_balance_before);
 
 		// Transactor balance should not be changed, since the transaction has failed
 		let transactor_balance_after = Balances::free_balance(transactor);
-		assert_eq!(transactor_balance_after, BIG_DEFAULT_BALANCE);
+		assert_eq!(transactor_balance_after, transactor_balance_before);
 	});
 }
 
@@ -994,13 +1409,13 @@ fn should_not_be_able_to_exceed_external_amount() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
 			Element::from_bytes(&output1).to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -1034,13 +1449,13 @@ fn should_not_be_able_to_exceed_external_amount() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -1049,6 +1464,8 @@ fn should_not_be_able_to_exceed_external_amount() {
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		assert_err!(
 			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
 			Error::<Test, _>::InvalidExtAmount
@@ -1056,11 +1473,11 @@ fn should_not_be_able_to_exceed_external_amount() {
 
 		// Relayer balance should be zero since the transaction failed
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, 0);
+		assert_eq!(relayer_balance_after, relayer_balance_before);
 
 		// Transactor balance should not be changed, since the transaction has failed
 		let transactor_balance_after = Balances::free_balance(transactor);
-		assert_eq!(transactor_balance_after, BIGGER_DEFAULT_BALANCE);
+		assert_eq!(transactor_balance_after, transactor_balance_before);
 	});
 }
 
@@ -1068,7 +1485,7 @@ fn should_not_be_able_to_exceed_external_amount() {
 fn should_not_be_able_to_withdraw_less_than_minimum() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone());
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -1089,17 +1506,15 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
-			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output1).to_vec(),
-			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output2).to_vec(),
+			MaxCurrencyId::get(),
+			output1.to_vec(), // Mock encryption value, not meant to be used in production
+			output2.to_vec(), // Mock encryption value, not meant to be used in production
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -1128,13 +1543,13 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -1143,6 +1558,9 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let transactor_balance_before = Balances::free_balance(transactor.clone());
+		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_err!(
 			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
 			Error::<Test, _>::InvalidWithdrawAmount
@@ -1150,14 +1568,14 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 
 		// Fee is not paid out
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, 0);
+		assert_eq!(relayer_balance_after, relayer_balance_before);
 
 		// Recipient is not paid
 		let recipient_balance_after = Balances::free_balance(recipient);
-		assert_eq!(recipient_balance_after, 0);
+		assert_eq!(recipient_balance_after, recipient_balance_before);
 
 		let transactor_balance_after = Balances::free_balance(transactor);
-		assert_eq!(transactor_balance_after, 0);
+		assert_eq!(transactor_balance_after, transactor_balance_before);
 	});
 }
 

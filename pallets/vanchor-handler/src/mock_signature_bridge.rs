@@ -44,8 +44,7 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
-		Verifier2x2Pallet: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		Verifier16x2Pallet: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>},
+		VAnchorVerifier: pallet_vanchor_verifier::{Pallet, Call, Storage, Event<T>},
 		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call},
@@ -54,6 +53,7 @@ frame_support::construct_runtime!(
 		VAnchor: pallet_vanchor::{Pallet, Call, Storage, Event<T>},
 		VAnchorHandler: pallet_vanchor_handler::{Pallet, Call, Storage, Event<T>},
 		SignatureBridge: pallet_signature_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>}
 	}
 );
 
@@ -116,14 +116,7 @@ parameter_types! {
 	pub const MetadataDepositPerByte: u64 = 1;
 }
 
-impl pallet_verifier::Config<pallet_verifier::Instance1> for Test {
-	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Verifier = ArkworksVerifierBn254;
-	type WeightInfo = ();
-}
-
-impl pallet_verifier::Config<pallet_verifier::Instance2> for Test {
+impl pallet_vanchor_verifier::Config for Test {
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
@@ -243,6 +236,22 @@ impl pallet_asset_registry::Config for Test {
 }
 
 parameter_types! {
+	pub const TokenWrapperPalletId: PalletId = PalletId(*b"py/tkwrp");
+	pub const WrappingFeeDivider: u128 = 100;
+}
+
+impl pallet_token_wrapper::Config for Test {
+	type AssetRegistry = AssetRegistry;
+	type Currency = Currencies;
+	type Event = Event;
+	type PalletId = TokenWrapperPalletId;
+	type TreasuryId = TokenWrapperPalletId;
+	type WeightInfo = ();
+	type ProposalNonce = u32;
+	type WrappingFeeDivider = WrappingFeeDivider;
+}
+
+parameter_types! {
 	pub const HistoryLength: u32 = 30;
 	// Substrate standalone chain ID type
 	pub const ChainType: [u8; 2] = [2, 0];
@@ -316,6 +325,7 @@ parameter_types! {
 	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
 	pub const MaxFee: Balance = 5;
 	pub const MaxExtAmount: Balance = 21;
+	pub const MaxCurrencyId: AssetId = AssetId::MAX - 1;
 }
 
 impl pallet_vanchor::Config for Test {
@@ -328,10 +338,11 @@ impl pallet_vanchor::Config for Test {
 	type PalletId = VAnchorPalletId;
 	type MaxFee = MaxFee;
 	type MaxExtAmount = MaxExtAmount;
+	type MaxCurrencyId = MaxCurrencyId;
+	type TokenWrapper = TokenWrapper;
 	type PostDepositHook = ();
 	type ProposalNonce = u32;
-	type Verifier2x2 = Verifier2x2Pallet;
-	type Verifier16x2 = Verifier16x2Pallet;
+	type VAnchorVerifier = VAnchorVerifier;
 }
 
 impl pallet_vanchor_handler::Config for Test {
