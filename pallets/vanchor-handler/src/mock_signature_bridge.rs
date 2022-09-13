@@ -54,6 +54,7 @@ frame_support::construct_runtime!(
 		VAnchorHandler: pallet_vanchor_handler::{Pallet, Call, Storage, Event<T>},
 		SignatureBridge: pallet_signature_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>}
+		KeyStorage: pallet_key_storage::{Pallet, Call, Storage, Event<T>, Config<T>}
 	}
 );
 
@@ -349,6 +350,11 @@ impl pallet_vanchor_handler::Config for Test {
 	type VAnchor = VAnchor;
 	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Test, BridgeInstance>;
 	type Event = Event;
+}
+
+impl pallet_key_storage::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
 }
 
 pub const RELAYER_A: u64 = 0x2;

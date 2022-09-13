@@ -51,6 +51,7 @@ pallet-linkable-tree = { path = "../linkable-tree", default-features = false }
 pallet-vanchor-verifier = { path = "../vanchor-verifier", default-features = false }
 pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
 webb-primitives = { path = "../../primitives", default-features = false }
+pallet-key-storage = {path = "../key-storage"}
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
 orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }

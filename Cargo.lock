@@ -5332,6 +5332,7 @@ dependencies = [
  "pallet-asset-registry",
  "pallet-balances",
  "pallet-hasher",
+ "pallet-key-storage",
  "pallet-linkable-tree",
  "pallet-mixer",
  "pallet-mt",
