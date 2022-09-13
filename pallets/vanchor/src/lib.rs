@@ -103,7 +103,7 @@ pub mod pallet {
 	#[pallet::config]
 	/// The module configuration trait.
 	pub trait Config<I: 'static = ()>:
-		frame_system::Config + pallet_linkable_tree::Config<I> + pallet_key_storage::Config<I>
+		frame_system::Config + pallet_linkable_tree::Config<I>
 	{
 		/// The overarching event type.
 		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
@@ -116,7 +116,7 @@ pub mod pallet {
 			+ LinkableTreeInspector<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>;
 
 		/// The key storage type
-		type KeyStorage: KeyStorageInterface<pallet_key_storage::KeyStorageConfiguration<Self, I>>;
+		type KeyStorage: KeyStorageInterface<Self::AccountId>;
 
 		/// Proposal nonce type
 		type ProposalNonce: Encode

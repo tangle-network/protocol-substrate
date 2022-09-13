@@ -113,11 +113,7 @@ pub struct KeyStorageConfiguration<T: Config<I>, I: 'static>(
 	core::marker::PhantomData<I>,
 );
 
-impl<T: Config<I>, I: 'static> KeyStorageConfig for KeyStorageConfiguration<T, I> {
-	type AccountId = T::AccountId;
-}
-
-impl<T: Config<I>, I: 'static> KeyStorageInterface<KeyStorageConfiguration<T, I>> for Pallet<T, I> {
+impl<T: Config<I>, I: 'static> KeyStorageInterface<T::AccountId> for Pallet<T, I> {
 	fn register(owner: T::AccountId, public_key: Vec<u8>) -> Result<(), DispatchError> {
 		let mut public_key_owners = <PublicKeyOwners<T, I>>::get();
 		public_key_owners.push((owner.clone(), public_key.clone()));
