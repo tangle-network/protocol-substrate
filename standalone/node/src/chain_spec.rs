@@ -16,7 +16,7 @@ use webb_runtime::{
 	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
 	GrandpaConfig, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBn254Config,
 	MixerBn254Config, MixerVerifierBn254Config, SessionConfig, StakerStatus, StakingConfig,
-	SudoConfig, VAnchorBn254Config, VAnchorVerifier16x2Bn254Config, VAnchorVerifier2x2Bn254Config,
+	SudoConfig, VAnchorBn254Config, VAnchorVerifierConfig,
 };
 
 // ImOnline consensus authority.
@@ -205,12 +205,12 @@ fn testnet_genesis(
 	};
 
 	log::info!("Verifier params for vanchor");
-	let vanchor_verifier_2x2_bn254_params = {
+	let vanchor_verifier_2_2_bn254_params = {
 		let vk_bytes =
 			include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin");
 		vk_bytes.to_vec()
 	};
-	let vanchor_verifier_16x2_bn254_params = {
+	let vanchor_verifier_2_16_bn254_params = {
 		let vk_bytes =
 			include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin");
 		vk_bytes.to_vec()
@@ -307,12 +307,11 @@ fn testnet_genesis(
 			parameters: Some(mixer_verifier_bn254_params),
 			phantom: Default::default(),
 		},
-		v_anchor_verifier_2x_2_bn_254: VAnchorVerifier2x2Bn254Config {
-			parameters: Some(vanchor_verifier_2x2_bn254_params),
-			phantom: Default::default(),
-		},
-		v_anchor_verifier_1_6x_2_bn_254: VAnchorVerifier16x2Bn254Config {
-			parameters: Some(vanchor_verifier_16x2_bn254_params),
+		v_anchor_verifier: VAnchorVerifierConfig {
+			parameters: Some(vec![
+				(2, 2, vanchor_verifier_2_2_bn254_params),
+				(2, 16, vanchor_verifier_2_16_bn254_params),
+			]),
 			phantom: Default::default(),
 		},
 		merkle_tree_bn_254: MerkleTreeBn254Config {

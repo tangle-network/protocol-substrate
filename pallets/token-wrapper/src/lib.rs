@@ -266,9 +266,7 @@ impl<T: Config> Pallet<T> {
 		amount: BalanceOf<T>,
 		into_pool_share_id: T::AssetId,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		let percent = WrappingFeePercent::<T>::get(into_pool_share_id);
-		ensure!(percent.is_some(), Error::<T>::NoWrappingFeePercentFound);
-		let percent = percent.unwrap_or_default();
+		let percent = WrappingFeePercent::<T>::get(into_pool_share_id).unwrap_or_default();
 		Ok(amount.saturating_mul(percent) / T::WrappingFeeDivider::get().saturating_sub(percent))
 	}
 

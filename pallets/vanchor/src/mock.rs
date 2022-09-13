@@ -47,8 +47,7 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
-		Verifier2x2Pallet: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		Verifier16x2Pallet: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>},
+		VAnchorVerifier: pallet_vanchor_verifier::{Pallet, Call, Storage, Event<T>},
 		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
 		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call},
@@ -116,16 +115,7 @@ parameter_types! {
 	pub const MetadataDepositPerByte: u64 = 1;
 }
 
-type Verifier2x2 = pallet_verifier::Instance1;
-impl pallet_verifier::Config<Verifier2x2> for Test {
-	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Verifier = ArkworksVerifierBn254;
-	type WeightInfo = ();
-}
-
-type Verifier16x2 = pallet_verifier::Instance2;
-impl pallet_verifier::Config<Verifier16x2> for Test {
+impl pallet_vanchor_verifier::Config for Test {
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
@@ -313,6 +303,7 @@ parameter_types! {
 	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
 	pub const MaxFee: Balance = 5;
 	pub const MaxExtAmount: Balance = 21;
+	pub const MaxCurrencyId: AssetId = AssetId::MAX - 1;
 }
 
 impl pallet_vanchor::Config for Test {
@@ -325,10 +316,11 @@ impl pallet_vanchor::Config for Test {
 	type PalletId = VAnchorPalletId;
 	type MaxFee = MaxFee;
 	type MaxExtAmount = MaxExtAmount;
+	type MaxCurrencyId = MaxCurrencyId;
 	type ProposalNonce = u32;
+	type TokenWrapper = TokenWrapper;
 	type PostDepositHook = ();
-	type Verifier2x2 = Verifier2x2Pallet;
-	type Verifier16x2 = Verifier16x2Pallet;
+	type VAnchorVerifier = VAnchorVerifier;
 	type KeyStorage = KeyStorage;
 }
 

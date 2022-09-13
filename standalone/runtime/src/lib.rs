@@ -1154,18 +1154,11 @@ impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
-impl pallet_verifier::Config<pallet_verifier::Instance2> for Runtime {
+impl pallet_vanchor_verifier::Config for Runtime {
 	type Event = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
-	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
-}
-
-impl pallet_verifier::Config<pallet_verifier::Instance3> for Runtime {
-	type Event = Event;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Verifier = ArkworksVerifierBn254;
-	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
+	type WeightInfo = pallet_vanchor_verifier::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_asset_registry::Config for Runtime {
@@ -1252,23 +1245,25 @@ parameter_types! {
 	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
 	pub const MaxFee: Balance = Balance::MAX - 1;
 	pub const MaxExtAmount: Balance = Balance::MAX - 1;
+	pub const MaxCurrencyId: webb_primitives::AssetId = webb_primitives::AssetId::MAX - 1;
 }
 
 impl pallet_vanchor::Config<pallet_vanchor::Instance1> for Runtime {
 	type Event = Event;
 	type PalletId = VAnchorPalletId;
 	type LinkableTree = LinkableTreeBn254;
-	type Verifier2x2 = VAnchorVerifier2x2Bn254;
-	type Verifier16x2 = VAnchorVerifier16x2Bn254;
+	type VAnchorVerifier = VAnchorVerifier;
 	type KeyStorage = KeyStorage;
 	type EthereumHasher = Keccak256HasherBn254;
 	type IntoField = ArkworksIntoFieldBn254;
 	type Currency = Currencies;
 	type MaxFee = MaxFee;
 	type MaxExtAmount = MaxExtAmount;
+	type MaxCurrencyId = MaxCurrencyId;
 	type PostDepositHook = ();
 	type ProposalNonce = u32;
 	type NativeCurrencyId = GetNativeCurrencyId;
+	type TokenWrapper = TokenWrapper;
 }
 
 impl pallet_vanchor_handler::Config<pallet_vanchor_handler::Instance1> for Runtime {
@@ -1440,9 +1435,8 @@ construct_runtime!(
 		// Mixer Verifier
 		MixerVerifierBn254: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
-		// VAnchor Verifier 2x2
-		VAnchorVerifier2x2Bn254: pallet_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
-		VAnchorVerifier16x2Bn254: pallet_verifier::<Instance3>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		// VAnchor Verifier
+		VAnchorVerifier: pallet_vanchor_verifier::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		// Merkle Tree
 		MerkleTreeBn254: pallet_mt::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},

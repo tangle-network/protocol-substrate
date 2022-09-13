@@ -10,9 +10,9 @@ pub trait VAnchorConfig {
 	type AccountId: Encode;
 	type Balance: Encode;
 	type Amount: Encode;
-	type CurrencyId;
-	type ChainId;
-	type TreeId;
+	type CurrencyId: Encode;
+	type ChainId: Encode;
+	type TreeId: Encode;
 	type Element: Encode;
 	type ProposalNonce: Encode;
 }
@@ -41,7 +41,7 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		transactor: C::AccountId,
 		id: C::TreeId,
 		proof_data: ProofData<C::Element>,
-		ext_data: ExtData<C::AccountId, C::Amount, C::Balance>,
+		ext_data: ExtData<C::AccountId, C::Amount, C::Balance, C::CurrencyId>,
 	) -> Result<(), dispatch::DispatchError>;
 	// Stores nullifier hash from a spend tx
 	fn add_nullifier_hash(
