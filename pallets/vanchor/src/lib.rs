@@ -350,7 +350,7 @@ pub mod pallet {
 			public_key: Vec<u8>,
 			id: T::TreeId,
 			proof_data: ProofData<T::Element>,
-			ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+			ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>,
 		) -> DispatchResultWithPostInfo {
 			let sender = ensure_signed(origin)?;
 			<Self as VAnchorInterface<_>>::register_and_transact(
@@ -421,7 +421,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		transactor: T::AccountId,
 		id: T::TreeId,
 		proof_data: ProofData<T::Element>,
-		ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>>,
+		ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>,
 	) -> Result<(), DispatchError> {
 		// First Register
 		T::KeyStorage::register(owner, public_key)?;

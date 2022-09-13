@@ -764,7 +764,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 fn should_complete_register_and_transact() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
-		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone());
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -785,17 +785,15 @@ fn should_complete_register_and_transact() {
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
 		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
-			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output1).to_vec(),
-			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output2).to_vec(),
+			MaxCurrencyId::get(),
+			output1.to_vec(),
+			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -824,13 +822,13 @@ fn should_complete_register_and_transact() {
 		// Constructing external data
 		let output1 = commitments[0].clone();
 		let output2 = commitments[1].clone();
-		let ext_data = ExtData::<AccountId, Amount, Balance>::new(
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			0,
-			[255u8; 32].into(),
+			MaxCurrencyId::get(),
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -839,6 +837,8 @@ fn should_complete_register_and_transact() {
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_ok!(VAnchor::register_and_transact(
 			Origin::signed(transactor.clone()),
 			transactor.clone(),
@@ -850,11 +850,11 @@ fn should_complete_register_and_transact() {
 
 		// Should be equal to the `fee` since the transaction was sucessful
 		let relayer_balance_after = Balances::free_balance(relayer);
-		assert_eq!(relayer_balance_after, fee);
+		assert_eq!(relayer_balance_after, relayer_balance_before + fee);
 
 		// Should be equal to the amount that is withdrawn
 		let recipient_balance_after = Balances::free_balance(recipient);
-		assert_eq!(recipient_balance_after, ext_amount.unsigned_abs());
+		assert_eq!(recipient_balance_after, recipient_balance_before + ext_amount.unsigned_abs());
 	});
 }
 

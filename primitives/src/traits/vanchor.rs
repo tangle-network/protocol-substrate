@@ -34,7 +34,7 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		transactor: C::AccountId,
 		id: C::TreeId,
 		proof_data: ProofData<C::Element>,
-		ext_data: ExtData<C::AccountId, C::Amount, C::Balance>,
+		ext_data: ExtData<C::AccountId, C::Amount, C::Balance, C::CurrencyId>,
 	) -> Result<(), dispatch::DispatchError>;
 	/// Transaction
 	fn transact(
