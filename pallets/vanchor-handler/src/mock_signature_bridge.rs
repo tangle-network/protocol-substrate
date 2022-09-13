@@ -344,6 +344,7 @@ impl pallet_vanchor::Config for Test {
 	type PostDepositHook = ();
 	type ProposalNonce = u32;
 	type VAnchorVerifier = VAnchorVerifier;
+	type KeyStorage = KeyStorage;
 }
 
 impl pallet_vanchor_handler::Config for Test {
