@@ -108,11 +108,6 @@ pub mod pallet {
 	}
 }
 
-pub struct KeyStorageConfiguration<T: Config<I>, I: 'static>(
-	core::marker::PhantomData<T>,
-	core::marker::PhantomData<I>,
-);
-
 impl<T: Config<I>, I: 'static> KeyStorageInterface<T::AccountId> for Pallet<T, I> {
 	fn register(owner: T::AccountId, public_key: Vec<u8>) -> Result<(), DispatchError> {
 		let mut public_key_owners = <PublicKeyOwners<T, I>>::get();
