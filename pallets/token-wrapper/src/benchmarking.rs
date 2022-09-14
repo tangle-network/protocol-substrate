@@ -144,7 +144,9 @@ benchmarks! {
 			existential_balance.into(),
 		)
 		.unwrap();
-	}:_(RawOrigin::Root, 5u32.into(), pool_share_id)
+
+		let nonce = 1048u32;
+	}:_(RawOrigin::Root, 5u32.into(), pool_share_id, nonce.into())
 	verify {
 		assert_last_event::<T>(
 			Event::UpdatedWrappingFeePercent {

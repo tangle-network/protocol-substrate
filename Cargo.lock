@@ -4739,6 +4739,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-key-storage"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "log",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "webb-primitives",
+]
+
+[[package]]
 name = "pallet-linkable-tree"
 version = "1.0.0"
 dependencies = [
@@ -5277,6 +5297,7 @@ dependencies = [
  "pallet-asset-registry",
  "pallet-balances",
  "pallet-hasher",
+ "pallet-key-storage",
  "pallet-linkable-tree",
  "pallet-mt",
  "pallet-token-wrapper",
@@ -5311,6 +5332,7 @@ dependencies = [
  "pallet-asset-registry",
  "pallet-balances",
  "pallet-hasher",
+ "pallet-key-storage",
  "pallet-linkable-tree",
  "pallet-mixer",
  "pallet-mt",
@@ -9857,6 +9879,7 @@ dependencies = [
  "pallet-hasher",
  "pallet-im-online",
  "pallet-indices",
+ "pallet-key-storage",
  "pallet-linkable-tree",
  "pallet-linkable-tree-rpc-runtime-api",
  "pallet-mixer",

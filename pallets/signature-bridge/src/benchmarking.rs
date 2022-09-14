@@ -26,7 +26,10 @@ use sp_io::{
 	hashing::keccak_256,
 };
 use sp_runtime::key_types::DUMMY;
-use webb_primitives::utils::{compute_chain_id_type, derive_resource_id};
+use webb_primitives::{
+	utils::{compute_chain_id_type, derive_resource_id},
+	webb_proposals::SubstrateTargetSystem,
+};
 
 /// Helper function to test last event
 fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
@@ -123,7 +126,7 @@ benchmarks_instance_pallet! {
 		// whitelist chain
 		let src_id = get_chain_id();
 		let _ = crate::Pallet::<T,I>::whitelist_chain(RawOrigin::Root.into(), src_id.into());
-		let r_id : ResourceId = derive_resource_id(1080u32, 1u32).into();
+		let r_id : ResourceId = derive_resource_id(1080u32, SubstrateTargetSystem { pallet_index: 2, tree_id: 1 }).into();
 
 		// prepare proposal
 		let call : <T as pallet::Config<I>>::Proposal = frame_system::Call::<T>::remark { remark: vec![10] }.into();
@@ -149,7 +152,7 @@ benchmarks_instance_pallet! {
 		let _ = crate::Pallet::<T,I>::whitelist_chain(RawOrigin::Root.into(), src_id.into());
 
 		// set resource
-		let r_id : ResourceId = derive_resource_id(1080u32, 1u32).into();
+		let r_id : ResourceId = derive_resource_id(1080u32, SubstrateTargetSystem { pallet_index: 2, tree_id: 1 }).into();
 		let _ = crate::Pallet::<T,I>::set_resource(RawOrigin::Root.into(), r_id.into());
 
 		// prepare proposal

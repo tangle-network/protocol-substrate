@@ -20,5 +20,6 @@ members = [
 	"pallets/token-wrapper",
 	"pallets/token-wrapper-handler",
 	"pallets/relayer-registry",
+	"pallets/key-storage",
 	"standalone/*",
 ]

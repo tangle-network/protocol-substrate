@@ -55,7 +55,8 @@ frame_support::construct_runtime!(
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		VAnchor: pallet_vanchor::{Pallet, Call, Storage, Event<T>},
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
-		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>}
+		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>},
+		KeyStorage: pallet_key_storage::{Pallet, Call, Storage, Event<T>, Config<T>}
 	}
 );
 
@@ -320,6 +321,12 @@ impl pallet_vanchor::Config for Test {
 	type TokenWrapper = TokenWrapper;
 	type PostDepositHook = ();
 	type VAnchorVerifier = VAnchorVerifier;
+	type KeyStorage = KeyStorage;
+}
+
+impl pallet_key_storage::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
 }
 
 pub fn assert_last_event<T: pallet_vanchor::Config>(

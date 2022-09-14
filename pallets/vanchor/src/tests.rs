@@ -761,6 +761,104 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 }
 
 #[test]
+fn should_complete_register_and_transact() {
+	new_test_ext().execute_with(|| {
+		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
+		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
+		let custom_root = MerkleTree::get_root(tree_id).unwrap();
+
+		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+		let ext_amount: Amount = -5;
+		let fee: Balance = 2;
+
+		let public_amount = -7;
+
+		let chain_type = [2, 0];
+		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let out_chain_ids = [chain_id; 2];
+		// After withdrawing -7
+		let out_amounts = [1, 2];
+
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			0,
+			MaxCurrencyId::get(),
+			output1.to_vec(),
+			output2.to_vec(),
+		);
+
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
+
+		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, ()>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			chain_id,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos,
+			proving_key_2x2_bytes,
+			neighbor_roots,
+			custom_root,
+		);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs);
+
+		// Constructing external data
+		let output1 = commitments[0].clone();
+		let output2 = commitments[1].clone();
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			0,
+			MaxCurrencyId::get(),
+			output1.to_vec(),
+			output2.to_vec(),
+		);
+
+		// Constructing proof data
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let recipient_balance_before = Balances::free_balance(recipient.clone());
+		assert_ok!(VAnchor::register_and_transact(
+			Origin::signed(transactor.clone()),
+			transactor.clone(),
+			[0u8; 32].to_vec(),
+			tree_id,
+			proof_data,
+			ext_data
+		));
+
+		// Should be equal to the `fee` since the transaction was sucessful
+		let relayer_balance_after = Balances::free_balance(relayer);
+		assert_eq!(relayer_balance_after, relayer_balance_before + fee);
+
+		// Should be equal to the amount that is withdrawn
+		let recipient_balance_after = Balances::free_balance(recipient);
+		assert_eq!(recipient_balance_after, recipient_balance_before + ext_amount.unsigned_abs());
+	});
+}
+
+#[test]
 fn should_not_complete_transaction_if_ext_data_is_invalid() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
