@@ -1,6 +1,6 @@
 [package]
 authors = ["Webb Technologies Inc."]
-description = "A pallet that stores public keys for shielded transfers."
+description = "A pallet that stores an account and public key mapping."
 edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
