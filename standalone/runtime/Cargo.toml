@@ -41,8 +41,8 @@ pallet-token-wrapper = {path = "../../pallets/token-wrapper", default-features =
 pallet-token-wrapper-handler = {path = "../../pallets/token-wrapper-handler", default-features = false }
 pallet-verifier = {path = "../../pallets/verifier", default-features = false }
 pallet-vanchor-verifier = {path = "../../pallets/vanchor-verifier", default-features = false }
-
 pallet-relayer-registry = {path = "../../pallets/relayer-registry", default-features = false }
+pallet-key-storage = {path = "../../pallets/key-storage", default-features = false}
 
 # Substrate dependencies
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }
@@ -131,7 +131,8 @@ runtime-benchmarks = [
   "pallet-collective/runtime-benchmarks",
   "pallet-token-wrapper/runtime-benchmarks",
   "pallet-token-wrapper-handler/runtime-benchmarks",
-  "pallet-relayer-registry/runtime-benchmarks"
+  "pallet-relayer-registry/runtime-benchmarks",
+  "pallet-key-storage/runtime-benchmarks"
 ]
 
 std = [

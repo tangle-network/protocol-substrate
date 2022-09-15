@@ -2,6 +2,7 @@
 use crate::types::vanchor::{ExtData, ProofData};
 use codec::Encode;
 use frame_support::dispatch;
+use sp_std::vec::Vec;
 use webb_proposals::ResourceId;
 
 pub trait VAnchorConfig {
@@ -26,6 +27,15 @@ pub trait VAnchorInterface<C: VAnchorConfig> {
 		asset: C::CurrencyId,
 		nonce: C::ProposalNonce,
 	) -> Result<C::TreeId, dispatch::DispatchError>;
+	/// Register and Transact
+	fn register_and_transact(
+		owner: C::AccountId,
+		public_key: Vec<u8>,
+		transactor: C::AccountId,
+		id: C::TreeId,
+		proof_data: ProofData<C::Element>,
+		ext_data: ExtData<C::AccountId, C::Amount, C::Balance, C::CurrencyId>,
+	) -> Result<(), dispatch::DispatchError>;
 	/// Transaction
 	fn transact(
 		transactor: C::AccountId,

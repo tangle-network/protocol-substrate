@@ -59,6 +59,7 @@ use sp_runtime::traits::Saturating;
 use webb_primitives::{
 	field_ops::IntoPrimeField,
 	hasher::InstanceHasher,
+	key_storage::KeyStorageInterface,
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
 	traits::vanchor::{VAnchorConfig, VAnchorInspector, VAnchorInterface},
 	types::{
@@ -114,6 +115,9 @@ pub mod pallet {
 		/// The tree type
 		type LinkableTree: LinkableTreeInterface<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>
 			+ LinkableTreeInspector<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>;
+
+		/// The key storage type
+		type KeyStorage: KeyStorageInterface<Self::AccountId>;
 
 		/// Proposal nonce type
 		type ProposalNonce: Encode
@@ -338,6 +342,23 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		#[transactional]
+		#[pallet::weight(0)]
+		pub fn register_and_transact(
+			origin: OriginFor<T>,
+			owner: T::AccountId,
+			public_key: Vec<u8>,
+			id: T::TreeId,
+			proof_data: ProofData<T::Element>,
+			ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>,
+		) -> DispatchResultWithPostInfo {
+			let sender = ensure_signed(origin)?;
+			<Self as VAnchorInterface<_>>::register_and_transact(
+				owner, public_key, sender, id, proof_data, ext_data,
+			)?;
+			Ok(().into())
+		}
+
 		#[pallet::weight(0)]
 		pub fn set_max_deposit_amount(
 			origin: OriginFor<T>,
@@ -392,6 +413,21 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 		let id = T::LinkableTree::create(creator.clone(), max_edges, depth)?;
 		VAnchors::<T, I>::insert(id, VAnchorMetadata { creator, asset });
 		Ok(id)
+	}
+
+	fn register_and_transact(
+		owner: T::AccountId,
+		public_key: Vec<u8>,
+		transactor: T::AccountId,
+		id: T::TreeId,
+		proof_data: ProofData<T::Element>,
+		ext_data: ExtData<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>,
+	) -> Result<(), DispatchError> {
+		// First Register
+		T::KeyStorage::register(owner, public_key)?;
+		// Then Transact
+		<Self as VAnchorInterface<_>>::transact(transactor, id, proof_data, ext_data)?;
+		Ok(())
 	}
 
 	fn transact(
