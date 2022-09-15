@@ -696,6 +696,12 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       [key: string]: AugmentedError<ApiType>;
     };
+    keyStorage: {
+      /**
+       * Generic error
+       **/
+      [key: string]: AugmentedError<ApiType>;
+    };
     linkableTreeBn254: {
       /**
        * Edge already exists

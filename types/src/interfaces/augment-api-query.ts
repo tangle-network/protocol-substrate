@@ -630,6 +630,16 @@ declare module '@polkadot/api-base/types/storage' {
        **/
       [key: string]: QueryableStorageEntry<ApiType>;
     };
+    keyStorage: {
+      /**
+       * The map of owners to public keys
+       **/
+      publicKeyOwners: AugmentedQuery<ApiType, () => Observable<Vec<ITuple<[AccountId32, Bytes]>>>, []> & QueryableStorageEntry<ApiType, []>;
+      /**
+       * Generic query
+       **/
+      [key: string]: QueryableStorageEntry<ApiType>;
+    };
     linkableTreeBn254: {
       /**
        * The next neighbor root index to store the merkle root update record

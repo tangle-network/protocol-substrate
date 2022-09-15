@@ -506,6 +506,16 @@ declare module '@polkadot/api-base/types/events' {
        **/
       [key: string]: AugmentedEvent<ApiType>;
     };
+    keyStorage: {
+      /**
+       * Public key registration
+       **/
+      PublicKeyRegistration: AugmentedEvent<ApiType, [owner: AccountId32, publicKey: Bytes], { owner: AccountId32, publicKey: Bytes }>;
+      /**
+       * Generic event
+       **/
+      [key: string]: AugmentedEvent<ApiType>;
+    };
     linkableTreeBn254: {
       /**
        * New tree created

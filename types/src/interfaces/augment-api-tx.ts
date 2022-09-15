@@ -1838,6 +1838,13 @@ declare module '@polkadot/api-base/types/submittable' {
        **/
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
     };
+    keyStorage: {
+      register: AugmentedSubmittable<(owner: AccountId32 | string | Uint8Array, publicKey: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, Bytes]>;
+      /**
+       * Generic tx
+       **/
+      [key: string]: SubmittableExtrinsicFunction<ApiType>;
+    };
     linkableTreeBn254: {
       create: AugmentedSubmittable<(maxEdges: u32 | AnyNumber | Uint8Array, depth: u8 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [u32, u8]>;
       /**
@@ -3445,6 +3452,7 @@ declare module '@polkadot/api-base/types/submittable' {
     };
     vAnchorBn254: {
       create: AugmentedSubmittable<(maxEdges: u32 | AnyNumber | Uint8Array, depth: u8 | AnyNumber | Uint8Array, asset: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [u32, u8, u32]>;
+      registerAndTransact: AugmentedSubmittable<(owner: AccountId32 | string | Uint8Array, publicKey: Bytes | string | Uint8Array, id: u32 | AnyNumber | Uint8Array, proofData: WebbPrimitivesVanchorProofData | { proof?: any; publicAmount?: any; roots?: any; inputNullifiers?: any; outputCommitments?: any; extDataHash?: any } | string | Uint8Array, extData: WebbPrimitivesVanchorExtData | { recipient?: any; relayer?: any; extAmount?: any; fee?: any; refund?: any; token?: any; encryptedOutput1?: any; encryptedOutput2?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId32, Bytes, u32, WebbPrimitivesVanchorProofData, WebbPrimitivesVanchorExtData]>;
       setMaxDepositAmount: AugmentedSubmittable<(maxDepositAmount: u128 | AnyNumber | Uint8Array, nonce: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [u128, u32]>;
       setMinWithdrawAmount: AugmentedSubmittable<(minWithdrawAmount: u128 | AnyNumber | Uint8Array, nonce: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [u128, u32]>;
       transact: AugmentedSubmittable<(id: u32 | AnyNumber | Uint8Array, proofData: WebbPrimitivesVanchorProofData | { proof?: any; publicAmount?: any; roots?: any; inputNullifiers?: any; outputCommitments?: any; extDataHash?: any } | string | Uint8Array, extData: WebbPrimitivesVanchorExtData | { recipient?: any; relayer?: any; extAmount?: any; fee?: any; refund?: any; token?: any; encryptedOutput1?: any; encryptedOutput2?: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [u32, WebbPrimitivesVanchorProofData, WebbPrimitivesVanchorExtData]>;
