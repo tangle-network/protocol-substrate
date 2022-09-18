@@ -1264,6 +1264,7 @@ impl pallet_vanchor::Config<pallet_vanchor::Instance1> for Runtime {
 	type ProposalNonce = u32;
 	type NativeCurrencyId = GetNativeCurrencyId;
 	type TokenWrapper = TokenWrapper;
+	type WeightInfo = ();
 }
 
 impl pallet_vanchor_handler::Config<pallet_vanchor_handler::Instance1> for Runtime {

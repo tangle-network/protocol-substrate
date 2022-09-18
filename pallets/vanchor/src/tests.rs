@@ -398,7 +398,6 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		assert_eq!(Currencies::free_balance(asset_id, &alice), 1_000);
 
 		/**** Create deposits with the newly wrapped token *** */
-
 		let tree_id = create_vanchor(asset_id);
 		let recipient = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
@@ -464,7 +463,6 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		assert_ok!(VAnchor::transact(Origin::signed(alice.clone()), tree_id, proof_data, ext_data));
 
 		/**** Withdraw and unwrap **** */
-
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 		let ext_amount: Amount = -5;
 		let fee: Balance = 2;
@@ -580,7 +578,6 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		assert_eq!(Currencies::free_balance(pooled_asset_id, &alice), 1_000);
 
 		/**** Create deposits with the newly wrapped token *** */
-
 		let tree_id = create_vanchor(pooled_asset_id);
 		let recipient = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
@@ -648,7 +645,6 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		assert_ok!(VAnchor::transact(Origin::signed(alice.clone()), tree_id, proof_data, ext_data));
 
 		/**** Withdraw and unwrap **** */
-
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
 		let ext_amount: Amount = -5;
 		let fee: Balance = 2;
