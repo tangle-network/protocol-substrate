@@ -2,7 +2,6 @@
 
 use super::*;
 use crate as pallet_vanchor;
-use codec::{Decode, Encode};
 use sp_core::H256;
 
 use frame_support::{parameter_types, traits::Nothing, PalletId};
@@ -295,6 +294,7 @@ impl pallet_vanchor::Config for Test {
 	type PostDepositHook = ();
 	type VAnchorVerifier = VAnchorVerifier;
 	type KeyStorage = KeyStorage;
+	type WeightInfo = ();
 }
 
 impl pallet_key_storage::Config for Test {
