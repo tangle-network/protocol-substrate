@@ -21,24 +21,81 @@
 
 use super::*;
 
-use webb_primitives::{traits::merkle_tree::TreeInspector, vanchor::VAnchorInterface, ElementTrait};
-use frame_benchmarking::{account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account, whitelisted_caller};
+use frame_benchmarking::{
+	account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account,
+	whitelisted_caller,
+};
 use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
-// Run the zk-setup binary before compiling the with runtime-benchmarks to
-// generate the zk_config.rs file if it doesn't exist The accounts used in
-// generating the proofs have to be the same accounts used in the withdraw
-// benchmark
-use zk_config::*;
 
-use crate::Pallet as VAnchor;
-use frame_support::{
-	storage,
-	traits::{Currency, Get, OnInitialize, PalletInfo},
+use ark_ff::{BigInteger, PrimeField};
+use pallet_linkable_tree::LinkableTreeConfigration;
+use webb_primitives::{
+	traits::{merkle_tree::TreeInspector, vanchor::VAnchorInterface},
+	utils::compute_chain_id_type,
+	AccountId, Amount, AssetId, Balance, Element, ElementTrait,
 };
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+use crate::{benchmarking_utils::*, Pallet as VAnchor};
+use arkworks_setups::{common::setup_params, Curve};
+use frame_support::{
+	assert_ok, storage,
+	traits::{Currency, Get, OnInitialize, PalletInfo},
+};
+use sp_io::hashing::keccak_256;
+
+fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
+}
+
+fn setup_env<T: Config<I>, I: 'static>() -> Vec<u8>
+where
+	T: pallet_vanchor_verifier::Config<I>,
+	T: pallet_hasher::Config<I>,
+{
+	// Initialize hasher pallet
+	pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params())
+		.unwrap();
+
+	// 2. Initialize MerkleTree pallet.
+	<pallet_mt::Pallet<T, I> as OnInitialize<_>>::on_initialize(Default::default());
+	// 3. Setup the VerifierPallet
+	//    but to do so, we need to have a VerifyingKey
+
+	let pk_2_2_bytes = include_bytes!(
+		"../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
+	)
+	.to_vec();
+	let vk_2_2_bytes =
+		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin")
+			.to_vec();
+
+	let pk_2_16_bytes = include_bytes!(
+		"../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/proving_key_uncompressed.bin"
+	)
+	.to_vec();
+	let vk_2_16_bytes =
+		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin")
+			.to_vec();
+
+	assert_ok!(<pallet_vanchor_verifier::Pallet<T, I>>::force_set_parameters(
+		RawOrigin::Root.into(),
+		(2, 2),
+		vk_2_2_bytes.clone()
+	));
+	assert_ok!(<pallet_vanchor_verifier::Pallet<T, I>>::force_set_parameters(
+		RawOrigin::Root.into(),
+		(2, 16),
+		vk_2_16_bytes.clone()
+	));
+
+	pk_2_2_bytes
+}
+
+pub fn hasher_params() -> Vec<u8> {
+	let curve = Curve::Bn254;
+	let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+	params.to_bytes()
 }
 
 const SEED: u32 = 0;
@@ -46,95 +103,198 @@ const MAX_EDGES: u32 = 256;
 
 benchmarks_instance_pallet! {
 
+	where_clause {  where T: pallet_hasher::Config<I>,
+		T: pallet_linkable_tree::Config<I>,
+		T: pallet_vanchor_verifier::Config<I>,
+		T: pallet_mt::Config<I, Element = Element>,
+		T: orml_tokens::Config<Amount = Amount>,
+		<T as frame_system::Config>::AccountId: From<AccountId>,
+		<<T as pallet::Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId: From<AssetId>,
+		pallet_linkable_tree::Pallet<T, I>: webb_primitives::linkable_tree::LinkableTreeInspector<LinkableTreeConfigration<T, I>> }
+
 	create {
 	  let i in 1..MAX_EDGES;
 	  let d in 1..<T as pallet_mt::Config<I>>::MaxTreeDepth::get() as u32;
 
-	  let deposit_size: u32 = 1_000_000_000;
+	  pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params()).unwrap();
+
 	  let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
-	}: _(RawOrigin::Root, deposit_size.into(), i, d as u8, asset_id)
-
-	deposit {
-	  let caller: T::AccountId = whitelisted_caller();
-	  let deposit_size: u32 = 50_000_000;
-	  let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
-	  let depth = <T as pallet_mt::Config<I>>::MaxTreeDepth::get();
-
-	  let tree_id = <VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::create(T::AccountId::default(), deposit_size.into(), depth, MAX_EDGES as u32, asset_id)?;
-	  let leaf = <T as pallet_mt::Config<I>>::Element::from_bytes(&[1u8; 32]);
-	  <<T as pallet_mt::Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
-
-	}: _(RawOrigin::Signed(caller.clone()), tree_id, leaf)
+	}: _(RawOrigin::Root, i, d as u8, asset_id)
 	verify {
-	  assert_eq!(<<T as crate::Config<I>>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &crate::Pallet::<T. I>::account_id()), deposit_size.into())
+		assert_last_event::<T, I>(Event::VAnchorCreation{ tree_id : 0_u32.into() }.into())
 	}
 
-	withdraw {
+	transact {
 
-		let hasher_pallet_name = <T as frame_system::Config<I>>::PalletInfo::name::<<T as pallet_mt::Config<I>>::Hasher>().unwrap();
-		let verifier_pallet_name = <T as frame_system::Config<I>>::PalletInfo::name::<<T as Config>::Verifier>().unwrap();
-
-		// 1. Setup The Hasher Pallet.
-		storage::unhashed::put(&storage::storage_prefix(hasher_pallet_name.as_bytes(), "Parameters".as_bytes()),&HASH_PARAMS[..]);
-
-		// 2. Initialize MerkleTree pallet
-		<pallet_mt::Pallet<T> as OnInitialize<_>>::on_initialize(Default::default());
-
-
-		storage::unhashed::put(&storage::storage_prefix(verifier_pallet_name.as_bytes(), "Parameters".as_bytes()),&VK_BYTES[..]);
-
-		// inputs
-		let caller: T::AccountId = whitelisted_caller();
-		<<T as pallet_mt::Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
-		let src_chain_id: u32 = 1;
-		let recipient_account_id: T::AccountId = account("recipient", 0, SEED);
-		let relayer_account_id: T::AccountId = account("relayer", 1, SEED);
-		whitelist_account!(recipient_account_id);
-		whitelist_account!(relayer_account_id);
-		<<T as pallet_mt::Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&recipient_account_id.clone(), 100_000_000u32.into());
-		let fee_value: u32 = 0;
-		let refund_value: u32 = 0;
+		let pk_2_2_bytes =  setup_env::<T,I>();
 
 		let deposit_size: u32 = 50_000_000;
-		let depth = <T as pallet_mt::Config<I>>::MaxTreeDepth::get();
-		let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, _>>>::get();
+		let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
+		  let depth = <T as pallet_mt::Config<I>>::MaxTreeDepth::get();
 
-		let tree_id = <VAnchor<T> as VAnchorInterface<VAnchorConfigration<T, I>>>::create(T::AccountId::default(), deposit_size.into(), depth, 2, asset_id)?;
+		let tree_id = <VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::create(None, depth, 1u32, asset_id, 1u32.into())?;
 
-		<VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::deposit(
-			caller.clone(),
-			tree_id,
-			<T as pallet_mt::Config<I>>::Element::from_bytes(&LEAF[..]),
-		)?;
+		<VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::set_max_deposit_amount(100u32.into(), 2u32.into())?;
 
-		let tree_root = <pallet_mt::Pallet<T, I> as TreeInspector<T::AccountId, <T as pallet_mt::Config<I>>::TreeId, <T as pallet_mt::Config<I>>::Element>>::get_root(tree_id).unwrap();
-		// sanity check.
+		let transactor : T::AccountId = account("", 0, SEED);
+		let recipient : T::AccountId = account("", 1, SEED);
+		let relayer: T::AccountId = account("", 4, SEED);
+		let ext_amount: u32 = 10;
+		let fee: u32 = 0;
 
-		assert_eq!(<T as pallet_mt::Config<I>>::Element::from_bytes(&ROOT_ELEMENT_BYTES[0]), tree_root);
+		<<T as pallet_mt::Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&transactor.clone(), 100_000_000u32.into());
 
-		let roots_element = ROOT_ELEMENT_BYTES
-			.iter()
-			.map(|v| <T as pallet_mt::Config>::Element::from_bytes(&v[..]))
-			.collect();
+		let public_amount : i128 = 10;
 
+		let chain_type = [2, 0];
+		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let in_chain_ids = [chain_id; 2];
+		let in_amounts = [0, 0];
+		let in_indices = [0, 1];
+		let out_chain_ids = [chain_id; 2];
+		let out_amounts = [10, 0];
 
-		let nullifier_hash_element = <T as pallet_mt::Config>::Element::from_bytes(&NULLIFIER_HASH_ELEMENTS_BYTES[..]);
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
+		// We are adding indicies to out utxos, since they will be used as an input utxos in next
+		// transaction
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
 
-	}: _(
-		RawOrigin::Signed(caller),
-		tree_id,
-		PROOF_BYTES.to_vec(),
-		src_chain_id.into(),
-		roots_element,
-		nullifier_hash_element,
-		recipient_account_id.clone(),
-		relayer_account_id,
-		fee_value.into(),
-		refund_value.into()
-	)
-	verify {
-		assert_eq!(<<T as crate::Config<I>>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &recipient_account_id), (100_000_000u32 + deposit_size).into())
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>::new(
+			recipient.into(),
+			relayer.into(),
+			ext_amount.into(),
+			fee.into(),
+			0u32.into(),
+			(AssetId::MAX - 1).into(),
+			output1.to_vec(), // Mock encryption value, not meant to be used in production
+			output2.to_vec(), // Mock encryption value, not meant to be used in production
+		);
+
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
+
+		let custom_root = <pallet_mt::Pallet<T, I>>::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; 1] = <pallet_linkable_tree::Pallet<T, I> as LinkableTreeInspector<
+			LinkableTreeConfigration<T, I>,
+		>>::get_neighbor_roots(tree_id).unwrap().try_into().unwrap();
+
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			chain_id,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos.clone(),
+			pk_2_2_bytes,
+			neighbor_roots,
+			custom_root,
+		);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs);
+
+		// Constructing proof data
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+	  }: _(RawOrigin::Signed(transactor.clone()), tree_id, proof_data.clone(), ext_data)
+	  verify {
+		  assert_last_event::<T, I>(Event::Transaction{ transactor, tree_id, leafs : proof_data.output_commitments, amount : ext_amount.into() }.into())
 	}
+
+	register_and_transact {
+
+		let pk_2_2_bytes =  setup_env::<T,I>();
+
+
+		let deposit_size: u32 = 50_000_000;
+		let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
+		  let depth = <T as pallet_mt::Config<I>>::MaxTreeDepth::get();
+
+		let tree_id = <VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::create(None, depth, 1u32, asset_id, 1u32.into())?;
+
+		<VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::set_max_deposit_amount(100u32.into(), 2u32.into())?;
+
+		let transactor : T::AccountId = account("", 0, SEED);
+		let recipient : T::AccountId = account("", 1, SEED);
+		let relayer: T::AccountId = account("", 4, SEED);
+		let ext_amount: u32 = 10;
+		let fee: u32 = 0;
+
+		<<T as pallet_mt::Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&transactor.clone(), 100_000_000u32.into());
+
+		let public_amount : i128 = 10;
+
+		let chain_type = [2, 0];
+		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let in_chain_ids = [chain_id; 2];
+		let in_amounts = [0, 0];
+		let in_indices = [0, 1];
+		let out_chain_ids = [chain_id; 2];
+		let out_amounts = [10, 0];
+
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
+		// We are adding indicies to out utxos, since they will be used as an input utxos in next
+		// transaction
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let ext_data = ExtData::<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>::new(
+			recipient.into(),
+			relayer.into(),
+			ext_amount.into(),
+			fee.into(),
+			0u32.into(),
+			(AssetId::MAX - 1).into(),
+			output1.to_vec(), // Mock encryption value, not meant to be used in production
+			output2.to_vec(), // Mock encryption value, not meant to be used in production
+		);
+
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
+
+		let custom_root = <pallet_mt::Pallet<T, I>>::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; 1] = <pallet_linkable_tree::Pallet<T, I> as LinkableTreeInspector<
+			LinkableTreeConfigration<T, I>,
+		>>::get_neighbor_roots(tree_id).unwrap().try_into().unwrap();
+
+		let (proof, public_inputs) = setup_zk_circuit(
+			public_amount,
+			chain_id,
+			ext_data_hash.to_vec(),
+			in_utxos,
+			out_utxos.clone(),
+			pk_2_2_bytes,
+			neighbor_roots,
+			custom_root,
+		);
+
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&public_inputs);
+
+		// Constructing proof data
+		let proof_data =
+			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+
+	  }: _(RawOrigin::Signed(transactor.clone()), transactor.clone(),[0u8; 32].to_vec(),tree_id, proof_data.clone(), ext_data)
+	  verify {
+		  assert_last_event::<T, I>(Event::Transaction{ transactor, tree_id, leafs : proof_data.output_commitments, amount : ext_amount.into() }.into())
+	}
+
+	set_max_deposit_amount {
+	  }: _(RawOrigin::Root, 100u32.into(), 101u32.into())
+	  verify {
+		  assert_last_event::<T, I>(Event::MaxDepositAmountChanged{ max_deposit_amount : 100_u32.into() }.into())
+	}
+
+	set_min_withdraw_amount {
+	}: _(RawOrigin::Root, 1u32.into(), 101u32.into())
+	verify {
+		assert_last_event::<T, I>(Event::MinWithdrawAmountChanged{ min_withdraw_amount : 1_u32.into() }.into())
+  }
+
 
 }
 

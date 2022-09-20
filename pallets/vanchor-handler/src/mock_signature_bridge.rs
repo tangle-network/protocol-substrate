@@ -345,6 +345,7 @@ impl pallet_vanchor::Config for Test {
 	type ProposalNonce = u32;
 	type VAnchorVerifier = VAnchorVerifier;
 	type KeyStorage = KeyStorage;
+	type WeightInfo = ();
 }
 
 impl pallet_vanchor_handler::Config for Test {
