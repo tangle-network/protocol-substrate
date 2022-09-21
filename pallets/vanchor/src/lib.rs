@@ -47,6 +47,9 @@ mod test_utils;
 #[cfg(test)]
 mod tests;
 
+mod benchmarking;
+mod benchmarking_utils;
+
 use codec::{Decode, Encode};
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::{
@@ -76,6 +79,9 @@ use sp_std::{
 	convert::{TryFrom, TryInto},
 	prelude::*,
 };
+
+pub mod weights;
+pub use weights::WeightInfo;
 
 /// Type alias for the orml_traits::MultiCurrency::Balance type
 pub type BalanceOf<T, I> =
@@ -165,6 +171,9 @@ pub mod pallet {
 		/// Native currency id
 		#[pallet::constant]
 		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
+
+		/// WeightInfo for pallet
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::storage]
@@ -310,7 +319,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::create(*depth as u32))]
 		pub fn create(
 			origin: OriginFor<T>,
 			max_edges: u32,
@@ -330,7 +339,7 @@ pub mod pallet {
 		}
 
 		#[transactional]
-		#[pallet::weight(0)] // TODO: Fix after benchmarks
+		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::transact())]
 		pub fn transact(
 			origin: OriginFor<T>,
 			id: T::TreeId,
@@ -343,7 +352,7 @@ pub mod pallet {
 		}
 
 		#[transactional]
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::register_and_transact())]
 		pub fn register_and_transact(
 			origin: OriginFor<T>,
 			owner: T::AccountId,
@@ -359,7 +368,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::set_max_deposit_amount())]
 		pub fn set_max_deposit_amount(
 			origin: OriginFor<T>,
 			max_deposit_amount: BalanceOf<T, I>,
@@ -370,7 +379,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::set_min_withdraw_amount())]
 		pub fn set_min_withdraw_amount(
 			origin: OriginFor<T>,
 			min_withdraw_amount: BalanceOf<T, I>,
@@ -575,6 +584,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn validate_and_set_nonce(nonce: T::ProposalNonce) -> Result<(), DispatchError> {
 		// Nonce should be greater than the proposal nonce in storage
 		let proposal_nonce = ProposalNonce::<T, I>::get();
+
 		ensure!(proposal_nonce < nonce, Error::<T, I>::InvalidNonce);
 
 		// Nonce should increment by a maximum of 1,048

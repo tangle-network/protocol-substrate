@@ -28,7 +28,13 @@ pallet-asset-registry = { path = "../asset-registry", default-features = false }
 pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", optional = true }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", optional = true }
-
+arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+arkworks-native-gadgets = { version = "1.0.0", default-features = false }
+ark-std = { version = "^0.3.0", default-features = false }
+ark-ff = { version = "^0.3.0", default-features = false}
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
+orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 
 [dev-dependencies]
 serde = { version = "1.0.119" }
@@ -41,7 +47,6 @@ pallet-key-storage = {path = "../key-storage"}
 orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
 rand = "0.8.4"
-
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false}
 ark-ec = { version = "^0.3.0", default-features = false }
@@ -69,7 +74,8 @@ std = [
     "pallet-vanchor-verifier/std",
     "pallet-asset-registry/std",
     "webb-primitives/std",
-    "frame-benchmarking/std"
+    "frame-benchmarking/std",
+    "ark-std/std"
 ]
 runtime-benchmarks = [
     "frame-benchmarking",

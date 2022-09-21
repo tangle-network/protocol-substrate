@@ -45,9 +45,9 @@ benchmarks_instance_pallet! {
 		let c in 0..MAX_VERIFIER_LENGTH;
 		let depositor: T::AccountId = account("depositor", 0, SEED);
 		let parameters = vec![0u8;c as usize];
-	}: _(RawOrigin::Root, parameters.clone())
+	}: _(RawOrigin::Root, (1u8,1u8), parameters.clone())
 	verify {
-		assert_eq!(Pallet::<T, I>::parameters(), parameters);
+		assert_eq!(Pallet::<T, I>::parameters((1u8,1u8)), parameters);
 	}
 }
 

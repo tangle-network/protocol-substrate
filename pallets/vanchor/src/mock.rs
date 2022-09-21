@@ -2,7 +2,6 @@
 
 use super::*;
 use crate as pallet_vanchor;
-use codec::{Decode, Encode};
 use sp_core::H256;
 
 use frame_support::{parameter_types, traits::Nothing, PalletId};
@@ -20,7 +19,7 @@ pub use webb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
 	hashing::ethereum::Keccak256HasherBn254,
 	types::{ElementTrait, IntoAbiToken},
-	AccountId,
+	AccountId, Element,
 };
 use webb_primitives::{hashing::ArkworksPoseidonHasherBn254, verifying::ArkworksVerifierBn254};
 
@@ -143,33 +142,6 @@ parameter_types! {
 		180, 93, 161, 235, 182, 53, 58, 52,
 		243, 171, 172, 211, 96, 76, 229, 47,
 	]);
-}
-
-#[derive(
-	Debug,
-	Encode,
-	Decode,
-	Default,
-	Copy,
-	Clone,
-	PartialEq,
-	Eq,
-	scale_info::TypeInfo,
-	Serialize,
-	Deserialize,
-)]
-pub struct Element([u8; 32]);
-
-impl ElementTrait for Element {
-	fn to_bytes(&self) -> &[u8] {
-		&self.0
-	}
-
-	fn from_bytes(input: &[u8]) -> Self {
-		let mut buf = [0u8; 32];
-		buf.iter_mut().zip(input).for_each(|(a, b)| *a = *b);
-		Self(buf)
-	}
 }
 
 impl pallet_mt::Config for Test {
@@ -322,6 +294,7 @@ impl pallet_vanchor::Config for Test {
 	type PostDepositHook = ();
 	type VAnchorVerifier = VAnchorVerifier;
 	type KeyStorage = KeyStorage;
+	type WeightInfo = ();
 }
 
 impl pallet_key_storage::Config for Test {
