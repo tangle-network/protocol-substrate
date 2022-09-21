@@ -5,9 +5,9 @@ name: Publish Types
 on:
   push:
     branches:
-    - main
+      - main
     paths:
-    - "types/package.json"
+      - "types/package.json"
 
 jobs:
   build:

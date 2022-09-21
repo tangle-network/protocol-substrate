@@ -23,6 +23,12 @@ jobs:
       - name: Update apt repositories
         run: sudo apt update
 
+      - name: Setup DVC
+        uses: iterative/setup-dvc@v1
+
+      - name: Fetch Fixtures
+        run: dvc pull
+
       - name: Cache Cargo
         uses: actions/cache@v2
         with:

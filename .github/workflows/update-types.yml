@@ -5,9 +5,9 @@ name: Bump types package
 on:
   push:
     branches:
-    - main
+      - main
     paths:
-    - "types/src/*"
+      - "types/src/*"
 
 jobs:
   build:

@@ -1,6 +1,6 @@
 {
   "name": "@webb-tools/protocol-substrate-types",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Polkadot.js type definitions required for interacting with Webb's substrate protocol",
   "main": "./build/index.js",
   "author": "Webb Developers <drew@webb.tools>",
