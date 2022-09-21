@@ -2,6 +2,7 @@
 
 This package is meant to be updated alongside changes to the protocol-substrate runtime.
 
+The package builds the types against the protocol-substrate standalone runtime.
 
 ### Update Types
 
@@ -20,12 +21,4 @@ yarn build:interfaces
 After updating the types, run a build for the package with
 ```
 yarn build
-```
-
-### Publishing the updated types
-
-publish the updated types package to npm with
-
-```
-node ./scripts/publish-types.js
 ```
