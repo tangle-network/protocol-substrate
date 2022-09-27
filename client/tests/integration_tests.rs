@@ -145,8 +145,8 @@ async fn make_vanchor_tx(
 	let refund = 0u128;
 	let token = AccountId32::from([255u8; 32]);
 
-	let output1: [u8; 32] = out_utxos[0].commitment.into_repr().to_bytes_le().try_into().unwrap();
-	let output2: [u8; 32] = out_utxos[1].commitment.into_repr().to_bytes_le().try_into().unwrap();
+	let output1: [u8; 32] = out_utxos[0].commitment.into_repr().to_bytes_be().try_into().unwrap();
+	let output2: [u8; 32] = out_utxos[1].commitment.into_repr().to_bytes_be().try_into().unwrap();
 	let ext_data = ExtData::new(
 		recipient.clone(),
 		relayer.clone(),
@@ -239,8 +239,8 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let mut out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
 	let custom_roots = Some([[0u8; 32]; ANCHOR_COUNT].map(|x| x.to_vec()));
-	let leaf0 = in_utxos[0].commitment.into_repr().to_bytes_le();
-	let leaf1 = in_utxos[1].commitment.into_repr().to_bytes_le();
+	let leaf0 = in_utxos[0].commitment.into_repr().to_bytes_be();
+	let leaf1 = in_utxos[1].commitment.into_repr().to_bytes_be();
 	let leaves: Vec<Vec<u8>> = vec![leaf0, leaf1];
 
 	make_vanchor_tx(

@@ -15,7 +15,7 @@ impl<F: PrimeField> InstanceHasher for ArkworksPoseidonHasher<F> {
 		let params = PoseidonParameters::<F>::from_bytes(param_bytes)?;
 		let poseidon = Poseidon::new(params);
 		let output: F = poseidon.hash(&els)?;
-		let value = output.into_repr().to_bytes_le();
+		let value = output.into_repr().to_bytes_be();
 		Ok(value)
 	}
 }

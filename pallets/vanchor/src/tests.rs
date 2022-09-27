@@ -125,8 +125,8 @@ fn create_vanchor_with_deposits(
 	// transaction
 	let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
 
-	let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-	let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+	let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+	let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 	let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 		recipient.clone(),
 		relayer.clone(),
@@ -196,8 +196,8 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -301,8 +301,8 @@ fn should_complete_2x2_transaction_with_withdraw() {
 
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -419,8 +419,8 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		// transaction
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -477,8 +477,8 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		let in_utxos = out_utxos.clone();
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -599,8 +599,8 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		// transaction
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -659,8 +659,8 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		let in_utxos = out_utxos.clone();
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -779,8 +779,8 @@ fn should_complete_register_and_transact() {
 
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -879,8 +879,8 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -985,8 +985,8 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -1090,8 +1090,8 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -1192,8 +1192,8 @@ fn should_not_be_able_to_double_spend() {
 
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -1301,8 +1301,8 @@ fn should_not_be_able_to_exceed_max_fee() {
 		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -1401,8 +1401,8 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -1501,8 +1501,8 @@ fn should_not_be_able_to_exceed_external_amount() {
 		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -1598,8 +1598,8 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),

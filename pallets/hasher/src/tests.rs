@@ -35,10 +35,10 @@ fn should_output_correct_hash() {
 		let params = setup_params::<Fr>(curve, 5, 3);
 		let res = DefaultPalletHasher::force_set_parameters(Origin::root(), params.to_bytes());
 		assert_ok!(res);
-		let left = Fr::one().into_repr().to_bytes_le(); // one
-		let right = Fr::one().double().into_repr().to_bytes_le(); // two
+		let left = Fr::one().into_repr().to_bytes_be(); // one
+		let right = Fr::one().double().into_repr().to_bytes_be(); // two
 		let hash = DefaultPalletHasher::hash_two(&left, &right).unwrap();
-		let f = Fr::from_le_bytes_mod_order(&hash).into_repr().to_bytes_be();
+		let f = Fr::from_be_bytes_mod_order(&hash).into_repr().to_bytes_be();
 		assert_eq!(
 			f,
 			bytes::from_hex("0x115cc0f5e7d690413df64c6b9662e9cf2a3617f2743245519e19607a4417189a")

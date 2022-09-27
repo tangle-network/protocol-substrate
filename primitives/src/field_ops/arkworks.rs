@@ -15,7 +15,7 @@ impl<F: PrimeField> IntoPrimeField<i128> for ArkworksIntoField<F> {
 		if value.is_negative() {
 			f = -f;
 		}
-		f.into_repr().to_bytes_le()
+		f.into_repr().to_bytes_be()
 	}
 }
 

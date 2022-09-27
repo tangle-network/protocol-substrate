@@ -34,4 +34,4 @@ ark-std = { version = "^0.3.0", default-features = false}
 wasm-utils = { version = "0.2.0" }
 webb-primitives = { path = "../primitives", features = ["hashing", "verifying", "field_ops"] }
 arkworks-setups = { version = "1.1.1", features = ["r1cs"], default-features = false }
-arkworks-native-gadgets = { version = "1.0.0", default-features = false }
+arkworks-native-gadgets = { git = "https://github.com/webb-tools/arkworks-gadgets", branch = "drew/big-endian", default-features = false }

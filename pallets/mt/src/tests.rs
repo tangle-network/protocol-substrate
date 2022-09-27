@@ -163,7 +163,7 @@ fn should_successfully_set_default_hashes_to_match_solidity() {
 
 			if i > 0 {
 				assert_eq!(
-					ark_bn254::Fr::from_le_bytes_mod_order(default_hashes[i].to_bytes()),
+					ark_bn254::Fr::from_be_bytes_mod_order(default_hashes[i].to_bytes()),
 					ark_bn254::Fr::from_be_bytes_mod_order(
 						solidity_merkle_tree_hashes[i].to_bytes()
 					)
@@ -182,7 +182,7 @@ fn should_be_able_to_insert_leaves() {
 		assert_ok!(MerkleTree::create(Origin::signed(1), depth));
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let total_leaves_count = 2u32.pow(depth as _);
-		let leaf = Element::from_bytes(&ark_bn254::Fr::from(1).into_repr().to_bytes_le());
+		let leaf = Element::from_bytes(&ark_bn254::Fr::from(1).into_repr().to_bytes_be());
 		(0..total_leaves_count).for_each(|_| {
 			assert_ok!(MerkleTree::insert(Origin::signed(1), tree_id, leaf));
 		});
@@ -228,6 +228,6 @@ pub fn shout_print_zero_element() {
 		Fr,
 		"21663839004416932945382355908790599225266501822907911457504978515578255421292"
 	);
-	let f_bytes = f.into_repr().to_bytes_le();
+	let f_bytes = f.into_repr().to_bytes_be();
 	dbg!(Element::from_bytes(&f_bytes));
 }

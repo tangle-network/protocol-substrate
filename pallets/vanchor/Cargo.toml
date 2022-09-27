@@ -28,9 +28,9 @@ pallet-asset-registry = { path = "../asset-registry", default-features = false }
 pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", optional = true }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.28", optional = true }
-arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
+arkworks-setups = { git = "https://github.com/webb-tools/arkworks-gadgets", branch = "drew/big-endian", features = ["r1cs"], default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-arkworks-native-gadgets = { version = "1.0.0", default-features = false }
+arkworks-native-gadgets = { git = "https://github.com/webb-tools/arkworks-gadgets", branch = "drew/big-endian", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false}
 orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
@@ -56,8 +56,8 @@ ark-groth16 = { version = "^0.3.0", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-arkworks-setups = { version = "1.0.0", features = ["r1cs"], default-features = false }
-arkworks-native-gadgets = { version = "1.0.0", default-features = false }
+arkworks-setups = { git = "https://github.com/webb-tools/arkworks-gadgets", branch = "drew/big-endian", features = ["r1cs"], default-features = false }
+arkworks-native-gadgets = { git = "https://github.com/webb-tools/arkworks-gadgets", branch = "drew/big-endian", default-features = false }
 
 
 [features]

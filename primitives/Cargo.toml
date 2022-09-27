@@ -34,7 +34,7 @@ blake2 = { version = "0.9", default-features = false }
 digest = { version = "0.9", default-features = false }
 
 ark-crypto-primitives = { version = "^0.3.0", default-features = false }
-arkworks-native-gadgets = { version = "1.0.0", default-features = false, optional = true }
+arkworks-native-gadgets = { git = "https://github.com/webb-tools/arkworks-gadgets", branch = "drew/big-endian", default-features = false, optional = true }
 
 ethabi = { version = "15.0.0", default-features = false }
 hex-literal = { version = "0.3.4", default-features = false }

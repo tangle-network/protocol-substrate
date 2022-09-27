@@ -186,8 +186,8 @@ type VAnchorProver_Bn254_30_2_2_2 =
 pub fn setup_mixer_leaf() -> (Element, Element, Element, Element) {
 	let rng = &mut thread_rng();
 	let curve = Curve::Bn254;
-	let secret = Bn254Fr::rand(rng).into_repr().to_bytes_le();
-	let nullifier = Bn254Fr::rand(rng).into_repr().to_bytes_le();
+	let secret = Bn254Fr::rand(rng).into_repr().to_bytes_be();
+	let nullifier = Bn254Fr::rand(rng).into_repr().to_bytes_be();
 	let Leaf { secret_bytes, nullifier_bytes, leaf_bytes, nullifier_hash_bytes, .. } =
 		MixerProver_Bn254_30::create_leaf_with_privates(curve, secret, nullifier).unwrap();
 
@@ -289,7 +289,7 @@ pub fn setup_vanchor_circuit(
 	let rng = &mut thread_rng();
 
 	let leaves_f: Vec<Bn254Fr> =
-		leaves.iter().map(|x| Bn254Fr::from_le_bytes_mod_order(&x)).collect();
+		leaves.iter().map(|x| Bn254Fr::from_be_bytes_mod_order(&x)).collect();
 
 	let mut in_leaves: BTreeMap<u64, Vec<Vec<u8>>> = BTreeMap::new();
 	in_leaves.insert(chain_id, leaves);
@@ -308,7 +308,7 @@ pub fn setup_vanchor_circuit(
 			&DEFAULT_LEAF,
 		)
 		.unwrap();
-		[(); ANCHOR_CT].map(|_| tree.root().into_repr().to_bytes_le())
+		[(); ANCHOR_CT].map(|_| tree.root().into_repr().to_bytes_be())
 	};
 
 	let vanchor_proof = VAnchorProver_Bn254_30_2_2_2::create_proof(
@@ -330,7 +330,7 @@ pub fn setup_vanchor_circuit(
 	let pub_ins = vanchor_proof
 		.public_inputs_raw
 		.iter()
-		.map(|x| Bn254Fr::from_le_bytes_mod_order(x))
+		.map(|x| Bn254Fr::from_be_bytes_mod_order(x))
 		.collect();
 
 	(vanchor_proof.proof, pub_ins)
@@ -367,21 +367,21 @@ pub fn deconstruct_vanchor_pi_el(
 ) {
 	let (chain_id, public_amount, roots, nullifiers, commitments, ext_data_hash) =
 		deconstruct_vanchor_pi(public_inputs_f);
-	let chain_id_el = Element::from_bytes(&chain_id.into_repr().to_bytes_le());
-	let public_amount_el = Element::from_bytes(&public_amount.into_repr().to_bytes_le());
+	let chain_id_el = Element::from_bytes(&chain_id.into_repr().to_bytes_be());
+	let public_amount_el = Element::from_bytes(&public_amount.into_repr().to_bytes_be());
 	let root_set_el = roots
 		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
 		.collect();
 	let nullifiers_el = nullifiers
 		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
 		.collect();
 	let commitments_el = commitments
 		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
 		.collect();
-	let ext_data_hash_el = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_le());
+	let ext_data_hash_el = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_be());
 	(chain_id_el, public_amount_el, root_set_el, nullifiers_el, commitments_el, ext_data_hash_el)
 }
 
