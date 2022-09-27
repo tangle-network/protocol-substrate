@@ -38,9 +38,8 @@ fn should_output_correct_hash() {
 		let left = Fr::one().into_repr().to_bytes_be(); // one
 		let right = Fr::one().double().into_repr().to_bytes_be(); // two
 		let hash = DefaultPalletHasher::hash_two(&left, &right).unwrap();
-		let f = Fr::from_be_bytes_mod_order(&hash).into_repr().to_bytes_be();
 		assert_eq!(
-			f,
+			hash,
 			bytes::from_hex("0x115cc0f5e7d690413df64c6b9662e9cf2a3617f2743245519e19607a4417189a")
 				.unwrap()
 		);
