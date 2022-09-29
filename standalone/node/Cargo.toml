@@ -102,8 +102,7 @@ substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/subs
 sc-sysinfo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28" }
 
 
-# arkworks-setups = { git = "https://github.com/webb-tools/arkworks-gadgets", branch = "drew/big-endian", features = ["r1cs"], default-features = false }
-arkworks-setups = { path = "../../../arkworks-gadgets/arkworks-setups", features = ["r1cs"], default-features = false }
+arkworks-setups = { version = "1.2.0", features = ["r1cs"], default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
 
 [features]

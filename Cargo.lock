@@ -365,7 +365,8 @@ dependencies = [
 [[package]]
 name = "arkworks-native-gadgets"
 version = "1.2.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian#4de74895fcea744d21af0f05f18efb03c33f0724"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35676148406eed6838c0f6e97edbaa8b3bb164a4dfc5b5f2bdd1371016fe3c0e"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
@@ -387,14 +388,15 @@ dependencies = [
 [[package]]
 name = "arkworks-r1cs-circuits"
 version = "1.2.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian#4de74895fcea744d21af0f05f18efb03c33f0724"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f4400533301ffdaeb5a0af712a1a417f9167818121135701a498c39748a4b69"
 dependencies = [
  "ark-ff",
  "ark-r1cs-std",
  "ark-relations",
  "ark-std",
- "arkworks-native-gadgets 1.2.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian)",
- "arkworks-r1cs-gadgets 1.2.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian)",
+ "arkworks-native-gadgets 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "arkworks-r1cs-gadgets 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -412,14 +414,15 @@ dependencies = [
 [[package]]
 name = "arkworks-r1cs-gadgets"
 version = "1.2.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian#4de74895fcea744d21af0f05f18efb03c33f0724"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fab1001cb6614e9f17ec0897a7af1b8431b92581dd1dde838932809545a50e3"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
  "ark-r1cs-std",
  "ark-relations",
  "ark-std",
- "arkworks-native-gadgets 1.2.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian)",
+ "arkworks-native-gadgets 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -445,7 +448,8 @@ dependencies = [
 [[package]]
 name = "arkworks-setups"
 version = "1.2.0"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian#4de74895fcea744d21af0f05f18efb03c33f0724"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3b52ce67f13652a62307fe59d77ff9504cc8454c09a382983435245c8783045"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ec",
@@ -455,10 +459,10 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 1.2.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian)",
- "arkworks-r1cs-circuits 1.2.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian)",
- "arkworks-r1cs-gadgets 1.2.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian)",
- "arkworks-utils 1.0.1 (git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian)",
+ "arkworks-native-gadgets 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "arkworks-r1cs-circuits 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "arkworks-r1cs-gadgets 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "arkworks-utils 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec",
  "tiny-keccak",
 ]
@@ -475,7 +479,8 @@ dependencies = [
 [[package]]
 name = "arkworks-utils"
 version = "1.0.1"
-source = "git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian#4de74895fcea744d21af0f05f18efb03c33f0724"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "61236daec5fc93440fbde38981ea062deacd222bdbf95e44e6d39bdb01261f9b"
 dependencies = [
  "ark-ff",
  "ark-std",
@@ -4727,7 +4732,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-setups 1.2.0",
+ "arkworks-setups 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -4889,7 +4894,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-setups 1.2.0",
+ "arkworks-setups 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -4923,7 +4928,7 @@ dependencies = [
  "ark-crypto-primitives",
  "ark-ff",
  "ark-std",
- "arkworks-setups 1.2.0",
+ "arkworks-setups 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5342,8 +5347,8 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 1.2.0",
- "arkworks-setups 1.2.0",
+ "arkworks-native-gadgets 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "arkworks-setups 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5377,7 +5382,7 @@ version = "1.0.0"
 dependencies = [
  "ark-bn254",
  "ark-crypto-primitives",
- "arkworks-setups 1.2.0 (git+https://github.com/webb-tools/arkworks-gadgets?branch=drew/big-endian)",
+ "arkworks-setups 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -9546,7 +9551,7 @@ dependencies = [
 
 [[package]]
 name = "wasm-utils"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
@@ -9555,8 +9560,8 @@ dependencies = [
  "ark-ff",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 1.2.0",
- "arkworks-setups 1.2.0",
+ "arkworks-native-gadgets 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "arkworks-setups 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "console_error_panic_hook",
  "ethabi",
  "getrandom 0.2.7",
@@ -9795,7 +9800,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-native-gadgets 1.2.0",
+ "arkworks-native-gadgets 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "blake2 0.9.2",
  "digest 0.9.0",
  "ethabi",
@@ -9834,7 +9839,7 @@ name = "webb-standalone-node"
 version = "1.0.0"
 dependencies = [
  "ark-bn254",
- "arkworks-setups 1.2.0",
+ "arkworks-setups 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap",
  "frame-benchmarking",
  "frame-benchmarking-cli",
