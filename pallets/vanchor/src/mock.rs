@@ -7,7 +7,6 @@ use sp_core::H256;
 use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
-use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -137,10 +136,8 @@ parameter_types! {
 	pub const RootHistorySize: u32 = 100;
 	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
 	pub const DefaultZeroElement: Element = Element([
-		108, 175, 153, 72, 237, 133, 150, 36,
-		226, 65, 231, 118, 15, 52, 27, 130,
-		180, 93, 161, 235, 182, 53, 58, 52,
-		243, 171, 172, 211, 96, 76, 229, 47,
+		47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52,
+		15, 118, 231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,
 	]);
 }
 

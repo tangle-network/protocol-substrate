@@ -44,10 +44,7 @@ pub fn hasher_params() -> Vec<u8> {
 	params.to_bytes()
 }
 
-const SEED: u32 = 0;
-
 benchmarks_instance_pallet! {
-
 	where_clause {  where T: pallet_hasher::Config<I> }
 
 	create {

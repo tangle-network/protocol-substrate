@@ -206,9 +206,9 @@ fn should_complete_2x2_transaction_with_deposit() {
 			0,
 			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output1).to_vec(),
+			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output2).to_vec(),
+			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -520,7 +520,6 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let relayer_balance_wrapped_token_before = Currencies::free_balance(asset_id, &relayer);
-		let recipient_balance_wrapped_token_before = Currencies::free_balance(asset_id, &recipient);
 		assert_ok!(VAnchor::transact(
 			Origin::signed(get_account(RELAYER_ACCOUNT_ID)),
 			tree_id,
@@ -609,9 +608,9 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 			refund,
 			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output1).to_vec(),
+			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output2).to_vec(),
+			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -889,9 +888,9 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 			0,
 			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output1).to_vec(),
+			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output2).to_vec(),
+			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -995,9 +994,9 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 			0,
 			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output1).to_vec(),
+			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output2).to_vec(),
+			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -1100,9 +1099,9 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 			0,
 			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output1).to_vec(),
+			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output2).to_vec(),
+			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -1202,9 +1201,9 @@ fn should_not_be_able_to_double_spend() {
 			0,
 			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output1).to_vec(),
+			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output2).to_vec(),
+			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -1311,9 +1310,9 @@ fn should_not_be_able_to_exceed_max_fee() {
 			0,
 			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output1).to_vec(),
+			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output2).to_vec(),
+			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -1411,9 +1410,9 @@ fn should_not_be_able_to_exceed_max_deposit() {
 			0,
 			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output1).to_vec(),
+			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output2).to_vec(),
+			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
@@ -1511,9 +1510,9 @@ fn should_not_be_able_to_exceed_external_amount() {
 			0,
 			MaxCurrencyId::get(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output1).to_vec(),
+			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
-			Element::from_bytes(&output2).to_vec(),
+			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
