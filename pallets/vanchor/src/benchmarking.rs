@@ -147,7 +147,7 @@ benchmarks_instance_pallet! {
 		let public_amount : i128 = 10;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -227,7 +227,7 @@ benchmarks_instance_pallet! {
 		let public_amount : i128 = 10;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];

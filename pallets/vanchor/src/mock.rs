@@ -165,7 +165,7 @@ parameter_types! {
 	pub const HistoryLength: u32 = 30;
 	// Substrate standalone chain ID type
 	pub const ChainType: [u8; 2] = [2, 0];
-	pub const ChainIdentifier: ChainId = 0;
+	pub const ChainIdentifier: ChainId = 1;
 }
 
 impl pallet_linkable_tree::Config for Test {

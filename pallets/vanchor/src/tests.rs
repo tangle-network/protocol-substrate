@@ -113,7 +113,7 @@ fn create_vanchor_with_deposits(
 	let public_amount = 10 as i128;
 
 	let chain_type = [2, 0];
-	let chain_id = compute_chain_id_type(0u32, chain_type);
+	let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 	let in_chain_ids = [chain_id; 2];
 	let in_amounts = [0, 0];
 	let in_indices = [0, 1];
@@ -186,7 +186,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let fee: Balance = 0;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -294,7 +294,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		let public_amount = -7;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let out_chain_ids = [chain_id; 2];
 		// After withdrawing -7
 		let out_amounts = [1, 2];
@@ -377,7 +377,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 #[test]
 fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token() {
 	new_test_ext().execute_with(|| {
-		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
+		let (proving_key_2x2_bytes, verifying_key_2x2_bytes, _, _) = setup_environment();
 		// Register a new wrapped asset / pool share over native assets
 		assert_ok!(AssetRegistry::register(
 			Origin::root(),
@@ -407,7 +407,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		let public_amount = ext_amount - (fee as i128);
 		// Format other metdata: chain identifiers, input/output metadata
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -452,6 +452,12 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 			custom_root,
 		);
 
+		use arkworks_setups::common::verify;
+		match verify::<ark_bn254::Bn254>(&public_inputs, &verifying_key_2x2_bytes, &proof) {
+			Ok(res) => println!("Proof verification result: {}", res),
+			Err(e) => panic!("Proof verification failed: {:?}", e),
+		}
+
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
 			deconstruct_public_inputs_el(&public_inputs);
@@ -469,7 +475,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		let refund: Balance = 10;
 		let public_amount = ext_amount - (fee as i128);
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let out_chain_ids = [chain_id; 2];
 		// After withdrawing -7
 		let out_amounts = [1, 2];
@@ -586,7 +592,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		let public_amount = ext_amount - (fee as i128);
 		// Format other metdata: chain identifiers, input/output metadata
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -650,7 +656,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		let refund: Balance = 10;
 		let public_amount = ext_amount - (fee as i128);
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let out_chain_ids = [chain_id; 2];
 		// After withdrawing -7
 		let out_amounts = [1, 2];
@@ -771,7 +777,7 @@ fn should_complete_register_and_transact() {
 		let public_amount = -7;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let out_chain_ids = [chain_id; 2];
 		// After withdrawing -7
 		let out_amounts = [1, 2];
@@ -868,7 +874,7 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		let fee: Balance = 0;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -977,7 +983,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 		let fee: Balance = 2;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let out_chain_ids = [chain_id; 2];
 		// Withdraw amount too big
 		let out_amounts = [100, 200];
@@ -1082,7 +1088,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 		let public_amount = -7;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let out_chain_ids = [chain_id; 2];
 		// Withdraw amount too small
 		let out_amounts = [1, 0];
@@ -1184,7 +1190,7 @@ fn should_not_be_able_to_double_spend() {
 		let public_amount = -7;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let out_chain_ids = [chain_id; 2];
 		// After withdrawing -7
 		let out_amounts = [1, 2];
@@ -1290,7 +1296,7 @@ fn should_not_be_able_to_exceed_max_fee() {
 		let fee: Balance = 6;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -1390,7 +1396,7 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		let fee: Balance = 0;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -1490,7 +1496,7 @@ fn should_not_be_able_to_exceed_external_amount() {
 		let fee: Balance = 3;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -1590,7 +1596,7 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 		let public_amount = -6;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let out_chain_ids = [chain_id; 2];
 		// After withdrawing -7
 		let out_amounts = [2, 2];

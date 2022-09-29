@@ -168,10 +168,10 @@ impl<T: Config<I>, I: 'static> VAnchorVerifierModule for Pallet<T, I> {
 	fn verify(
 		public_inp_bytes: &[u8],
 		proof: &[u8],
-		max_edges: u8,
+		num_anchors: u8,
 		num_inputs: u8,
 	) -> Result<bool, DispatchError> {
-		let params = Self::parameters((max_edges, num_inputs));
+		let params = Self::parameters((num_anchors, num_inputs));
 		ensure!(!params.is_empty(), Error::<T, I>::ParametersNotInitialized);
 		match T::Verifier::verify(public_inp_bytes, proof, &params) {
 			Ok(verified) => Ok(verified),
