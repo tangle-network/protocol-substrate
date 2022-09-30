@@ -53,7 +53,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let mut deposit_res: TxProgress<_, _> =
 		api.tx().sign_and_submit_then_watch_default(&deposit_tx, &signer).await?;
 
-	expect_event::<webb_runtime::mixer_bn254::events::Deposit>(&mut deposit_res).await?;
+	expect_event::<webb_runtime::mixer_bn254::events::Deposit, PolkadotConfig, OnlineClient::<PolkadotConfig>>(&mut deposit_res).await?;
 
 	let tree_metadata_storage_key = mt_storage.trees(&tree_id);
 	let tree_metadata_res = api.storage().fetch(&tree_metadata_storage_key, None).await?;
@@ -128,7 +128,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let mut withdraw_res =
 		api.tx().sign_and_submit_then_watch_default(&withdraw_tx, &signer).await?;
 
-	expect_event::<webb_runtime::mixer_bn254::events::Withdraw>(&mut withdraw_res).await?;
+	expect_event::<webb_runtime::mixer_bn254::events::Withdraw, PolkadotConfig, OnlineClient::<PolkadotConfig>>(&mut withdraw_res).await?;
 
 	Ok(().into())
 }
