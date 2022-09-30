@@ -11,9 +11,8 @@ use webb_primitives::{hashing::ethereum::keccak_256, utils::compute_chain_id_typ
 use ark_bn254::Fr as Bn254Fr;
 use arkworks_native_gadgets::ark_std::rand::rngs::OsRng;
 use arkworks_setups::{
-	common::{setup_params, verify_unchecked, verify_unchecked_raw},
+	common::{verify_unchecked, verify_unchecked_raw},
 	utxo::Utxo,
-	Curve,
 };
 use subxt::{
 	ext::sp_runtime::AccountId32,
@@ -239,8 +238,6 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let vk_bytes = include_bytes!(
 		"../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key_uncompressed.bin"
 	);
-
-	let params4 = setup_params::<Bn254Fr>(Curve::Bn254, 5, 4);
 
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();
