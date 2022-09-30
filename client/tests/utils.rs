@@ -1,13 +1,17 @@
-use ark_std::collections::BTreeMap;
+use ark_std::{collections::BTreeMap, rand::rngs::OsRng};
 use core::fmt::Debug;
-use subxt::{DefaultConfig, Event, TransactionProgress};
-
-use subxt::sp_runtime::AccountId32;
-use webb_client::webb_runtime;
-use webb_runtime::runtime_types::{
-	sp_runtime::DispatchError,
-	webb_primitives::types::vanchor::{ExtData as WebbExtData, ProofData as WebbProofData},
-	webb_standalone_runtime::Element as WebbElement,
+use sp_runtime::AccountId32;
+use subxt::{
+	client::OnlineClientT,
+	events::StaticEvent,
+	tx::{TxProgress, TxStatus, TxStatus::*},
+	Config,
+};
+use webb_client::webb_runtime::{
+	self, runtime_types::webb_primitives::runtime::Element as WebbElement,
+};
+use webb_runtime::runtime_types::webb_primitives::types::vanchor::{
+	ExtData as WebbExtData, ProofData as WebbProofData,
 };
 
 use ark_ff::{BigInteger, PrimeField};
@@ -24,8 +28,8 @@ use arkworks_setups::{
 };
 use webb_primitives::types::{ElementTrait, IntoAbiToken, Token};
 
-use ark_std::{rand::thread_rng, UniformRand};
 use ark_bn254::{Bn254, Fr as Bn254Fr};
+use ark_std::{rand::thread_rng, UniformRand};
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
@@ -167,8 +171,8 @@ const TREE_DEPTH: usize = 30;
 const ANCHOR_CT: usize = 2;
 pub const NUM_UTXOS: usize = 2;
 pub const DEFAULT_LEAF: [u8; 32] = [
-	47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52,
-	15, 118, 231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,
+	47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52, 15, 118,
+	231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,
 ];
 
 #[allow(non_camel_case_types)]
@@ -203,32 +207,28 @@ pub fn create_mixer_proof(
 	fee_value: u128,
 	refund_value: u128,
 	pk_bytes: Vec<u8>,
-	rng: &mut OsRng
+	rng: &mut OsRng,
 ) -> (
 	Vec<u8>, // proof bytes
 	Element, // root
 ) {
 	let mixer_proof = MixerProver_Bn254_30::create_proof(
-		ArkCurve::Bn254,
+		Curve::Bn254,
 		secret,
 		nullifier,
 		leaves,
 		leaf_index,
-		recipient,
-		relayer,
-		fee,
-		refund,
-		pk,
+		recipient_bytes,
+		relayer_bytes,
+		fee_value,
+		refund_value,
+		pk_bytes,
 		DEFAULT_LEAF,
 		rng,
 	)
-	.map_err(|e| {
-		let mut error: OperationError = OpStatusCode::InvalidProofParameters.into();
-		error.data = Some(e.to_string());
-		error
-	})?;
+	.unwrap();
 
-	(mixer_proof.proof, Element::from_bytes(mixer_proof.root_raw))
+	(mixer_proof.proof, Element::from_bytes(&mixer_proof.root_raw))
 }
 
 pub fn setup_utxos(
@@ -378,58 +378,70 @@ pub fn deconstruct_vanchor_pi_el(
 	(chain_id_el, public_amount_el, root_set_el, nullifiers_el, commitments_el, ext_data_hash_el)
 }
 
-pub async fn expect_event<E: Event + Debug>(
-	tx_progess: &mut TransactionProgress<
-		'_,
-		DefaultConfig,
-		DispatchError,
-		webb_client::webb_runtime::Event,
-	>,
+pub async fn expect_event<E: StaticEvent + Debug, T: Config, C: OnlineClientT<T>>(
+	tx_progess: &mut TxProgress<T, C>,
 ) -> Result<(), Box<dyn std::error::Error>> {
 	// Start printing on a fresh line
 	println!("");
 
 	while let Some(ev) = tx_progess.next_item().await {
-		let ev = ev?;
-		use subxt::TransactionStatus::*;
+		let ev: TxStatus<T, C> = ev?;
 
-		// Made it into a block, but not finalized.
-		if let InBlock(details) = ev {
-			println!(
-				"Transaction {:?} made it into block {:?}",
-				details.extrinsic_hash(),
-				details.block_hash()
-			);
+		match ev {
+			Ready => {
+				println!("Ready");
+			},
+			Broadcast(details) => {
+				println!("Broadcasted: {:?}", details);
+			},
+			InBlock(details) => {
+				println!(
+					"Transaction {:?} made it into block {:?}",
+					details.extrinsic_hash(),
+					details.block_hash()
+				);
 
-			let events = details.wait_for_success().await?;
-			let transfer_event = events.find_first::<E>()?;
+				let events = details.wait_for_success().await?;
+				if let Some(event) = events.find_first::<E>()? {
+					println!("In block (but not finalized): {event:?}");
+				} else {
+					println!("Failed to find Event");
+				}
+			},
+			Finalized(details) => {
+				println!(
+					"Transaction {:?} is finalized in block {:?}",
+					details.extrinsic_hash(),
+					details.block_hash()
+				);
 
-			if let Some(event) = transfer_event {
-				println!("In block (but not finalized): {event:?}");
-			} else {
-				println!("Failed to find Event");
-			}
-		}
-		// Finalized!
-		else if let Finalized(details) = ev {
-			println!(
-				"Transaction {:?} is finalized in block {:?}",
-				details.extrinsic_hash(),
-				details.block_hash()
-			);
+				let events = details.wait_for_success().await?;
+				let transfer_event = events.find_first::<E>()?;
 
-			let events = details.wait_for_success().await?;
-			let transfer_event = events.find_first::<E>()?;
-
-			if let Some(event) = transfer_event {
-				println!("Transaction success: {event:?}");
-			} else {
-				println!("Failed to find Balances::Transfer Event");
-			}
-		}
-		// Report other statuses we see.
-		else {
-			println!("Current transaction status: {:?}", ev);
+				if let Some(event) = transfer_event {
+					println!("Transaction success: {event:?}");
+				} else {
+					println!("Failed to find Balances::Transfer Event");
+				}
+			},
+			Future => {
+				println!("Future");
+			},
+			Retracted(details) => {
+				println!("Retracted: {:?}", details);
+			},
+			FinalityTimeout(details) => {
+				println!("FinalityTimeout: {:?}", details);
+			},
+			Usurped(details) => {
+				println!("Usurped: {:?}", details);
+			},
+			Dropped => {
+				println!("Dropped");
+			},
+			Invalid => {
+				println!("Invalid");
+			},
 		}
 	}
 
