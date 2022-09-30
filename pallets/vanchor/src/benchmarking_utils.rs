@@ -19,8 +19,8 @@ const TREE_DEPTH: usize = 30;
 const ANCHOR_CT: usize = 2;
 const NUM_UTXOS: usize = 2;
 pub const DEFAULT_LEAF: [u8; 32] = [
-	108, 175, 153, 72, 237, 133, 150, 36, 226, 65, 231, 118, 15, 52, 27, 130, 180, 93, 161, 235,
-	182, 53, 58, 52, 243, 171, 172, 211, 96, 76, 229, 47,
+	47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52, 15, 118,
+	231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,
 ];
 
 #[allow(non_camel_case_types)]
@@ -77,12 +77,12 @@ pub fn setup_zk_circuit(
 	let curve = Curve::Bn254;
 	let rng = &mut thread_rng();
 
-	let leaf0 = in_utxos[0].commitment.into_repr().to_bytes_le();
-	let leaf1 = in_utxos[1].commitment.into_repr().to_bytes_le();
+	let leaf0 = in_utxos[0].commitment.into_repr().to_bytes_be();
+	let leaf1 = in_utxos[1].commitment.into_repr().to_bytes_be();
 
 	let leaves: Vec<Vec<u8>> = vec![leaf0, leaf1];
 	let leaves_f: Vec<Bn254Fr> =
-		leaves.iter().map(|x| Bn254Fr::from_le_bytes_mod_order(&x)).collect();
+		leaves.iter().map(|x| Bn254Fr::from_be_bytes_mod_order(&x)).collect();
 
 	let mut in_leaves: BTreeMap<u64, Vec<Vec<u8>>> = BTreeMap::new();
 	in_leaves.insert(chain_id, leaves);
@@ -99,7 +99,7 @@ pub fn setup_zk_circuit(
 	.unwrap();
 
 	let roots_f: [Bn254Fr; ANCHOR_CT] = vec![if custom_root != Element::from_bytes(&[0u8; 32]) {
-		Bn254Fr::from_le_bytes_mod_order(custom_root.to_bytes())
+		Bn254Fr::from_be_bytes_mod_order(custom_root.to_bytes())
 	} else {
 		tree.root()
 	}]
@@ -107,7 +107,7 @@ pub fn setup_zk_circuit(
 	.chain(
 		neighbor_roots
 			.iter()
-			.map(|r| Bn254Fr::from_le_bytes_mod_order(r.to_bytes()))
+			.map(|r| Bn254Fr::from_be_bytes_mod_order(r.to_bytes()))
 			.collect::<Vec<Bn254Fr>>()
 			.iter(),
 	)
@@ -115,7 +115,7 @@ pub fn setup_zk_circuit(
 	.collect::<Vec<Bn254Fr>>()
 	.try_into()
 	.unwrap();
-	let in_root_set = roots_f.map(|x| x.into_repr().to_bytes_le());
+	let in_root_set = roots_f.map(|x| x.into_repr().to_bytes_be());
 
 	let vanchor_proof = VAnchorProver_Bn254_30_2_2_2::create_proof(
 		curve,
@@ -136,7 +136,7 @@ pub fn setup_zk_circuit(
 	let pub_ins = vanchor_proof
 		.public_inputs_raw
 		.iter()
-		.map(|x| Bn254Fr::from_le_bytes_mod_order(x))
+		.map(|x| Bn254Fr::from_be_bytes_mod_order(x))
 		.collect();
 
 	(vanchor_proof.proof, pub_ins)
@@ -173,20 +173,20 @@ pub fn deconstruct_public_inputs_el(
 ) {
 	let (chain_id, public_amount, roots, nullifiers, commitments, ext_data_hash) =
 		deconstruct_public_inputs(public_inputs_f);
-	let chain_id_el = Element::from_bytes(&chain_id.into_repr().to_bytes_le());
-	let public_amount_el = Element::from_bytes(&public_amount.into_repr().to_bytes_le());
+	let chain_id_el = Element::from_bytes(&chain_id.into_repr().to_bytes_be());
+	let public_amount_el = Element::from_bytes(&public_amount.into_repr().to_bytes_be());
 	let root_set_el = roots
 		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
 		.collect();
 	let nullifiers_el = nullifiers
 		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
 		.collect();
 	let commitments_el = commitments
 		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_le()))
+		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
 		.collect();
-	let ext_data_hash_el = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_le());
+	let ext_data_hash_el = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_be());
 	(chain_id_el, public_amount_el, root_set_el, nullifiers_el, commitments_el, ext_data_hash_el)
 }

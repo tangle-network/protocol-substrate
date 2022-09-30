@@ -1,7 +1,5 @@
-use sp_keyring::{sr25519::sr25519::Pair, AccountKeyring};
-use subxt::{DefaultConfig, PairSigner};
-use wasm_utils::ANCHOR_COUNT;
-use webb_client::{self, client, webb_runtime, WebbRuntimeApi};
+use sp_keyring::AccountKeyring;
+use webb_client::webb_runtime;
 use webb_primitives::ElementTrait;
 
 mod utils;
@@ -11,21 +9,24 @@ use utils::*;
 use webb_primitives::{hashing::ethereum::keccak_256, utils::compute_chain_id_type, IntoAbiToken};
 
 use ark_bn254::Fr as Bn254Fr;
-use arkworks_native_gadgets::poseidon::Poseidon;
+use arkworks_native_gadgets::ark_std::rand::rngs::OsRng;
 use arkworks_setups::{
-	common::{setup_params, verify_unchecked, verify_unchecked_raw},
+	common::{verify_unchecked, verify_unchecked_raw},
 	utxo::Utxo,
-	Curve,
 };
-use subxt::sp_runtime::AccountId32;
+use subxt::{
+	ext::sp_runtime::AccountId32,
+	tx::{PairSigner, TxProgress},
+	OnlineClient, PolkadotConfig,
+};
+use utils::ExtData;
 
 use ark_ff::{BigInteger, PrimeField};
 
 #[tokio::test]
 async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
-	let api = client().await?;
-
-	let signer = PairSigner::<DefaultConfig, Pair>::new(AccountKeyring::Alice.pair());
+	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
+	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 
 	let pk_bytes =
 		include_bytes!("../../substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin");
@@ -41,29 +42,38 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let (leaf, secret, nullifier, nullifier_hash) = setup_mixer_leaf();
 
 	// Get the mixer transaction API
-	let mixer = api.tx().mixer_bn254();
+	let mixer = webb_runtime::tx().mixer_bn254();
 	// Get the mixer storage API
-	let mt_storage = api.storage().merkle_tree_bn254();
+	let mt_storage = webb_runtime::storage().merkle_tree_bn254();
 
 	let tree_id = 0;
-	let deposit_tx = mixer.deposit(tree_id, leaf.into()).unwrap();
-	let mut deposit_res = deposit_tx.sign_and_submit_then_watch_default(&signer).await?;
+	let deposit_tx = mixer.deposit(tree_id, leaf.into());
+	let mut deposit_res: TxProgress<_, _> =
+		api.tx().sign_and_submit_then_watch_default(&deposit_tx, &signer).await?;
 
-	expect_event::<webb_runtime::mixer_bn254::events::Deposit>(&mut deposit_res).await?;
+	expect_event::<
+		webb_runtime::mixer_bn254::events::Deposit,
+		PolkadotConfig,
+		OnlineClient<PolkadotConfig>,
+	>(&mut deposit_res)
+	.await?;
 
-	let tree_metadata_res = mt_storage.trees(&tree_id, None).await?;
+	let tree_metadata_storage_key = mt_storage.trees(&tree_id);
+	let tree_metadata_res = api.storage().fetch(&tree_metadata_storage_key, None).await?;
 	let leaf_count = tree_metadata_res.unwrap().leaf_count;
 
 	let mut leaves = Vec::new();
 	for i in 0..leaf_count {
-		let leaf = mt_storage.leaves(&tree_id, &i, None).await?;
+		let leaf_storage_key = mt_storage.leaves(&tree_id, &i);
+		let leaf = api.storage().fetch(&leaf_storage_key, None).await?.unwrap();
 		leaves.push(leaf.0.to_vec());
 	}
 
 	println!("Number of leaves in the tree: {:?}", leaves.len());
 	println!("Leaf count: {:?}", leaf_count);
+	let mut rng = OsRng {};
 
-	let (proof_bytes, root) = setup_mixer_circuit(
+	let (proof_bytes, root) = create_mixer_proof(
 		leaves,
 		(leaf_count - 1) as u64,
 		secret.0.to_vec(),
@@ -73,10 +83,12 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 		fee,
 		refund,
 		pk_bytes.to_vec(),
+		&mut rng,
 	);
 
 	// Fetch the root from chain storage and check if it equals the local root
-	let tree_metadata_res = mt_storage.trees(&0, None).await?;
+	let tree_metadata_storage_key = mt_storage.trees(&0);
+	let tree_metadata_res = api.storage().fetch(&tree_metadata_storage_key, None).await?;
 	if let Some(tree_metadata) = tree_metadata_res {
 		let chain_root = tree_metadata.root;
 		assert_eq!(chain_root.0, root.0);
@@ -106,28 +118,30 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	assert!(res, "Invalid proof");
 
 	// Do the withdraw
-	let withdraw_tx = mixer
-		.withdraw(
-			tree_id,
-			proof_bytes,
-			root.into(),
-			nullifier_hash.into(),
-			recipient,
-			relayer,
-			fee,
-			refund,
-		)
-		.unwrap();
-	let mut withdraw_res = withdraw_tx.sign_and_submit_then_watch_default(&signer).await?;
+	let withdraw_tx = mixer.withdraw(
+		tree_id,
+		proof_bytes,
+		root.into(),
+		nullifier_hash.into(),
+		recipient,
+		relayer,
+		fee,
+		refund,
+	);
+	let mut withdraw_res =
+		api.tx().sign_and_submit_then_watch_default(&withdraw_tx, &signer).await?;
 
-	expect_event::<webb_runtime::mixer_bn254::events::Withdraw>(&mut withdraw_res).await?;
+	expect_event::<
+		webb_runtime::mixer_bn254::events::Withdraw,
+		PolkadotConfig,
+		OnlineClient<PolkadotConfig>,
+	>(&mut withdraw_res)
+	.await?;
 
 	Ok(().into())
 }
 
 async fn make_vanchor_tx(
-	api: &WebbRuntimeApi,
-	signer: &PairSigner<DefaultConfig, Pair>,
 	pk_bytes: &[u8],
 	vk_bytes: &[u8],
 	recipient: &AccountId32,
@@ -138,15 +152,18 @@ async fn make_vanchor_tx(
 	in_utxos: [Utxo<Bn254Fr>; 2],
 	out_utxos: [Utxo<Bn254Fr>; 2],
 ) -> Result<(), Box<dyn std::error::Error>> {
+	let api = OnlineClient::<PolkadotConfig>::new().await?;
+	let signer = PairSigner::new(AccountKeyring::Alice.pair());
+
 	let chain_type = [2, 0];
 	let chain_id = compute_chain_id_type(1080u32, chain_type);
 	let ext_amount = public_amount;
 	let fee = 0u128;
 	let refund = 0u128;
-	let token = AccountId32::from([255u8; 32]);
+	let token = u32::MAX - 1;
 
-	let output1: [u8; 32] = out_utxos[0].commitment.into_repr().to_bytes_le().try_into().unwrap();
-	let output2: [u8; 32] = out_utxos[1].commitment.into_repr().to_bytes_le().try_into().unwrap();
+	let output1: [u8; 32] = out_utxos[0].commitment.into_repr().to_bytes_be().try_into().unwrap();
+	let output2: [u8; 32] = out_utxos[1].commitment.into_repr().to_bytes_be().try_into().unwrap();
 	let ext_data = ExtData::new(
 		recipient.clone(),
 		relayer.clone(),
@@ -194,22 +211,26 @@ async fn make_vanchor_tx(
 	// vanchor = 6
 	let tree_id = 6;
 	// Get the vanchor transaction API
-	let vanchor = api.tx().v_anchor_bn254();
+	let vanchor = webb_runtime::tx().v_anchor_bn254();
 
-	let transact_tx = vanchor.transact(tree_id, proof_data.into(), ext_data.into()).unwrap();
+	let transact_tx = vanchor.transact(tree_id, proof_data.into(), ext_data.into());
 
-	let mut transact_res = transact_tx.sign_and_submit_then_watch_default(signer).await?;
+	let mut transact_res =
+		api.tx().sign_and_submit_then_watch_default(&transact_tx, &signer).await?;
 
-	expect_event::<webb_runtime::v_anchor_bn254::events::Transaction>(&mut transact_res).await?;
+	expect_event::<
+		webb_runtime::v_anchor_bn254::events::Transaction,
+		PolkadotConfig,
+		OnlineClient<PolkadotConfig>,
+	>(&mut transact_res)
+	.await?;
 
 	Ok(().into())
 }
 
 #[tokio::test]
 async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
-	let api = client().await?;
-
-	let signer = PairSigner::<DefaultConfig, Pair>::new(AccountKeyring::Alice.pair());
+	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
 
 	let pk_bytes = include_bytes!(
 		"../../substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
@@ -217,9 +238,6 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let vk_bytes = include_bytes!(
 		"../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key_uncompressed.bin"
 	);
-
-	let params4 = setup_params::<Bn254Fr>(Curve::Bn254, 5, 4);
-	let poseidon4 = Poseidon::new(params4);
 
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();
@@ -238,14 +256,12 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some([0, 1]));
 	let mut out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-	let custom_roots = Some([[0u8; 32]; ANCHOR_COUNT].map(|x| x.to_vec()));
-	let leaf0 = in_utxos[0].commitment.into_repr().to_bytes_le();
-	let leaf1 = in_utxos[1].commitment.into_repr().to_bytes_le();
+	let custom_roots = Some([[0u8; 32]; 2].map(|x| x.to_vec()));
+	let leaf0 = in_utxos[0].commitment.into_repr().to_bytes_be();
+	let leaf1 = in_utxos[1].commitment.into_repr().to_bytes_be();
 	let leaves: Vec<Vec<u8>> = vec![leaf0, leaf1];
 
 	make_vanchor_tx(
-		&api,
-		&signer,
 		pk_bytes,
 		vk_bytes,
 		&recipient,
@@ -259,24 +275,26 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	.await?;
 
 	// Get the vanchor storage API
-	let mt_storage = api.storage().merkle_tree_bn254();
+	let mt_storage = webb_runtime::storage().merkle_tree_bn254();
 
 	let tree_id = 6;
-	let tree_metadata_res = mt_storage.trees(&tree_id, None).await?;
+	let tree_metadata_storage_key = mt_storage.trees(&tree_id);
+	let tree_metadata_res = api.storage().fetch(&tree_metadata_storage_key, None).await?;
 	let tree_metadata = tree_metadata_res.unwrap();
 	let leaf_count = tree_metadata.leaf_count;
 	let chain_root = tree_metadata.root;
 
 	let mut leaves = Vec::new();
 	for i in 0..leaf_count {
-		let leaf = mt_storage.leaves(&tree_id, &i, None).await?;
+		let leaf_storage_key = mt_storage.leaves(&tree_id, &i);
+		let leaf = api.storage().fetch(&leaf_storage_key, None).await?.unwrap();
 		leaves.push(leaf.0.to_vec());
 	}
 
 	let out_indices = [leaves.len() - 1, leaves.len() - 2];
 
 	for (i, utxo) in out_utxos.iter_mut().enumerate() {
-		utxo.set_index(out_indices[i] as u64, &poseidon4).unwrap();
+		utxo.set_index(out_indices[i] as u64);
 	}
 
 	let new_amount = amount / 2;
@@ -289,8 +307,6 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let out_utxos = setup_utxos(out_chain_ids, new_out_amounts, None);
 
 	make_vanchor_tx(
-		&api,
-		&signer,
 		pk_bytes,
 		vk_bytes,
 		&recipient,

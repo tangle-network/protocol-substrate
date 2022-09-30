@@ -147,7 +147,7 @@ benchmarks_instance_pallet! {
 		let public_amount : i128 = 10;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -159,8 +159,8 @@ benchmarks_instance_pallet! {
 		// transaction
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>::new(
 			recipient.into(),
 			relayer.into(),
@@ -227,7 +227,7 @@ benchmarks_instance_pallet! {
 		let public_amount : i128 = 10;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(0u32, chain_type);
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -239,8 +239,8 @@ benchmarks_instance_pallet! {
 		// transaction
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, Some(in_indices));
 
-		let output1 = out_utxos[0].commitment.into_repr().to_bytes_le();
-		let output2 = out_utxos[1].commitment.into_repr().to_bytes_le();
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 		let ext_data = ExtData::<T::AccountId, AmountOf<T, I>, BalanceOf<T, I>, CurrencyIdOf<T, I>>::new(
 			recipient.into(),
 			relayer.into(),

@@ -96,65 +96,6 @@ fn should_be_able_to_deposit() {
 }
 
 #[test]
-fn mixer_works_with_wasm_utils() {
-	new_test_ext().execute_with(|| {
-		let curve = Curve::Bn254;
-		let pk_bytes = setup_environment(curve);
-		// now let's create the mixer.
-		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
-		// now with mixer created, we should setup the circuit.
-		let tree_id = MerkleTree::next_tree_id() - 1;
-		let sender_account_id = account::<AccountId>("", 1, SEED);
-		let recipient_account_id = account::<AccountId>("", 2, SEED);
-		let relayer_account_id = account::<AccountId>("", 0, SEED);
-		let fee_value = 0;
-		let refund_value = 0;
-
-		// inputs
-		let recipient_bytes = crate::truncate_and_pad(&recipient_account_id.encode()[..]);
-		let relayer_bytes = crate::truncate_and_pad(&relayer_account_id.encode()[..]);
-
-		let (proof_bytes, root_element, nullifier_hash_element, leaf_element) =
-			setup_wasm_utils_zk_circuit(
-				curve,
-				recipient_bytes,
-				relayer_bytes,
-				pk_bytes,
-				fee_value,
-				refund_value,
-			);
-
-		assert_ok!(Mixer::deposit(
-			Origin::signed(sender_account_id.clone()),
-			tree_id,
-			leaf_element,
-		));
-		// check the balance before the withdraw.
-		let balance_before = Balances::free_balance(recipient_account_id.clone());
-
-		let mixer_tree_root = MerkleTree::get_root(tree_id).unwrap();
-		assert_eq!(root_element, mixer_tree_root);
-
-		assert_ok!(Mixer::withdraw(
-			Origin::signed(sender_account_id),
-			tree_id,
-			proof_bytes,
-			root_element,
-			nullifier_hash_element,
-			recipient_account_id.clone(),
-			relayer_account_id,
-			fee_value.into(),
-			refund_value.into(),
-		));
-		// now we check the recipient balance again.
-		let balance_after = Balances::free_balance(recipient_account_id);
-		assert_eq!(balance_after, balance_before + deposit_size);
-		// perfect
-	});
-}
-
-#[test]
 fn mixer_works() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;

@@ -335,9 +335,6 @@ impl<T: Config<I>, I: 'static>
 		Self::ensure_nullifier_unused(id, nullifier_hash)?;
 		Self::add_nullifier_hash(id, nullifier_hash)?;
 		// Format proof public inputs for verification
-		// FIXME: This is for a specfic gadget so we ought to create a generic handler
-		// FIXME: Such as a unpack/pack public inputs trait
-		// FIXME: 	-> T::PublicInputTrait::validate(public_bytes: &[u8])
 		let mut bytes = Vec::new();
 		let element_encoder = |v: &[u8]| {
 			let mut output = [0u8; 32];

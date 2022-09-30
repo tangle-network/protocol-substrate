@@ -69,7 +69,7 @@ use webb_primitives::{
 		vanchor::{ExtData, ProofData, VAnchorMetadata},
 		ElementTrait, IntoAbiToken,
 	},
-	utils::element_encoder,
+	utils::reverse_element_encoder,
 	verifier::*,
 	webb_proposals::ResourceId,
 };
@@ -625,7 +625,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		for comm in &proof_data.output_commitments {
 			bytes.extend_from_slice(comm.to_bytes());
 		}
-		bytes.extend_from_slice(&chain_id_type.using_encoded(element_encoder));
+		bytes.extend_from_slice(&chain_id_type.using_encoded(reverse_element_encoder));
 		for root in &proof_data.roots {
 			bytes.extend_from_slice(root.to_bytes());
 		}

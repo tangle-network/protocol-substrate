@@ -39,6 +39,13 @@ pub fn element_encoder(v: &[u8]) -> [u8; 32] {
 	output
 }
 
+pub fn reverse_element_encoder(v: &[u8]) -> [u8; 32] {
+	let mut output = [0u8; 32];
+	output.iter_mut().zip(v).for_each(|(b1, b2)| *b1 = *b2);
+	output.reverse();
+	output
+}
+
 /// gets the chain id and tree id to derive resource id
 pub fn derive_resource_id(chain_id: u32, system: SubstrateTargetSystem) -> ResourceId {
 	let target_system = TargetSystem::Substrate(system);

@@ -250,10 +250,6 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 	) -> Result<T::TreeId, DispatchError> {
 		let id = T::Tree::create(creator, depth)?;
 		MaxEdges::<T, I>::insert(id, max_edges);
-		#[cfg(feature = "std")]
-		{
-			println!("Created tree with id: {:?}, {:?}", id, max_edges);
-		}
 		Ok(id)
 	}
 

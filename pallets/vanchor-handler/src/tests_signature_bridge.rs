@@ -275,9 +275,9 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
-
+		println!("here");
 		mock_vanchor_creation_using_pallet_call(&r_id);
-
+		println!("there");
 		let root = Element::from_bytes(&[1; 32]);
 		let latest_leaf_index = 5;
 		let src_target_system = target_system;

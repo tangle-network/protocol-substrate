@@ -35,12 +35,11 @@ fn should_output_correct_hash() {
 		let params = setup_params::<Fr>(curve, 5, 3);
 		let res = DefaultPalletHasher::force_set_parameters(Origin::root(), params.to_bytes());
 		assert_ok!(res);
-		let left = Fr::one().into_repr().to_bytes_le(); // one
-		let right = Fr::one().double().into_repr().to_bytes_le(); // two
+		let left = Fr::one().into_repr().to_bytes_be(); // one
+		let right = Fr::one().double().into_repr().to_bytes_be(); // two
 		let hash = DefaultPalletHasher::hash_two(&left, &right).unwrap();
-		let f = Fr::from_le_bytes_mod_order(&hash).into_repr().to_bytes_be();
 		assert_eq!(
-			f,
+			hash,
 			bytes::from_hex("0x115cc0f5e7d690413df64c6b9662e9cf2a3617f2743245519e19607a4417189a")
 				.unwrap()
 		);
@@ -88,13 +87,8 @@ fn should_build_the_same_merkle_tree_solidity() {
 			hex!("1f15585f8947e378bcf8bd918716799da909acdb944c57150b1eb4565fda8aa0"),
 			hex!("1eb064b21055ac6a350cf41eb30e4ce2cb19680217df3a243617c2838185ad06"),
 		];
-		let default_zero = [
-			108, 175, 153, 72, 237, 133, 150, 36, 226, 65, 231, 118, 15, 52, 27, 130, 180, 93, 161,
-			235, 182, 53, 58, 52, 243, 171, 172, 211, 96, 76, 229, 47,
-		]
-		.to_vec();
 
-		let _other_zero = [
+		let default_zero = [
 			47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52,
 			15, 118, 231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,
 		]
