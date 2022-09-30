@@ -6,12 +6,6 @@ use arkworks_setups::{
 };
 use webb_primitives::ElementTrait;
 
-// wasm-utils dependencies
-use wasm_utils::{
-	proof::{generate_proof_js, mixer::MixerProofPayload, JsProofInput, ProofInput},
-	types::{Backend, Curve as WasmCurve},
-};
-
 use crate::mock::Element;
 
 pub const DEFAULT_LEAF: [u8; 32] = [
@@ -65,67 +59,6 @@ pub fn setup_zk_circuit(
 			let root_element = Element::from_bytes(&root_raw);
 
 			(proof, root_element, nullifier_hash_element, leaf_element)
-		},
-		Curve::Bls381 => {
-			unimplemented!()
-		},
-	}
-}
-
-pub fn setup_wasm_utils_zk_circuit(
-	curve: Curve,
-	recipient_bytes: Vec<u8>,
-	relayer_bytes: Vec<u8>,
-	pk_bytes: Vec<u8>,
-	fee_value: u128,
-	refund_value: u128,
-) -> (
-	Vec<u8>, // proof bytes
-	Element, // root
-	Element, // nullifier_hash
-	Element, // leaf
-) {
-	match curve {
-		Curve::Bn254 => {
-			let note_secret = "7e0f4bfa263d8b93854772c94851c04b3a9aba38ab808a8d081f6f5be9758110b7147c395ee9bf495734e4703b1f622009c81712520de0bbd5e7a10237c7d829bf6bd6d0729cca778ed9b6fb172bbb12b01927258aca7e0a66fd5691548f8717";
-			let raw = hex::decode(&note_secret).unwrap();
-
-			let secret = &raw[0..32];
-			let nullifier = &raw[32..64];
-			let leaf = MixerR1csproverBn254_30::create_leaf_with_privates(
-				curve,
-				secret.to_vec(),
-				nullifier.to_vec(),
-			)
-			.unwrap();
-
-			let leaves = vec![leaf.leaf_bytes];
-
-			let mixer_proof_input = MixerProofPayload {
-				exponentiation: 5,
-				width: 3,
-				curve: WasmCurve::Bn254,
-				backend: Backend::Arkworks,
-				secret: secret.to_vec(),
-				nullifier: nullifier.to_vec(),
-				recipient: recipient_bytes,
-				relayer: relayer_bytes,
-				pk: pk_bytes,
-				refund: refund_value,
-				fee: fee_value,
-				chain_id: 0,
-				leaves,
-				leaf_index: 0,
-			};
-			let js_proof_inputs =
-				JsProofInput { inner: ProofInput::Mixer(Box::new(mixer_proof_input)) };
-			let proof = generate_proof_js(js_proof_inputs).unwrap().mixer_proof().unwrap();
-
-			let root_element = Element::from_bytes(&proof.root);
-			let nullifier_hash_element = Element::from_bytes(&proof.nullifier_hash);
-			let leaf_element = Element::from_bytes(&proof.leaf);
-
-			(proof.proof, root_element, nullifier_hash_element, leaf_element)
 		},
 		Curve::Bls381 => {
 			unimplemented!()

@@ -340,7 +340,6 @@ pub mod pallet {
 		temp_hashes.push(default_zero);
 		let mut temp_hash = default_zero.to_bytes().to_vec();
 		for i in 0..T::MaxTreeDepth::get() {
-			println!("temp_hash: {:?}, {:?}", i, temp_hash);
 			temp_hash = T::Hasher::hash_two(&temp_hash, &temp_hash).unwrap();
 			temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
 		}

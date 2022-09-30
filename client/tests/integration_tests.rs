@@ -1,6 +1,5 @@
 use sp_keyring::{sr25519::sr25519::Pair, AccountKeyring};
 use subxt::{DefaultConfig, PairSigner};
-use wasm_utils::ANCHOR_COUNT;
 use webb_client::{self, client, webb_runtime, WebbRuntimeApi};
 use webb_primitives::ElementTrait;
 
@@ -62,8 +61,9 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 
 	println!("Number of leaves in the tree: {:?}", leaves.len());
 	println!("Leaf count: {:?}", leaf_count);
+	let mut rng = OsRng;
 
-	let (proof_bytes, root) = setup_mixer_circuit(
+	let (proof_bytes, root) = create_mixer_proof(
 		leaves,
 		(leaf_count - 1) as u64,
 		secret.0.to_vec(),
@@ -73,6 +73,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 		fee,
 		refund,
 		pk_bytes.to_vec(),
+		&mut rng
 	);
 
 	// Fetch the root from chain storage and check if it equals the local root
@@ -238,7 +239,7 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some([0, 1]));
 	let mut out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
-	let custom_roots = Some([[0u8; 32]; ANCHOR_COUNT].map(|x| x.to_vec()));
+	let custom_roots = Some([[0u8; 32]; 2].map(|x| x.to_vec()));
 	let leaf0 = in_utxos[0].commitment.into_repr().to_bytes_be();
 	let leaf1 = in_utxos[1].commitment.into_repr().to_bytes_be();
 	let leaves: Vec<Vec<u8>> = vec![leaf0, leaf1];

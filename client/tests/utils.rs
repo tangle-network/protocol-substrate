@@ -24,13 +24,7 @@ use arkworks_setups::{
 };
 use webb_primitives::types::{ElementTrait, IntoAbiToken, Token};
 
-// wasm-utils dependencies
 use ark_std::{rand::thread_rng, UniformRand};
-use wasm_utils::{
-	proof::{generate_proof_js, mixer::MixerProofPayload, JsProofInput, ProofInput},
-	types::{Backend, Curve as WasmCurve},
-};
-
 use ark_bn254::{Bn254, Fr as Bn254Fr};
 use codec::{Decode, Encode};
 use scale_info::TypeInfo;
@@ -199,7 +193,7 @@ pub fn setup_mixer_leaf() -> (Element, Element, Element, Element) {
 	(leaf_element, secret_element, nullifier_element, nullifier_hash_element)
 }
 
-pub fn setup_mixer_circuit(
+pub fn create_mixer_proof(
 	leaves: Vec<Vec<u8>>,
 	leaf_index: u64,
 	secret: Vec<u8>,
@@ -209,33 +203,32 @@ pub fn setup_mixer_circuit(
 	fee_value: u128,
 	refund_value: u128,
 	pk_bytes: Vec<u8>,
+	rng: &mut OsRng
 ) -> (
 	Vec<u8>, // proof bytes
 	Element, // root
 ) {
-	let mixer_proof_input = MixerProofPayload {
-		exponentiation: 5,
-		width: 3,
-		curve: WasmCurve::Bn254,
-		backend: Backend::Arkworks,
+	let mixer_proof = MixerProver_Bn254_30::create_proof(
+		ArkCurve::Bn254,
 		secret,
 		nullifier,
-		recipient: recipient_bytes,
-		relayer: relayer_bytes,
-		pk: pk_bytes,
-		refund: refund_value,
-		fee: fee_value,
-		chain_id: 0,
 		leaves,
 		leaf_index,
-	};
-	let js_proof_inputs = JsProofInput { inner: ProofInput::Mixer(Box::new(mixer_proof_input)) };
-	let proof = generate_proof_js(js_proof_inputs).unwrap().mixer_proof().unwrap();
+		recipient,
+		relayer,
+		fee,
+		refund,
+		pk,
+		DEFAULT_LEAF,
+		rng,
+	)
+	.map_err(|e| {
+		let mut error: OperationError = OpStatusCode::InvalidProofParameters.into();
+		error.data = Some(e.to_string());
+		error
+	})?;
 
-	let root_array: [u8; 32] = proof.root.try_into().unwrap();
-	let root_element = Element(root_array);
-
-	(proof.proof, root_element)
+	(mixer_proof.proof, Element::from_bytes(mixer_proof.root_raw))
 }
 
 pub fn setup_utxos(
