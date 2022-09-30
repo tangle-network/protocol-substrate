@@ -9,16 +9,16 @@ use utils::*;
 use webb_primitives::{hashing::ethereum::keccak_256, utils::compute_chain_id_type, IntoAbiToken};
 
 use ark_bn254::Fr as Bn254Fr;
-use arkworks_native_gadgets::{ark_std::rand::rngs::OsRng, poseidon::Poseidon};
+use arkworks_native_gadgets::ark_std::rand::rngs::OsRng;
 use arkworks_setups::{
 	common::{setup_params, verify_unchecked, verify_unchecked_raw},
 	utxo::Utxo,
 	Curve,
 };
 use subxt::{
-	ext::{sp_core::sr25519::Pair, sp_runtime::AccountId32},
-	tx::{self, PairSigner, TxProgress},
-	Config, OnlineClient, PolkadotConfig,
+	ext::sp_runtime::AccountId32,
+	tx::{PairSigner, TxProgress},
+	OnlineClient, PolkadotConfig,
 };
 use utils::ExtData;
 
@@ -27,7 +27,6 @@ use ark_ff::{BigInteger, PrimeField};
 #[tokio::test]
 async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
-
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 
 	let pk_bytes =
@@ -53,7 +52,12 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let mut deposit_res: TxProgress<_, _> =
 		api.tx().sign_and_submit_then_watch_default(&deposit_tx, &signer).await?;
 
-	expect_event::<webb_runtime::mixer_bn254::events::Deposit, PolkadotConfig, OnlineClient::<PolkadotConfig>>(&mut deposit_res).await?;
+	expect_event::<
+		webb_runtime::mixer_bn254::events::Deposit,
+		PolkadotConfig,
+		OnlineClient<PolkadotConfig>,
+	>(&mut deposit_res)
+	.await?;
 
 	let tree_metadata_storage_key = mt_storage.trees(&tree_id);
 	let tree_metadata_res = api.storage().fetch(&tree_metadata_storage_key, None).await?;
@@ -128,7 +132,12 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let mut withdraw_res =
 		api.tx().sign_and_submit_then_watch_default(&withdraw_tx, &signer).await?;
 
-	expect_event::<webb_runtime::mixer_bn254::events::Withdraw, PolkadotConfig, OnlineClient::<PolkadotConfig>>(&mut withdraw_res).await?;
+	expect_event::<
+		webb_runtime::mixer_bn254::events::Withdraw,
+		PolkadotConfig,
+		OnlineClient<PolkadotConfig>,
+	>(&mut withdraw_res)
+	.await?;
 
 	Ok(().into())
 }
@@ -208,17 +217,21 @@ async fn make_vanchor_tx(
 	let transact_tx = vanchor.transact(tree_id, proof_data.into(), ext_data.into());
 
 	let mut transact_res =
-		transact_tx.sign_and_submit_then_watch_default(transact_tx, signer).await?;
+		api.tx().sign_and_submit_then_watch_default(&transact_tx, &signer).await?;
 
-	expect_event::<webb_runtime::v_anchor_bn254::events::Transaction>(&mut transact_res).await?;
+	expect_event::<
+		webb_runtime::v_anchor_bn254::events::Transaction,
+		PolkadotConfig,
+		OnlineClient<PolkadotConfig>,
+	>(&mut transact_res)
+	.await?;
 
 	Ok(().into())
 }
 
 #[tokio::test]
 async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
-	let api = OnlineClient::<PolkadotConfig>::new().await?;
-	let signer = PairSigner::new(AccountKeyring::Alice.pair());
+	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
 
 	let pk_bytes = include_bytes!(
 		"../../substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
@@ -228,7 +241,6 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	);
 
 	let params4 = setup_params::<Bn254Fr>(Curve::Bn254, 5, 4);
-	let poseidon4 = Poseidon::new(params4);
 
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();

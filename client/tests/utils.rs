@@ -1,9 +1,9 @@
 use ark_std::{collections::BTreeMap, rand::rngs::OsRng};
 use core::fmt::Debug;
-use sp_runtime::AccountId32;
 use subxt::{
 	client::OnlineClientT,
 	events::StaticEvent,
+	ext::sp_runtime::AccountId32,
 	tx::{TxProgress, TxStatus, TxStatus::*},
 	Config,
 };
