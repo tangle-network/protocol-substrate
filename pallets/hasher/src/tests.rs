@@ -88,14 +88,14 @@ fn should_build_the_same_merkle_tree_solidity() {
 			hex!("1eb064b21055ac6a350cf41eb30e4ce2cb19680217df3a243617c2838185ad06"),
 		];
 
-		let other_zero = [
+		let default_zero = [
 			47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52,
 			15, 118, 231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,
 		]
 		.to_vec();
 
 		let mut hashes = vec![];
-		let mut temp_hash_bytes = other_zero;
+		let mut temp_hash_bytes = default_zero;
 		hashes.push(temp_hash_bytes.clone());
 		for _i in 0..32 {
 			temp_hash_bytes =
