@@ -72,6 +72,7 @@ std = [
     "pallet-asset-registry/std",
     "webb-primitives/std",
     "frame-benchmarking/std",
+    "pallet-token-wrapper/std",
     "ark-std/std"
 ]
 runtime-benchmarks = [

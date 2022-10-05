@@ -45,7 +45,8 @@ runtime-benchmarks = [
   "frame-support/runtime-benchmarks",
 ]
 std = [
-  "serde/std",
+  "serde",
+  "scale-info/std",
   "codec/std",
   "frame-support/std",
   "frame-system/std",
@@ -55,4 +56,5 @@ std = [
   "sp-std/std",
   "sp-api/std",
   "frame-benchmarking/std",
+  "sp-arithmetic/std",
 ]
