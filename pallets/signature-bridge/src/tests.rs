@@ -245,7 +245,7 @@ fn should_fail_on_invalid_proposal_call() {
 
 		// set the new maintainer
 		assert_ok!(Bridge::force_set_maintainer(Origin::root(), public_uncompressed.to_vec()));
-		
+
 		// should fail to execute proposal as invalid call is provided
 		assert_err!(
 			Bridge::execute_proposal(

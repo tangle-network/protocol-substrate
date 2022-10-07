@@ -101,7 +101,7 @@ impl Contains<Call> for ExecuteAllProposalsFilter {
 			Call::System(method) => match method {
 				system::Call::remark { .. } => true,
 				_ => false,
-			},	
+			},
 			_ => false,
 		}
 	}
