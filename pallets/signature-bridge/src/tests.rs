@@ -68,7 +68,6 @@ fn create_proposal_tests() {
 			Bridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id,
-				Box::new(call.clone()),
 				prop_data.clone(),
 				sig.0.to_vec(),
 			),
@@ -81,7 +80,6 @@ fn create_proposal_tests() {
 		assert_ok!(Bridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
-			Box::new(call.clone()),
 			prop_data.clone(),
 			sig.0.to_vec(),
 		));
@@ -187,7 +185,6 @@ fn should_fail_to_set_resource_id_when_nonce_increments_by_more_than_1048() {
 			Bridge::set_resource_with_signature(
 				Origin::signed(RELAYER_A),
 				src_id,
-				Box::new(call.clone()),
 				prop_data.clone(),
 				sig.0.to_vec(),
 			),
