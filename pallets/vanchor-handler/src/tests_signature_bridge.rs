@@ -147,7 +147,6 @@ fn should_create_vanchor_with_sig_succeed() {
 			SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id.chain_id(),
-				Box::new(anchor_create_call.clone()),
 				prop_data.clone(),
 				sig.0.to_vec(),
 			),
@@ -163,7 +162,6 @@ fn should_create_vanchor_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id.chain_id(),
-			Box::new(anchor_create_call.clone()),
 			prop_data.clone(),
 			sig.0.to_vec(),
 		));
@@ -223,7 +221,6 @@ fn should_add_vanchor_edge_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id.chain_id(),
-			Box::new(anchor_update_call.clone()),
 			prop_data,
 			sig.0.to_vec(),
 		));
@@ -303,7 +300,6 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id.chain_id(),
-			Box::new(anchor_update_call.clone()),
 			prop_data,
 			sig.0.to_vec(),
 		));
@@ -349,7 +345,6 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id.chain_id(),
-			Box::new(anchor_update_call.clone()),
 			prop_data,
 			sig.0.to_vec(),
 		));
@@ -435,7 +430,6 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 			SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id.chain_id() + 1,
-				Box::new(anchor_create_call.clone()),
 				prop_data,
 				sig.0.to_vec(),
 			),
@@ -490,7 +484,6 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 			SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id.chain_id(),
-				Box::new(anchor_create_call.clone()),
 				prop_data,
 				sig.0.to_vec(),
 			),
@@ -543,7 +536,6 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 			SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id.chain_id(),
-				Box::new(anchor_create_call.clone()),
 				prop_data,
 				tampered_sig.clone(),
 			),
@@ -587,12 +579,10 @@ fn should_add_resource_sig_succeed_using_webb_proposals() {
 			Origin::root(),
 			public_uncompressed.to_vec()
 		));
-		let set_resource_call: Call =
-			codec::Decode::decode(&mut &set_resource_proposal_bytes[40..]).unwrap();
+
 		assert_ok!(SignatureBridge::set_resource_with_signature(
 			Origin::signed(RELAYER_A),
 			src_id.chain_id(),
-			Box::new(set_resource_call),
 			set_resource_proposal_bytes,
 			sig.0.to_vec(),
 		));

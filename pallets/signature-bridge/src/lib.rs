@@ -57,7 +57,7 @@ mod tests;
 mod benchmarking;
 
 mod weights;
-use codec::{Decode, Encode, EncodeLike};
+use codec::{self, Decode, Encode, EncodeLike};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
@@ -318,8 +318,6 @@ pub mod pallet {
 
 		/// @param origin
 		/// @param src_id
-		/// @param call: the dispatchable call corresponding to a
-		/// handler function
 		/// @param proposal_data: (r_id, nonce, 4 bytes of zeroes, call)
 		/// @param signature: a signature over the proposal_data
 		///
@@ -340,11 +338,10 @@ pub mod pallet {
 		/// # <weight>
 		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
-		#[pallet::weight((call.get_dispatch_info().weight + T::WeightInfo::set_resource_with_signature(), call.get_dispatch_info().class, Pays::Yes))]
+		#[pallet::weight((T::WeightInfo::set_resource_with_signature(), Pays::Yes))]
 		pub fn set_resource_with_signature(
 			origin: OriginFor<T>,
 			src_id: T::ChainId,
-			call: Box<<T as Config<I>>::Proposal>,
 			proposal_data: Vec<u8>,
 			signature: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
@@ -352,6 +349,10 @@ pub mod pallet {
 			let r_id = Self::parse_r_id_from_proposal_data(&proposal_data)?;
 			let nonce = Self::parse_nonce_from_proposal_data(&proposal_data)?;
 			let parsed_call = Self::parse_call_from_proposal_data(&proposal_data);
+			// Decode executable call
+			let proposal_call = codec::Decode::decode(&mut parsed_call.as_slice())
+				.map_err(|_| Error::<T, I>::InvalidCall)?;
+
 			// Nonce should be greater than the proposal nonce in storage
 			let proposal_nonce = ProposalNonce::<T, I>::get();
 			ensure!(proposal_nonce < nonce, Error::<T, I>::InvalidNonce);
@@ -371,10 +372,11 @@ pub mod pallet {
 			// ChainId should be whitelisted
 			ensure!(Self::chain_whitelisted(src_id), Error::<T, I>::ChainNotWhitelisted);
 
-			// Ensure that call is consistent with parsed_call
-			let encoded_call = call.encode();
-			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
-			ensure!(T::SetResourceProposalFilter::contains(&call), Error::<T, I>::InvalidCall);
+			// Ensure decoded call exists in Call filter
+			ensure!(
+				T::SetResourceProposalFilter::contains(&proposal_call),
+				Error::<T, I>::InvalidCall
+			);
 			// Ensure this chain id matches the r_id
 			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
 			let this_chain_id_type =
@@ -389,13 +391,11 @@ pub mod pallet {
 			// add resource
 			Self::register_resource(r_id)?;
 
-			Self::finalize_execution(src_id, nonce, call)
+			Self::finalize_execution(src_id, nonce, proposal_call.into())
 		}
 
 		/// @param origin
 		/// @param src_id
-		/// @param call: the dispatchable call corresponding to a
-		/// handler function
 		/// @param proposal_data: (r_id, nonce, 4 bytes of zeroes, call)
 		/// @param signature: a signature over the proposal_data
 		///
@@ -416,11 +416,10 @@ pub mod pallet {
 		/// # <weight>
 		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
-		#[pallet::weight((T::WeightInfo::execute_proposal() + call.get_dispatch_info().weight, call.get_dispatch_info().class, Pays::Yes))]
+		#[pallet::weight((T::WeightInfo::execute_proposal() , Pays::Yes))]
 		pub fn execute_proposal(
 			origin: OriginFor<T>,
 			src_id: T::ChainId,
-			call: Box<<T as Config<I>>::Proposal>,
 			proposal_data: Vec<u8>,
 			signature: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
@@ -428,18 +427,20 @@ pub mod pallet {
 			let r_id = Self::parse_r_id_from_proposal_data(&proposal_data)?;
 			let nonce = Self::parse_nonce_from_proposal_data(&proposal_data)?;
 			let parsed_call = Self::parse_call_from_proposal_data(&proposal_data);
+			// Decode executable call
+			let proposal_call = codec::Decode::decode(&mut parsed_call.as_slice())
+				.map_err(|_| Error::<T, I>::InvalidCall)?;
 			// Verify signature of proposal data
 			ensure!(
 				T::SignatureVerifier::verify(&Self::maintainer(), &proposal_data[..], &signature)
 					.unwrap_or(false),
 				Error::<T, I>::InvalidPermissions,
 			);
-			ensure!(T::ExecuteProposalFilter::contains(&call), Error::<T, I>::InvalidCall);
+			// Ensure decoded call exists in Call filter.
+			ensure!(T::ExecuteProposalFilter::contains(&proposal_call), Error::<T, I>::InvalidCall);
 			ensure!(Self::chain_whitelisted(src_id), Error::<T, I>::ChainNotWhitelisted);
 			ensure!(Self::resource_exists(r_id), Error::<T, I>::ResourceDoesNotExist);
-			// Ensure that call is consistent with parsed_call
-			let encoded_call = call.encode();
-			ensure!(encoded_call == parsed_call, Error::<T, I>::CallNotConsistentWithProposalData);
+
 			// Ensure this chain id matches the r_id
 			let execution_chain_id_type = Self::parse_chain_id_type_from_r_id(r_id);
 			let this_chain_id_type =
@@ -450,7 +451,7 @@ pub mod pallet {
 				Error::<T, I>::IncorrectExecutionChainIdType
 			);
 
-			Self::finalize_execution(src_id, nonce, call)
+			Self::finalize_execution(src_id, nonce, proposal_call.into())
 		}
 	}
 }

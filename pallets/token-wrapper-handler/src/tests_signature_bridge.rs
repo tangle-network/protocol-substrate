@@ -5,7 +5,7 @@ use sp_core::{
 	keccak_256, Pair,
 };
 
-use super::mock_signature_bridge::{Call, Origin, SignatureBridge, Test, RELAYER_A};
+use super::mock_signature_bridge::{Origin, SignatureBridge, Test, RELAYER_A};
 
 use crate::mock_signature_bridge::new_test_ext_initialized;
 
@@ -121,14 +121,12 @@ fn should_update_fee_with_sig_succeed() {
 		let wrapping_fee_proposal_bytes = make_wrapping_fee_proposal(header, 5, pool_share_id);
 		let msg = keccak_256(&wrapping_fee_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
-		let fee_call: Call =
-			codec::Decode::decode(&mut &wrapping_fee_proposal_bytes[40..]).unwrap();
+
 		// should fail to execute proposal as non-maintainer
 		assert_err!(
 			SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id,
-				Box::new(fee_call.clone()),
 				wrapping_fee_proposal_bytes.clone(),
 				sig.0.to_vec(),
 			),
@@ -144,7 +142,6 @@ fn should_update_fee_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
-			Box::new(fee_call.clone()),
 			wrapping_fee_proposal_bytes.clone(),
 			sig.0.to_vec(),
 		));
@@ -196,14 +193,10 @@ fn should_add_token_with_sig_succeed() {
 			Origin::root(),
 			public_uncompressed.to_vec()
 		));
-
-		let add_token_call: Call =
-			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
-			Box::new(add_token_call.clone()),
 			add_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
@@ -261,13 +254,10 @@ fn should_remove_token_with_sig_succeed() {
 			public_uncompressed.to_vec()
 		));
 
-		let add_token_call: Call =
-			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
-			Box::new(add_token_call.clone()),
 			add_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
@@ -280,13 +270,9 @@ fn should_remove_token_with_sig_succeed() {
 		let msg = keccak_256(&remove_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
-		let remove_token_call: Call =
-			codec::Decode::decode(&mut &remove_token_proposal_bytes[40..]).unwrap();
-
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
-			Box::new(remove_token_call.clone()),
 			remove_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
@@ -338,13 +324,11 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 			make_remove_token_proposal(header, "meme".to_string(), first_token_id);
 		let msg = keccak_256(&remove_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
-		let remove_token_call: Call =
-			codec::Decode::decode(&mut &remove_token_proposal_bytes[40..]).unwrap();
+
 		assert_err!(
 			SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id,
-				Box::new(remove_token_call.clone()),
 				remove_token_proposal_bytes,
 				sig.0.to_vec(),
 			),
@@ -407,15 +391,13 @@ fn should_add_many_tokens_with_sig_succeed() {
 		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
-		let add_token_call: Call =
-			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
+
 		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
-			Box::new(add_token_call.clone()),
 			add_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
@@ -423,8 +405,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), second_token_id);
-		let add_token_call: Call =
-			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
+
 		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
@@ -432,7 +413,6 @@ fn should_add_many_tokens_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
-			Box::new(add_token_call.clone()),
 			add_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
@@ -440,8 +420,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), third_token_id);
-		let add_token_call: Call =
-			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
+
 		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
@@ -449,7 +428,6 @@ fn should_add_many_tokens_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
-			Box::new(add_token_call.clone()),
 			add_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
@@ -500,8 +478,7 @@ fn should_fail_to_add_same_token_with_sig() {
 		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
-		let add_token_call: Call =
-			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
+
 		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
@@ -514,7 +491,6 @@ fn should_fail_to_add_same_token_with_sig() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			Origin::signed(RELAYER_A),
 			src_id,
-			Box::new(add_token_call.clone()),
 			add_token_proposal_bytes.clone(),
 			sig.0.to_vec(),
 		));
@@ -526,8 +502,7 @@ fn should_fail_to_add_same_token_with_sig() {
 		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
-		let add_token_call: Call =
-			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
+
 		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
@@ -535,7 +510,6 @@ fn should_fail_to_add_same_token_with_sig() {
 			SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id,
-				Box::new(add_token_call.clone()),
 				add_token_proposal_bytes.clone(),
 				sig.0.to_vec(),
 			),
@@ -579,8 +553,7 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
-		let add_token_call: Call =
-			codec::Decode::decode(&mut &add_token_proposal_bytes[40..]).unwrap();
+
 		let msg = keccak_256(&add_token_proposal_bytes);
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
@@ -594,7 +567,6 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 			SignatureBridge::execute_proposal(
 				Origin::signed(RELAYER_A),
 				src_id,
-				Box::new(add_token_call.clone()),
 				add_token_proposal_bytes.clone(),
 				sig.0.to_vec(),
 			),
