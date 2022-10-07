@@ -96,8 +96,14 @@ impl Contains<Call> for SetResourceProposalFilter {
 
 pub struct ExecuteAllProposalsFilter;
 impl Contains<Call> for ExecuteAllProposalsFilter {
-	fn contains(_c: &Call) -> bool {
-		true
+	fn contains(c: &Call) -> bool {
+		match c {
+			Call::System(method) => match method {
+				system::Call::remark { .. } => true,
+				_ => false,
+			},	
+			_ => false,
+		}
 	}
 }
 
