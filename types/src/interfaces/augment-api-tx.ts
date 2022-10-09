@@ -2541,8 +2541,6 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * @param origin
        * @param src_id
-       * @param call: the dispatchable call corresponding to a
-       * handler function
        * @param proposal_data: (r_id, nonce, 4 bytes of zeroes, call)
        * @param signature: a signature over the proposal_data
        * 
@@ -2564,7 +2562,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * - weight of proposed call, regardless of whether execution is performed
        * # </weight>
        **/
-      executeProposal: AugmentedSubmittable<(srcId: u64 | AnyNumber | Uint8Array, call: Call | IMethod | string | Uint8Array, proposalData: Bytes | string | Uint8Array, signature: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [u64, Call, Bytes, Bytes]>;
+      executeProposal: AugmentedSubmittable<(srcId: u64 | AnyNumber | Uint8Array, proposalData: Bytes | string | Uint8Array, signature: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [u64, Bytes, Bytes]>;
       forceSetMaintainer: AugmentedSubmittable<(newMaintainer: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [Bytes]>;
       /**
        * Removes a resource ID from the resource mapping.
@@ -2592,8 +2590,6 @@ declare module '@polkadot/api-base/types/submittable' {
       /**
        * @param origin
        * @param src_id
-       * @param call: the dispatchable call corresponding to a
-       * handler function
        * @param proposal_data: (r_id, nonce, 4 bytes of zeroes, call)
        * @param signature: a signature over the proposal_data
        * 
@@ -2615,7 +2611,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * - weight of proposed call, regardless of whether execution is performed
        * # </weight>
        **/
-      setResourceWithSignature: AugmentedSubmittable<(srcId: u64 | AnyNumber | Uint8Array, call: Call | IMethod | string | Uint8Array, proposalData: Bytes | string | Uint8Array, signature: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [u64, Call, Bytes, Bytes]>;
+      setResourceWithSignature: AugmentedSubmittable<(srcId: u64 | AnyNumber | Uint8Array, proposalData: Bytes | string | Uint8Array, signature: Bytes | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [u64, Bytes, Bytes]>;
       /**
        * Enables a chain ID as a source or destination for a bridge transfer.
        * 

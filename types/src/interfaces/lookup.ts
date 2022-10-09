@@ -3349,13 +3349,11 @@ export default {
       },
       set_resource_with_signature: {
         srcId: 'u64',
-        call: 'Call',
         proposalData: 'Bytes',
         signature: 'Bytes',
       },
       execute_proposal: {
         srcId: 'u64',
-        call: 'Call',
         proposalData: 'Bytes',
         signature: 'Bytes'
       }
