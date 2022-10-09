@@ -3618,14 +3618,12 @@ declare module '@polkadot/types/lookup' {
     readonly isSetResourceWithSignature: boolean;
     readonly asSetResourceWithSignature: {
       readonly srcId: u64;
-      readonly call: Call;
       readonly proposalData: Bytes;
       readonly signature: Bytes;
     } & Struct;
     readonly isExecuteProposal: boolean;
     readonly asExecuteProposal: {
       readonly srcId: u64;
-      readonly call: Call;
       readonly proposalData: Bytes;
       readonly signature: Bytes;
     } & Struct;
