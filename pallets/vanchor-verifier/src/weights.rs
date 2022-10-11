@@ -54,11 +54,11 @@ pub struct WebbWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MixerVerifierBn254 Parameters (r:1 w:1)
 	fn force_set_parameters(c: u32, ) -> Weight {
-		(3_653_000 as Weight)
+		Weight::from_ref_time(3_653_000)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+			.saturating_add(Weight::from_ref_time(1_000).saturating_mul(c as u64))
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 }
 
@@ -66,10 +66,10 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 impl WeightInfo for () {
 	// Storage: MixerVerifierBn254 Parameters (r:1 w:1)
 	fn force_set_parameters(c: u32, ) -> Weight {
-		(3_653_000 as Weight)
+		Weight::from_ref_time(3_653_000)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+			.saturating_add(Weight::from_ref_time(1_000).saturating_mul(c as u64))
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 }

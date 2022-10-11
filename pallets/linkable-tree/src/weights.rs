@@ -46,23 +46,23 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree Trees (r:0 w:1)
 	// Storage: LinkableTree MaxEdges (r:0 w:1)
 	fn create(i: u32, d: u32, ) -> Weight {
-		53_487_000_u64
+		Weight::from_ref_time(53_487_000)
 			// Standard Error: 3_000
-			.saturating_add(4_000_u64.saturating_mul(i as Weight))
+			.saturating_add(Weight::from_ref_time(4_000_u64).saturating_mul(i as u64))
 			// Standard Error: 33_000
-			.saturating_add(43_000_u64.saturating_mul(d as Weight))
+			.saturating_add(Weight::from_ref_time(43_000_u64).saturating_mul(d as u64))
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	// Storage: LinkableTree Maintainer (r:1 w:1)
 	fn set_maintainer() -> Weight {
-		38_000_000_u64
+		Weight::from_ref_time(38_000_000)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: LinkableTree Maintainer (r:1 w:1)
 	fn force_set_maintainer() -> Weight {
-		32_000_000_u64
+		Weight::from_ref_time(32_000_000)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -71,12 +71,12 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 #[allow(unused_variables)]
 impl WeightInfo for () {
 	fn create(i: u32, d: u32, ) -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 	fn set_maintainer() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 	fn force_set_maintainer() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 }

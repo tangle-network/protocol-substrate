@@ -54,9 +54,9 @@ pub struct WebbWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: HasherBn254 Parameters (r:1 w:1)
 	fn force_set_parameters(_c: u32, ) -> Weight {
-		(8_102_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(8_102_000)
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 }
 
@@ -64,8 +64,8 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 impl WeightInfo for () {
 	// Storage: HasherBn254 Parameters (r:1 w:1)
 	fn force_set_parameters(_c: u32, ) -> Weight {
-		(8_102_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(8_102_000)
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 }

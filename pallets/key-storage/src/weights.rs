@@ -59,19 +59,19 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: KeyStorage PublicKeyOwners (r:1 w:0)
 	/// The range of component `c` is `[0, 20000]`.
 	fn register(c: u32, ) -> Weight {
-		(33_025_000 as Weight)
+		Weight::from_ref_time(33_025_000)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(c as Weight))
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
+			.saturating_add(Weight::from_ref_time(1_000).saturating_mul(c as u64))
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
 	}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	fn register(_c: u32, ) -> Weight {
-		(33_025_000 as Weight)
+		Weight::from_ref_time(33_025_000)
 			// Standard Error: 0
-			.saturating_add((1_000 as Weight).saturating_mul(1 as Weight))
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
+			.saturating_add(Weight::from_ref_time(1_000).saturating_mul(1 as u64))
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
 	}
 }

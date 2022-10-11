@@ -245,7 +245,7 @@ pub mod pallet {
 				let temp_hashes = generate_default_hashes::<T, I>();
 				DefaultHashes::<T, I>::put(temp_hashes);
 			}
-			1u64 + 1u64
+			Weight::from_ref_time(2u64)
 		}
 	}
 

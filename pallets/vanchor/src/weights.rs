@@ -62,9 +62,9 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree Trees (r:0 w:1)
 	// Storage: Vanchor VAnchors (r:0 w:1)
 	fn create(d: u32, ) -> Weight {
-		(43_099_000 as Weight)
+		Weight::from_ref_time(43_099_000)
 			// Standard Error: 5_000
-			.saturating_add(43_000_u64.saturating_mul(d as Weight))
+			.saturating_add(Weight::from_ref_time(43_000_u64).saturating_mul(d as u64))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
@@ -78,7 +78,7 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree Leaves (r:0 w:1)
 	// Storage: MerkleTree CachedRoots (r:0 w:1)
 	fn transact() -> Weight {
-		(9_847_660_000 as Weight)
+		Weight::from_ref_time(9_847_660_000)
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
@@ -92,23 +92,23 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree Leaves (r:0 w:1)
 	// Storage: MerkleTree CachedRoots (r:0 w:1)
 	fn register_and_transact() -> Weight {
-		(10_047_340_000 as Weight)
+		Weight::from_ref_time(10_047_340_000)
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
 	// Storage: Vanchor MaxDepositAmount (r:1 w:1)
 	fn set_max_deposit_amount() -> Weight {
-		(3_653_000 as Weight)
+		Weight::from_ref_time(3_653_000)
 			// Standard Error: 0
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Vanchor MinWithdrawAmount (r:1 w:1)
 	fn set_min_withdraw_amount() -> Weight {
-		(3_653_000 as Weight)
+		Weight::from_ref_time(3_653_000)
 			// Standard Error: 0
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 }
 
@@ -119,9 +119,9 @@ impl WeightInfo for () {
 	// Storage: MerkleTree Trees (r:0 w:1)
 	// Storage: Vanchor VAnchors (r:0 w:1)
 	fn create(d: u32, ) -> Weight {
-		(43_099_000 as Weight)
+		Weight::from_ref_time(43_099_000)
 			// Standard Error: 5_000
-			.saturating_add(43_000_u64.saturating_mul(d as Weight))
+			.saturating_add(Weight::from_ref_time(43_000_u64).saturating_mul(d as u64))
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
@@ -135,7 +135,7 @@ impl WeightInfo for () {
 	// Storage: MerkleTree Leaves (r:0 w:1)
 	// Storage: MerkleTree CachedRoots (r:0 w:1)
 	fn transact() -> Weight {
-		(9_847_660_000 as Weight)
+		Weight::from_ref_time(9_847_660_000)
 			.saturating_add(RocksDbWeight::get().reads(7_u64))
 			.saturating_add(RocksDbWeight::get().writes(6_u64))
 	}
@@ -149,22 +149,22 @@ impl WeightInfo for () {
 	// Storage: MerkleTree Leaves (r:0 w:1)
 	// Storage: MerkleTree CachedRoots (r:0 w:1)
 	fn register_and_transact() -> Weight {
-		(10_047_340_000 as Weight)
+		Weight::from_ref_time(10_047_340_000)
 			.saturating_add(RocksDbWeight::get().reads(7_u64))
 			.saturating_add(RocksDbWeight::get().writes(6_u64))
 	}
 	// Storage: Vanchor MaxDepositAmount (r:1 w:1)
 	fn set_max_deposit_amount() -> Weight {
-		(3_653_000 as Weight)
+		Weight::from_ref_time(3_653_000)
 			// Standard Error: 0
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Vanchor MinWithdrawAmount (r:1 w:1)
 	fn set_min_withdraw_amount() -> Weight {
-		(3_653_000 as Weight)
+		Weight::from_ref_time(3_653_000)
 			// Standard Error: 0
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 }
