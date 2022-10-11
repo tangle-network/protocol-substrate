@@ -537,7 +537,7 @@ impl pallet_election_provider_multi_phase::MinerConfig for WebbMinerConfig {
 	type Solution = NposSolution16;
 
 	fn solution_weight(_v: u32, _t: u32, _a: u32, _d: u32) -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 }
 
@@ -1507,8 +1507,8 @@ pub type Executive = frame_executive::Executive<
 
 pub struct OnRuntimeUpgrade;
 impl frame_support::traits::OnRuntimeUpgrade for OnRuntimeUpgrade {
-	fn on_runtime_upgrade() -> u64 {
-		0u64
+	fn on_runtime_upgrade() -> Weight {
+		Weight::from_ref_time(0)
 	}
 }
 
@@ -1607,17 +1607,17 @@ impl_runtime_apis! {
 	}
 
 	impl sp_consensus_babe::BabeApi<Block> for Runtime {
-		fn configuration() -> sp_consensus_babe::BabeGenesisConfiguration {
+		fn configuration() -> sp_consensus_babe::BabeConfiguration {
 			// The choice of `c` parameter (where `1 - c` represents the
 			// probability of a slot being empty), is done in accordance to the
 			// slot duration and expected target block time, for safely
 			// resisting network delays of maximum two seconds.
 			// <https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results>
-			sp_consensus_babe::BabeGenesisConfiguration {
+			sp_consensus_babe::BabeConfiguration {
 				slot_duration: Babe::slot_duration(),
 				epoch_length: EpochDuration::get(),
 				c: BABE_GENESIS_EPOCH_CONFIG.c,
-				genesis_authorities: Babe::authorities().to_vec(),
+				authorities: Babe::authorities().to_vec(),
 				randomness: Babe::randomness(),
 				allowed_slots: BABE_GENESIS_EPOCH_CONFIG.allowed_slots,
 			}

@@ -34,7 +34,7 @@ use std::sync::Arc;
 
 use jsonrpsee::RpcModule;
 use sc_client_api::AuxStore;
-use sc_consensus_babe::{Config, Epoch};
+use sc_consensus_babe::{BabeConfiguration, Epoch};
 use sc_consensus_babe_rpc::Babe as BabeRpc;
 use sc_consensus_epochs::SharedEpochChanges;
 use sc_finality_grandpa::{
@@ -62,8 +62,8 @@ use pallet_mt_rpc::MerkleTreeClient;
 
 /// Extra dependencies for BABE.
 pub struct BabeDeps {
-	/// BABE protocol config.
-	pub babe_config: Config,
+	/// BABE protocol configuration.
+	pub babe_config: BabeConfiguration,
 	/// BABE pending epoch changes.
 	pub shared_epoch_changes: SharedEpochChanges<Block, Epoch>,
 	/// The keystore that manages the keys of the node.

@@ -59,9 +59,9 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: Mixer Mixers (r:0 w:1)
 	// Storage: MerkleTree Trees (r:0 w:1)
 	fn create(d: u32, ) -> Weight {
-		(34_099_000 as Weight)
+		Weight::from_ref_time(34_099_000)
 			// Standard Error: 5_000
-			.saturating_add(43_000_u64.saturating_mul(d as Weight))
+			.saturating_add(Weight::from_ref_time(43_000_u64).saturating_mul(d as u64))
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -75,7 +75,7 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTree Leaves (r:0 w:1)
 	// Storage: MerkleTree CachedRoots (r:0 w:1)
 	fn deposit() -> Weight {
-		(9_847_660_000 as Weight)
+		Weight::from_ref_time(9_847_660_000)
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
@@ -86,7 +86,7 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MixerVerifier Parameters (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
 	fn withdraw() -> Weight {
-		(35_264_966_000 as Weight)
+		Weight::from_ref_time(35_264_966_000)
 			.saturating_add(T::DbWeight::get().reads(6_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -98,9 +98,9 @@ impl WeightInfo for () {
 	// Storage: Mixer Mixers (r:0 w:1)
 	// Storage: MerkleTree Trees (r:0 w:1)
 	fn create(d: u32, ) -> Weight {
-		(34_099_000 as Weight)
+		Weight::from_ref_time(34_099_000)
 			// Standard Error: 5_000
-			.saturating_add(43_000_u64.saturating_mul(d as Weight))
+			.saturating_add(Weight::from_ref_time(3_000_u64).saturating_mul(d as u64))
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
@@ -114,7 +114,7 @@ impl WeightInfo for () {
 	// Storage: MerkleTree Leaves (r:0 w:1)
 	// Storage: MerkleTree CachedRoots (r:0 w:1)
 	fn deposit() -> Weight {
-		(9_847_660_000 as Weight)
+		Weight::from_ref_time(9_847_660_000)
 			.saturating_add(RocksDbWeight::get().reads(7_u64))
 			.saturating_add(RocksDbWeight::get().writes(6_u64))
 	}
@@ -125,7 +125,7 @@ impl WeightInfo for () {
 	// Storage: MixerVerifier Parameters (r:1 w:0)
 	// Storage: System Account (r:1 w:1)
 	fn withdraw() -> Weight {
-		(35_264_966_000 as Weight)
+		Weight::from_ref_time(35_264_966_000)
 			.saturating_add(RocksDbWeight::get().reads(6_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}

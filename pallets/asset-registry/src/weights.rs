@@ -56,37 +56,37 @@ pub struct WebbWeight<T>(PhantomData<T>);
 
 impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	fn register() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 
 	fn update() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 
 	fn set_metadata() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 
 	fn set_location() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	fn register() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 
 	fn update() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 
 	fn set_metadata() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 
 	fn set_location() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 }

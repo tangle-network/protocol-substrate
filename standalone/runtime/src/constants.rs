@@ -45,7 +45,7 @@ pub mod constants {
 	pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 
 	/// We allow for 0.5 seconds of compute with a 6 second average block time.
-	pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+	pub const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_div(2);
 }
 
 /// Fee-related.
@@ -80,7 +80,7 @@ pub mod fee {
 			// in Kusama, extrinsic base weight (smallest non-zero weight) is mapped to 1/10
 			// CENT: in Statemine, we map to 1/10 of that, or 1/100 CENT
 			let p = super::currency::CENTS;
-			let q = 100 * Balance::from(ExtrinsicBaseWeight::get());
+			let q = 1000_u128;
 			smallvec![WeightToFeeCoefficient {
 				degree: 1,
 				negative: false,

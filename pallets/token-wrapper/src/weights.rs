@@ -48,7 +48,7 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: System Account (r:1 w:1)
 	// Storage: Tokens TotalIssuance (r:1 w:1)
 	fn wrap() -> Weight {
-		(141_546_000_u64)
+		Weight::from_ref_time(141_546_000_u64)
 			.saturating_add(T::DbWeight::get().reads(8_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
@@ -57,27 +57,27 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: Tokens TotalIssuance (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn unwrap() -> Weight {
-		(125_843_000_u64)
+		Weight::from_ref_time(125_843_000_u64)
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
 	// Storage: TokenWrapper WrappingFeePercent (r:0 w:1)
 	fn set_wrapping_fee() -> Weight {
-		(16_705_000_u64)
+		Weight::from_ref_time(16_705_000_u64)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
 impl WeightInfo for () {
 	fn wrap() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 
 	fn unwrap() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 
 	fn set_wrapping_fee() -> Weight {
-		0
+		Weight::from_ref_time(0)
 	}
 }
