@@ -1,18 +1,15 @@
 <div align="center">
-<a href="https://www.webb.tools/">
-    
-![Webb Logo](./assets/webb_banner_light.png#gh-light-mode-only)
-![Webb Logo](./assets/webb_banner_dark.png#gh-dark-mode-only)
+  <a href="https://www.webb.tools/">
 
+  ![Webb Logo](./assets/webb_banner_light.png#gh-light-mode-only)
+  ![Webb Logo](./assets/webb_banner_dark.png#gh-dark-mode-only)
   </a>
-  </div>
+</div>
 <p align="left">
     <strong>🚀 Webb's Substrate Pallet Implementation 🚀</strong>
 </p>
 
-
 # Anchor Protocol [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/webb-tools/protocol-substrate/Build%20&%20Test?style=flat-square)](https://github.com/webb-tools/protocol-substrate/actions) [![Codecov](https://img.shields.io/codecov/c/gh/webb-tools/protocol-substrate?style=flat-square&token=A4WGU76TWU)](https://codecov.io/gh/webb-tools/protocol-substrate) [![License Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0) [![Twitter](https://img.shields.io/twitter/follow/webbprotocol.svg?style=flat-square&label=Twitter&color=1DA1F2)](https://twitter.com/webbprotocol) [![Telegram](https://img.shields.io/badge/Telegram-gray?logo=telegram)](https://t.me/webbprotocol) [![Discord](https://img.shields.io/discord/833784453251596298.svg?style=flat-square&label=Discord&logo=discord)](https://discord.gg/cv8EfJu3Tn)
-
 
 <!-- TABLE OF CONTENTS -->
 <h2 id="table-of-contents" style=border:0!important> 📖 Table of Contents</h2>
@@ -35,14 +32,15 @@ For additional information, please refer to the [Webb Protocol-Substrate Rust Do
 pallets/
   |____linkable-tree/       # A module for constructing, modifying and inspecting linkable trees.
   |____hasher/              # A module for abstracting over arbitrary hash functions primarily for zero-knowledge friendly hash functions that have potentially large parameters to deal with.
-  |____mixer/               # A simple module for building Mixers. 
+  |____mixer/               # A simple module for building Mixers.
   |____signature-bridge/    # A module for managing voting, resource, and maintainer composition through signature verification.
   |____token-wrapper/       # A module for wrapping pooled assets and minting pool share tokens
-  |____vanchor/             # A simple module for building variable Anchors.  
+  |____vanchor/             # A simple module for building variable Anchors.
   |____vanchor-handler/     # A module for executing the modification of vanchors.
   |____verifier/            # A module for abstracting over arbitrary zero-knowledge verifiers for arbitrary zero-knowledge gadgets
   |____xanchor/             # A module for managing the linking process between anchors.
 ```
+
 ### Prerequisites
 
 This guide uses <https://rustup.rs> installer and the `rustup` tool to manage the Rust toolchain.
@@ -74,7 +72,7 @@ Install protobuf-compiler
 # For linux
 apt install -y protobuf-compiler
 
-# For macos 
+# For macos
 brew install protobuf
 ```
 
@@ -146,7 +144,7 @@ In order to run the standalone development network, you will need to prepare 2 t
 ./target/release/webb-standalone-node --dev --bob --port 33334 --tmp   --bootnodes /ip4/127.0.0.1/tcp/30333/p2p/12D3KooWEyoppNCUx8Yx66oV9fJnriXwCcXwDDUA2kj6vnc6iDEp
 ```
 
-You now have successfully set up a standalone local testnet! 🎉 
+You now have successfully set up a standalone local testnet! 🎉
 
 ### Docker 🐳
 
@@ -171,19 +169,22 @@ The following instructions outlines how to run the protocol-substrate base test 
 ```
 cargo test --release --workspace --exclude webb-client
 ```
+
 ### To run integration tests
 
 1. Run `cd scripts`
 2. Run `sh run-integrations.sh`
+
 ### Code Coverage
 
-You need to have docker installed to generate code coverage. 
+You need to have docker installed to generate code coverage.
 
 > Build docker image:
 
 ```sh
 docker build -t cov -f docker/Coverage.Dockerfile .
 ```
+
 > Run docker image and generate code coverage reports:
 
 ```sh
@@ -212,7 +213,7 @@ cargo b --release --features runtime-benchmarks -p webb-standalone-node
 
 ## Contributing
 
-Interested in contributing to protocol-substrate? Thank you so much for your interest! We are always appreciative for contributions from the open-source community!  
+Interested in contributing to protocol-substrate? Thank you so much for your interest! We are always appreciative for contributions from the open-source community!
 
 If you have a contribution in mind, please check out our [Contribution Guide](./.github/CONTRIBUTING.md) for information on how to do so. We are excited for your first contribution!
 
