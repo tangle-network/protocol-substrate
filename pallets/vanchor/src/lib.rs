@@ -501,7 +501,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			transactor,
 			tree_id: id,
 			leafs: proof_data.output_commitments,
-			encrypted_output: vec![ext_data.encrypted_output1,ext_data.encrypted_output2],
+			encrypted_output: vec![ext_data.encrypted_output1, ext_data.encrypted_output2],
 			amount: public_amount,
 		});
 		Ok(())
