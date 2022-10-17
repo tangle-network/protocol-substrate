@@ -228,6 +228,8 @@ pub mod pallet {
 			transactor: T::AccountId,
 			tree_id: T::TreeId,
 			leafs: Vec<T::Element>,
+			encrypted_output1: Vec<u8>,
+			encrypted_output2: Vec<u8>,
 			amount: AmountOf<T, I>,
 		},
 		/// Deposit hook has executed successfully
@@ -500,6 +502,8 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 			transactor,
 			tree_id: id,
 			leafs: proof_data.output_commitments,
+			encrypted_output1: ext_data.encrypted_output1,
+			encrypted_output2: ext_data.encrypted_output2,
 			amount: public_amount,
 		});
 		Ok(())
