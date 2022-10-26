@@ -16,9 +16,9 @@ log = "0.4"
 webb-primitives = {path = "../../primitives", features = ["verifying"], default-features = false}
 frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
 frame-system = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29" }
-orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
-orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
-orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", default-features = false }
+orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.29", default-features = false }
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.29", default-features = false }
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.29", default-features = false }
 pallet-asset-registry = {path = "../asset-registry", default-features = false}
 pallet-hasher = {path = "../hasher", default-features = false}
 pallet-mt = {path = "../mt", default-features = false}
