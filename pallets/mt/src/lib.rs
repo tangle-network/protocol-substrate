@@ -339,9 +339,13 @@ pub mod pallet {
 		let default_zero = T::DefaultZeroElement::get();
 		temp_hashes.push(default_zero);
 		let mut temp_hash = default_zero.to_bytes().to_vec();
-		for _ in 0..T::MaxTreeDepth::get() {
+		for _ in 1..T::MaxTreeDepth::get() {
 			temp_hash = T::Hasher::hash_two(&temp_hash, &temp_hash).unwrap();
 			temp_hashes.push(T::Element::from_vec(temp_hash.clone()));
+		}
+
+		if temp_hashes.len() != (T::MaxTreeDepth::get() as usize) {
+			panic!("Default hashes length is not equal to max tree depth");
 		}
 
 		temp_hashes
@@ -396,7 +400,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 			paused: false,
 			max_leaves: two.saturating_pow(depth.into()),
 			leaf_count: T::LeafIndex::zero(),
-			root: Self::default_hashes()[depth as usize],
+			root: default_edge_nodes[(depth - 1) as usize],
 			edge_nodes: default_edge_nodes,
 		};
 
@@ -479,6 +483,6 @@ impl<T: Config<I>, I: 'static> TreeInspector<T::AccountId, T::TreeId, T::Element
 	fn get_default_root(tree_id: T::TreeId) -> Result<T::Element, DispatchError> {
 		ensure!(Trees::<T, I>::contains_key(tree_id), Error::<T, I>::TreeDoesntExist);
 		let default_hashes = DefaultHashes::<T, I>::get();
-		Ok(default_hashes[(Self::get_tree(tree_id)?.depth) as usize])
+		Ok(default_hashes[(Self::get_tree(tree_id)?.depth - 1) as usize])
 	}
 }
