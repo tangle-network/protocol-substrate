@@ -3,7 +3,7 @@ WORKDIR /webb
 
 # Install Required Packages
 RUN apt-get update && \
-  apt-get install -y git python3 python3-pip pkg-config clang curl libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler && \
+  apt-get install -y git python3 python3-pip pkg-config clang curl libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler libc6 && \
   rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install dvc
@@ -11,8 +11,8 @@ RUN pip3 install dvc
 COPY . .
 
 # Build Standalone Node.
-RUN dvc pull && \
-  cargo build --release -p webb-standalone-node
+RUN dvc pull -f 
+RUN cargo build --release -p webb-standalone-node
 
 # This is the 2nd stage: a very small image where we copy the Node binary."
 
@@ -20,7 +20,7 @@ FROM ubuntu:20.04
 
 COPY --from=builder /webb/target/release/webb-standalone-node /usr/local/bin
 
-RUN apt-get update && apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev libc6 && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /webb webb && \
   mkdir -p /data /webb/.local/share/webb && \
