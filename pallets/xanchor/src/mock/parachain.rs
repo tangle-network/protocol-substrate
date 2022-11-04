@@ -65,7 +65,7 @@ impl frame_system::Config for Runtime {
 	type BlockWeights = ();
 	type Call = Call;
 	type DbWeight = ();
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type Hash = H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
 	type Header = Header;
@@ -75,7 +75,7 @@ impl frame_system::Config for Runtime {
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type PalletInfo = PalletInfo;
 	type SS58Prefix = ();
 	type SystemWeightInfo = ();
@@ -92,7 +92,7 @@ impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	type Balance = Balance;
 	type DustRemoval = ();
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = MaxLocks;
 	type MaxReserves = MaxReserves;
@@ -175,7 +175,7 @@ pub mod mock_msg_queue {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		type XcmExecutor: ExecuteXcm<Self::Call>;
 	}
 
@@ -308,14 +308,14 @@ pub mod mock_msg_queue {
 }
 
 impl mock_msg_queue::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNetwork>;
 
 impl pallet_xcm::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
 	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
@@ -325,14 +325,14 @@ impl pallet_xcm::Config for Runtime {
 	type XcmReserveTransferFilter = Everything;
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type Call = Call;
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
@@ -344,21 +344,21 @@ parameter_types! {
 }
 
 impl pallet_verifier::Config<pallet_verifier::Instance1> for Test {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
 impl pallet_verifier::Config<pallet_verifier::Instance2> for Test {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
 impl pallet_hasher::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
@@ -417,7 +417,7 @@ impl pallet_mt::Config for Runtime {
 	type DataDepositPerByte = LeafDepositPerByte;
 	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
 	type LeafIndex = u32;
@@ -442,7 +442,7 @@ impl orml_tokens::Config for Runtime {
 	type Balance = Balance;
 	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ExistentialDeposits = AssetRegistry;
 	type OnDust = ();
 	type WeightInfo = ();
@@ -464,7 +464,7 @@ impl pallet_asset_registry::Config for Runtime {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type NativeAssetId = NativeCurrencyId;
 	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
@@ -485,7 +485,7 @@ impl pallet_linkable_tree::Config for Runtime {
 	type ChainId = ChainId;
 	type ChainType = ChainType;
 	type ChainIdentifier = ChainIdentifier;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();
@@ -493,7 +493,7 @@ impl pallet_linkable_tree::Config for Runtime {
 
 impl pallet_vanchor::Config for Runtime {
 	type Currency = Currencies;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
@@ -509,8 +509,8 @@ impl pallet_xanchor::Config for Runtime {
 	type Call = Call;
 	type DemocracyGovernanceDelegate = Democracy;
 	type DemocracyOrigin = EnsureRoot<AccountId>;
-	type Event = Event;
-	type Origin = Origin;
+	type RuntimeEvent = Event;
+	type RuntimeOrigin = RuntimeOrigin;
 	type ParaId = MsgQueue;
 	type XcmSender = XcmRouter;
 }
@@ -519,7 +519,7 @@ impl pallet_preimage::Config for Runtime {
 	type BaseDeposit = ();
 	type ByteDeposit = ();
 	type Currency = ();
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
 	type MaxSize = frame_support::traits::ConstU32<1024>;
 	type WeightInfo = ();
@@ -532,11 +532,11 @@ parameter_types! {
 
 impl pallet_scheduler::Config for Runtime {
 	type Call = Call;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type MaxScheduledPerBlock = ();
 	type MaximumWeight = MaximumSchedulerWeight;
 	type NoPreimagePostponement = NoPreimagePostponement;
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type OriginPrivilegeCmp = frame_support::traits::EqualPrivilegeOnly;
 	type PalletsOrigin = OriginCaller;
 	type PreimageProvider = Preimage;
@@ -584,7 +584,7 @@ impl pallet_democracy::Config for Runtime {
 	type CooloffPeriod = CooloffPeriod;
 	type Currency = pallet_balances::Pallet<Self>;
 	type EnactmentPeriod = EnactmentPeriod;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ExternalDefaultOrigin = EnsureSignedBy<AccountOne, AccountId>;
 	type ExternalMajorityOrigin = EnsureSignedBy<AccountThree, AccountId>;
 	type ExternalOrigin = EnsureSignedBy<AccountTwo, AccountId>;

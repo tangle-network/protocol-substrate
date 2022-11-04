@@ -73,7 +73,7 @@ impl system::Config for Test {
 	type BlockWeights = ();
 	type Call = Call;
 	type DbWeight = ();
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header;
@@ -83,7 +83,7 @@ impl system::Config for Test {
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type PalletInfo = PalletInfo;
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
@@ -102,7 +102,7 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = Balance;
 	type DustRemoval = ();
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = ();
 	type MaxReserves = ();
@@ -118,14 +118,14 @@ parameter_types! {
 }
 
 impl pallet_vanchor_verifier::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
 impl pallet_hasher::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
@@ -178,7 +178,7 @@ impl pallet_mt::Config for Test {
 	type DataDepositPerByte = LeafDepositPerByte;
 	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
 	type LeafIndex = u32;
@@ -203,7 +203,7 @@ impl orml_tokens::Config for Test {
 	type Balance = Balance;
 	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ExistentialDeposits = AssetRegistry;
 	type OnDust = ();
 	type WeightInfo = ();
@@ -227,7 +227,7 @@ impl pallet_asset_registry::Config for Test {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type NativeAssetId = NativeCurrencyId;
 	type RegistryOrigin = frame_system::EnsureRoot<u64>;
 	type StringLimit = RegistryStringLimit;
@@ -242,7 +242,7 @@ parameter_types! {
 impl pallet_token_wrapper::Config for Test {
 	type AssetRegistry = AssetRegistry;
 	type Currency = Currencies;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TokenWrapperPalletId;
 	type WeightInfo = ();
@@ -261,7 +261,7 @@ impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
 	type ChainType = ChainType;
 	type ChainIdentifier = ChainIdentifier;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();
@@ -309,7 +309,7 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type ChainId = ChainId;
 	type ChainIdentifier = ChainIdentifier;
 	type ChainType = ChainType;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type Proposal = Call;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
@@ -330,7 +330,7 @@ parameter_types! {
 impl pallet_vanchor::Config for Test {
 	type Currency = Currencies;
 	type EthereumHasher = Keccak256HasherBn254;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type IntoField = ArkworksIntoFieldBn254;
 	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
@@ -349,11 +349,11 @@ impl pallet_vanchor::Config for Test {
 impl pallet_vanchor_handler::Config for Test {
 	type VAnchor = VAnchor;
 	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Test, BridgeInstance>;
-	type Event = Event;
+	type RuntimeEvent = Event;
 }
 
 impl pallet_key_storage::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type WeightInfo = ();
 }
 

@@ -43,7 +43,7 @@ parameter_types! {
 }
 
 impl frame_system::Config for Runtime {
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type Call = Call;
 	type Index = u64;
 	type BlockNumber = u64;
@@ -52,7 +52,7 @@ impl frame_system::Config for Runtime {
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type BlockHashCount = BlockHashCount;
 	type BlockWeights = ();
 	type BlockLength = ();
@@ -78,7 +78,7 @@ parameter_types! {
 impl pallet_balances::Config for Runtime {
 	type MaxLocks = MaxLocks;
 	type Balance = Balance;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
@@ -144,7 +144,7 @@ impl Config for XcmConfig {
 pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, KusamaNetwork>;
 
 impl pallet_xcm::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type SendXcmOrigin = xcm_builder::EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
 	// Anyone can execute XCM messages locally...
@@ -155,7 +155,7 @@ impl pallet_xcm::Config for Runtime {
 	type XcmReserveTransferFilter = Everything;
 	type Weigher = FixedWeightBounds<BaseXcmWeight, Call, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type Call = Call;
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
@@ -182,7 +182,7 @@ impl polkadot_runtime_parachains::ump::WeightInfo for TestWeightInfo {
 }
 
 impl ump::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type UmpSink = ump::XcmSink<XcmExecutor<XcmConfig>, Runtime>;
 	type FirstMessageFactorPercent = FirstMessageFactorPercent;
 	type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;

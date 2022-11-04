@@ -96,12 +96,13 @@ pub mod pallet {
 	/// The module configuration trait.
 	pub trait Config<I: 'static = ()>: frame_system::Config {
 		/// The overarching event type.
-		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self, I>>
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Origin used to administer the pallet
-		type AdminOrigin: EnsureOrigin<Self::Origin>;
+		type AdminOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 		/// Proposed dispatchable call
 		type Proposal: Parameter
-			+ Dispatchable<Origin = Self::Origin>
+			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>
 			+ EncodeLike
 			+ Decode
 			+ GetDispatchInfo;
@@ -459,7 +460,7 @@ pub mod pallet {
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	// *** Utility methods ***
 
-	pub fn ensure_admin(o: T::Origin) -> DispatchResultWithPostInfo {
+	pub fn ensure_admin(o: T::RuntimeOrigin) -> DispatchResultWithPostInfo {
 		T::AdminOrigin::try_origin(o).map(|_| ()).or_else(ensure_root)?;
 		Ok(().into())
 	}
@@ -560,14 +561,14 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 /// Simple ensure origin for the bridge account
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo, RuntimeDebug)]
 pub struct EnsureBridge<T, I>(sp_std::marker::PhantomData<(T, I)>);
-impl<T: Config<I>, I: 'static> EnsureOrigin<T::Origin> for EnsureBridge<T, I> {
+impl<T: Config<I>, I: 'static> EnsureOrigin<T::RuntimeOrigin> for EnsureBridge<T, I> {
 	type Success = T::AccountId;
 
-	fn try_origin(o: T::Origin) -> Result<Self::Success, T::Origin> {
+	fn try_origin(o: T::RuntimeOrigin) -> Result<Self::Success, T::RuntimeOrigin> {
 		let bridge_id = T::BridgeAccountId::get().into_account_truncating();
 		o.into().and_then(|o| match o {
 			system::RawOrigin::Signed(who) if who == bridge_id => Ok(bridge_id),
-			r => Err(T::Origin::from(r)),
+			r => Err(T::RuntimeOrigin::from(r)),
 		})
 	}
 
@@ -575,8 +576,8 @@ impl<T: Config<I>, I: 'static> EnsureOrigin<T::Origin> for EnsureBridge<T, I> {
 	///
 	/// ** Should be used for benchmarking only!!! **
 	#[cfg(feature = "runtime-benchmarks")]
-	fn successful_origin() -> T::Origin {
-		T::Origin::from(frame_system::RawOrigin::Signed(
+	fn successful_origin() -> T::RuntimeOrigin {
+		T::RuntimeOrigin::from(frame_system::RawOrigin::Signed(
 			T::BridgeAccountId::get().into_account_truncating(),
 		))
 	}

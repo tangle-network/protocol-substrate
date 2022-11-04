@@ -41,7 +41,7 @@ impl system::Config for Test {
 	type BlockWeights = ();
 	type Call = Call;
 	type DbWeight = ();
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header;
@@ -51,7 +51,7 @@ impl system::Config for Test {
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type PalletInfo = PalletInfo;
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
@@ -70,7 +70,7 @@ parameter_types! {
 }
 
 impl pallet_key_storage::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type WeightInfo = ();
 }
 

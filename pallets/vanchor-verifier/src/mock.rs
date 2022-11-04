@@ -47,7 +47,7 @@ impl system::Config for Test {
 	type BlockWeights = ();
 	type Call = Call;
 	type DbWeight = ();
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header;
@@ -57,7 +57,7 @@ impl system::Config for Test {
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type PalletInfo = PalletInfo;
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
@@ -72,7 +72,7 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = u128;
 	type DustRemoval = ();
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = ();
 	type MaxReserves = ();
@@ -88,7 +88,7 @@ parameter_types! {
 }
 
 impl pallet_vanchor_verifier::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();

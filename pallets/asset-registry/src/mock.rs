@@ -65,7 +65,7 @@ impl system::Config for Test {
 	type BlockWeights = ();
 	type Call = Call;
 	type DbWeight = ();
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header;
@@ -75,7 +75,7 @@ impl system::Config for Test {
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type PalletInfo = PalletInfo;
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
@@ -97,7 +97,7 @@ impl Config for Test {
 	type AssetId = u32;
 	type AssetNativeLocation = AssetLocation;
 	type Balance = Balance;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type NativeAssetId = NativeAssetId;
 	type RegistryOrigin = frame_system::EnsureRoot<u64>;
 	type StringLimit = RegistryStringLimit;

@@ -62,7 +62,7 @@ impl system::Config for Test {
 	type BlockWeights = ();
 	type Call = Call;
 	type DbWeight = ();
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header;
@@ -72,7 +72,7 @@ impl system::Config for Test {
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type PalletInfo = PalletInfo;
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
@@ -87,7 +87,7 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = Balance;
 	type DustRemoval = ();
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = ();
 	type MaxReserves = ();
@@ -103,7 +103,7 @@ parameter_types! {
 }
 
 impl pallet_hasher::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
@@ -156,7 +156,7 @@ impl pallet_mt::Config for Test {
 	type DataDepositPerByte = LeafDepositPerByte;
 	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
 	type LeafIndex = u32;
@@ -186,7 +186,7 @@ impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
 	type ChainType = ChainType;
 	type ChainIdentifier = CurrentChainId;
-	type Event = Event;
+	type RuntimeEvent = Event;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();

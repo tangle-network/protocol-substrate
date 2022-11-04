@@ -113,7 +113,8 @@ pub mod pallet {
 		frame_system::Config + pallet_linkable_tree::Config<I>
 	{
 		/// The overarching event type.
-		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self, I>>
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;

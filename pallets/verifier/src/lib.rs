@@ -86,14 +86,15 @@ pub mod pallet {
 	/// The module configuration trait.
 	pub trait Config<I: 'static = ()>: frame_system::Config {
 		/// The overarching event type.
-		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self, I>>
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// The verifier instance trait
 		type Verifier: InstanceVerifier;
 
 		/// The origin which may forcibly reset parameters or otherwise alter
 		/// privileged attributes.
-		type ForceOrigin: EnsureOrigin<Self::Origin>;
+		type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// WeightInfo for pallet
 		type WeightInfo: WeightInfo;
