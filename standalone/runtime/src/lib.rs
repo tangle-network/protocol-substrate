@@ -443,9 +443,9 @@ parameter_types! {
 	pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_BLOCKS as u32 / 4;
 
 	// signed config
-	pub const SignedRewardBase: Balance = 1 * DOLLARS;
-	pub const SignedDepositBase: Balance = 1 * DOLLARS;
-	pub const SignedDepositByte: Balance = 1 * CENTS;
+	pub const SignedRewardBase: Balance = DOLLARS;
+	pub const SignedDepositBase: Balance = DOLLARS;
+	pub const SignedDepositByte: Balance = CENTS;
 
 	pub BetterUnsignedThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
 
@@ -756,8 +756,8 @@ parameter_types! {
 	pub const Burn: Permill = Permill::from_percent(50);
 	pub const TipCountdown: BlockNumber = DAYS;
 	pub const TipFindersFee: Percent = Percent::from_percent(20);
-	pub const TipReportDepositBase: Balance = 1 * DOLLARS;
-	pub const DataDepositPerByte: Balance = 1 * CENTS;
+	pub const TipReportDepositBase: Balance = DOLLARS;
+	pub const DataDepositPerByte: Balance = CENTS;
 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
 	pub const MaximumReasonLength: u32 = 300;
 	pub const MaxApprovals: u32 = 100;
@@ -791,11 +791,11 @@ impl pallet_treasury::Config for Runtime {
 parameter_types! {
 	pub const BountyCuratorDeposit: Permill = Permill::from_percent(50);
 	pub const BountyValueMinimum: Balance = 5 * DOLLARS;
-	pub const BountyDepositBase: Balance = 1 * DOLLARS;
+	pub const BountyDepositBase: Balance = DOLLARS;
 	pub const CuratorDepositMultiplier: Permill = Permill::from_percent(50);
-	pub const CuratorDepositMin: Balance = 1 * DOLLARS;
+	pub const CuratorDepositMin: Balance = DOLLARS;
 	pub const CuratorDepositMax: Balance = 100 * DOLLARS;
-	pub const BountyDepositPayoutDelay: BlockNumber = 1 * DAYS;
+	pub const BountyDepositPayoutDelay: BlockNumber = DAYS;
 	pub const BountyUpdatePeriod: BlockNumber = 14 * DAYS;
 }
 
@@ -815,7 +815,7 @@ impl pallet_bounties::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ChildBountyValueMinimum: Balance = 1 * DOLLARS;
+	pub const ChildBountyValueMinimum: Balance = DOLLARS;
 }
 
 impl pallet_child_bounties::Config for Runtime {
@@ -1293,9 +1293,7 @@ impl Contains<RuntimeCall> for SetResourceProposalFilter {
 				pallet_vanchor_handler::Call::execute_set_resource_proposal { .. } => true,
 				_ => false,
 			},
-			RuntimeCall::TokenWrapperHandler(method) => match method {
-				_ => false,
-			},
+			RuntimeCall::TokenWrapperHandler(_method) => false,
 			_ => false,
 		}
 	}

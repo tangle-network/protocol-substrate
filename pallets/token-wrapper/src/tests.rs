@@ -42,12 +42,7 @@ fn should_wrap_token() {
 		));
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(
-			RuntimeOrigin::root(),
-			5,
-			pool_share_id.into(),
-			1
-		));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_ok!(TokenWrapper::wrap(
 			RuntimeOrigin::signed(recipient),
@@ -108,12 +103,7 @@ fn should_unwrap_token() {
 		));
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(
-			RuntimeOrigin::root(),
-			5,
-			pool_share_id.into(),
-			1
-		));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_ok!(TokenWrapper::wrap(
 			RuntimeOrigin::signed(recipient),
@@ -145,9 +135,8 @@ fn should_unwrap_token() {
 
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
-			initial_balance_first_token.saturating_sub(
-				TokenWrapper::get_wrapping_fee(50000, pool_share_id.into()).unwrap()
-			)
+			initial_balance_first_token
+				.saturating_sub(TokenWrapper::get_wrapping_fee(50000, pool_share_id).unwrap())
 		);
 	})
 }
@@ -187,12 +176,7 @@ fn wrapping_should_fail_if_asset_is_not_in_pool() {
 			balance
 		));
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(
-			RuntimeOrigin::root(),
-			5,
-			pool_share_id.into(),
-			1
-		));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_err!(
 			TokenWrapper::wrap(
@@ -231,16 +215,11 @@ fn only_root_should_update_wrapping_fee() {
 		.unwrap();
 
 		assert_err!(
-			TokenWrapper::set_wrapping_fee(RuntimeOrigin::signed(1), 10, pool_share_id.into(), 1),
+			TokenWrapper::set_wrapping_fee(RuntimeOrigin::signed(1), 10, pool_share_id, 1),
 			BadOrigin
 		);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(
-			RuntimeOrigin::root(),
-			10,
-			pool_share_id.into(),
-			1
-		));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 10, pool_share_id, 1));
 	})
 }
 
@@ -281,12 +260,7 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(
-			RuntimeOrigin::root(),
-			5,
-			pool_share_id.into(),
-			1
-		));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_ok!(TokenWrapper::wrap(
 			RuntimeOrigin::signed(recipient),
@@ -363,12 +337,7 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 			balance
 		));
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(
-			RuntimeOrigin::root(),
-			5,
-			pool_share_id.into(),
-			1
-		));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_ok!(TokenWrapper::wrap(
 			RuntimeOrigin::signed(recipient),
@@ -383,7 +352,7 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
 			initial_balance_first_token
-				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128, pool_share_id.into()))
+				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128, pool_share_id))
 		);
 
 		assert_eq!(TokenWrapper::get_balance(second_token_id, &recipient), Default::default());
@@ -439,12 +408,7 @@ fn should_not_wrap_invalid_amount() {
 			balance
 		));
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(
-			RuntimeOrigin::root(),
-			5,
-			pool_share_id.into(),
-			1
-		));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_err!(
 			TokenWrapper::wrap(
@@ -528,17 +492,12 @@ fn test_two_different_pool_shares() {
 		let initial_balance_third_token =
 			TokenWrapper::get_balance(third_token_id, &second_recipient);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(
-			RuntimeOrigin::root(),
-			5,
-			pool_share_id.into(),
-			1
-		));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(
 			RuntimeOrigin::root(),
 			10,
-			second_pool_share_id.into(),
+			second_pool_share_id,
 			2
 		));
 

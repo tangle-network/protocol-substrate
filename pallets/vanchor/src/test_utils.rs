@@ -38,7 +38,7 @@ pub fn setup_utxos(
 	// Input Utxos
 	let indices: [Option<u64>; NUM_UTXOS] = if indices.is_some() {
 		let ind_unw = indices.unwrap();
-		ind_unw.map(|x| Some(x))
+		ind_unw.map(Some)
 	} else {
 		[None; NUM_UTXOS]
 	};
@@ -58,9 +58,8 @@ pub fn setup_utxos(
 		rng,
 	)
 	.unwrap();
-	let in_utxos = [utxo1, utxo2];
 
-	in_utxos
+	[utxo1, utxo2]
 }
 
 pub fn setup_zk_circuit(
@@ -82,7 +81,7 @@ pub fn setup_zk_circuit(
 
 	let leaves: Vec<Vec<u8>> = vec![leaf0, leaf1];
 	let leaves_f: Vec<Bn254Fr> =
-		leaves.iter().map(|x| Bn254Fr::from_be_bytes_mod_order(&x)).collect();
+		leaves.iter().map(|x| Bn254Fr::from_be_bytes_mod_order(x)).collect();
 
 	let mut in_leaves: BTreeMap<u64, Vec<Vec<u8>>> = BTreeMap::new();
 	in_leaves.insert(chain_id, leaves);
@@ -127,7 +126,7 @@ pub fn setup_zk_circuit(
 		in_leaves,
 		in_utxos,
 		out_utxos,
-		pk_bytes.clone(),
+		pk_bytes,
 		DEFAULT_LEAF,
 		rng,
 	)

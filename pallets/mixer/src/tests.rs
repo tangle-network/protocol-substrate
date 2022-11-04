@@ -146,8 +146,8 @@ fn mixer_works() {
 			nullifier_hash_element,
 			recipient_account_id.clone(),
 			relayer_account_id,
-			fee_value.into(),
-			refund_value.into(),
+			fee_value,
+			refund_value,
 		));
 		// now we check the recipient balance again.
 		let balance_after = Balances::free_balance(recipient_account_id);
@@ -209,8 +209,8 @@ fn mixer_should_fail_with_when_proof_when_any_byte_is_changed_in_proof() {
 				nullifier_hash_element,
 				recipient_account_id,
 				relayer_account_id,
-				fee_value.into(),
-				refund_value.into(),
+				fee_value,
+				refund_value,
 			),
 			pallet_verifier::Error::<Test, _>::VerifyError,
 		);
@@ -270,8 +270,8 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 				nullifier_hash_element,
 				recipient_account_id,
 				relayer_account_id,
-				fee_value.into(),
-				refund_value.into(),
+				fee_value,
+				refund_value,
 			),
 			crate::Error::<Test>::UnknownRoot
 		);
@@ -325,8 +325,8 @@ fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation(
 				nullifier_hash_element,
 				recipient_account_id,
 				sender_account_id,
-				fee_value.into(),
-				refund_value.into(),
+				fee_value,
+				refund_value,
 			),
 			crate::Error::<Test>::InvalidWithdrawProof
 		);
@@ -381,7 +381,7 @@ fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 				recipient_account_id,
 				relayer_account_id,
 				100u128,
-				refund_value.into(),
+				refund_value,
 			),
 			crate::Error::<Test>::InvalidWithdrawProof
 		);
@@ -435,8 +435,8 @@ fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_revers
 				nullifier_hash_element,
 				recipient_account_id,
 				relayer_account_id,
-				fee_value.into(),
-				refund_value.into(),
+				fee_value,
+				refund_value,
 			),
 			crate::Error::<Test>::InvalidWithdrawProof
 		);
@@ -491,8 +491,8 @@ fn double_spending_should_fail() {
 			nullifier_hash_element,
 			recipient_account_id.clone(),
 			relayer_account_id.clone(),
-			fee_value.into(),
-			refund_value.into(),
+			fee_value,
+			refund_value,
 		));
 		// now we check the recipient balance again.
 		let balance_after = Balances::free_balance(recipient_account_id.clone());
@@ -508,8 +508,8 @@ fn double_spending_should_fail() {
 				nullifier_hash_element,
 				recipient_account_id,
 				relayer_account_id,
-				fee_value.into(),
-				refund_value.into(),
+				fee_value,
+				refund_value,
 			),
 			crate::Error::<Test>::AlreadyRevealedNullifier
 		);

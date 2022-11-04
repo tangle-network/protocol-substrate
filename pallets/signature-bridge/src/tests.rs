@@ -49,8 +49,7 @@ fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u
 fn create_proposal_tests() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id =
-		derive_resource_id(1080u32, SubstrateTargetSystem { pallet_index: 2, tree_id: 1 }).into();
+	let r_id = derive_resource_id(1080u32, SubstrateTargetSystem { pallet_index: 2, tree_id: 1 });
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -64,7 +63,7 @@ fn create_proposal_tests() {
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, call_encoded);
 		let msg = keccak_256(&prop_data);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		// should fail to execute proposal as non-maintainer
 		assert_err!(
@@ -86,7 +85,7 @@ fn create_proposal_tests() {
 		assert_ok!(Bridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
-			prop_data.clone(),
+			prop_data,
 			sig.0.to_vec(),
 		));
 
@@ -171,8 +170,7 @@ fn create_proposal_tests() {
 fn should_fail_to_set_resource_id_when_nonce_increments_by_more_than_1048() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id =
-		derive_resource_id(5u32, SubstrateTargetSystem { pallet_index: 2, tree_id: 1 }).into();
+	let r_id = derive_resource_id(5u32, SubstrateTargetSystem { pallet_index: 2, tree_id: 1 });
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
 		None,
@@ -185,13 +183,13 @@ fn should_fail_to_set_resource_id_when_nonce_increments_by_more_than_1048() {
 		let nonce = [0u8, 0u8, 4u8, 120u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, call_encoded);
 		let msg = keccak_256(&prop_data);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		assert_err!(
 			Bridge::set_resource_with_signature(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
-				prop_data.clone(),
+				prop_data,
 				sig.0.to_vec(),
 			),
 			Error::<Test>::InvalidNonce
@@ -201,8 +199,7 @@ fn should_fail_to_set_resource_id_when_nonce_increments_by_more_than_1048() {
 
 #[test]
 fn set_maintainer_should_work() {
-	let r_id =
-		derive_resource_id(5u32, SubstrateTargetSystem { pallet_index: 2, tree_id: 1 }).into();
+	let r_id = derive_resource_id(5u32, SubstrateTargetSystem { pallet_index: 2, tree_id: 1 });
 	let new_maintainer = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 
 	let pair = ecdsa::Pair::from_string(
@@ -221,7 +218,7 @@ fn set_maintainer_should_work() {
 		message.extend_from_slice(&nonce);
 		message.extend_from_slice(&new_maintainer);
 		let msg = keccak_256(&message);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		// set the new maintainer
 		assert_ok!(Bridge::set_maintainer(RuntimeOrigin::signed(RELAYER_A), message, sig.encode()));
@@ -232,8 +229,7 @@ fn set_maintainer_should_work() {
 fn should_fail_on_invalid_proposal_call() {
 	let chain_type = [2, 0];
 	let src_id = compute_chain_id_type(1u32, chain_type);
-	let r_id =
-		derive_resource_id(1080u32, SubstrateTargetSystem { pallet_index: 2, tree_id: 1 }).into();
+	let r_id = derive_resource_id(1080u32, SubstrateTargetSystem { pallet_index: 2, tree_id: 1 });
 	let public_uncompressed = hex!("8db55b05db86c0b1786ca49f095d76344c9e6056b2f02701a7e7f3c20aabfd913ebbe148dd17c56551a52952371071a6c604b3f3abe8f2c8fa742158ea6dd7d4");
 	let pair = ecdsa::Pair::from_string(
 		"0x9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
@@ -247,7 +243,7 @@ fn should_fail_on_invalid_proposal_call() {
 		let nonce = [0u8, 0u8, 0u8, 1u8];
 		let prop_data = make_proposal_data(r_id.encode(), nonce, call_encoded);
 		let msg = keccak_256(&prop_data);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		// set the new maintainer
 		assert_ok!(Bridge::force_set_maintainer(
@@ -260,7 +256,7 @@ fn should_fail_on_invalid_proposal_call() {
 			Bridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
-				prop_data.clone(),
+				prop_data,
 				sig.0.to_vec(),
 			),
 			Error::<Test>::InvalidCall

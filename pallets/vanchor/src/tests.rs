@@ -121,10 +121,10 @@ fn create_vanchor_with_deposits(
 	let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
 	let recipient = get_account(RECIPIENT_ACCOUNT_ID);
 	let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
-	let ext_amount: Amount = 10 as i128;
+	let ext_amount: Amount = 10_i128;
 	let fee: Balance = 0;
 
-	let public_amount = 10 as i128;
+	let public_amount = 10_i128;
 
 	let chain_type = [2, 0];
 	let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
@@ -142,8 +142,8 @@ fn create_vanchor_with_deposits(
 	let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
 	let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
 	let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
-		recipient.clone(),
-		relayer.clone(),
+		recipient,
+		relayer,
 		ext_amount,
 		fee,
 		0,
@@ -195,8 +195,8 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
 
-		let ext_amount: Amount = 10 as i128;
-		let public_amount = 10 as i128;
+		let ext_amount: Amount = 10_i128;
+		let public_amount = 10_i128;
 		let fee: Balance = 0;
 
 		let chain_type = [2, 0];
@@ -250,8 +250,8 @@ fn should_complete_2x2_transaction_with_deposit() {
 			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
-		let output1 = commitments[0].clone();
-		let output2 = commitments[1].clone();
+		let output1 = commitments[0];
+		let output2 = commitments[1];
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -352,8 +352,8 @@ fn should_complete_2x2_transaction_with_withdraw() {
 			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
-		let output1 = commitments[0].clone();
-		let output2 = commitments[1].clone();
+		let output1 = commitments[0];
+		let output2 = commitments[1];
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -372,7 +372,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_ok!(VAnchor::transact(
-			RuntimeOrigin::signed(transactor.clone()),
+			RuntimeOrigin::signed(transactor),
 			tree_id,
 			proof_data,
 			ext_data
@@ -415,7 +415,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		let tree_id = create_vanchor(asset_id);
 		let recipient = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
-		let ext_amount: Amount = 10 as i128;
+		let ext_amount: Amount = 10_i128;
 		let fee: Balance = 0;
 		let refund: Balance = 0;
 		let public_amount = ext_amount - (fee as i128);
@@ -480,12 +480,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
-		assert_ok!(VAnchor::transact(
-			RuntimeOrigin::signed(alice.clone()),
-			tree_id,
-			proof_data,
-			ext_data
-		));
+		assert_ok!(VAnchor::transact(RuntimeOrigin::signed(alice), tree_id, proof_data, ext_data));
 
 		/**** Withdraw and unwrap **** */
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
@@ -499,7 +494,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		// After withdrawing -7
 		let out_amounts = [1, 2];
 
-		let in_utxos = out_utxos.clone();
+		let in_utxos = out_utxos;
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
@@ -555,7 +550,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		// Should be equal to the `fee` since the transaction was sucessful
 		let relayer_balance_after = Balances::free_balance(relayer.clone());
 		let relayer_balance_wrapped_token_after = Currencies::free_balance(asset_id, &relayer);
-		let recipient_balance_after = Balances::free_balance(recipient.clone());
+		let recipient_balance_after = Balances::free_balance(recipient);
 
 		// The relayer is paid a fee in the wrapped/pooled token. Therefore,
 		// we expect the relayer's wrapped token balance to be PLUS the fee.
@@ -586,13 +581,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 			0
 		));
 		let first_asset_id = AssetRegistry::next_asset_id() - 1;
-		assert_ok!(Tokens::set_balance(
-			RuntimeOrigin::root(),
-			alice.clone(),
-			first_asset_id,
-			10_000,
-			0
-		));
+		assert_ok!(Tokens::set_balance(RuntimeOrigin::root(), alice, first_asset_id, 10_000, 0));
 		assert_ok!(AssetRegistry::register(
 			RuntimeOrigin::root(),
 			b"webbTemp".to_vec(),
@@ -616,7 +605,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		let tree_id = create_vanchor(pooled_asset_id);
 		let recipient = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
-		let ext_amount: Amount = 10 as i128;
+		let ext_amount: Amount = 10_i128;
 		let fee: Balance = 0;
 		let refund: Balance = 0;
 		let public_amount = ext_amount - (fee as i128);
@@ -677,12 +666,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
-		assert_ok!(VAnchor::transact(
-			RuntimeOrigin::signed(alice.clone()),
-			tree_id,
-			proof_data,
-			ext_data
-		));
+		assert_ok!(VAnchor::transact(RuntimeOrigin::signed(alice), tree_id, proof_data, ext_data));
 
 		/**** Withdraw and unwrap **** */
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
@@ -696,7 +680,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		// After withdrawing -7
 		let out_amounts = [1, 2];
 
-		let in_utxos = out_utxos.clone();
+		let in_utxos = out_utxos;
 		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
 
 		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
@@ -707,7 +691,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 			ext_amount,
 			fee,
 			refund,
-			first_asset_id.clone(),
+			first_asset_id,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -736,15 +720,15 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
-		let output1 = commitments[0].clone();
-		let output2 = commitments[1].clone();
+		let output1 = commitments[0];
+		let output2 = commitments[1];
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
 			ext_amount,
 			fee,
 			refund,
-			first_asset_id.clone(),
+			first_asset_id,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -856,8 +840,8 @@ fn should_complete_register_and_transact() {
 			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
-		let output1 = commitments[0].clone();
-		let output2 = commitments[1].clone();
+		let output1 = commitments[0];
+		let output2 = commitments[1];
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -877,7 +861,7 @@ fn should_complete_register_and_transact() {
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_ok!(VAnchor::register_and_transact(
 			RuntimeOrigin::signed(transactor.clone()),
-			transactor.clone(),
+			transactor,
 			[0u8; 32].to_vec(),
 			tree_id,
 			proof_data,
@@ -904,8 +888,8 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
 
-		let ext_amount: Amount = 10 as i128;
-		let public_amount = 10 as i128;
+		let ext_amount: Amount = 10_i128;
+		let public_amount = 10_i128;
 		let fee: Balance = 0;
 
 		let chain_type = [2, 0];
@@ -959,7 +943,7 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
-		let output1 = commitments[0].clone();
+		let output1 = commitments[0];
 
 		// INVALID output commitment
 		let output2 = Element::from_bytes(&[0u8; 32]);
@@ -1069,8 +1053,8 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
-		let output1 = commitments[0].clone();
-		let output2 = commitments[1].clone();
+		let output1 = commitments[0];
+		let output2 = commitments[1];
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -1179,8 +1163,8 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
-		let output1 = commitments[0].clone();
-		let output2 = commitments[1].clone();
+		let output1 = commitments[0];
+		let output2 = commitments[1];
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -1286,8 +1270,8 @@ fn should_not_be_able_to_double_spend() {
 			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
-		let output1 = commitments[0].clone();
-		let output2 = commitments[1].clone();
+		let output1 = commitments[0];
+		let output2 = commitments[1];
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),
@@ -1346,7 +1330,7 @@ fn should_not_be_able_to_exceed_max_fee() {
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
 
-		let ext_amount: Amount = 10 as i128;
+		let ext_amount: Amount = 10_i128;
 		let public_amount = 4;
 		let fee: Balance = 6;
 
@@ -1401,10 +1385,10 @@ fn should_not_be_able_to_exceed_max_fee() {
 			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
-		let output1 = commitments[0].clone();
-		let output2 = commitments[1].clone();
+		let output1 = commitments[0];
+		let output2 = commitments[1];
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
-			recipient.clone(),
+			recipient,
 			relayer.clone(),
 			ext_amount,
 			fee,
@@ -1506,10 +1490,10 @@ fn should_not_be_able_to_exceed_max_deposit() {
 			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
-		let output1 = commitments[0].clone();
-		let output2 = commitments[1].clone();
+		let output1 = commitments[0];
+		let output2 = commitments[1];
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
-			recipient.clone(),
+			recipient,
 			relayer.clone(),
 			ext_amount,
 			fee,
@@ -1611,10 +1595,10 @@ fn should_not_be_able_to_exceed_external_amount() {
 			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
-		let output1 = commitments[0].clone();
-		let output2 = commitments[1].clone();
+		let output1 = commitments[0];
+		let output2 = commitments[1];
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
-			recipient.clone(),
+			recipient,
 			relayer.clone(),
 			ext_amount,
 			fee,
@@ -1710,8 +1694,8 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 			deconstruct_public_inputs_el(&public_inputs);
 
 		// Constructing external data
-		let output1 = commitments[0].clone();
-		let output2 = commitments[1].clone();
+		let output1 = commitments[0];
+		let output2 = commitments[1];
 		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
 			recipient.clone(),
 			relayer.clone(),

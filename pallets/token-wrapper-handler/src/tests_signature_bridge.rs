@@ -82,8 +82,7 @@ fn make_proposal_header(
 	function_signature: webb_proposals::FunctionSignature,
 	nonce: webb_proposals::Nonce,
 ) -> webb_proposals::ProposalHeader {
-	let header = webb_proposals::ProposalHeader::new(resource_id, function_signature, nonce);
-	header
+	webb_proposals::ProposalHeader::new(resource_id, function_signature, nonce)
 }
 
 // ----Signature Bridge Tests----
@@ -120,7 +119,7 @@ fn should_update_fee_with_sig_succeed() {
 		let header = make_proposal_header(r_id, WRAPPING_FEE_FUNCTION_SIG, nonce);
 		let wrapping_fee_proposal_bytes = make_wrapping_fee_proposal(header, 5, pool_share_id);
 		let msg = keccak_256(&wrapping_fee_proposal_bytes);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		// should fail to execute proposal as non-maintainer
 		assert_err!(
@@ -142,7 +141,7 @@ fn should_update_fee_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
-			wrapping_fee_proposal_bytes.clone(),
+			wrapping_fee_proposal_bytes,
 			sig.0.to_vec(),
 		));
 
@@ -187,7 +186,7 @@ fn should_add_token_with_sig_succeed() {
 		let add_token_proposal_bytes =
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 		let msg = keccak_256(&add_token_proposal_bytes);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
@@ -246,7 +245,7 @@ fn should_remove_token_with_sig_succeed() {
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 
 		let msg = keccak_256(&add_token_proposal_bytes);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
@@ -268,7 +267,7 @@ fn should_remove_token_with_sig_succeed() {
 		let remove_token_proposal_bytes =
 			make_remove_token_proposal(header, "meme".to_string(), first_token_id);
 		let msg = keccak_256(&remove_token_proposal_bytes);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
@@ -323,7 +322,7 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 		let remove_token_proposal_bytes =
 			make_remove_token_proposal(header, "meme".to_string(), first_token_id);
 		let msg = keccak_256(&remove_token_proposal_bytes);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		assert_err!(
 			SignatureBridge::execute_proposal(
@@ -393,7 +392,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 
 		let msg = keccak_256(&add_token_proposal_bytes);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
@@ -407,7 +406,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 			make_add_token_proposal(header, "meme".to_string(), second_token_id);
 
 		let msg = keccak_256(&add_token_proposal_bytes);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
@@ -422,7 +421,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 			make_add_token_proposal(header, "meme".to_string(), third_token_id);
 
 		let msg = keccak_256(&add_token_proposal_bytes);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
@@ -480,7 +479,7 @@ fn should_fail_to_add_same_token_with_sig() {
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 
 		let msg = keccak_256(&add_token_proposal_bytes);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
@@ -491,7 +490,7 @@ fn should_fail_to_add_same_token_with_sig() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
-			add_token_proposal_bytes.clone(),
+			add_token_proposal_bytes,
 			sig.0.to_vec(),
 		));
 		// Check that first_token_id is part of pool
@@ -504,13 +503,13 @@ fn should_fail_to_add_same_token_with_sig() {
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 
 		let msg = keccak_256(&add_token_proposal_bytes);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		assert_err!(
 			SignatureBridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
-				add_token_proposal_bytes.clone(),
+				add_token_proposal_bytes,
 				sig.0.to_vec(),
 			),
 			asset_registry::Error::<Test>::AssetExistsInPool
@@ -555,7 +554,7 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 			make_add_token_proposal(header, "meme".to_string(), first_token_id);
 
 		let msg = keccak_256(&add_token_proposal_bytes);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
@@ -567,7 +566,7 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 			SignatureBridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
-				add_token_proposal_bytes.clone(),
+				add_token_proposal_bytes,
 				sig.0.to_vec(),
 			),
 			asset_registry::Error::<Test>::AssetNotRegistered

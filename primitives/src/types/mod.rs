@@ -53,7 +53,7 @@ pub enum Backend {
 }
 
 #[cfg_attr(feature = "std", derive(Debug))]
-#[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 pub struct Setup {
 	pub hasher: HashFunction,
 	pub backend: Backend,

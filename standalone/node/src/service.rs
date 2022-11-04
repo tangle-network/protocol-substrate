@@ -21,7 +21,7 @@
 //! Service implementation. Specialized wrapper over substrate service.
 
 use futures::prelude::*;
-use sc_client_api::{BlockBackend, ExecutorProvider};
+use sc_client_api::BlockBackend;
 use sc_consensus_babe::{self, SlotProportion};
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::{Event, NetworkService};

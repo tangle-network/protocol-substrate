@@ -49,8 +49,7 @@ fn make_proposal_header(
 	function_signature: webb_proposals::FunctionSignature,
 	nonce: webb_proposals::Nonce,
 ) -> webb_proposals::ProposalHeader {
-	let header = webb_proposals::ProposalHeader::new(resource_id, function_signature, nonce);
-	header
+	webb_proposals::ProposalHeader::new(resource_id, function_signature, nonce)
 }
 
 // helper function to create anchor using Anchor pallet call
@@ -141,7 +140,7 @@ fn should_create_vanchor_with_sig_succeed() {
 			anchor_create_call_encoded,
 		);
 		let msg = keccak_256(&prop_data);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 		// should fail to execute proposal as non-maintainer
 		assert_err!(
 			SignatureBridge::execute_proposal(
@@ -162,7 +161,7 @@ fn should_create_vanchor_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id.chain_id(),
-			prop_data.clone(),
+			prop_data,
 			sig.0.to_vec(),
 		));
 
@@ -211,7 +210,7 @@ fn should_add_vanchor_edge_with_sig_succeed() {
 			anchor_update_call_encoded,
 		);
 		let msg = keccak_256(&prop_data);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
@@ -289,7 +288,7 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 			anchor_update_call_encoded,
 		);
 		let msg = keccak_256(&prop_data);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
@@ -340,7 +339,7 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 			anchor_update_call_encoded,
 		);
 		let msg = keccak_256(&prop_data);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
@@ -418,7 +417,7 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 			anchor_create_call_encoded,
 		);
 		let msg = keccak_256(&prop_data);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
@@ -472,7 +471,7 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 			anchor_create_call_encoded,
 		);
 		let msg = keccak_256(&prop_data);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
@@ -520,14 +519,14 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 			anchor_create_call_encoded,
 		);
 		let msg = keccak_256(&prop_data);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
-		let mut tampered_sig = sig.0.to_vec().clone();
+		let mut tampered_sig = sig.0.to_vec();
 		for x in &mut tampered_sig[2..5] {
 			*x += 1;
 		}
@@ -572,7 +571,7 @@ fn should_add_resource_sig_succeed_using_webb_proposals() {
 		let set_resource_proposal_bytes = make_set_resource_proposal(header, resource);
 
 		let msg = keccak_256(&set_resource_proposal_bytes);
-		let sig: Signature = pair.sign_prehashed(&msg).into();
+		let sig: Signature = pair.sign_prehashed(&msg);
 
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(

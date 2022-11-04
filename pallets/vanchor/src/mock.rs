@@ -310,7 +310,7 @@ pub fn assert_last_event<T: pallet_vanchor::Config>(
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
+	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
 
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
