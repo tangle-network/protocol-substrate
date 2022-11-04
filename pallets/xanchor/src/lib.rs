@@ -322,7 +322,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			payload: LinkProposalOf<T, I>,
 		) -> DispatchResultWithPostInfo {
-			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
+			let para = ensure_sibling_para(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 			let caller_chain_id = para_id_to_chain_id::<T, I>(para);
 			// Now we are on the other chain (if you look at it from the caller point of view)
 			// We first check if the requested anchor exists (if any).
@@ -360,7 +360,7 @@ pub mod pallet {
 			value: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			// TODO: Should the following line be here?
-			// TODO: let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
+			// TODO: let para = ensure_sibling_para(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 			let _caller = ensure_signed(origin.clone())?;
 			let my_tree_id = payload.target_tree_id;
 			ensure!(Self::anchor_exists(my_tree_id), Error::<T, I>::AnchorNotFound);
@@ -431,7 +431,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			payload: LinkProposalOf<T, I>,
 		) -> DispatchResultWithPostInfo {
-			let para = ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
+			let para = ensure_sibling_para(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 			let caller_chain_id = para_id_to_chain_id::<T, I>(para);
 			// get the local tree id, it should be in the target_tree_id.
 			let my_tree_id = payload.target_tree_id;
@@ -494,7 +494,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			anchor_update_proposal_bytes: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
-			ensure_sibling_para(<T as Config<I>>::Origin::from(origin))?;
+			ensure_sibling_para(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 
 			// get the anchor update proposal struct from the bytes
 			let anchor_update_proposal =

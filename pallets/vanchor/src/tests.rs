@@ -43,7 +43,7 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	let curve = Curve::Bn254;
 	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 	// 1. Setup The Hasher Pallet.
-	assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+	assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), params3.to_bytes()));
 	// 2. Initialize MerkleTree pallet.
 	<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 	// 3. Setup the VerifierPallet
@@ -65,9 +65,13 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin")
 			.to_vec();
 
-	assert_ok!(VAnchorVerifier::force_set_parameters(Origin::root(), (2, 2), vk_2_2_bytes.clone()));
 	assert_ok!(VAnchorVerifier::force_set_parameters(
-		Origin::root(),
+		RuntimeOrigin::root(),
+		(2, 2),
+		vk_2_2_bytes.clone()
+	));
+	assert_ok!(VAnchorVerifier::force_set_parameters(
+		RuntimeOrigin::root(),
 		(2, 16),
 		vk_2_16_bytes.clone()
 	));
@@ -78,14 +82,24 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	let bigger_transactor = account::<AccountId>("", BIGGER_TRANSACTOR_ACCOUNT_ID, SEED);
 
 	// Set balances
-	assert_ok!(Balances::set_balance(Origin::root(), transactor, DEFAULT_BALANCE, 0));
-	assert_ok!(Balances::set_balance(Origin::root(), relayer, DEFAULT_BALANCE, 0));
-	assert_ok!(Balances::set_balance(Origin::root(), big_transactor, BIG_DEFAULT_BALANCE, 0));
-	assert_ok!(Balances::set_balance(Origin::root(), bigger_transactor, BIGGER_DEFAULT_BALANCE, 0));
+	assert_ok!(Balances::set_balance(RuntimeOrigin::root(), transactor, DEFAULT_BALANCE, 0));
+	assert_ok!(Balances::set_balance(RuntimeOrigin::root(), relayer, DEFAULT_BALANCE, 0));
+	assert_ok!(Balances::set_balance(
+		RuntimeOrigin::root(),
+		big_transactor,
+		BIG_DEFAULT_BALANCE,
+		0
+	));
+	assert_ok!(Balances::set_balance(
+		RuntimeOrigin::root(),
+		bigger_transactor,
+		BIGGER_DEFAULT_BALANCE,
+		0
+	));
 
 	// set configurable storage
-	assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 10, 1));
-	assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 3, 2));
+	assert_ok!(VAnchor::set_max_deposit_amount(RuntimeOrigin::root(), 10, 1));
+	assert_ok!(VAnchor::set_min_withdraw_amount(RuntimeOrigin::root(), 3, 2));
 
 	// finally return the provingkey bytes
 	(pk_2_2_bytes, vk_2_2_bytes, pk_2_16_bytes, vk_2_16_bytes)
@@ -94,7 +108,7 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 fn create_vanchor(asset_id: u32) -> u32 {
 	let max_edges = EDGE_CT as u32;
 	let depth = TREE_DEPTH as u8;
-	assert_ok!(VAnchor::create(Origin::root(), max_edges, depth, asset_id));
+	assert_ok!(VAnchor::create(RuntimeOrigin::root(), max_edges, depth, asset_id));
 	MerkleTree::next_tree_id() - 1
 }
 
@@ -166,7 +180,7 @@ fn create_vanchor_with_deposits(
 	let proof_data =
 		ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
-	assert_ok!(VAnchor::transact(Origin::signed(transactor), tree_id, proof_data, ext_data));
+	assert_ok!(VAnchor::transact(RuntimeOrigin::signed(transactor), tree_id, proof_data, ext_data));
 
 	(tree_id, out_utxos)
 }
@@ -257,7 +271,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		assert_ok!(VAnchor::transact(
-			Origin::signed(transactor.clone()),
+			RuntimeOrigin::signed(transactor.clone()),
 			tree_id,
 			proof_data,
 			ext_data
@@ -358,7 +372,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_ok!(VAnchor::transact(
-			Origin::signed(transactor.clone()),
+			RuntimeOrigin::signed(transactor.clone()),
 			tree_id,
 			proof_data,
 			ext_data
@@ -380,7 +394,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		let (proving_key_2x2_bytes, verifying_key_2x2_bytes, _, _) = setup_environment();
 		// Register a new wrapped asset / pool share over native assets
 		assert_ok!(AssetRegistry::register(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			b"webbWEBB".to_vec(),
 			AssetType::PoolShare(vec![0]),
 			0
@@ -389,7 +403,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		// Mint some wrapped asset / pool share by depositing the native asset
 		let alice = get_account(TRANSACTOR_ACCOUNT_ID);
 		assert_ok!(TokenWrapper::wrap(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			NativeCurrencyId::get(),
 			asset_id,
 			1_000,
@@ -466,7 +480,12 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
-		assert_ok!(VAnchor::transact(Origin::signed(alice.clone()), tree_id, proof_data, ext_data));
+		assert_ok!(VAnchor::transact(
+			RuntimeOrigin::signed(alice.clone()),
+			tree_id,
+			proof_data,
+			ext_data
+		));
 
 		/**** Withdraw and unwrap **** */
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
@@ -527,7 +546,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let relayer_balance_wrapped_token_before = Currencies::free_balance(asset_id, &relayer);
 		assert_ok!(VAnchor::transact(
-			Origin::signed(get_account(RELAYER_ACCOUNT_ID)),
+			RuntimeOrigin::signed(get_account(RELAYER_ACCOUNT_ID)),
 			tree_id,
 			proof_data,
 			ext_data
@@ -560,11 +579,22 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
 		let alice = get_account(TRANSACTOR_ACCOUNT_ID);
 		// Register a new asset that will be wrapped
-		assert_ok!(AssetRegistry::register(Origin::root(), b"temp".to_vec(), AssetType::Token, 0));
-		let first_asset_id = AssetRegistry::next_asset_id() - 1;
-		assert_ok!(Tokens::set_balance(Origin::root(), alice.clone(), first_asset_id, 10_000, 0));
 		assert_ok!(AssetRegistry::register(
-			Origin::root(),
+			RuntimeOrigin::root(),
+			b"temp".to_vec(),
+			AssetType::Token,
+			0
+		));
+		let first_asset_id = AssetRegistry::next_asset_id() - 1;
+		assert_ok!(Tokens::set_balance(
+			RuntimeOrigin::root(),
+			alice.clone(),
+			first_asset_id,
+			10_000,
+			0
+		));
+		assert_ok!(AssetRegistry::register(
+			RuntimeOrigin::root(),
 			b"webbTemp".to_vec(),
 			AssetType::PoolShare(vec![first_asset_id]),
 			0
@@ -573,7 +603,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		// Mint some wrapped asset / pool share by depositing the native asset
 		let alice = get_account(TRANSACTOR_ACCOUNT_ID);
 		assert_ok!(TokenWrapper::wrap(
-			Origin::signed(alice.clone()),
+			RuntimeOrigin::signed(alice.clone()),
 			first_asset_id,
 			pooled_asset_id,
 			1_000,
@@ -647,7 +677,12 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
-		assert_ok!(VAnchor::transact(Origin::signed(alice.clone()), tree_id, proof_data, ext_data));
+		assert_ok!(VAnchor::transact(
+			RuntimeOrigin::signed(alice.clone()),
+			tree_id,
+			proof_data,
+			ext_data
+		));
 
 		/**** Withdraw and unwrap **** */
 		let custom_root = MerkleTree::get_root(tree_id).unwrap();
@@ -728,7 +763,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		let recipient_balance_unwrapped_token_before =
 			Currencies::free_balance(first_asset_id, &recipient);
 		assert_ok!(VAnchor::transact(
-			Origin::signed(get_account(RELAYER_ACCOUNT_ID)),
+			RuntimeOrigin::signed(get_account(RELAYER_ACCOUNT_ID)),
 			tree_id,
 			proof_data,
 			ext_data
@@ -841,7 +876,7 @@ fn should_complete_register_and_transact() {
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_ok!(VAnchor::register_and_transact(
-			Origin::signed(transactor.clone()),
+			RuntimeOrigin::signed(transactor.clone()),
 			transactor.clone(),
 			[0u8; 32].to_vec(),
 			tree_id,
@@ -947,7 +982,12 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_err!(
-			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			VAnchor::transact(
+				RuntimeOrigin::signed(transactor.clone()),
+				tree_id,
+				proof_data,
+				ext_data
+			),
 			Error::<Test, _>::InvalidExtData,
 		);
 
@@ -1051,7 +1091,12 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		// Should fail with invalid external data error
 		assert_err!(
-			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			VAnchor::transact(
+				RuntimeOrigin::signed(transactor.clone()),
+				tree_id,
+				proof_data,
+				ext_data
+			),
 			Error::<Test, _>::InvalidTransactionProof
 		);
 
@@ -1156,7 +1201,12 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		// Should fail with invalid external data error
 		assert_err!(
-			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			VAnchor::transact(
+				RuntimeOrigin::signed(transactor.clone()),
+				tree_id,
+				proof_data,
+				ext_data
+			),
 			Error::<Test, _>::InvalidTransactionProof
 		);
 
@@ -1257,13 +1307,18 @@ fn should_not_be_able_to_double_spend() {
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_ok!(VAnchor::transact(
-			Origin::signed(transactor.clone()),
+			RuntimeOrigin::signed(transactor.clone()),
 			tree_id,
 			proof_data.clone(),
 			ext_data.clone()
 		));
 		assert_err!(
-			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			VAnchor::transact(
+				RuntimeOrigin::signed(transactor.clone()),
+				tree_id,
+				proof_data,
+				ext_data
+			),
 			Error::<Test, _>::AlreadyRevealedNullifier
 		);
 
@@ -1366,7 +1421,12 @@ fn should_not_be_able_to_exceed_max_fee() {
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		assert_err!(
-			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			VAnchor::transact(
+				RuntimeOrigin::signed(transactor.clone()),
+				tree_id,
+				proof_data,
+				ext_data
+			),
 			Error::<Test, _>::InvalidFee
 		);
 
@@ -1466,7 +1526,12 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		assert_err!(
-			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			VAnchor::transact(
+				RuntimeOrigin::signed(transactor.clone()),
+				tree_id,
+				proof_data,
+				ext_data
+			),
 			Error::<Test, _>::InvalidDepositAmount
 		);
 
@@ -1566,7 +1631,12 @@ fn should_not_be_able_to_exceed_external_amount() {
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		assert_err!(
-			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			VAnchor::transact(
+				RuntimeOrigin::signed(transactor.clone()),
+				tree_id,
+				proof_data,
+				ext_data
+			),
 			Error::<Test, _>::InvalidExtAmount
 		);
 
@@ -1661,7 +1731,12 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_err!(
-			VAnchor::transact(Origin::signed(transactor.clone()), tree_id, proof_data, ext_data),
+			VAnchor::transact(
+				RuntimeOrigin::signed(transactor.clone()),
+				tree_id,
+				proof_data,
+				ext_data
+			),
 			Error::<Test, _>::InvalidWithdrawAmount
 		);
 
@@ -1681,10 +1756,10 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 #[test]
 fn set_get_max_deposit_amount() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 1, 1));
+		assert_ok!(VAnchor::set_max_deposit_amount(RuntimeOrigin::root(), 1, 1));
 		assert_eq!(MaxDepositAmount::<Test>::get(), 1);
 
-		assert_ok!(VAnchor::set_max_deposit_amount(Origin::root(), 5, 2));
+		assert_ok!(VAnchor::set_max_deposit_amount(RuntimeOrigin::root(), 5, 2));
 		assert_eq!(MaxDepositAmount::<Test>::get(), 5);
 	})
 }
@@ -1692,10 +1767,10 @@ fn set_get_max_deposit_amount() {
 #[test]
 fn set_get_min_withdraw_amount() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 2, 1));
+		assert_ok!(VAnchor::set_min_withdraw_amount(RuntimeOrigin::root(), 2, 1));
 		assert_eq!(MinWithdrawAmount::<Test>::get(), 2);
 
-		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 5, 2));
+		assert_ok!(VAnchor::set_min_withdraw_amount(RuntimeOrigin::root(), 5, 2));
 		assert_eq!(MinWithdrawAmount::<Test>::get(), 5);
 	})
 }
@@ -1703,11 +1778,11 @@ fn set_get_min_withdraw_amount() {
 #[test]
 fn should_fail_to_set_amounts_with_invalid_nonces() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_min_withdraw_amount(Origin::root(), 2, 1));
+		assert_ok!(VAnchor::set_min_withdraw_amount(RuntimeOrigin::root(), 2, 1));
 		assert_eq!(MinWithdrawAmount::<Test>::get(), 2);
 
 		assert_err!(
-			VAnchor::set_min_withdraw_amount(Origin::root(), 5, 1),
+			VAnchor::set_min_withdraw_amount(RuntimeOrigin::root(), 5, 1),
 			Error::<Test, _>::InvalidNonce
 		);
 	})

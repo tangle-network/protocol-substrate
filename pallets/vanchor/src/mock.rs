@@ -71,9 +71,9 @@ impl system::Config for Test {
 	type BlockLength = ();
 	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type DbWeight = ();
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header;
@@ -98,7 +98,7 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = Balance;
 	type DustRemoval = ();
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = ();
 	type MaxReserves = ();
@@ -114,14 +114,14 @@ parameter_types! {
 }
 
 impl pallet_vanchor_verifier::Config for Test {
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
 impl pallet_hasher::Config for Test {
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
@@ -147,7 +147,7 @@ impl pallet_mt::Config for Test {
 	type DataDepositPerByte = LeafDepositPerByte;
 	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
 	type LeafIndex = u32;
@@ -172,7 +172,7 @@ impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
 	type ChainType = ChainType;
 	type ChainIdentifier = ChainIdentifier;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();
@@ -189,12 +189,15 @@ impl orml_tokens::Config for Test {
 	type Balance = Balance;
 	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposits = AssetRegistry;
 	type OnDust = ();
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
+	type OnSlash = ();
+	type OnDeposit = ();
+	type OnTransfer = ();
 	type OnNewTokenAccount = ();
 	type OnKilledTokenAccount = ();
 	type ReserveIdentifier = [u8; 8];
@@ -213,7 +216,7 @@ impl pallet_asset_registry::Config for Test {
 	type AssetId = AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = NativeCurrencyId;
 	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
@@ -238,7 +241,7 @@ impl pallet_treasury::Config for Test {
 	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 	type BurnDestination = ();
 	type Currency = pallet_balances::Pallet<Test>;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type MaxApprovals = MaxApprovals;
 	type OnSlash = ();
 	type PalletId = TreasuryPalletId;
@@ -260,7 +263,7 @@ parameter_types! {
 impl pallet_token_wrapper::Config for Test {
 	type AssetRegistry = AssetRegistry;
 	type Currency = Currencies;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TreasuryPalletId;
 	type WeightInfo = ();
@@ -278,7 +281,7 @@ parameter_types! {
 impl pallet_vanchor::Config for Test {
 	type Currency = Currencies;
 	type EthereumHasher = Keccak256HasherBn254;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type IntoField = ArkworksIntoFieldBn254;
 	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
@@ -295,12 +298,12 @@ impl pallet_vanchor::Config for Test {
 }
 
 impl pallet_key_storage::Config for Test {
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 
 pub fn assert_last_event<T: pallet_vanchor::Config>(
-	generic_event: <T as pallet_vanchor::Config>::Event,
+	generic_event: <T as pallet_vanchor::Config>::RuntimeEvent,
 ) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }

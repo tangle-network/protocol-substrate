@@ -63,9 +63,9 @@ impl system::Config for Test {
 	type BlockLength = ();
 	type BlockNumber = u64;
 	type BlockWeights = ();
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type DbWeight = ();
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header;
@@ -97,7 +97,7 @@ impl Config for Test {
 	type AssetId = u32;
 	type AssetNativeLocation = AssetLocation;
 	type Balance = Balance;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = NativeAssetId;
 	type RegistryOrigin = frame_system::EnsureRoot<u64>;
 	type StringLimit = RegistryStringLimit;

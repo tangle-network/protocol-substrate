@@ -85,9 +85,9 @@ impl Into<WebbProofData<WebbElement>> for ProofData<Element> {
 		WebbProofData {
 			proof: self.proof,
 			public_amount: self.public_amount.into(),
-			roots: self.roots.iter().map(|x| x.clone().into()).collect(),
-			input_nullifiers: self.input_nullifiers.iter().map(|x| x.clone().into()).collect(),
-			output_commitments: self.output_commitments.iter().map(|x| x.clone().into()).collect(),
+			roots: self.roots.iter().map(|x| (*x).into()).collect(),
+			input_nullifiers: self.input_nullifiers.iter().map(|x| (*x).into()).collect(),
+			output_commitments: self.output_commitments.iter().map(|x| (*x).into()).collect(),
 			ext_data_hash: self.ext_data_hash.into(),
 		}
 	}
@@ -242,7 +242,7 @@ pub fn setup_utxos(
 	// Input Utxos
 	let indices: [Option<u64>; NUM_UTXOS] = if indices.is_some() {
 		let ind_unw = indices.unwrap();
-		ind_unw.map(|x| Some(x))
+		ind_unw.map(Some)
 	} else {
 		[None; NUM_UTXOS]
 	};
@@ -262,9 +262,8 @@ pub fn setup_utxos(
 		rng,
 	)
 	.unwrap();
-	let in_utxos = [utxo1, utxo2];
 
-	in_utxos
+	[utxo1, utxo2]
 }
 
 pub fn setup_vanchor_circuit(
@@ -282,7 +281,7 @@ pub fn setup_vanchor_circuit(
 	let rng = &mut thread_rng();
 
 	let leaves_f: Vec<Bn254Fr> =
-		leaves.iter().map(|x| Bn254Fr::from_be_bytes_mod_order(&x)).collect();
+		leaves.iter().map(|x| Bn254Fr::from_be_bytes_mod_order(x)).collect();
 
 	let mut in_leaves: BTreeMap<u64, Vec<Vec<u8>>> = BTreeMap::new();
 	in_leaves.insert(chain_id, leaves);
@@ -314,7 +313,7 @@ pub fn setup_vanchor_circuit(
 		in_leaves,
 		in_utxos,
 		out_utxos,
-		pk_bytes.clone(),
+		pk_bytes,
 		DEFAULT_LEAF,
 		rng,
 	)
@@ -382,7 +381,7 @@ pub async fn expect_event<E: StaticEvent + Debug, T: Config, C: OnlineClientT<T>
 	tx_progess: &mut TxProgress<T, C>,
 ) -> Result<(), Box<dyn std::error::Error>> {
 	// Start printing on a fresh line
-	println!("");
+	println!();
 
 	while let Some(ev) = tx_progess.next_item().await {
 		let ev: TxStatus<T, C> = ev?;
@@ -445,7 +444,7 @@ pub async fn expect_event<E: StaticEvent + Debug, T: Config, C: OnlineClientT<T>
 		}
 	}
 
-	Ok(().into())
+	Ok(())
 }
 
 pub fn truncate_and_pad(t: &[u8]) -> Vec<u8> {

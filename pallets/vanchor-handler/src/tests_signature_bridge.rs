@@ -58,7 +58,7 @@ fn mock_vanchor_creation_using_pallet_call(resource_id: &ResourceId) {
 	// upon successful anchor creation, Tree(with id=0) will be created in
 	// `pallet_mt`, make sure Tree(with id=0) doesn't exist in `pallet_mt` storage
 	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
-	assert_ok!(VAnchor::create(Origin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
+	assert_ok!(VAnchor::create(RuntimeOrigin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 	// hack: insert an entry in AnchorsList with tree-id=0
 	AnchorList::<Test>::insert(resource_id, 0);
 	// make sure Tree(with id=0) exists in `pallet_mt` storage
@@ -71,8 +71,8 @@ fn make_vanchor_create_proposal(
 	src_chain_id: ChainId,
 	resource_id: &ResourceId,
 	nonce: u32,
-) -> Call {
-	Call::VAnchorHandler(crate::Call::execute_vanchor_create_proposal {
+) -> RuntimeCall {
+	RuntimeCall::VAnchorHandler(crate::Call::execute_vanchor_create_proposal {
 		src_chain_id,
 		r_id: *resource_id,
 		max_edges: TEST_MAX_EDGES,
@@ -87,8 +87,8 @@ fn make_vanchor_update_proposal(
 	merkle_root: Element,
 	src_resource_id: ResourceId,
 	nonce: u32,
-) -> Call {
-	Call::VAnchorHandler(crate::Call::execute_vanchor_update_proposal {
+) -> RuntimeCall {
+	RuntimeCall::VAnchorHandler(crate::Call::execute_vanchor_update_proposal {
 		r_id: *resource_id,
 		merkle_root,
 		src_resource_id,
@@ -129,7 +129,7 @@ fn should_create_vanchor_with_sig_succeed() {
 	.execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
 		let nonce = 1;
 		let anchor_create_call = make_vanchor_create_proposal(src_id.chain_id(), &r_id, nonce);
 		let anchor_create_call_encoded = anchor_create_call.encode();
@@ -145,7 +145,7 @@ fn should_create_vanchor_with_sig_succeed() {
 		// should fail to execute proposal as non-maintainer
 		assert_err!(
 			SignatureBridge::execute_proposal(
-				Origin::signed(RELAYER_A),
+				RuntimeOrigin::signed(RELAYER_A),
 				src_id.chain_id(),
 				prop_data.clone(),
 				sig.0.to_vec(),
@@ -154,13 +154,13 @@ fn should_create_vanchor_with_sig_succeed() {
 		);
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
 
 		assert_ok!(SignatureBridge::execute_proposal(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id.chain_id(),
 			prop_data.clone(),
 			sig.0.to_vec(),
@@ -193,7 +193,7 @@ fn should_add_vanchor_edge_with_sig_succeed() {
 	.execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
 
 		mock_vanchor_creation_using_pallet_call(&r_id);
 
@@ -214,12 +214,12 @@ fn should_add_vanchor_edge_with_sig_succeed() {
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 
 		assert_ok!(SignatureBridge::execute_proposal(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id.chain_id(),
 			prop_data,
 			sig.0.to_vec(),
@@ -271,7 +271,7 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 	.execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
 		println!("here");
 		mock_vanchor_creation_using_pallet_call(&r_id);
 		println!("there");
@@ -293,12 +293,12 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 
 		assert_ok!(SignatureBridge::execute_proposal(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id.chain_id(),
 			prop_data,
 			sig.0.to_vec(),
@@ -343,7 +343,7 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
 		assert_ok!(SignatureBridge::execute_proposal(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id.chain_id(),
 			prop_data,
 			sig.0.to_vec(),
@@ -385,7 +385,7 @@ fn should_fail_to_whitelist_chain_already_whitelisted() {
 	)
 	.execute_with(|| {
 		assert_err!(
-			SignatureBridge::whitelist_chain(Origin::root(), src_id.chain_id()),
+			SignatureBridge::whitelist_chain(RuntimeOrigin::root(), src_id.chain_id()),
 			pallet_signature_bridge::Error::<Test, _>::ChainAlreadyWhitelisted
 		);
 	})
@@ -421,14 +421,14 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
 
 		assert_err!(
 			SignatureBridge::execute_proposal(
-				Origin::signed(RELAYER_A),
+				RuntimeOrigin::signed(RELAYER_A),
 				src_id.chain_id() + 1,
 				prop_data,
 				sig.0.to_vec(),
@@ -475,14 +475,14 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
 
 		assert_err!(
 			SignatureBridge::execute_proposal(
-				Origin::signed(RELAYER_A),
+				RuntimeOrigin::signed(RELAYER_A),
 				src_id.chain_id(),
 				prop_data,
 				sig.0.to_vec(),
@@ -523,7 +523,7 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
@@ -534,7 +534,7 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 
 		assert_err!(
 			SignatureBridge::execute_proposal(
-				Origin::signed(RELAYER_A),
+				RuntimeOrigin::signed(RELAYER_A),
 				src_id.chain_id(),
 				prop_data,
 				tampered_sig.clone(),
@@ -560,11 +560,11 @@ fn should_add_resource_sig_succeed_using_webb_proposals() {
 	new_test_ext_for_set_resource_proposal_initialized(src_id.chain_id()).execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let _ = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
 		let nonce = webb_proposals::Nonce::from(0x0001);
 		let header = make_proposal_header(resource, SET_RESOURCE_FUNCTION_SIG, nonce);
 		//create anchor
-		assert_ok!(VAnchor::create(Origin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
+		assert_ok!(VAnchor::create(RuntimeOrigin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 		// Anchorlist should be 0 and will be updated after exectuing set resource proposal
 		assert_eq!(0, AnchorList::<Test>::iter_keys().count());
 
@@ -576,12 +576,12 @@ fn should_add_resource_sig_succeed_using_webb_proposals() {
 
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 
 		assert_ok!(SignatureBridge::set_resource_with_signature(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id.chain_id(),
 			set_resource_proposal_bytes,
 			sig.0.to_vec(),

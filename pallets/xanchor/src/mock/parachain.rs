@@ -63,9 +63,9 @@ impl frame_system::Config for Runtime {
 	type BlockLength = ();
 	type BlockNumber = u64;
 	type BlockWeights = ();
-	type Call = Call;
+	type Call = RuntimeCall;
 	type DbWeight = ();
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Hash = H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
 	type Header = Header;
@@ -92,7 +92,7 @@ impl pallet_balances::Config for Runtime {
 	type AccountStore = System;
 	type Balance = Balance;
 	type DustRemoval = ();
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = MaxLocks;
 	type MaxReserves = MaxReserves;
@@ -108,7 +108,7 @@ parameter_types! {
 parameter_types! {
 	pub const KsmLocation: MultiLocation = MultiLocation::parent();
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
-	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
+	pub RelayChainOrigin: Origin = cumulus_pallet_xcm::RuntimeOrigin::Relay.into();
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
 }
 
@@ -131,7 +131,7 @@ pub type XcmOriginToCallOrigin = (
 	// allow it to issue a transaction from the Root origin.
 	ParentAsSuperuser<Origin>,
 	// Native signed account converter; this just converts an `AccountId32`
-	// origin into a normal `Origin::Signed` origin of the same 32-byte value.
+	// origin into a normal `RuntimeOrigin::Signed` origin of the same 32-byte value.
 	SignedAccountId32AsNative<RelayNetwork, Origin>,
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm
 	// origin.
@@ -152,7 +152,7 @@ pub type Barrier = AllowUnpaidExecutionFrom<Everything>;
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
-	type Call = Call;
+	type Call = RuntimeCall;
 	type XcmSender = XcmRouter;
 	type AssetTransactor = LocalAssetTransactor;
 	type OriginConverter = XcmOriginToCallOrigin;
@@ -308,14 +308,14 @@ pub mod mock_msg_queue {
 }
 
 impl mock_msg_queue::Config for Runtime {
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 pub type LocalOriginToLocation = SignedToAccountId32<Origin, AccountId, RelayNetwork>;
 
 impl pallet_xcm::Config for Runtime {
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
 	type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
@@ -326,13 +326,13 @@ impl pallet_xcm::Config for Runtime {
 	type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
 	type LocationInverter = LocationInverter<Ancestry>;
 	type RuntimeOrigin = RuntimeOrigin;
-	type Call = Call;
+	type Call = RuntimeCall;
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
@@ -344,21 +344,21 @@ parameter_types! {
 }
 
 impl pallet_verifier::Config<pallet_verifier::Instance1> for Test {
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
 impl pallet_verifier::Config<pallet_verifier::Instance2> for Test {
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
 impl pallet_hasher::Config for Runtime {
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
@@ -417,7 +417,7 @@ impl pallet_mt::Config for Runtime {
 	type DataDepositPerByte = LeafDepositPerByte;
 	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
 	type LeafIndex = u32;
@@ -442,7 +442,7 @@ impl orml_tokens::Config for Runtime {
 	type Balance = Balance;
 	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposits = AssetRegistry;
 	type OnDust = ();
 	type WeightInfo = ();
@@ -464,7 +464,7 @@ impl pallet_asset_registry::Config for Runtime {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = NativeCurrencyId;
 	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
@@ -485,7 +485,7 @@ impl pallet_linkable_tree::Config for Runtime {
 	type ChainId = ChainId;
 	type ChainType = ChainType;
 	type ChainIdentifier = ChainIdentifier;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();
@@ -493,7 +493,7 @@ impl pallet_linkable_tree::Config for Runtime {
 
 impl pallet_vanchor::Config for Runtime {
 	type Currency = Currencies;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = AnchorPalletId;
@@ -506,10 +506,10 @@ impl pallet_vanchor::Config for Runtime {
 
 impl pallet_xanchor::Config for Runtime {
 	type Anchor = Anchor;
-	type Call = Call;
+	type Call = RuntimeCall;
 	type DemocracyGovernanceDelegate = Democracy;
 	type DemocracyOrigin = EnsureRoot<AccountId>;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type ParaId = MsgQueue;
 	type XcmSender = XcmRouter;
@@ -519,7 +519,7 @@ impl pallet_preimage::Config for Runtime {
 	type BaseDeposit = ();
 	type ByteDeposit = ();
 	type Currency = ();
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
 	type MaxSize = frame_support::traits::ConstU32<1024>;
 	type WeightInfo = ();
@@ -531,8 +531,8 @@ parameter_types! {
 }
 
 impl pallet_scheduler::Config for Runtime {
-	type Call = Call;
-	type RuntimeEvent = Event;
+	type Call = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
 	type MaxScheduledPerBlock = ();
 	type MaximumWeight = MaximumSchedulerWeight;
 	type NoPreimagePostponement = NoPreimagePostponement;
@@ -584,7 +584,7 @@ impl pallet_democracy::Config for Runtime {
 	type CooloffPeriod = CooloffPeriod;
 	type Currency = pallet_balances::Pallet<Self>;
 	type EnactmentPeriod = EnactmentPeriod;
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExternalDefaultOrigin = EnsureSignedBy<AccountOne, AccountId>;
 	type ExternalMajorityOrigin = EnsureSignedBy<AccountThree, AccountId>;
 	type ExternalOrigin = EnsureSignedBy<AccountTwo, AccountId>;
@@ -599,7 +599,7 @@ impl pallet_democracy::Config for Runtime {
 	type OperationalPreimageOrigin = EnsureSignedBy<AccountSix, AccountId>;
 	type PalletsOrigin = OriginCaller;
 	type PreimageByteDeposit = PreimageByteDeposit;
-	type Proposal = Call;
+	type Proposal = RuntimeCall;
 	type Scheduler = Scheduler;
 	type Slash = ();
 	type VetoOrigin = EnsureSignedBy<OneToFive, AccountId>;

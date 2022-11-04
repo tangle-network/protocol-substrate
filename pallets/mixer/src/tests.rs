@@ -27,7 +27,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 		account::<AccountId>("", 5, SEED),
 		account::<AccountId>("", 6, SEED),
 	] {
-		assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
+		assert_ok!(Balances::set_balance(RuntimeOrigin::root(), account_id, 100_000_000, 0));
 	}
 
 	match curve {
@@ -35,7 +35,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			let params3 = hasher_params();
 
 			// 1. Setup The Hasher Pallet.
-			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3));
+			assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), params3));
 			// 2. Initialize MerkleTree pallet.
 			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 			// 3. Setup the VerifierPallet
@@ -46,7 +46,10 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			let vk_bytes =
 				include_bytes!("../../../substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
 
-			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
+			assert_ok!(VerifierPallet::force_set_parameters(
+				RuntimeOrigin::root(),
+				vk_bytes.to_vec()
+			));
 
 			// finally return the provingkey bytes
 			pk_bytes.to_vec()
@@ -61,10 +64,10 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 fn should_create_new_mixer() {
 	new_test_ext().execute_with(|| {
 		// init hasher pallet first.
-		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
+		assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), hasher_params()));
 		// then the merkle tree.
 		<MerkleTree as OnInitialize<u64>>::on_initialize(1);
-		assert_ok!(Mixer::create(Origin::root(), One::one(), 3, 0));
+		assert_ok!(Mixer::create(RuntimeOrigin::root(), One::one(), 3, 0));
 	});
 }
 
@@ -73,18 +76,18 @@ fn should_be_able_to_deposit() {
 	new_test_ext().execute_with(|| {
 		let _ = setup_environment(Curve::Bn254);
 		// init hasher pallet first.
-		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
+		assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), hasher_params()));
 		// then the merkle tree.
 		<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 3, 0));
+		assert_ok!(Mixer::create(RuntimeOrigin::root(), deposit_size, 3, 0));
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let account_id = account::<AccountId>("", 1, SEED);
 		let leaf = Element::from_bytes(&[1u8; 32]);
 		// check the balance before the deposit.
 		let balance_before = Balances::free_balance(account_id.clone());
 		// and we do the deposit
-		assert_ok!(Mixer::deposit(Origin::signed(account_id.clone()), tree_id, leaf));
+		assert_ok!(Mixer::deposit(RuntimeOrigin::signed(account_id.clone()), tree_id, leaf));
 		// now we check the balance after the deposit.
 		let balance_after = Balances::free_balance(account_id);
 		// the balance should be less now with `deposit_size`
@@ -102,7 +105,7 @@ fn mixer_works() {
 		let pk_bytes = setup_environment(curve);
 		// now let's create the mixer.
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
+		assert_ok!(Mixer::create(RuntimeOrigin::root(), deposit_size, 30, 0));
 		// now with mixer created, we should setup the circuit.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
@@ -125,7 +128,7 @@ fn mixer_works() {
 		);
 
 		assert_ok!(Mixer::deposit(
-			Origin::signed(sender_account_id.clone()),
+			RuntimeOrigin::signed(sender_account_id.clone()),
 			tree_id,
 			leaf_element,
 		));
@@ -136,7 +139,7 @@ fn mixer_works() {
 		assert_eq!(root_element, mixer_tree_root);
 
 		assert_ok!(Mixer::withdraw(
-			Origin::signed(sender_account_id),
+			RuntimeOrigin::signed(sender_account_id),
 			tree_id,
 			proof_bytes,
 			root_element,
@@ -160,7 +163,7 @@ fn mixer_should_fail_with_when_proof_when_any_byte_is_changed_in_proof() {
 		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
+		assert_ok!(Mixer::create(RuntimeOrigin::root(), deposit_size, 30, 0));
 		// now with mixer created, we should setup the circuit.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
@@ -184,7 +187,7 @@ fn mixer_should_fail_with_when_proof_when_any_byte_is_changed_in_proof() {
 			);
 
 		assert_ok!(Mixer::deposit(
-			Origin::signed(sender_account_id.clone()),
+			RuntimeOrigin::signed(sender_account_id.clone()),
 			tree_id,
 			leaf_element,
 		));
@@ -199,7 +202,7 @@ fn mixer_should_fail_with_when_proof_when_any_byte_is_changed_in_proof() {
 
 		assert_err!(
 			Mixer::withdraw(
-				Origin::signed(sender_account_id),
+				RuntimeOrigin::signed(sender_account_id),
 				tree_id,
 				proof_bytes,
 				root_element,
@@ -222,7 +225,7 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
+		assert_ok!(Mixer::create(RuntimeOrigin::root(), deposit_size, 30, 0));
 		// now with mixer created, we should setup the circuit.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
@@ -245,7 +248,7 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 		);
 
 		assert_ok!(Mixer::deposit(
-			Origin::signed(sender_account_id.clone()),
+			RuntimeOrigin::signed(sender_account_id.clone()),
 			tree_id,
 			leaf_element,
 		));
@@ -260,7 +263,7 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 		// now we start to generate the proof.
 		assert_err!(
 			Mixer::withdraw(
-				Origin::signed(sender_account_id),
+				RuntimeOrigin::signed(sender_account_id),
 				tree_id,
 				proof_bytes,
 				root_element,
@@ -282,7 +285,7 @@ fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation(
 		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
+		assert_ok!(Mixer::create(RuntimeOrigin::root(), deposit_size, 30, 0));
 		// now with mixer created, we should setup the circuit.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
@@ -305,7 +308,7 @@ fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation(
 		);
 
 		assert_ok!(Mixer::deposit(
-			Origin::signed(sender_account_id.clone()),
+			RuntimeOrigin::signed(sender_account_id.clone()),
 			tree_id,
 			leaf_element,
 		));
@@ -315,7 +318,7 @@ fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation(
 
 		assert_err!(
 			Mixer::withdraw(
-				Origin::signed(sender_account_id.clone()),
+				RuntimeOrigin::signed(sender_account_id.clone()),
 				tree_id,
 				proof_bytes,
 				root_element,
@@ -337,7 +340,7 @@ fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
+		assert_ok!(Mixer::create(RuntimeOrigin::root(), deposit_size, 30, 0));
 		// now with mixer created, we should setup the circuit.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
@@ -360,7 +363,7 @@ fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 		);
 
 		assert_ok!(Mixer::deposit(
-			Origin::signed(sender_account_id.clone()),
+			RuntimeOrigin::signed(sender_account_id.clone()),
 			tree_id,
 			leaf_element,
 		));
@@ -370,7 +373,7 @@ fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 
 		assert_err!(
 			Mixer::withdraw(
-				Origin::signed(sender_account_id),
+				RuntimeOrigin::signed(sender_account_id),
 				tree_id,
 				proof_bytes,
 				root_element,
@@ -392,7 +395,7 @@ fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_revers
 		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
+		assert_ok!(Mixer::create(RuntimeOrigin::root(), deposit_size, 30, 0));
 		// now with mixer created, we should setup the circuit.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
@@ -415,7 +418,7 @@ fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_revers
 		);
 
 		assert_ok!(Mixer::deposit(
-			Origin::signed(sender_account_id.clone()),
+			RuntimeOrigin::signed(sender_account_id.clone()),
 			tree_id,
 			leaf_element,
 		));
@@ -425,7 +428,7 @@ fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_revers
 
 		assert_err!(
 			Mixer::withdraw(
-				Origin::signed(sender_account_id),
+				RuntimeOrigin::signed(sender_account_id),
 				tree_id,
 				proof_bytes,
 				root_element,
@@ -447,7 +450,7 @@ fn double_spending_should_fail() {
 		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, 0));
+		assert_ok!(Mixer::create(RuntimeOrigin::root(), deposit_size, 30, 0));
 		// now with mixer created, we should setup the circuit.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
@@ -470,7 +473,7 @@ fn double_spending_should_fail() {
 		);
 
 		assert_ok!(Mixer::deposit(
-			Origin::signed(sender_account_id.clone()),
+			RuntimeOrigin::signed(sender_account_id.clone()),
 			tree_id,
 			leaf_element,
 		));
@@ -481,7 +484,7 @@ fn double_spending_should_fail() {
 		let balance_before = Balances::free_balance(recipient_account_id.clone());
 
 		assert_ok!(Mixer::withdraw(
-			Origin::signed(sender_account_id.clone()),
+			RuntimeOrigin::signed(sender_account_id.clone()),
 			tree_id,
 			proof_bytes.clone(),
 			root_element,
@@ -498,7 +501,7 @@ fn double_spending_should_fail() {
 
 		assert_err!(
 			Mixer::withdraw(
-				Origin::signed(sender_account_id),
+				RuntimeOrigin::signed(sender_account_id),
 				tree_id,
 				proof_bytes,
 				root_element,
@@ -532,7 +535,7 @@ fn deposit_with_non_native_asset_should_work() {
 		let pk_bytes = setup_environment(curve);
 
 		let deposit_size = One::one();
-		assert_ok!(Mixer::create(Origin::root(), deposit_size, 30, currency_id));
+		assert_ok!(Mixer::create(RuntimeOrigin::root(), deposit_size, 30, currency_id));
 		// now with mixer created, we should setup the circuit.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let sender_account_id = account::<AccountId>("", 1, SEED);
@@ -558,7 +561,7 @@ fn deposit_with_non_native_asset_should_work() {
 		// now we add some balance
 		let new_balance = 100;
 		assert_ok!(Currencies::update_balance(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			sender_account_id.clone(),
 			currency_id,
 			new_balance,
@@ -567,7 +570,7 @@ fn deposit_with_non_native_asset_should_work() {
 		assert_eq!(Currencies::free_balance(currency_id, &sender_account_id), new_balance as _);
 		// and then we do the deposit
 		assert_ok!(Mixer::deposit(
-			Origin::signed(sender_account_id.clone()),
+			RuntimeOrigin::signed(sender_account_id.clone()),
 			tree_id,
 			leaf_element,
 		));

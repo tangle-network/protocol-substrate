@@ -5,7 +5,7 @@ use sp_core::{
 	keccak_256, Pair,
 };
 
-use super::mock_signature_bridge::{Origin, SignatureBridge, Test, RELAYER_A};
+use super::mock_signature_bridge::{RuntimeOrigin, SignatureBridge, Test, RELAYER_A};
 
 use crate::mock_signature_bridge::new_test_ext_initialized;
 
@@ -125,7 +125,7 @@ fn should_update_fee_with_sig_succeed() {
 		// should fail to execute proposal as non-maintainer
 		assert_err!(
 			SignatureBridge::execute_proposal(
-				Origin::signed(RELAYER_A),
+				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
 				wrapping_fee_proposal_bytes.clone(),
 				sig.0.to_vec(),
@@ -135,12 +135,12 @@ fn should_update_fee_with_sig_succeed() {
 
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 
 		assert_ok!(SignatureBridge::execute_proposal(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
 			wrapping_fee_proposal_bytes.clone(),
 			sig.0.to_vec(),
@@ -190,12 +190,12 @@ fn should_add_token_with_sig_succeed() {
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
 			add_token_proposal_bytes,
 			sig.0.to_vec(),
@@ -222,8 +222,8 @@ fn should_remove_token_with_sig_succeed() {
 	let public_uncompressed = get_public_uncompressed_key();
 	let pair = get_edsca_account();
 	new_test_ext_initialized(src_id, r_id, b"System.remark".to_vec()).execute_with(|| {
-		assert_ok!(SignatureBridge::set_resource(Origin::root(), r_id_add_token));
-		assert_ok!(SignatureBridge::set_resource(Origin::root(), r_id_remove_token));
+		assert_ok!(SignatureBridge::set_resource(RuntimeOrigin::root(), r_id_add_token));
+		assert_ok!(SignatureBridge::set_resource(RuntimeOrigin::root(), r_id_remove_token));
 
 		let existential_balance: u32 = 1000;
 
@@ -250,13 +250,13 @@ fn should_remove_token_with_sig_succeed() {
 
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
 			add_token_proposal_bytes,
 			sig.0.to_vec(),
@@ -271,7 +271,7 @@ fn should_remove_token_with_sig_succeed() {
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 
 		assert_ok!(SignatureBridge::execute_proposal(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
 			remove_token_proposal_bytes,
 			sig.0.to_vec(),
@@ -315,7 +315,7 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 		let nonce = webb_proposals::Nonce::from(0x0001);
@@ -327,7 +327,7 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 
 		assert_err!(
 			SignatureBridge::execute_proposal(
-				Origin::signed(RELAYER_A),
+				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
 				remove_token_proposal_bytes,
 				sig.0.to_vec(),
@@ -384,7 +384,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 		.unwrap();
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 		let nonce = webb_proposals::Nonce::from(0x0001);
@@ -396,7 +396,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 		let sig: Signature = pair.sign_prehashed(&msg).into();
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
 			add_token_proposal_bytes,
 			sig.0.to_vec(),
@@ -411,7 +411,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
 			add_token_proposal_bytes,
 			sig.0.to_vec(),
@@ -426,7 +426,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
 			add_token_proposal_bytes,
 			sig.0.to_vec(),
@@ -484,12 +484,12 @@ fn should_fail_to_add_same_token_with_sig() {
 
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 		// Create proposal
 		assert_ok!(SignatureBridge::execute_proposal(
-			Origin::signed(RELAYER_A),
+			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
 			add_token_proposal_bytes.clone(),
 			sig.0.to_vec(),
@@ -508,7 +508,7 @@ fn should_fail_to_add_same_token_with_sig() {
 
 		assert_err!(
 			SignatureBridge::execute_proposal(
-				Origin::signed(RELAYER_A),
+				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
 				add_token_proposal_bytes.clone(),
 				sig.0.to_vec(),
@@ -559,13 +559,13 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			public_uncompressed.to_vec()
 		));
 		// Create proposal (& vote)
 		assert_err!(
 			SignatureBridge::execute_proposal(
-				Origin::signed(RELAYER_A),
+				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
 				add_token_proposal_bytes.clone(),
 				sig.0.to_vec(),

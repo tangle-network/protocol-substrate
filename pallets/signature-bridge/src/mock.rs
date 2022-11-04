@@ -45,9 +45,9 @@ impl system::Config for Test {
 	type BlockLength = ();
 	type BlockNumber = u64;
 	type BlockWeights = ();
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type DbWeight = ();
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header;
@@ -72,7 +72,7 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = u64;
 	type DustRemoval = ();
-	type RuntimeEvent = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = ();
 	type MaxReserves = ();
@@ -88,17 +88,17 @@ parameter_types! {
 }
 
 pub struct SetResourceProposalFilter;
-impl Contains<Call> for SetResourceProposalFilter {
-	fn contains(_c: &Call) -> bool {
+impl Contains<RuntimeCall> for SetResourceProposalFilter {
+	fn contains(_c: &RuntimeCall) -> bool {
 		false
 	}
 }
 
 pub struct ExecuteAllProposalsFilter;
-impl Contains<Call> for ExecuteAllProposalsFilter {
-	fn contains(c: &Call) -> bool {
+impl Contains<RuntimeCall> for ExecuteAllProposalsFilter {
+	fn contains(c: &RuntimeCall) -> bool {
 		match c {
-			Call::System(method) => match method {
+			RuntimeCall::System(method) => match method {
 				system::Call::remark { .. } => true,
 				_ => false,
 			},
@@ -113,8 +113,8 @@ impl Config for Test {
 	type ChainId = u64;
 	type ChainIdentifier = ChainIdentifier;
 	type ChainType = ChainType;
-	type RuntimeEvent = Event;
-	type Proposal = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type Proposal = RuntimeCall;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = u32;
 	type SetResourceProposalFilter = SetResourceProposalFilter;
@@ -152,9 +152,9 @@ pub fn new_test_ext_initialized(
 	let mut t = new_test_ext();
 	t.execute_with(|| {
 		// Whitelist chain
-		assert_ok!(Bridge::whitelist_chain(Origin::root(), src_id));
+		assert_ok!(Bridge::whitelist_chain(RuntimeOrigin::root(), src_id));
 		// Set and check resource ID mapped to some junk data
-		assert_ok!(Bridge::set_resource(Origin::root(), r_id));
+		assert_ok!(Bridge::set_resource(RuntimeOrigin::root(), r_id));
 		assert!(Bridge::resource_exists(r_id));
 	});
 	t
@@ -163,8 +163,8 @@ pub fn new_test_ext_initialized(
 // Checks events against the latest. A contiguous set of events must be
 // provided. They must include the most recent event, but do not have to include
 // every past event.
-pub fn assert_events(mut expected: Vec<Event>) {
-	let mut actual: Vec<Event> =
+pub fn assert_events(mut expected: Vec<RuntimeEvent>) {
+	let mut actual: Vec<RuntimeEvent> =
 		system::Pallet::<Test>::events().iter().map(|e| e.event.clone()).collect();
 
 	expected.reverse();

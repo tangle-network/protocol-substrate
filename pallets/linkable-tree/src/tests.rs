@@ -18,11 +18,11 @@ fn should_create_new_linkable_tree() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let _res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _res = HasherPallet::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
 
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
-		assert_ok!(LinkableTree::create(Origin::root(), max_edges, depth));
+		assert_ok!(LinkableTree::create(RuntimeOrigin::root(), max_edges, depth));
 		let id = MerkleTree::next_tree_id() - 1;
 		let root = <LinkableTree as LinkableTreeInspector<_>>::get_root(id);
 		assert_eq!(
@@ -42,7 +42,7 @@ fn should_fail_to_create_new_linkable_tree_if_not_root() {
 		let depth = TREE_DEPTH as u8;
 		assert_err!(
 			LinkableTree::create(
-				Origin::signed(account::<AccountId>("", 1, SEED)),
+				RuntimeOrigin::signed(account::<AccountId>("", 1, SEED)),
 				max_edges,
 				depth,
 			),
@@ -58,11 +58,11 @@ fn should_be_able_to_add_neighbors_and_check_history() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let _res = HasherPallet::force_set_parameters(Origin::root(), params.to_bytes());
+		let _res = HasherPallet::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
 
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
-		assert_ok!(LinkableTree::create(Origin::root(), max_edges, depth));
+		assert_ok!(LinkableTree::create(RuntimeOrigin::root(), max_edges, depth));
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let src_tree_id = 3;
 		let src_chain_id = TypedChainId::Substrate(1);

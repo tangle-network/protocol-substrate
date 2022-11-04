@@ -12,7 +12,7 @@ fn set_resource_works() {
 		Balances::make_free_balance_be(&caller, 1000_u32.into());
 
 		assert_ok!(RelayerRegistry::set_resource(
-			Origin::signed(caller.clone()),
+			RuntimeOrigin::signed(caller.clone()),
 			resource_id,
 			Default::default()
 		));
@@ -36,12 +36,15 @@ fn clear_resource_works() {
 		Balances::make_free_balance_be(&caller, 1000_u32.into());
 
 		assert_ok!(RelayerRegistry::set_resource(
-			Origin::signed(caller.clone()),
+			RuntimeOrigin::signed(caller.clone()),
 			resource_id,
 			Default::default()
 		));
 
-		assert_ok!(RelayerRegistry::clear_resource(Origin::signed(caller.clone()), resource_id));
+		assert_ok!(RelayerRegistry::clear_resource(
+			RuntimeOrigin::signed(caller.clone()),
+			resource_id
+		));
 
 		// ensure the deposit has been retured
 		assert_eq!(Balances::free_balance(&caller), 1000_u32.into());
