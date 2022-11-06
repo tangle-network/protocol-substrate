@@ -66,6 +66,7 @@ use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	construct_runtime,
 	pallet_prelude::Get,
+	dispatch::DispatchClass,
 	parameter_types,
 	traits::{
 		ConstU128, ConstU16, ConstU32, Currency, Everything, Imbalance, InstanceFilter,
@@ -73,7 +74,7 @@ use frame_support::{
 	},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
-		DispatchClass, IdentityFee, Weight,
+		IdentityFee, Weight,
 	},
 	PalletId, RuntimeDebug,
 };
