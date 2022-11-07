@@ -19,7 +19,7 @@ pub struct DepositDetails<AccountId, Balance> {
 
 /// Hash functions for MerkleTree
 #[cfg_attr(feature = "std", derive(Debug))]
-#[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 pub enum HashFunction {
 	PoseidonDefault,
 	// Poseidon hash - (width, exponentiation)
@@ -29,7 +29,7 @@ pub enum HashFunction {
 
 /// Different curve types
 #[cfg_attr(feature = "std", derive(Debug))]
-#[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 pub enum Curve {
 	Bls381,
 	Bn254,
@@ -38,7 +38,7 @@ pub enum Curve {
 
 /// Different curve types
 #[cfg_attr(feature = "std", derive(Debug))]
-#[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 pub enum Snark {
 	Groth16,
 	Marlin,
@@ -46,14 +46,14 @@ pub enum Snark {
 }
 
 #[cfg_attr(feature = "std", derive(Debug))]
-#[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 pub enum Backend {
 	Arkworks(Curve, Snark),
 	Bulletproofs(Curve),
 }
 
 #[cfg_attr(feature = "std", derive(Debug))]
-#[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, TypeInfo)]
 pub struct Setup {
 	pub hasher: HashFunction,
 	pub backend: Backend,
@@ -91,8 +91,8 @@ pub trait IntoAbiToken {
 	fn into_abi(&self) -> Token;
 	fn encode_abi(&self) -> Vec<u8> {
 		let token = self.into_abi();
-		let encoded_input = encode(&[token]);
-		encoded_input
+
+		encode(&[token])
 	}
 }
 

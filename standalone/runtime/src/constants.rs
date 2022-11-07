@@ -51,8 +51,7 @@ pub mod constants {
 /// Fee-related.
 pub mod fee {
 	use frame_support::weights::{
-		constants::ExtrinsicBaseWeight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-		WeightToFeePolynomial,
+		WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial,
 	};
 	use smallvec::smallvec;
 	pub use sp_runtime::Perbill;

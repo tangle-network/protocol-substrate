@@ -48,6 +48,7 @@ pub struct ExtData<AccountId: Encode, Amount: Encode, Balance: Encode, CurrencyI
 }
 
 impl<I: Encode, A: Encode, B: Encode, C: Encode> ExtData<I, A, B, C> {
+	#[allow(clippy::too_many_arguments)]
 	pub fn new(
 		recipient: I,
 		relayer: I,

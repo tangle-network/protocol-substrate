@@ -93,7 +93,8 @@ pub mod pallet {
 	/// The module configuration trait.
 	pub trait Config<I: 'static = ()>: frame_system::Config {
 		/// The overarching event type.
-		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self, I>>
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// The overarching tree ID type
 		type TreeId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
@@ -120,7 +121,7 @@ pub mod pallet {
 		type Currency: ReservableCurrency<Self::AccountId>;
 
 		/// The origin which may forcibly modify the tree
-		type ForceOrigin: EnsureOrigin<Self::Origin>;
+		type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// The basic amount of funds that must be reserved for an tree.
 		type TreeDeposit: Get<DepositBalanceOf<Self, I>>;

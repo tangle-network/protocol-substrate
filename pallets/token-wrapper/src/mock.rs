@@ -48,9 +48,9 @@ impl system::Config for Test {
 	type BlockLength = ();
 	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type DbWeight = ();
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header;
@@ -60,7 +60,7 @@ impl system::Config for Test {
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type PalletInfo = PalletInfo;
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
@@ -83,7 +83,7 @@ impl asset_registry::Config for Test {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = NativeAssetId;
 	type RegistryOrigin = frame_system::EnsureRoot<u64>;
 	type StringLimit = RegistryStringLimit;
@@ -98,7 +98,7 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = u128;
 	type DustRemoval = ();
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = ();
 	type MaxReserves = ();
@@ -112,13 +112,16 @@ impl orml_tokens::Config for Test {
 	type Balance = Balance;
 	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposits = AssetRegistry;
 	type OnDust = ();
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type OnNewTokenAccount = ();
 	type OnKilledTokenAccount = ();
+	type OnSlash = ();
+	type OnDeposit = ();
+	type OnTransfer = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 }
@@ -153,7 +156,7 @@ impl pallet_treasury::Config for Test {
 	type Burn = Burn;
 	type BurnDestination = ();
 	type Currency = pallet_balances::Pallet<Test>;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type MaxApprovals = MaxApprovals;
 	type OnSlash = ();
 	type PalletId = TreasuryPalletId;
@@ -176,7 +179,7 @@ parameter_types! {
 impl Config for Test {
 	type AssetRegistry = AssetRegistry;
 	type Currency = Currencies;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TreasuryPalletId;
 	type WeightInfo = ();

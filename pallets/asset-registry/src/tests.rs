@@ -36,14 +36,19 @@ fn register_asset_works() {
 		let ed = 1_000_000u128;
 
 		assert_noop!(
-			AssetRegistryPallet::register(Origin::root(), too_long.to_vec(), AssetType::Token, ed),
+			AssetRegistryPallet::register(
+				RuntimeOrigin::root(),
+				too_long.to_vec(),
+				AssetType::Token,
+				ed
+			),
 			Error::<Test>::TooLong
 		);
 
 		let name: Vec<u8> = b"HDX".to_vec();
 
 		assert_ok!(AssetRegistryPallet::register(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			name.clone(),
 			AssetType::Token,
 			ed
@@ -63,7 +68,7 @@ fn register_asset_works() {
 		);
 
 		assert_noop!(
-			AssetRegistryPallet::register(Origin::root(), name, AssetType::Token, ed),
+			AssetRegistryPallet::register(RuntimeOrigin::root(), name, AssetType::Token, ed),
 			Error::<Test>::AssetAlreadyRegistered
 		);
 	});
@@ -133,7 +138,7 @@ fn location_mapping_works() {
 		));
 
 		assert_ok!(AssetRegistryPallet::set_location(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			asset_id,
 			asset_location.clone()
 		));
@@ -193,7 +198,7 @@ fn set_metadata_works() {
 				b"xDOT".to_vec().try_into().unwrap();
 
 			assert_ok!(AssetRegistryPallet::set_metadata(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				dot_id,
 				b"xDOT".to_vec(),
 				12u8
@@ -205,7 +210,7 @@ fn set_metadata_works() {
 			);
 
 			assert_ok!(AssetRegistryPallet::set_metadata(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				dot_id,
 				b"xDOT".to_vec(),
 				30u8
@@ -218,7 +223,7 @@ fn set_metadata_works() {
 
 			assert_noop!(
 				AssetRegistryPallet::set_metadata(
-					Origin::root(),
+					RuntimeOrigin::root(),
 					dot_id,
 					b"JUST_TOO_LONG".to_vec(),
 					30u8
@@ -227,7 +232,12 @@ fn set_metadata_works() {
 			);
 
 			assert_noop!(
-				AssetRegistryPallet::set_metadata(Origin::root(), 100, b"NONE".to_vec(), 30u8),
+				AssetRegistryPallet::set_metadata(
+					RuntimeOrigin::root(),
+					100,
+					b"NONE".to_vec(),
+					30u8
+				),
 				Error::<Test>::AssetNotFound
 			);
 		});
@@ -249,7 +259,7 @@ fn update_asset() {
 
 		// set a new name and type for an existing asset
 		assert_ok!(AssetRegistryPallet::update(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			btc_asset_id,
 			b"superBTC".to_vec(),
 			AssetType::Token,
@@ -274,7 +284,7 @@ fn update_asset() {
 		// cannot set existing name for an existing asset
 		assert_noop!(
 			(AssetRegistryPallet::update(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				usd_asset_id,
 				b"superBTC".to_vec(),
 				AssetType::Token,
@@ -286,7 +296,7 @@ fn update_asset() {
 		// cannot set a new name for a non-existent asset
 		assert_noop!(
 			(AssetRegistryPallet::update(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				next_asset_id,
 				b"VOID".to_vec(),
 				AssetType::Token,
@@ -298,7 +308,7 @@ fn update_asset() {
 		// corner case: change the name and also the type for an existing asset (token
 		// -> pool share)
 		assert_ok!(AssetRegistryPallet::update(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			btc_asset_id,
 			b"BTCUSD".to_vec(),
 			AssetType::PoolShare(vec![btc_asset_id, usd_asset_id]),
@@ -307,7 +317,7 @@ fn update_asset() {
 
 		// Update ED
 		assert_ok!(AssetRegistryPallet::update(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			btc_asset_id,
 			b"BTCUSD".to_vec(),
 			AssetType::PoolShare(vec![btc_asset_id, usd_asset_id]),
@@ -329,7 +339,7 @@ fn update_asset() {
 		// corner case: change the name and also the type for an existing asset (pool
 		// share -> token)
 		assert_ok!(AssetRegistryPallet::update(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			btc_asset_id,
 			b"superBTC".to_vec(),
 			AssetType::Token,
@@ -375,7 +385,11 @@ fn add_asset_to_pool() {
 		)
 		.unwrap();
 
-		assert_ok!(Registry::add_asset_to_pool(Origin::root(), b"meme".to_vec(), second_token_id));
+		assert_ok!(Registry::add_asset_to_pool(
+			RuntimeOrigin::root(),
+			b"meme".to_vec(),
+			second_token_id
+		));
 
 		assert!(<Registry as ShareTokenRegistry<
 			<Test as crate::Config>::AssetId,
@@ -412,7 +426,7 @@ fn delete_asset_from_pool() {
 		.unwrap();
 
 		assert_ok!(Registry::delete_asset_from_pool(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			b"meme".to_vec(),
 			second_token_id
 		));

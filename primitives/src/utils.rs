@@ -51,8 +51,7 @@ pub fn derive_resource_id(chain_id: u32, system: SubstrateTargetSystem) -> Resou
 	let target_system = TargetSystem::Substrate(system);
 	let typed_chain_id = TypedChainId::Substrate(chain_id);
 
-	let resource_id = webb_proposals::ResourceId::new(target_system, typed_chain_id);
-	resource_id
+	webb_proposals::ResourceId::new(target_system, typed_chain_id)
 }
 
 /// Gets the resource id and parses it to tree id and chain id
@@ -91,9 +90,7 @@ where
 /// takes an input of the underlying chain id(u32) and
 /// gets the actual chain id(Substrate) which is in u64
 pub fn get_typed_chain_id_in_u64(chain_id: u32) -> u64 {
-	let typed_chain_id = TypedChainId::Substrate(chain_id).chain_id();
-
-	typed_chain_id
+	TypedChainId::Substrate(chain_id).chain_id()
 }
 
 /// gets the underlying chain id(u32) from the
@@ -102,9 +99,8 @@ pub fn get_underlying_chain_id(typed_chain_id: u64) -> u32 {
 	let bytes = typed_chain_id.to_be_bytes();
 	let mut underlying_chain_id_bytes = [0u8; 4];
 	underlying_chain_id_bytes.copy_from_slice(&bytes[4..]);
-	let underlying_chain_id = u32::from_be_bytes(underlying_chain_id_bytes);
 
-	underlying_chain_id
+	u32::from_be_bytes(underlying_chain_id_bytes)
 }
 
 #[cfg(test)]

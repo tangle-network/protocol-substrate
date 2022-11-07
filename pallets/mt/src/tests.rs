@@ -10,18 +10,18 @@ use crate::mock::*;
 #[test]
 fn shout_create_an_empty_tree() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
-		assert_ok!(MerkleTree::create(Origin::signed(1), 32));
+		assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), hasher_params()));
+		assert_ok!(MerkleTree::create(RuntimeOrigin::signed(1), 32));
 	});
 }
 
 #[test]
 fn should_fail_in_case_of_larger_depth() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
+		assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), hasher_params()));
 		let max_depth = <Test as Config>::MaxTreeDepth::get();
 		assert_err!(
-			MerkleTree::create(Origin::signed(1), max_depth + 1),
+			MerkleTree::create(RuntimeOrigin::signed(1), max_depth + 1),
 			DispatchError::Module(ModuleError {
 				index: 3,
 				error: [1, 0, 0, 0], // InvalidTreeDepth,
@@ -34,11 +34,11 @@ fn should_fail_in_case_of_larger_depth() {
 #[test]
 fn should_fail_in_case_when_max_default_hashes_is_exceeded() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
+		assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), hasher_params()));
 		let max_default_hashes = <Test as Config>::MaxTreeDepth::get();
 		assert_err!(
 			MerkleTree::force_set_default_hashes(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				vec![
 					<Test as Config>::DefaultZeroElement::get();
 					(max_default_hashes + 1) as usize
@@ -52,8 +52,8 @@ fn should_fail_in_case_when_max_default_hashes_is_exceeded() {
 #[test]
 fn should_successfully_set_default_hashes_to_match_solidity() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
-		assert_ok!(MerkleTree::create(Origin::signed(1), 32));
+		assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), hasher_params()));
+		assert_ok!(MerkleTree::create(RuntimeOrigin::signed(1), 32));
 		let default_hashes: Vec<Element> = MerkleTree::default_hashes();
 		let solidity_merkle_tree_hashes: Vec<Element> = vec![
 			Element::from_bytes(&hex!(
@@ -177,14 +177,14 @@ fn should_successfully_set_default_hashes_to_match_solidity() {
 fn should_be_able_to_insert_leaves() {
 	new_test_ext().execute_with(|| {
 		// init hasher pallet first.
-		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
+		assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), hasher_params()));
 		let depth = 3;
-		assert_ok!(MerkleTree::create(Origin::signed(1), depth));
+		assert_ok!(MerkleTree::create(RuntimeOrigin::signed(1), depth));
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let total_leaves_count = 2u32.pow(depth as _);
 		let leaf = Element::from_bytes(&ark_bn254::Fr::from(1).into_repr().to_bytes_be());
 		(0..total_leaves_count).for_each(|_| {
-			assert_ok!(MerkleTree::insert(Origin::signed(1), tree_id, leaf));
+			assert_ok!(MerkleTree::insert(RuntimeOrigin::signed(1), tree_id, leaf));
 		});
 	});
 }
@@ -193,17 +193,17 @@ fn should_be_able_to_insert_leaves() {
 fn should_fail_if_the_tree_is_full() {
 	new_test_ext().execute_with(|| {
 		// init hasher pallet first.
-		assert_ok!(HasherPallet::force_set_parameters(Origin::root(), hasher_params()));
+		assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), hasher_params()));
 		let depth = 3;
-		assert_ok!(MerkleTree::create(Origin::signed(1), depth));
+		assert_ok!(MerkleTree::create(RuntimeOrigin::signed(1), depth));
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let total_leaves_count = 2u32.pow(depth as _);
 		let leaf = Element::from_bytes(&[1u8; 32]);
 		(0..total_leaves_count).for_each(|_| {
-			assert_ok!(MerkleTree::insert(Origin::signed(1), tree_id, leaf));
+			assert_ok!(MerkleTree::insert(RuntimeOrigin::signed(1), tree_id, leaf));
 		});
 		assert_err!(
-			MerkleTree::insert(Origin::signed(1), tree_id, leaf),
+			MerkleTree::insert(RuntimeOrigin::signed(1), tree_id, leaf),
 			DispatchError::Module(ModuleError {
 				index: 3,
 				error: [3, 0, 0, 0], // ExceedsMaxLeaves

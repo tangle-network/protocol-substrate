@@ -62,30 +62,30 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: SignatureBridge MaintainerNonce (r:1 w:1)
 	fn set_maintainer() -> Weight {
 		Weight::from_ref_time(52_000_000)
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	// Storage: SignatureBridge Maintainer (r:1 w:1)
 	fn force_set_maintainer() -> Weight {
 		Weight::from_ref_time(11_000_000)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: SignatureBridge Resources (r:0 w:1)
 	fn set_resource() -> Weight {
 		Weight::from_ref_time(1_000_000)
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: SignatureBridge Resources (r:0 w:1)
 	fn remove_resource() -> Weight {
 		Weight::from_ref_time(1_000_000)
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: SignatureBridge ChainNonces (r:1 w:1)
 	fn whitelist_chain() -> Weight {
 		Weight::from_ref_time(11_000_000)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: SignatureBridge ProposalNonce (r:1 w:1)
 	// Storage: SignatureBridge Maintainer (r:1 w:0)
@@ -93,8 +93,8 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: SignatureBridge Resources (r:1 w:1)
 	fn set_resource_with_signature() -> Weight {
 		Weight::from_ref_time(61_000_000)
-			.saturating_add(T::DbWeight::get().reads(4 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	// Storage: SignatureBridge ProposalNonce (r:1 w:1)
 	// Storage: SignatureBridge Maintainer (r:1 w:0)
@@ -102,8 +102,8 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: SignatureBridge Resources (r:1 w:0)
 	fn execute_proposal() -> Weight {
 		Weight::from_ref_time(59_000_000)
-			.saturating_add(T::DbWeight::get().reads(4 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
@@ -113,30 +113,30 @@ impl WeightInfo for () {
 	// Storage: SignatureBridge MaintainerNonce (r:1 w:1)
 	fn set_maintainer() -> Weight {
 		Weight::from_ref_time(52_000_000)
-			.saturating_add(RocksDbWeight::get().reads(2 as u64))
-			.saturating_add(RocksDbWeight::get().writes(2 as u64))
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 	// Storage: SignatureBridge Maintainer (r:1 w:1)
 	fn force_set_maintainer() -> Weight {
 		Weight::from_ref_time(11_000_000)
-			.saturating_add(RocksDbWeight::get().reads(1 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	// Storage: SignatureBridge Resources (r:0 w:1)
 	fn set_resource() -> Weight {
 		Weight::from_ref_time(1_000_000)
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	// Storage: SignatureBridge Resources (r:0 w:1)
 	fn remove_resource() -> Weight {
 		Weight::from_ref_time(1_000_000)
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	// Storage: SignatureBridge ChainNonces (r:1 w:1)
 	fn whitelist_chain() -> Weight {
 		Weight::from_ref_time(11_000_000)
-			.saturating_add(RocksDbWeight::get().reads(1 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	// Storage: SignatureBridge ProposalNonce (r:1 w:1)
 	// Storage: SignatureBridge Maintainer (r:1 w:0)
@@ -144,8 +144,8 @@ impl WeightInfo for () {
 	// Storage: SignatureBridge Resources (r:1 w:1)
 	fn set_resource_with_signature() -> Weight {
 		Weight::from_ref_time(61_000_000)
-			.saturating_add(RocksDbWeight::get().reads(4 as u64))
-			.saturating_add(RocksDbWeight::get().writes(2 as u64))
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 	// Storage: SignatureBridge ProposalNonce (r:1 w:1)
 	// Storage: SignatureBridge Maintainer (r:1 w:0)
@@ -153,7 +153,7 @@ impl WeightInfo for () {
 	// Storage: SignatureBridge Resources (r:1 w:0)
 	fn execute_proposal() -> Weight {
 		Weight::from_ref_time(59_000_000)
-			.saturating_add(RocksDbWeight::get().reads(4 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

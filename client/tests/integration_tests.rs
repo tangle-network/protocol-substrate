@@ -114,7 +114,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	pi.push(root.0.to_vec());
 	pi.push(arbitrary_input.to_vec());
 
-	let res = verify_unchecked_raw::<ark_bn254::Bn254>(&pi, &vk_bytes.to_vec(), &proof_bytes)?;
+	let res = verify_unchecked_raw::<ark_bn254::Bn254>(&pi, vk_bytes.as_ref(), &proof_bytes)?;
 	assert!(res, "Invalid proof");
 
 	// Do the withdraw
@@ -138,7 +138,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	>(&mut withdraw_res)
 	.await?;
 
-	Ok(().into())
+	Ok(())
 }
 
 async fn make_vanchor_tx(
@@ -188,7 +188,7 @@ async fn make_vanchor_tx(
 		pk_bytes.to_vec(),
 	);
 
-	let res = verify_unchecked::<ark_bn254::Bn254>(&public_inputs, &vk_bytes.to_vec(), &proof)?;
+	let res = verify_unchecked::<ark_bn254::Bn254>(&public_inputs, vk_bytes, &proof)?;
 	assert!(res, "Invalid proof");
 
 	// Deconstructing public inputs
@@ -225,7 +225,7 @@ async fn make_vanchor_tx(
 	>(&mut transact_res)
 	.await?;
 
-	Ok(().into())
+	Ok(())
 }
 
 #[tokio::test]
@@ -323,5 +323,5 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	println!("Leaf count: {:?}", leaf_count);
 	println!("Chain root {:?}", chain_root);
 
-	Ok(().into())
+	Ok(())
 }

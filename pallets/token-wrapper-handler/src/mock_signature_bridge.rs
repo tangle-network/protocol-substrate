@@ -54,9 +54,9 @@ impl system::Config for Test {
 	type BlockLength = ();
 	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type DbWeight = ();
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header;
@@ -66,7 +66,7 @@ impl system::Config for Test {
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type PalletInfo = PalletInfo;
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
@@ -89,7 +89,7 @@ impl asset_registry::Config for Test {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = NativeAssetId;
 	type RegistryOrigin = frame_system::EnsureRoot<u64>;
 	type StringLimit = RegistryStringLimit;
@@ -104,7 +104,7 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = u128;
 	type DustRemoval = ();
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = ();
 	type MaxReserves = ();
@@ -118,11 +118,14 @@ impl orml_tokens::Config for Test {
 	type Balance = Balance;
 	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposits = AssetRegistry;
 	type OnDust = ();
 	type WeightInfo = ();
 	type MaxLocks = ();
+	type OnSlash = ();
+	type OnDeposit = ();
+	type OnTransfer = ();
 	type MaxReserves = ();
 	type OnNewTokenAccount = ();
 	type OnKilledTokenAccount = ();
@@ -159,7 +162,7 @@ impl pallet_treasury::Config for Test {
 	type Burn = Burn;
 	type BurnDestination = ();
 	type Currency = pallet_balances::Pallet<Test>;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type MaxApprovals = MaxApprovals;
 	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 	type OnSlash = ();
@@ -182,7 +185,7 @@ parameter_types! {
 impl pallet_token_wrapper::Config for Test {
 	type AssetRegistry = AssetRegistry;
 	type Currency = Currencies;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TreasuryPalletId;
 	type WeightInfo = ();
@@ -194,17 +197,17 @@ pub type ProposalNonce = u32;
 pub type MaintainerNonce = u32;
 
 pub struct SetResourceProposalFilter;
-impl Contains<Call> for SetResourceProposalFilter {
-	fn contains(_c: &Call) -> bool {
+impl Contains<RuntimeCall> for SetResourceProposalFilter {
+	fn contains(_c: &RuntimeCall) -> bool {
 		false
 	}
 }
 
 pub struct ExecuteProposalFilter;
-impl Contains<Call> for ExecuteProposalFilter {
-	fn contains(c: &Call) -> bool {
+impl Contains<RuntimeCall> for ExecuteProposalFilter {
+	fn contains(c: &RuntimeCall) -> bool {
 		match c {
-			Call::TokenWrapperHandler(method) => match method {
+			RuntimeCall::TokenWrapperHandler(method) => match method {
 				pallet_token_wrapper_handler::Call::execute_add_token_to_pool_share { .. } => true,
 				pallet_token_wrapper_handler::Call::execute_remove_token_from_pool_share {
 					..
@@ -231,8 +234,8 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type ChainId = ChainId;
 	type ChainIdentifier = ChainIdentifier;
 	type ChainType = ChainType;
-	type Event = Event;
-	type Proposal = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type Proposal = RuntimeCall;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
 	type SetResourceProposalFilter = SetResourceProposalFilter;
@@ -244,7 +247,7 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 
 impl Config for Test {
 	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Test, BridgeInstance>;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type TokenWrapper = TokenWrapper;
 }
 
@@ -269,8 +272,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 // Checks events against the latest. A contiguous set of events must be
 // provided. They must include the most recent event, but do not have to include
 // every past event.
-pub fn assert_events(mut expected: Vec<Event>) {
-	let mut actual: Vec<Event> =
+pub fn assert_events(mut expected: Vec<RuntimeEvent>) {
+	let mut actual: Vec<RuntimeEvent> =
 		system::Pallet::<Test>::events().iter().map(|e| e.event.clone()).collect();
 
 	expected.reverse();
@@ -289,9 +292,9 @@ pub fn new_test_ext_initialized(
 	let mut t = new_test_ext();
 	t.execute_with(|| {
 		// Whitelist chain
-		assert_ok!(SignatureBridge::whitelist_chain(Origin::root(), src_id));
+		assert_ok!(SignatureBridge::whitelist_chain(RuntimeOrigin::root(), src_id));
 		// Set and check resource ID mapped to some junk data
-		assert_ok!(SignatureBridge::set_resource(Origin::root(), r_id));
+		assert_ok!(SignatureBridge::set_resource(RuntimeOrigin::root(), r_id));
 		assert!(SignatureBridge::resource_exists(r_id));
 	});
 	t

@@ -62,7 +62,7 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 		Weight::from_ref_time(33_025_000)
 			// Standard Error: 0
 			.saturating_add(Weight::from_ref_time(1_000).saturating_mul(c as u64))
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 }
 
@@ -71,7 +71,7 @@ impl WeightInfo for () {
 	fn register(_c: u32, ) -> Weight {
 		Weight::from_ref_time(33_025_000)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(1_000).saturating_mul(1 as u64))
-			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(Weight::from_ref_time(1_000).saturating_mul(1_u64))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
 	}
 }

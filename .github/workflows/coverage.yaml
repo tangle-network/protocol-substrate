@@ -34,7 +34,7 @@ jobs:
       - name: Install apt dependencies
         run: |
           apt-get update && \
-          apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev && \
+          apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler && \
           rm -rf /var/lib/apt/lists/*
     
       - name: Rust Cache

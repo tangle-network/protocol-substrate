@@ -27,7 +27,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
 
 			// 1. Setup The Hasher Pallet.
-			assert_ok!(HasherPallet::force_set_parameters(Origin::root(), params3.to_bytes()));
+			assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), params3.to_bytes()));
 			// 2. Initialize MerkleTree pallet.
 			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 			// 3. Setup the VerifierPallet
@@ -45,7 +45,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 				.to_vec(),
 			);
 
-			assert_ok!(VerifierPallet::force_set_parameters(Origin::root(), vk_bytes.to_vec()));
+			assert_ok!(VerifierPallet::force_set_parameters(RuntimeOrigin::root(), vk_bytes.to_vec()));
 
 			for account_id in [
 				account::<AccountId>("", 1, SEED),
@@ -55,7 +55,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 				account::<AccountId>("", 5, SEED),
 				account::<AccountId>("", 6, SEED),
 			] {
-				assert_ok!(Balances::set_balance(Origin::root(), account_id, 100_000_000, 0));
+				assert_ok!(Balances::set_balance(RuntimeOrigin::root(), account_id, 100_000_000, 0));
 			}
 
 			// finally return the provingkey bytes
@@ -163,7 +163,7 @@ fn should_link_two_anchors() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		para_a_tree_id = MerkleTree::next_tree_id() - 1;
 	});
 
@@ -172,7 +172,7 @@ fn should_link_two_anchors() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		para_b_tree_id = MerkleTree::next_tree_id() - 1;
 	});
 
@@ -187,7 +187,7 @@ fn should_link_two_anchors() {
 				.into();
 		// then, on the call here, we tell it which tree we are going to link to.
 		// (para_b_tree_id).
-		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
+		assert_ok!(XAnchor::force_register_resource_id(RuntimeOrigin::root(), r_id, para_b_tree_id));
 	});
 	// Here, the same as above, but the only difference is that
 	// the caller is one of the Parachain A operators.
@@ -198,7 +198,7 @@ fn should_link_two_anchors() {
 				.into();
 		// then, when we are sending the call we tell it which tree we are going to link
 		// to. (para_a_tree_id).
-		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
+		assert_ok!(XAnchor::force_register_resource_id(RuntimeOrigin::root(), r_id, para_a_tree_id));
 	});
 
 	// now we assume both of them are linked, let's check that.
@@ -236,7 +236,7 @@ fn should_bridge_anchors_using_xcm() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		para_a_tree_id = MerkleTree::next_tree_id() - 1;
 	});
 
@@ -245,18 +245,18 @@ fn should_bridge_anchors_using_xcm() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		para_b_tree_id = MerkleTree::next_tree_id() - 1;
 	});
 
 	ParaA::execute_with(|| {
 		let r_id = derive_resource_id(PARAID_B, para_a_tree_id).into();
-		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
+		assert_ok!(XAnchor::force_register_resource_id(RuntimeOrigin::root(), r_id, para_b_tree_id));
 	});
 
 	ParaB::execute_with(|| {
 		let r_id = derive_resource_id(PARAID_A, para_b_tree_id).into();
-		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_a_tree_id));
+		assert_ok!(XAnchor::force_register_resource_id(RuntimeOrigin::root(), r_id, para_a_tree_id));
 	});
 
 	// now we do a deposit on one chain (ParaA) for example
@@ -269,7 +269,7 @@ fn should_bridge_anchors_using_xcm() {
 		let balance_before = Balances::free_balance(account_id.clone());
 		// and we do the deposit
 		assert_ok!(Anchor::deposit_and_update_linked_anchors(
-			Origin::signed(account_id.clone()),
+			RuntimeOrigin::signed(account_id.clone()),
 			para_a_tree_id,
 			leaf
 		));
@@ -305,7 +305,7 @@ fn should_fail_to_register_resource_id_if_not_the_democracy() {
 		let target_tree_id = 1;
 		assert_err!(
 			XAnchor::register_resource_id(
-				Origin::signed(parachain::AccountTwo::get()),
+				RuntimeOrigin::signed(parachain::AccountTwo::get()),
 				r_id,
 				target_tree_id
 			),
@@ -324,7 +324,7 @@ fn should_fail_to_register_resource_id_when_anchor_does_not_exist() {
 		let r_id = derive_resource_id(PARAID_B.into(), tree_id).into();
 		let target_tree_id = 1;
 		assert_err!(
-			XAnchor::register_resource_id(Origin::root(), r_id, target_tree_id),
+			XAnchor::register_resource_id(RuntimeOrigin::root(), r_id, target_tree_id),
 			crate::Error::<parachain::Runtime, _>::AnchorNotFound,
 		);
 	});
@@ -340,15 +340,15 @@ fn should_fail_to_link_anchor_if_it_is_already_anchored() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		// next we start to register the resource id.
 		let tree_id = MerkleTree::next_tree_id() - 1;
 		let r_id = derive_resource_id(PARAID_B.into(), tree_id).into();
 		let target_tree_id = 1;
-		assert_ok!(XAnchor::register_resource_id(Origin::root(), r_id, target_tree_id));
+		assert_ok!(XAnchor::register_resource_id(RuntimeOrigin::root(), r_id, target_tree_id));
 		// now we try to link the anchor again, should error.
 		assert_err!(
-			XAnchor::register_resource_id(Origin::root(), r_id, target_tree_id),
+			XAnchor::register_resource_id(RuntimeOrigin::root(), r_id, target_tree_id),
 			crate::Error::<parachain::Runtime, _>::ResourceIsAlreadyAnchored
 		);
 	});
@@ -381,7 +381,7 @@ fn ensure_that_the_only_way_to_update_edges_is_from_another_parachain() {
 
 		assert_err!(
 			XAnchor::update(
-				Origin::signed(parachain::AccountTwo::get()),
+				RuntimeOrigin::signed(parachain::AccountTwo::get()),
 				anchor_update_proposal.into_bytes()
 			),
 			frame_support::error::BadOrigin,
@@ -414,7 +414,7 @@ fn governance_system_works() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		MerkleTree::next_tree_id() - 1
 	});
 	// Also, Create an anchor on parachain B.
@@ -423,7 +423,7 @@ fn governance_system_works() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		MerkleTree::next_tree_id() - 1
 	});
 
@@ -440,7 +440,7 @@ fn governance_system_works() {
 		};
 		let value = 100;
 		assert_ok!(XAnchor::propose_to_link_anchor(
-			Origin::signed(AccountThree::get()),
+			RuntimeOrigin::signed(AccountThree::get()),
 			payload,
 			value
 		));
@@ -455,7 +455,7 @@ fn governance_system_works() {
 		// now we need to vote on the proposal.
 		let referendum_index = Democracy::referendum_count() - 1;
 		assert_ok!(Democracy::vote(
-			Origin::signed(AccountOne::get()),
+			RuntimeOrigin::signed(AccountOne::get()),
 			referendum_index,
 			aye(AccountOne::get())
 		));
@@ -481,7 +481,7 @@ fn governance_system_works() {
 		// now we need to vote on the proposal.
 		let referendum_index = Democracy::referendum_count() - 1;
 		assert_ok!(Democracy::vote(
-			Origin::signed(AccountTwo::get()),
+			RuntimeOrigin::signed(AccountTwo::get()),
 			referendum_index,
 			aye(AccountTwo::get())
 		));
@@ -521,7 +521,7 @@ fn should_fail_to_create_proposal_if_the_anchor_does_not_exist() {
 		};
 		let value = 100;
 		assert_err!(
-			XAnchor::propose_to_link_anchor(Origin::signed(AccountThree::get()), payload, value),
+			XAnchor::propose_to_link_anchor(RuntimeOrigin::signed(AccountThree::get()), payload, value),
 			Error::<Runtime>::AnchorNotFound
 		);
 	});
@@ -536,7 +536,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		MerkleTree::next_tree_id() - 1
 	});
 	// create an anchor on parachain B.
@@ -545,14 +545,14 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		MerkleTree::next_tree_id() - 1
 	});
 
 	// force link them.
 	ParaA::execute_with(|| {
 		let r_id = derive_resource_id(PARAID_B.into(), para_a_tree_id).into();
-		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
+		assert_ok!(XAnchor::force_register_resource_id(RuntimeOrigin::root(), r_id, para_b_tree_id));
 	});
 
 	// now try create a proposal on chain A, it should fail since it is already
@@ -565,7 +565,7 @@ fn should_fail_to_create_proposal_for_already_linked_anchors() {
 		};
 		let value = 100;
 		assert_err!(
-			XAnchor::propose_to_link_anchor(Origin::signed(AccountThree::get()), payload, value),
+			XAnchor::propose_to_link_anchor(RuntimeOrigin::signed(AccountThree::get()), payload, value),
 			Error::<Runtime>::ResourceIsAlreadyAnchored
 		);
 	});
@@ -580,7 +580,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		MerkleTree::next_tree_id() - 1
 	});
 
@@ -590,7 +590,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		MerkleTree::next_tree_id() - 1
 	});
 
@@ -603,7 +603,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 		};
 		let value = 100;
 		assert_ok!(XAnchor::propose_to_link_anchor(
-			Origin::signed(AccountThree::get()),
+			RuntimeOrigin::signed(AccountThree::get()),
 			payload,
 			value
 		));
@@ -619,7 +619,7 @@ fn should_fail_to_create_proposal_for_already_pending_linking() {
 		};
 		let value = 100;
 		assert_err!(
-			XAnchor::propose_to_link_anchor(Origin::signed(AccountFour::get()), payload, value),
+			XAnchor::propose_to_link_anchor(RuntimeOrigin::signed(AccountFour::get()), payload, value),
 			Error::<Runtime>::AnchorLinkIsAlreadyPending
 		);
 	});
@@ -639,7 +639,7 @@ fn should_fail_to_call_send_link_anchor_message_as_signed_account() {
 		};
 		let value = 100;
 		assert_err!(
-			XAnchor::send_link_anchor_message(Origin::signed(AccountThree::get()), payload, value),
+			XAnchor::send_link_anchor_message(RuntimeOrigin::signed(AccountThree::get()), payload, value),
 			frame_support::error::BadOrigin,
 		);
 	});
@@ -658,7 +658,7 @@ fn should_fail_to_call_save_link_proposal_as_signed_account() {
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		assert_err!(
-			XAnchor::save_link_proposal(Origin::signed(AccountThree::get()), payload,),
+			XAnchor::save_link_proposal(RuntimeOrigin::signed(AccountThree::get()), payload,),
 			frame_support::error::BadOrigin,
 		);
 	});
@@ -674,7 +674,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		MerkleTree::next_tree_id() - 1
 	});
 
@@ -684,14 +684,14 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		MerkleTree::next_tree_id() - 1
 	});
 
 	// force link them.
 	ParaA::execute_with(|| {
 		let r_id = derive_resource_id(PARAID_B.into(), para_a_tree_id).into();
-		assert_ok!(XAnchor::force_register_resource_id(Origin::root(), r_id, para_b_tree_id));
+		assert_ok!(XAnchor::force_register_resource_id(RuntimeOrigin::root(), r_id, para_b_tree_id));
 	});
 
 	// now creating a proposal on chain A should fail since it is already linked.
@@ -704,7 +704,7 @@ fn should_fail_to_save_link_proposal_on_already_linked_anchors() {
 		println!("Payload {:?}", payload);
 		let value = 100;
 		assert_err!(
-			XAnchor::propose_to_link_anchor(Origin::signed(AccountThree::get()), payload, value),
+			XAnchor::propose_to_link_anchor(RuntimeOrigin::signed(AccountThree::get()), payload, value),
 			Error::<Runtime>::ResourceIsAlreadyAnchored
 		);
 	});
@@ -720,7 +720,7 @@ fn should_fail_to_call_handle_link_anchor_message_without_anchor_being_pending()
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
 		let asset_id = 0;
-		assert_ok!(Anchor::create(Origin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
+		assert_ok!(Anchor::create(RuntimeOrigin::root(), DEPOSIT_SIZE, max_edges, depth, asset_id));
 		MerkleTree::next_tree_id() - 1
 	});
 	// now calling handle_link_anchor_message directly should fail.
@@ -734,7 +734,7 @@ fn should_fail_to_call_handle_link_anchor_message_without_anchor_being_pending()
 		let value = 100;
 		assert_err!(
 			XAnchor::handle_link_anchor_message(
-				Origin::signed(AccountThree::get()),
+				RuntimeOrigin::signed(AccountThree::get()),
 				payload,
 				value
 			),
@@ -756,7 +756,7 @@ fn should_fail_to_call_link_anchors_as_signed_account() {
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		assert_err!(
-			XAnchor::link_anchors(Origin::signed(AccountThree::get()), payload),
+			XAnchor::link_anchors(RuntimeOrigin::signed(AccountThree::get()), payload),
 			frame_support::error::BadOrigin,
 		);
 	});
@@ -775,7 +775,7 @@ fn should_fail_to_call_handle_link_anchors_as_signed_account() {
 			local_tree_id: MerkleTree::next_tree_id(),
 		};
 		assert_err!(
-			XAnchor::handle_link_anchors(Origin::signed(AccountThree::get()), payload),
+			XAnchor::handle_link_anchors(RuntimeOrigin::signed(AccountThree::get()), payload),
 			frame_support::error::BadOrigin,
 		);
 	});
@@ -791,7 +791,7 @@ fn should_fail_to_call_register_resource_id_as_signed_account() {
 		let r_id = derive_resource_id(PARAID_B.into(), MerkleTree::next_tree_id()).into();
 		assert_err!(
 			XAnchor::register_resource_id(
-				Origin::signed(AccountThree::get()),
+				RuntimeOrigin::signed(AccountThree::get()),
 				r_id,
 				MerkleTree::next_tree_id()
 			),
@@ -828,7 +828,7 @@ fn should_fail_to_call_update_as_signed_account() {
 
 		assert_err!(
 			XAnchor::update(
-				Origin::signed(AccountThree::get()),
+				RuntimeOrigin::signed(AccountThree::get()),
 				anchor_update_proposal.into_bytes()
 			),
 			frame_support::error::BadOrigin,
