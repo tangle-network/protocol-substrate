@@ -201,7 +201,7 @@ benchmarks_instance_pallet! {
 	  }: _(RawOrigin::Signed(transactor.clone()), tree_id, proof_data.clone(), ext_data)
 	  verify {
 		  assert_last_event::<T, I>(
-			Event::Transaction { 
+			Event::Transaction {
 			transactor,
 			tree_id,
 			leafs : proof_data.output_commitments,
@@ -289,7 +289,7 @@ benchmarks_instance_pallet! {
 	  }: _(RawOrigin::Signed(transactor.clone()), transactor.clone(),[0u8; 32].to_vec(),tree_id, proof_data.clone(), ext_data)
 	  verify {
 		assert_last_event::<T, I>(
-		  Event::Transaction { 
+		  Event::Transaction {
 		  transactor,
 		  tree_id,
 		  leafs : proof_data.output_commitments,

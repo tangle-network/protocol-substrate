@@ -155,7 +155,7 @@ benchmarks! {
 			}.into()
 		)
 	}
-	
+
 	set_fee_recipient {
 		let fee_recipient: T::AccountId = whitelisted_caller();
 		let nonce = 1048u32;

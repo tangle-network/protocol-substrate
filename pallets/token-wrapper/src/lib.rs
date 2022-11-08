@@ -179,7 +179,7 @@ pub mod pallet {
 			asset_id: T::AssetId,
 			amount: BalanceOf<T>,
 			recipient: T::AccountId,
-		}
+		},
 	}
 
 	#[pallet::error]
@@ -270,14 +270,14 @@ pub mod pallet {
 			>>::unwrap(origin, from_pool_share_id, into_asset_id, amount, recipient)?;
 			Ok(().into())
 		}
-		
+
 		#[pallet::weight(195000)]
 		pub fn rescue_tokens(
 			origin: OriginFor<T>,
 			asset_id: T::AssetId,
 			amount: BalanceOf<T>,
 			recipient: T::AccountId,
-			nonce: T::ProposalNonce
+			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 
@@ -300,7 +300,7 @@ impl<T: Config> Pallet<T> {
 	pub fn treasury_id() -> T::AccountId {
 		T::TreasuryId::get().into_account_truncating()
 	}
-	
+
 	pub fn get_fee_recipient() -> T::AccountId {
 		FeeRecipient::<T>::get().unwrap_or(Self::treasury_id())
 	}
@@ -498,7 +498,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 		Self::deposit_event(Event::UpdatedFeeRecipient { fee_recipient });
 		Ok(())
 	}
-	
+
 	// sets new fee recipient who will receiving wrapping cost fee.
 	fn rescue_tokens(
 		asset_id: T::AssetId,
@@ -511,7 +511,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 		// One which receives wrapping cost fees
 		let fee_recipient = Self::get_fee_recipient();
 		let from_currency_id = Self::to_currency_id(asset_id)?;
-		
+
 		// Check if total balance of fee recipient id greater than amount to rescue
 		let total_balance = T::Currency::total_balance(from_currency_id, &fee_recipient);
 		if total_balance > amount {
@@ -519,12 +519,8 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 		} else {
 			T::Currency::transfer(from_currency_id, &fee_recipient, &recipient, total_balance)?;
 		}
-		
-		Self::deposit_event(Event::TokensRescued { 
-			asset_id, 
-			amount, 
-			recipient 
-		});
+
+		Self::deposit_event(Event::TokensRescued { asset_id, amount, recipient });
 		Ok(())
 	}
 

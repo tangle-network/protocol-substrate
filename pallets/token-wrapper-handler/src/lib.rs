@@ -150,7 +150,7 @@ pub mod pallet {
 		pub fn execute_set_fee_recipient_proposal(
 			origin: OriginFor<T>,
 			fee_recipient: T::AccountId,
-			nonce: T::ProposalNonce
+			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
 			T::BridgeOrigin::ensure_origin(origin)?;
 			T::TokenWrapper::set_fee_recipient(fee_recipient, nonce)?;

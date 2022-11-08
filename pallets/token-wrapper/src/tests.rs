@@ -50,7 +50,12 @@ fn should_wrap_token() {
 
 		// increment nonce
 		let nonce = nonce + 1;
-		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id.into(), nonce));
+		assert_ok!(TokenWrapper::set_wrapping_fee(
+			RuntimeOrigin::root(),
+			5,
+			pool_share_id.into(),
+			nonce
+		));
 
 		assert_ok!(TokenWrapper::wrap(
 			RuntimeOrigin::signed(recipient),
@@ -578,11 +583,21 @@ fn should_rescue_all_tokens() {
 
 		assert_ok!(TokenWrapper::set_fee_recipient(RuntimeOrigin::root(), fee_recipient, nonce));
 
-		assert_ok!(Currencies::update_balance(RuntimeOrigin::root(), recipient, first_token_id, balance));
-		
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			recipient,
+			first_token_id,
+			balance
+		));
+
 		// increment nonce
 		let nonce = nonce + 1;
-		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id.into(), nonce));
+		assert_ok!(TokenWrapper::set_wrapping_fee(
+			RuntimeOrigin::root(),
+			5,
+			pool_share_id.into(),
+			nonce
+		));
 
 		assert_ok!(TokenWrapper::wrap(
 			RuntimeOrigin::signed(recipient),
@@ -596,11 +611,16 @@ fn should_rescue_all_tokens() {
 		let rescue_tokens_recipient: u64 = 11;
 		// increment nonce
 		let nonce = nonce + 1;
-		assert_ok!(TokenWrapper::rescue_tokens(RuntimeOrigin::root(), first_token_id,rescue_amount,rescue_tokens_recipient, nonce));
+		assert_ok!(TokenWrapper::rescue_tokens(
+			RuntimeOrigin::root(),
+			first_token_id,
+			rescue_amount,
+			rescue_tokens_recipient,
+			nonce
+		));
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &rescue_tokens_recipient),
 			rescue_amount
 		);
-		
 	})
 }

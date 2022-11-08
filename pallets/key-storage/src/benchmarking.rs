@@ -18,11 +18,11 @@
 #![cfg(feature = "runtime-benchmarks")]
 use super::*;
 use crate::Pallet;
-use sp_std::vec;
 use frame_benchmarking::{
 	benchmarks_instance_pallet, impl_benchmark_test_suite, whitelisted_caller,
 };
 use frame_system::RawOrigin;
+use sp_std::vec;
 fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
