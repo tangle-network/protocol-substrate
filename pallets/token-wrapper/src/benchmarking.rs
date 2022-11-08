@@ -109,7 +109,7 @@ benchmarks! {
 			balance.into()
 		);
 
-		<TokenWrapper<T> as TokenWrapperInterface<T::AccountId, <T as asset_registry::Config>::AssetId, BalanceOf<T>>, T::ProposalNonce>::wrap(recipient.clone(), first_token_id, pool_share_id, 5_000u32.into(), recipient.clone());
+		<TokenWrapper<T> as TokenWrapperInterface<T::AccountId, <T as asset_registry::Config>::AssetId, BalanceOf<T>, T::ProposalNonce>>::wrap(recipient.clone(), first_token_id, pool_share_id, 5_000u32.into(), recipient.clone());
 
 	}:_(RawOrigin::Signed(recipient.clone()), pool_share_id, first_token_id, 5_000u32.into(), recipient.clone())
 	verify {
@@ -152,6 +152,18 @@ benchmarks! {
 			Event::UpdatedWrappingFeePercent {
 				into_pool_share_id: pool_share_id,
 				wrapping_fee_percent: 5u32.into(),
+			}.into()
+		)
+	}
+	
+	set_fee_recipient {
+		let fee_recipient: T::AccountId = whitelisted_caller();
+		let nonce = 1048u32;
+	}:_(RawOrigin::Root,fee_recipient.clone(), nonce.into())
+	verify {
+		assert_last_event::<T>(
+			Event::UpdatedFeeRecipient {
+				fee_recipient
 			}.into()
 		)
 	}

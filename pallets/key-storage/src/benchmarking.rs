@@ -18,6 +18,7 @@
 #![cfg(feature = "runtime-benchmarks")]
 use super::*;
 use crate::Pallet;
+use sp_std::vec;
 use frame_benchmarking::{
 	benchmarks_instance_pallet, impl_benchmark_test_suite, whitelisted_caller,
 };

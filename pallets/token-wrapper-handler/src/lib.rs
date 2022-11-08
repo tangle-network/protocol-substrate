@@ -143,5 +143,18 @@ pub mod pallet {
 			T::TokenWrapper::delete_asset_from_existing_pool(&name, asset_id, nonce)?;
 			Ok(().into())
 		}
+		/// Executes `SetFeeRecipient` proposal which will set new fee recipient,
+		/// who will be receiving wrapping fee cost.
+		/// Ensures that only the bridge can call this function.
+		#[pallet::weight(195_000_000)]
+		pub fn execute_set_fee_recipient_proposal(
+			origin: OriginFor<T>,
+			fee_recipient: T::AccountId,
+			nonce: T::ProposalNonce
+		) -> DispatchResultWithPostInfo {
+			T::BridgeOrigin::ensure_origin(origin)?;
+			T::TokenWrapper::set_fee_recipient(fee_recipient, nonce)?;
+			Ok(().into())
+		}
 	}
 }

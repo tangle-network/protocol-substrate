@@ -174,7 +174,31 @@ pub mod pallet {
 			Self::set_resource(r_id, tree_id)
 		}
 
-		// TODO: Add configurable limit proposal executors for VAnchors
+		/// Execute set max deposit limit proposal.
+		/// The `MaxDepositLimitProposal` updates the maximum deposit amount allowed on the variable anchor system.
+		#[pallet::weight(195_000_000)]
+		pub fn execute_set_max_deposit_limit_proposal(
+			origin: OriginFor<T>,
+			max_deposit_limit: VAnchorBalanceOf<T, I>,
+			nonce: T::ProposalNonce
+		) -> DispatchResultWithPostInfo {
+			T::BridgeOrigin::ensure_origin(origin)?;
+			
+			Self::set_max_deposit_amount(max_deposit_limit, nonce)
+		}
+
+		/// Execute set min withdrawal limit proposal.
+		/// The `MinWithdrawalLimitProposal` updates the minimum withdrawal amount allowed on the variable anchor system.
+		#[pallet::weight(195_000_000)]
+		pub fn execute_set_minx_withdrawal_limit_proposal(
+			origin: OriginFor<T>,
+			min_withdraw_limit: VAnchorBalanceOf<T, I>,
+			nonce: T::ProposalNonce
+		) -> DispatchResultWithPostInfo {
+			T::BridgeOrigin::ensure_origin(origin)?;
+			
+			Self::set_min_withdraw_amount(min_withdraw_limit, nonce)
+		}
 	}
 }
 
@@ -239,6 +263,18 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			)?;
 			Self::deposit_event(Event::AnchorEdgeAdded);
 		}
+		Ok(().into())
+	}
+
+	fn set_max_deposit_amount(max_deposit_limit: VAnchorBalanceOf<T,I> , nonce: T::ProposalNonce) -> DispatchResultWithPostInfo {
+		T::VAnchor::set_max_deposit_amount(max_deposit_limit.into(),nonce)?;
+		Self::deposit_event(Event::AnchorEdgeAdded);
+		Ok(().into())
+	}
+
+	fn set_min_withdraw_amount(min_withdraw_limit: VAnchorBalanceOf<T,I> , nonce: T::ProposalNonce) -> DispatchResultWithPostInfo {
+		T::VAnchor::set_min_withdraw_amount(min_withdraw_limit.into(),nonce)?;
+		Self::deposit_event(Event::AnchorEdgeAdded);
 		Ok(().into())
 	}
 }
