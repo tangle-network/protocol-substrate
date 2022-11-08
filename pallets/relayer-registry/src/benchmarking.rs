@@ -26,7 +26,7 @@ use frame_support::traits::Get;
 use frame_system::RawOrigin;
 use webb_primitives::webb_proposals::ResourceId;
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 

@@ -40,7 +40,7 @@ use frame_support::{
 	traits::{Currency, Get, OnInitialize, PalletInfo},
 };
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 

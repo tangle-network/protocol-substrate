@@ -217,7 +217,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(195000)]
+		#[pallet::weight(195_000_000)]
 		pub fn set_fee_recipient(
 			origin: OriginFor<T>,
 			fee_recipient: T::AccountId,
@@ -271,7 +271,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::weight(195000)]
+		#[pallet::weight(195_000_000)]
 		pub fn rescue_tokens(
 			origin: OriginFor<T>,
 			asset_id: T::AssetId,

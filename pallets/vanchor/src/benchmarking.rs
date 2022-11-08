@@ -44,9 +44,11 @@ use frame_support::{
 };
 use sp_io::hashing::keccak_256;
 
-fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
+fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
+
+const CHAIN_IDENTIFIER: u32 = 1080;
 
 fn setup_env<T: Config<I>, I: 'static>() -> Vec<u8>
 where
@@ -147,7 +149,7 @@ benchmarks_instance_pallet! {
 		let public_amount : i128 = 10;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
+		let chain_id = compute_chain_id_type(CHAIN_IDENTIFIER, chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -235,7 +237,7 @@ benchmarks_instance_pallet! {
 		let public_amount : i128 = 10;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
+		let chain_id = compute_chain_id_type(CHAIN_IDENTIFIER, chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
