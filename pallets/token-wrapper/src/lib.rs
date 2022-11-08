@@ -499,7 +499,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 		Ok(())
 	}
 
-	// sets new fee recipient who will receiving wrapping cost fee.
+	// transfers tokens from treasury (fee recipient) to provided address.
 	fn rescue_tokens(
 		asset_id: T::AssetId,
 		recipient: T::AccountId,
