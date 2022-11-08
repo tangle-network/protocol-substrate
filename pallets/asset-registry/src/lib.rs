@@ -58,10 +58,10 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// The origin which can work with asset-registry.
-		type RegistryOrigin: EnsureOrigin<Self::Origin>;
+		type RegistryOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// Asset type
 		type AssetId: Parameter

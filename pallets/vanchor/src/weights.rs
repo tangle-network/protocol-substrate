@@ -100,15 +100,15 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	fn set_max_deposit_amount() -> Weight {
 		Weight::from_ref_time(3_653_000)
 			// Standard Error: 0
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: Vanchor MinWithdrawAmount (r:1 w:1)
 	fn set_min_withdraw_amount() -> Weight {
 		Weight::from_ref_time(3_653_000)
 			// Standard Error: 0
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
@@ -157,14 +157,14 @@ impl WeightInfo for () {
 	fn set_max_deposit_amount() -> Weight {
 		Weight::from_ref_time(3_653_000)
 			// Standard Error: 0
-			.saturating_add(RocksDbWeight::get().reads(1 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	// Storage: Vanchor MinWithdrawAmount (r:1 w:1)
 	fn set_min_withdraw_amount() -> Weight {
 		Weight::from_ref_time(3_653_000)
 			// Standard Error: 0
-			.saturating_add(RocksDbWeight::get().reads(1 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

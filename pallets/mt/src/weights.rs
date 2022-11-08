@@ -59,8 +59,8 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTreeBn254 Trees (r:0 w:1)
 	fn create(_d: u32, ) -> Weight {
 		Weight::from_ref_time(30_789_000)
-			.saturating_add(T::DbWeight::get().reads(2 as u64))
-			.saturating_add(T::DbWeight::get().writes(2 as u64))
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	// Storage: MerkleTreeBn254 Trees (r:1 w:1)
 	// Storage: MerkleTreeBn254 NextLeafIndex (r:1 w:1)
@@ -71,13 +71,13 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: MerkleTreeBn254 CachedRoots (r:0 w:1)
 	fn insert() -> Weight {
 		Weight::from_ref_time(4_857_000_000)
-			.saturating_add(T::DbWeight::get().reads(5 as u64))
-			.saturating_add(T::DbWeight::get().writes(5 as u64))
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
 	// Storage: MerkleTreeBn254 DefaultHashes (r:0 w:1)
 	fn force_set_default_hashes(_p: u32, ) -> Weight {
 		Weight::from_ref_time(1_003_000)
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
@@ -88,8 +88,8 @@ impl WeightInfo for () {
 	// Storage: MerkleTreeBn254 Trees (r:0 w:1)
 	fn create(_d: u32, ) -> Weight {
 		Weight::from_ref_time(30_789_000)
-			.saturating_add(RocksDbWeight::get().reads(2 as u64))
-			.saturating_add(RocksDbWeight::get().writes(2 as u64))
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 	// Storage: MerkleTreeBn254 Trees (r:1 w:1)
 	// Storage: MerkleTreeBn254 NextLeafIndex (r:1 w:1)
@@ -100,12 +100,12 @@ impl WeightInfo for () {
 	// Storage: MerkleTreeBn254 CachedRoots (r:0 w:1)
 	fn insert() -> Weight {
 		Weight::from_ref_time(4_857_000_000)
-			.saturating_add(RocksDbWeight::get().reads(5 as u64))
-			.saturating_add(RocksDbWeight::get().writes(5 as u64))
+			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
 	// Storage: MerkleTreeBn254 DefaultHashes (r:0 w:1)
 	fn force_set_default_hashes(_p: u32, ) -> Weight {
 		Weight::from_ref_time(1_003_000)
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

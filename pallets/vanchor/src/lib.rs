@@ -113,7 +113,8 @@ pub mod pallet {
 		frame_system::Config + pallet_linkable_tree::Config<I>
 	{
 		/// The overarching event type.
-		type Event: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self, I>>
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;
@@ -704,7 +705,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			// Deposit tokens to the pallet from the transactor's account
 			<T as Config<I>>::Currency::transfer(
 				vanchor.asset,
-				&transactor,
+				transactor,
 				&Self::account_id(),
 				abs_amount,
 			)?;
@@ -713,12 +714,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				abs_amount >= MinWithdrawAmount::<T, I>::get(),
 				Error::<T, I>::InvalidWithdrawAmount
 			);
-			if ext_data.token.clone() != T::MaxCurrencyId::get() {
+			if ext_data.token != T::MaxCurrencyId::get() {
 				// Unwrap to recipient account
 				T::TokenWrapper::unwrap(
 					Self::account_id(),
 					vanchor.asset,
-					ext_data.token.clone(),
+					ext_data.token,
 					abs_amount,
 					ext_data.recipient.clone(),
 				)?;

@@ -34,7 +34,7 @@ jobs:
       - name: Install apt dependencies
         run: |
           apt-get update && \
-          apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev && \
+          apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler && \
           rm -rf /var/lib/apt/lists/*
     
       - name: Rust Cache
@@ -57,6 +57,7 @@ jobs:
               --timeout 3600
 
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}

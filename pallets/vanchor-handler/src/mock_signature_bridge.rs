@@ -71,9 +71,9 @@ impl system::Config for Test {
 	type BlockLength = ();
 	type BlockNumber = BlockNumber;
 	type BlockWeights = ();
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	type DbWeight = ();
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type Header = Header;
@@ -83,7 +83,7 @@ impl system::Config for Test {
 	type OnKilledAccount = ();
 	type OnNewAccount = ();
 	type OnSetCode = ();
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	type PalletInfo = PalletInfo;
 	type SS58Prefix = SS58Prefix;
 	type SystemWeightInfo = ();
@@ -102,7 +102,7 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type Balance = Balance;
 	type DustRemoval = ();
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposit = ExistentialDeposit;
 	type MaxLocks = ();
 	type MaxReserves = ();
@@ -118,14 +118,14 @@ parameter_types! {
 }
 
 impl pallet_vanchor_verifier::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
 
 impl pallet_hasher::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
@@ -178,7 +178,7 @@ impl pallet_mt::Config for Test {
 	type DataDepositPerByte = LeafDepositPerByte;
 	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
 	type LeafIndex = u32;
@@ -203,12 +203,15 @@ impl orml_tokens::Config for Test {
 	type Balance = Balance;
 	type CurrencyId = webb_primitives::AssetId;
 	type DustRemovalWhitelist = Nothing;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposits = AssetRegistry;
 	type OnDust = ();
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type OnNewTokenAccount = ();
+	type OnSlash = ();
+	type OnDeposit = ();
+	type OnTransfer = ();
 	type OnKilledTokenAccount = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
@@ -227,7 +230,7 @@ impl pallet_asset_registry::Config for Test {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = NativeCurrencyId;
 	type RegistryOrigin = frame_system::EnsureRoot<u64>;
 	type StringLimit = RegistryStringLimit;
@@ -242,7 +245,7 @@ parameter_types! {
 impl pallet_token_wrapper::Config for Test {
 	type AssetRegistry = AssetRegistry;
 	type Currency = Currencies;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type PalletId = TokenWrapperPalletId;
 	type TreasuryId = TokenWrapperPalletId;
 	type WeightInfo = ();
@@ -261,7 +264,7 @@ impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
 	type ChainType = ChainType;
 	type ChainIdentifier = ChainIdentifier;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type HistoryLength = HistoryLength;
 	type Tree = MerkleTree;
 	type WeightInfo = ();
@@ -273,10 +276,10 @@ parameter_types! {
 }
 
 pub struct SetResourceProposalFilter;
-impl Contains<Call> for SetResourceProposalFilter {
-	fn contains(c: &Call) -> bool {
+impl Contains<RuntimeCall> for SetResourceProposalFilter {
+	fn contains(c: &RuntimeCall) -> bool {
 		match c {
-			Call::VAnchorHandler(method) => match method {
+			RuntimeCall::VAnchorHandler(method) => match method {
 				pallet_vanchor_handler::Call::execute_set_resource_proposal { .. } => true,
 				_ => false,
 			},
@@ -286,10 +289,10 @@ impl Contains<Call> for SetResourceProposalFilter {
 }
 
 pub struct ExecuteProposalFilter;
-impl Contains<Call> for ExecuteProposalFilter {
-	fn contains(c: &Call) -> bool {
+impl Contains<RuntimeCall> for ExecuteProposalFilter {
+	fn contains(c: &RuntimeCall) -> bool {
 		match c {
-			Call::VAnchorHandler(method) => match method {
+			RuntimeCall::VAnchorHandler(method) => match method {
 				pallet_vanchor_handler::Call::execute_vanchor_create_proposal { .. } => true,
 				pallet_vanchor_handler::Call::execute_vanchor_update_proposal { .. } => true,
 				_ => false,
@@ -309,8 +312,8 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type ChainId = ChainId;
 	type ChainIdentifier = ChainIdentifier;
 	type ChainType = ChainType;
-	type Event = Event;
-	type Proposal = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type Proposal = RuntimeCall;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
 	type SetResourceProposalFilter = SetResourceProposalFilter;
@@ -330,7 +333,7 @@ parameter_types! {
 impl pallet_vanchor::Config for Test {
 	type Currency = Currencies;
 	type EthereumHasher = Keccak256HasherBn254;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type IntoField = ArkworksIntoFieldBn254;
 	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
@@ -349,11 +352,11 @@ impl pallet_vanchor::Config for Test {
 impl pallet_vanchor_handler::Config for Test {
 	type VAnchor = VAnchor;
 	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Test, BridgeInstance>;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 }
 
 impl pallet_key_storage::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 
@@ -375,19 +378,22 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext
 }
 
-fn last_event() -> Event {
-	system::Pallet::<Test>::events().pop().map(|e| e.event).expect("Event expected")
+fn last_event() -> RuntimeEvent {
+	system::Pallet::<Test>::events()
+		.pop()
+		.map(|e| e.event)
+		.expect("RuntimeEvent expected")
 }
 
-pub fn expect_event<E: Into<Event>>(e: E) {
+pub fn expect_event<E: Into<RuntimeEvent>>(e: E) {
 	assert_eq!(last_event(), e.into());
 }
 
-// Asserts that the event was emitted at some point.
-pub fn event_exists<E: Into<Event>>(e: E) {
-	let actual: Vec<Event> =
+// Asserts that the RuntimeEvent was emitted at some point.
+pub fn event_exists<E: Into<RuntimeEvent>>(e: E) {
+	let actual: Vec<RuntimeEvent> =
 		system::Pallet::<Test>::events().iter().map(|e| e.event.clone()).collect();
-	let e: Event = e.into();
+	let e: RuntimeEvent = e.into();
 	let mut exists = false;
 	for evt in actual {
 		if evt == e {
@@ -399,16 +405,16 @@ pub fn event_exists<E: Into<Event>>(e: E) {
 }
 
 // Checks events against the latest. A contiguous set of events must be
-// provided. They must include the most recent event, but do not have to include
-// every past event.
-pub fn assert_events(mut expected: Vec<Event>) {
-	let mut actual: Vec<Event> =
+// provided. They must include the most recent RuntimeEvent, but do not have to include
+// every past RuntimeEvent.
+pub fn assert_events(mut expected: Vec<RuntimeEvent>) {
+	let mut actual: Vec<RuntimeEvent> =
 		system::Pallet::<Test>::events().iter().map(|e| e.event.clone()).collect();
 
 	expected.reverse();
 
 	for evt in expected {
-		let next = actual.pop().expect("event expected");
+		let next = actual.pop().expect("RuntimeEvent expected");
 		assert_eq!(next, evt, "Events don't match");
 	}
 }
@@ -421,9 +427,9 @@ pub fn new_test_ext_initialized(
 	let mut t = new_test_ext();
 	t.execute_with(|| {
 		// Whitelist chain
-		assert_ok!(SignatureBridge::whitelist_chain(Origin::root(), src_id));
+		assert_ok!(SignatureBridge::whitelist_chain(RuntimeOrigin::root(), src_id));
 		// Set and check resource ID mapped to some junk data
-		assert_ok!(SignatureBridge::set_resource(Origin::root(), r_id));
+		assert_ok!(SignatureBridge::set_resource(RuntimeOrigin::root(), r_id));
 		assert!(SignatureBridge::resource_exists(r_id));
 	});
 	t
@@ -435,7 +441,7 @@ pub fn new_test_ext_for_set_resource_proposal_initialized(
 	let mut t = new_test_ext();
 	t.execute_with(|| {
 		// Whitelist chain
-		assert_ok!(SignatureBridge::whitelist_chain(Origin::root(), src_id));
+		assert_ok!(SignatureBridge::whitelist_chain(RuntimeOrigin::root(), src_id));
 	});
 	t
 }

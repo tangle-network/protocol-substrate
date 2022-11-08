@@ -56,14 +56,14 @@ impl<T: frame_system::Config> WeightInfo for WebbWeight<T> {
 	// Storage: RelayerRegistry ResourceOf (r:1 w:1)
 	fn set_resource() -> Weight {
 		Weight::from_ref_time(28_000_000)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	// Storage: RelayerRegistry ResourceOf (r:1 w:1)
 	fn clear_resource() -> Weight {
 		Weight::from_ref_time(25_000_000)
-			.saturating_add(T::DbWeight::get().reads(1 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
@@ -72,13 +72,13 @@ impl WeightInfo for () {
 	// Storage: RelayerRegistry ResourceOf (r:1 w:1)
 	fn set_resource() -> Weight {
 		Weight::from_ref_time(28_000_000)
-			.saturating_add(RocksDbWeight::get().reads(1 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	// Storage: RelayerRegistry ResourceOf (r:1 w:1)
 	fn clear_resource() -> Weight {
 		Weight::from_ref_time(25_000_000)
-			.saturating_add(RocksDbWeight::get().reads(1 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

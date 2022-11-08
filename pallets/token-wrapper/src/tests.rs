@@ -40,7 +40,12 @@ fn should_wrap_token() {
 
 		assert_ok!(TokenWrapper::set_fee_recipient(Origin::root(), fee_recipient, nonce));
 
-		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			recipient,
+			first_token_id,
+			balance
+		));
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
 		// increment nonce
@@ -48,7 +53,7 @@ fn should_wrap_token() {
 		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into(), nonce));
 
 		assert_ok!(TokenWrapper::wrap(
-			Origin::signed(recipient),
+			RuntimeOrigin::signed(recipient),
 			first_token_id,
 			pool_share_id,
 			50000_u128,
@@ -100,13 +105,18 @@ fn should_unwrap_token() {
 
 		let balance: i128 = 100000;
 
-		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			recipient,
+			first_token_id,
+			balance
+		));
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into(), 1));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_ok!(TokenWrapper::wrap(
-			Origin::signed(recipient),
+			RuntimeOrigin::signed(recipient),
 			first_token_id,
 			pool_share_id,
 			50000_u128,
@@ -124,7 +134,7 @@ fn should_unwrap_token() {
 		);
 
 		assert_ok!(TokenWrapper::unwrap(
-			Origin::signed(recipient),
+			RuntimeOrigin::signed(recipient),
 			pool_share_id,
 			first_token_id,
 			50000_u128,
@@ -135,9 +145,8 @@ fn should_unwrap_token() {
 
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
-			initial_balance_first_token.saturating_sub(
-				TokenWrapper::get_wrapping_fee(50000, pool_share_id.into()).unwrap()
-			)
+			initial_balance_first_token
+				.saturating_sub(TokenWrapper::get_wrapping_fee(50000, pool_share_id).unwrap())
 		);
 	})
 }
@@ -170,13 +179,18 @@ fn wrapping_should_fail_if_asset_is_not_in_pool() {
 
 		let balance: i128 = 100000;
 
-		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			recipient,
+			first_token_id,
+			balance
+		));
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into(), 1));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_err!(
 			TokenWrapper::wrap(
-				Origin::signed(recipient),
+				RuntimeOrigin::signed(recipient),
 				first_token_id,
 				pool_share_id,
 				50000_u128,
@@ -211,11 +225,11 @@ fn only_root_should_update_wrapping_fee() {
 		.unwrap();
 
 		assert_err!(
-			TokenWrapper::set_wrapping_fee(Origin::signed(1), 10, pool_share_id.into(), 1),
+			TokenWrapper::set_wrapping_fee(RuntimeOrigin::signed(1), 10, pool_share_id, 1),
 			BadOrigin
 		);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 10, pool_share_id.into(), 1));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 10, pool_share_id, 1));
 	})
 }
 
@@ -247,14 +261,19 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 
 		let balance: i128 = 100000;
 
-		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			recipient,
+			first_token_id,
+			balance
+		));
 
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into(), 1));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_ok!(TokenWrapper::wrap(
-			Origin::signed(recipient),
+			RuntimeOrigin::signed(recipient),
 			first_token_id,
 			pool_share_id,
 			50000_u128,
@@ -273,7 +292,7 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 
 		assert_err!(
 			TokenWrapper::unwrap(
-				Origin::signed(recipient),
+				RuntimeOrigin::signed(recipient),
 				pool_share_id,
 				second_token_id,
 				50000_u128,
@@ -312,21 +331,26 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 
 		let balance: i128 = 100000;
 
-		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			recipient,
+			first_token_id,
+			balance
+		));
 
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
 		assert_ok!(Currencies::update_balance(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			TokenWrapper::account_id(),
 			second_token_id,
 			balance
 		));
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into(), 1));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_ok!(TokenWrapper::wrap(
-			Origin::signed(recipient),
+			RuntimeOrigin::signed(recipient),
 			first_token_id,
 			pool_share_id,
 			50000_u128,
@@ -338,7 +362,7 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 		assert_eq!(
 			TokenWrapper::get_balance(first_token_id, &recipient),
 			initial_balance_first_token
-				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128, pool_share_id.into()))
+				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128, pool_share_id))
 		);
 
 		assert_eq!(TokenWrapper::get_balance(second_token_id, &recipient), Default::default());
@@ -346,7 +370,7 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 		assert_eq!(TokenWrapper::get_balance(pool_share_id, &recipient), 50000);
 
 		assert_ok!(TokenWrapper::unwrap(
-			Origin::signed(recipient),
+			RuntimeOrigin::signed(recipient),
 			pool_share_id,
 			second_token_id,
 			50000_u128,
@@ -387,13 +411,18 @@ fn should_not_wrap_invalid_amount() {
 
 		let balance: i128 = 100000;
 
-		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			recipient,
+			first_token_id,
+			balance
+		));
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into(), 1));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_err!(
 			TokenWrapper::wrap(
-				Origin::signed(recipient),
+				RuntimeOrigin::signed(recipient),
 				first_token_id,
 				pool_share_id,
 				0_u128,
@@ -456,11 +485,16 @@ fn test_two_different_pool_shares() {
 
 		let second_balance: i128 = 100000;
 
-		assert_ok!(Currencies::update_balance(Origin::root(), recipient, first_token_id, balance));
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			recipient,
+			first_token_id,
+			balance
+		));
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
 		assert_ok!(Currencies::update_balance(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			second_recipient,
 			third_token_id,
 			second_balance
@@ -468,17 +502,17 @@ fn test_two_different_pool_shares() {
 		let initial_balance_third_token =
 			TokenWrapper::get_balance(third_token_id, &second_recipient);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(Origin::root(), 5, pool_share_id.into(), 1));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
 
 		assert_ok!(TokenWrapper::set_wrapping_fee(
-			Origin::root(),
+			RuntimeOrigin::root(),
 			10,
-			second_pool_share_id.into(),
+			second_pool_share_id,
 			2
 		));
 
 		assert_ok!(TokenWrapper::wrap(
-			Origin::signed(recipient),
+			RuntimeOrigin::signed(recipient),
 			first_token_id,
 			pool_share_id,
 			50000_u128,
@@ -487,7 +521,7 @@ fn test_two_different_pool_shares() {
 		assert_eq!(Tokens::total_issuance(pool_share_id), 50000);
 
 		assert_ok!(TokenWrapper::wrap(
-			Origin::signed(second_recipient),
+			RuntimeOrigin::signed(second_recipient),
 			third_token_id,
 			second_pool_share_id,
 			50000_u128,
