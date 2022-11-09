@@ -38,7 +38,12 @@ fn should_wrap_token() {
 
 		let nonce: u32 = 1;
 
-		assert_ok!(TokenWrapper::set_fee_recipient(RuntimeOrigin::root(), fee_recipient, nonce));
+		assert_ok!(TokenWrapper::set_fee_recipient(
+			RuntimeOrigin::root(),
+			pool_share_id,
+			fee_recipient,
+			nonce
+		));
 
 		assert_ok!(Currencies::update_balance(
 			RuntimeOrigin::root(),
@@ -581,7 +586,12 @@ fn should_rescue_all_tokens() {
 
 		let nonce: u32 = 1;
 
-		assert_ok!(TokenWrapper::set_fee_recipient(RuntimeOrigin::root(), fee_recipient, nonce));
+		assert_ok!(TokenWrapper::set_fee_recipient(
+			RuntimeOrigin::root(),
+			pool_share_id,
+			fee_recipient,
+			nonce
+		));
 
 		assert_ok!(Currencies::update_balance(
 			RuntimeOrigin::root(),
@@ -613,6 +623,7 @@ fn should_rescue_all_tokens() {
 		let nonce = nonce + 1;
 		assert_ok!(TokenWrapper::rescue_tokens(
 			RuntimeOrigin::root(),
+			pool_share_id,
 			first_token_id,
 			rescue_amount,
 			rescue_tokens_recipient,

@@ -144,16 +144,34 @@ pub mod pallet {
 			Ok(().into())
 		}
 		/// Executes `SetFeeRecipient` proposal which will set new fee recipient,
-		/// who will be receiving wrapping fee cost.
+		/// who will be receiving wrapping fee cost for given asset.
 		/// Ensures that only the bridge can call this function.
 		#[pallet::weight(195_000_000)]
 		pub fn execute_set_fee_recipient_proposal(
 			origin: OriginFor<T>,
+			pool_share_id: T::AssetId,
 			fee_recipient: T::AccountId,
 			nonce: T::ProposalNonce,
 		) -> DispatchResultWithPostInfo {
 			T::BridgeOrigin::ensure_origin(origin)?;
-			T::TokenWrapper::set_fee_recipient(fee_recipient, nonce)?;
+			T::TokenWrapper::set_fee_recipient(pool_share_id, fee_recipient, nonce)?;
+			Ok(().into())
+		}
+
+		/// Executes `RescueTokenProposal`, which will transfer tokens from
+		/// fee recipient to given recipient address from given asset.
+		/// Ensures that only the bridge can call this function.
+		#[pallet::weight(195_000_000)]
+		pub fn execute_rescue_tokens_proposal(
+			origin: OriginFor<T>,
+			pool_share_id: T::AssetId,
+			asset_id: T::AssetId,
+			amount: BalanceOf<T>,
+			recipient: T::AccountId,
+			nonce: T::ProposalNonce,
+		) -> DispatchResultWithPostInfo {
+			T::BridgeOrigin::ensure_origin(origin)?;
+			T::TokenWrapper::rescue_tokens(pool_share_id, asset_id, amount, recipient, nonce)?;
 			Ok(().into())
 		}
 	}
