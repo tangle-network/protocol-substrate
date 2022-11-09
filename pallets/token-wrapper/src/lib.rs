@@ -177,6 +177,7 @@ pub mod pallet {
 			pool_share_id: T::AssetId,
 		},
 		TokensRescued {
+			from_pool_share_id: T::AssetId,
 			asset_id: T::AssetId,
 			amount: BalanceOf<T>,
 			recipient: T::AccountId,
@@ -559,7 +560,12 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 			T::Currency::transfer(from_currency_id, &fee_recipient, &recipient, total_balance)?;
 		}
 
-		Self::deposit_event(Event::TokensRescued { asset_id, amount, recipient });
+		Self::deposit_event(Event::TokensRescued {
+			from_pool_share_id,
+			asset_id,
+			amount,
+			recipient,
+		});
 		Ok(())
 	}
 

@@ -157,13 +157,76 @@ benchmarks! {
 	}
 
 	set_fee_recipient {
+		let existential_balance: u32 = 1000;
+		let first_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_asset(
+			&b"shib".to_vec(),
+			existential_balance.into(),
+		)
+		.unwrap();
+		let second_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_asset(
+			&b"doge".to_vec(),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let pool_share_id = <<T as Config>::AssetRegistry as ShareTokenRegistry<<T as asset_registry::Config>::AssetId, Vec<u8>, T::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_shared_asset(
+			&b"meme".to_vec(),
+			&vec![second_token_id, first_token_id],
+			existential_balance.into(),
+		)
+		.unwrap();
+
 		let fee_recipient: T::AccountId = whitelisted_caller();
 		let nonce = 1048u32;
-	}:_(RawOrigin::Root,fee_recipient.clone(), nonce.into())
+	}:_(RawOrigin::Root,pool_share_id, fee_recipient.clone(), nonce.into())
 	verify {
 		assert_last_event::<T>(
 			Event::UpdatedFeeRecipient {
-				fee_recipient
+				fee_recipient,
+				pool_share_id
+			}.into()
+		)
+	}
+
+	rescue_tokens {
+		let existential_balance: u32 = 1000;
+		let first_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_asset(
+			&b"shib".to_vec(),
+			existential_balance.into(),
+		)
+		.unwrap();
+		let second_token_id = <<T as Config>::AssetRegistry as Registry<<T as asset_registry::Config>::AssetId, Vec<u8>, <T as asset_registry::Config>::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_asset(
+			&b"doge".to_vec(),
+			existential_balance.into(),
+		)
+		.unwrap();
+		let pool_asset_name = b"meme".to_vec();
+		let pool_share_id = <<T as Config>::AssetRegistry as ShareTokenRegistry<<T as asset_registry::Config>::AssetId, Vec<u8>, T::Balance, BoundedVec<u8, T::StringLimit>, DispatchError>>::create_shared_asset(
+			&pool_asset_name,
+			&vec![second_token_id, first_token_id],
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let fee_recipient: T::AccountId = whitelisted_caller();
+		FeeRecipient::<T>::insert(pool_asset_name, &fee_recipient);
+		let amount: u32 = 10_000;
+
+		<<T as Config>::Currency as MultiCurrency<T::AccountId>>::deposit(
+			TokenWrapper::<T>::to_currency_id(first_token_id).unwrap(),
+			&fee_recipient,
+			amount.into()
+		);
+		let nonce = 1048u32;
+		let recipient: T::AccountId = whitelisted_caller();
+	}:_(RawOrigin::Root,pool_share_id, first_token_id, amount.into(), recipient.clone(), nonce.into())
+	verify {
+		assert_last_event::<T>(
+			Event::TokensRescued {
+				from_pool_share_id: pool_share_id,
+				asset_id: first_token_id,
+				amount: amount.into(),
+				recipient,
 			}.into()
 		)
 	}
