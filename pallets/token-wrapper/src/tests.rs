@@ -34,6 +34,17 @@ fn should_wrap_token() {
 
 		let balance: i128 = 100000;
 
+		let fee_recipient: u64 = 10;
+
+		let nonce: u32 = 1;
+
+		assert_ok!(TokenWrapper::set_fee_recipient(
+			RuntimeOrigin::root(),
+			pool_share_id,
+			fee_recipient,
+			nonce
+		));
+
 		assert_ok!(Currencies::update_balance(
 			RuntimeOrigin::root(),
 			recipient,
@@ -42,7 +53,14 @@ fn should_wrap_token() {
 		));
 		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
-		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, 1));
+		// increment nonce
+		let nonce = nonce + 1;
+		assert_ok!(TokenWrapper::set_wrapping_fee(
+			RuntimeOrigin::root(),
+			5,
+			pool_share_id.into(),
+			nonce
+		));
 
 		assert_ok!(TokenWrapper::wrap(
 			RuntimeOrigin::signed(recipient),
@@ -51,6 +69,7 @@ fn should_wrap_token() {
 			50000_u128,
 			recipient
 		));
+		let wrapping_fee = TokenWrapper::get_wrapping_fee(50000_u128, pool_share_id).unwrap();
 		println!("{:?}", Tokens::total_issuance(pool_share_id));
 		println!("{:?}", TokenWrapper::get_balance(first_token_id, &recipient));
 		println!("{:?}", TokenWrapper::get_balance(pool_share_id, &recipient));
@@ -64,6 +83,7 @@ fn should_wrap_token() {
 		);
 
 		assert_eq!(TokenWrapper::get_balance(pool_share_id, &recipient), 50000);
+		assert_eq!(TokenWrapper::get_balance(first_token_id, &fee_recipient), wrapping_fee);
 	})
 }
 
@@ -530,6 +550,88 @@ fn test_two_different_pool_shares() {
 			TokenWrapper::get_balance(third_token_id, &recipient),
 			initial_balance_third_token
 				.saturating_sub(TokenWrapper::get_amount_to_wrap(50000_u128, second_pool_share_id))
+		);
+	})
+}
+
+#[test]
+fn should_rescue_all_tokens() {
+	new_test_ext().execute_with(|| {
+		let existential_balance: u32 = 1000;
+		let first_token_id = AssetRegistry::register_asset(
+			b"shib".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+		let second_token_id = AssetRegistry::register_asset(
+			b"doge".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let pool_share_id = AssetRegistry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let recipient: u64 = 1;
+
+		let balance: i128 = 100000;
+
+		let fee_recipient: u64 = 10;
+
+		let nonce: u32 = 1;
+
+		assert_ok!(TokenWrapper::set_fee_recipient(
+			RuntimeOrigin::root(),
+			pool_share_id,
+			fee_recipient,
+			nonce
+		));
+
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			recipient,
+			first_token_id,
+			balance
+		));
+
+		// increment nonce
+		let nonce = nonce + 1;
+		assert_ok!(TokenWrapper::set_wrapping_fee(
+			RuntimeOrigin::root(),
+			5,
+			pool_share_id.into(),
+			nonce
+		));
+
+		assert_ok!(TokenWrapper::wrap(
+			RuntimeOrigin::signed(recipient),
+			first_token_id,
+			pool_share_id,
+			50000_u128,
+			recipient
+		));
+		// Rescue all tokens from fee recipient to provided recipient address.
+		let rescue_amount = TokenWrapper::get_balance(first_token_id, &fee_recipient);
+		let rescue_tokens_recipient: u64 = 11;
+		// increment nonce
+		let nonce = nonce + 1;
+		assert_ok!(TokenWrapper::rescue_tokens(
+			RuntimeOrigin::root(),
+			pool_share_id,
+			first_token_id,
+			rescue_amount,
+			rescue_tokens_recipient,
+			nonce
+		));
+		assert_eq!(
+			TokenWrapper::get_balance(first_token_id, &rescue_tokens_recipient),
+			rescue_amount
 		);
 	})
 }

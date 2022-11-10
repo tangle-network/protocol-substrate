@@ -44,9 +44,11 @@ use frame_support::{
 };
 use sp_io::hashing::keccak_256;
 
-fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
+fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
+
+const CHAIN_IDENTIFIER: u32 = 1080;
 
 fn setup_env<T: Config<I>, I: 'static>() -> Vec<u8>
 where
@@ -147,7 +149,7 @@ benchmarks_instance_pallet! {
 		let public_amount : i128 = 10;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
+		let chain_id = compute_chain_id_type(CHAIN_IDENTIFIER, chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -200,7 +202,15 @@ benchmarks_instance_pallet! {
 
 	  }: _(RawOrigin::Signed(transactor.clone()), tree_id, proof_data.clone(), ext_data)
 	  verify {
-		  assert_last_event::<T, I>(Event::Transaction{ transactor, tree_id, leafs : proof_data.output_commitments, amount : ext_amount.into() }.into())
+		  assert_last_event::<T, I>(
+			Event::Transaction {
+			transactor,
+			tree_id,
+			leafs : proof_data.output_commitments,
+			encrypted_output1: output1.to_vec(),
+			encrypted_output2: output2.to_vec(),
+			amount : ext_amount.into() }.into()
+		)
 	}
 
 	register_and_transact {
@@ -227,7 +237,7 @@ benchmarks_instance_pallet! {
 		let public_amount : i128 = 10;
 
 		let chain_type = [2, 0];
-		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
+		let chain_id = compute_chain_id_type(CHAIN_IDENTIFIER, chain_type);
 		let in_chain_ids = [chain_id; 2];
 		let in_amounts = [0, 0];
 		let in_indices = [0, 1];
@@ -280,8 +290,16 @@ benchmarks_instance_pallet! {
 
 	  }: _(RawOrigin::Signed(transactor.clone()), transactor.clone(),[0u8; 32].to_vec(),tree_id, proof_data.clone(), ext_data)
 	  verify {
-		  assert_last_event::<T, I>(Event::Transaction{ transactor, tree_id, leafs : proof_data.output_commitments, amount : ext_amount.into() }.into())
-	}
+		assert_last_event::<T, I>(
+		  Event::Transaction {
+		  transactor,
+		  tree_id,
+		  leafs : proof_data.output_commitments,
+		  encrypted_output1: output1.to_vec(),
+		  encrypted_output2: output2.to_vec(),
+		  amount : ext_amount.into() }.into()
+	  )
+  }
 
 	set_max_deposit_amount {
 	  }: _(RawOrigin::Root, 100u32.into(), 101u32.into())

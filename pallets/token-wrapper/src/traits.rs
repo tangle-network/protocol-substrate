@@ -7,6 +7,18 @@ pub trait TokenWrapperInterface<AccountId, AssetId, Balance, Nonce> {
 		fee: Balance,
 		nonce: Nonce,
 	) -> Result<(), dispatch::DispatchError>;
+	fn set_fee_recipient(
+		pool_share_id: AssetId,
+		fee_recipient: AccountId,
+		nonce: Nonce,
+	) -> Result<(), dispatch::DispatchError>;
+	fn rescue_tokens(
+		from_pool_share_id: AssetId,
+		asset_id: AssetId,
+		amount: Balance,
+		recipient: AccountId,
+		nonce: Nonce,
+	) -> Result<(), dispatch::DispatchError>;
 	fn wrap(
 		from: AccountId,
 		from_asset_id: AssetId,

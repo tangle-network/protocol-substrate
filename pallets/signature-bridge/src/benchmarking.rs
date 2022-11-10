@@ -32,7 +32,7 @@ use webb_primitives::{
 };
 
 /// Helper function to test last event
-fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::Event) {
+fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
@@ -135,7 +135,7 @@ benchmarks_instance_pallet! {
 		let prop_data = make_proposal_data(r_id.encode(), nonce, call_encoded);
 		let msg = keccak_256(&prop_data);
 		let signature = ecdsa_sign_prehashed(DUMMY, &maintainer, &msg).unwrap();
-	}: _(RawOrigin::Signed(caller), src_id.into(), Box::new(call), prop_data, signature.encode())
+	}: _(RawOrigin::Signed(caller), src_id.into(), prop_data, signature.encode())
 	verify {
 		assert_last_event::<T, I>(Event::ProposalSucceeded{chain_id : src_id.into(), proposal_nonce : 1_u32.into()}.into());
 	}
@@ -162,7 +162,7 @@ benchmarks_instance_pallet! {
 		let prop_data = make_proposal_data(r_id.encode(), nonce, call_encoded);
 		let msg = keccak_256(&prop_data);
 		let signature = ecdsa_sign_prehashed(DUMMY, &maintainer, &msg).unwrap();
-	}: _(RawOrigin::Signed(caller), src_id.into(), Box::new(call), prop_data, signature.encode())
+	}: _(RawOrigin::Signed(caller), src_id.into(), prop_data, signature.encode())
 	verify {
 		assert_last_event::<T, I>(Event::ProposalSucceeded{chain_id : src_id.into(), proposal_nonce : 1_u32.into()}.into());
 	}
