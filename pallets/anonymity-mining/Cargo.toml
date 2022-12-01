@@ -15,6 +15,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 
+pallet-vanchor = { path = "../vanchor", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
 orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.30", default-features = false }
@@ -64,6 +65,7 @@ std = [
 	"orml-traits/std",
 	"pallet-asset-registry/std",
 	"pallet-balances/std",
+	"pallet-vanchor/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

@@ -4586,6 +4586,7 @@ dependencies = [
  "orml-traits",
  "pallet-asset-registry",
  "pallet-balances",
+ "pallet-vanchor",
  "parity-scale-codec",
  "scale-info",
  "serde",

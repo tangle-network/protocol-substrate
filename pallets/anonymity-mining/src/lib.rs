@@ -37,14 +37,16 @@ use frame_support::{
 };
 use orml_traits::{currency::transactional, MultiCurrency};
 use sp_std::{convert::TryInto, prelude::*, vec};
+use webb_primitives::traits::vanchor::{VAnchorInterface, VAnchorInspector};
+use pallet_vanchor::VAnchorConfigration;
 
 pub use pallet::*;
 
 /// Type alias for the orml_traits::MultiCurrency::Balance type
-pub type BalanceOf<T> =
-	<<T as Config>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
+pub type BalanceOf<T, I> =
+	<<T as Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
 /// Type alias for the orml_traits::MultiCurrency::CurrencyId type
-pub type CurrencyIdOf<T> = <<T as pallet::Config>::Currency as MultiCurrency<
+pub type CurrencyIdOf<T, I> = <<T as pallet::Config<I>>::Currency as MultiCurrency<
 	<T as frame_system::Config>::AccountId,
 >>::CurrencyId;
 
@@ -57,13 +59,14 @@ pub mod pallet {
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
-	pub struct Pallet<T>(_);
+	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
 	/// The module configuration trait.
-	pub trait Config: frame_system::Config + pallet_balances::Config {
+	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_balances::Config + pallet_vanchor::Config<I> {
 		/// The overarching event type.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type RuntimeEvent: From<Event<Self, I>>
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Account Identifier from which the internal Pot is generated.
 		type PotId: Get<PalletId>;
@@ -71,9 +74,13 @@ pub mod pallet {
 		/// Currency type for taking deposits
 		type Currency: MultiCurrency<Self::AccountId>;
 
+		/// VAnchor Interface
+		type VAnchor: VAnchorInterface<VAnchorConfigration<Self, I>>
+			+ VAnchorInspector<VAnchorConfigration<Self, I>>;
+		
 		/// Native currency id
 		#[pallet::constant]
-		type NativeCurrencyId: Get<CurrencyIdOf<Self>>;
+		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
 
 		/// The origin which may forcibly reset parameters or otherwise alter
 		/// privileged attributes.
@@ -81,55 +88,53 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {
-		pub phantom: PhantomData<T>,
+	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
+		pub phantom: (PhantomData<T>, PhantomData<I>),
 	}
 
 	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
+	impl<T: Config<I>, I: 'static> Default for GenesisConfig<T, I> {
 		fn default() -> Self {
 			Self { phantom: Default::default() }
 		}
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
 		fn build(&self) {}
 	}
 
 	#[pallet::storage]
 	#[pallet::getter(fn parameters)]
 	/// Details of the module's parameters
-	pub(super) type Parameters<T: Config> = StorageValue<_, Vec<u8>, ValueQuery>;
+	pub(super) type Parameters<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, Vec<u8>, ValueQuery>;
 
 	#[pallet::event]
-	pub enum Event<T: Config> {}
+	pub enum Event<T: Config<I>, I: 'static = ()> {}
 
 	#[pallet::error]
-	pub enum Error<T> {
+	pub enum Error<T, I = ()> {
 		/// Parameters haven't been initialized
 		ParametersNotInitialized,
 		/// Error during hashing
 		HashError,
 	}
 
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
-
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
 		pub fn swap(
 			origin: OriginFor<T>,
 			recipient: T::AccountId,
-			amount: BalanceOf<T>,
+			amount: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			Ok(().into())
 		}
 	}
 }
 
-impl<T: Config> Pallet<T> {
+impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Get a unique, inaccessible account id from the `PotId`.
 	pub fn account_id() -> T::AccountId {
 		T::PotId::get().into_account_truncating()
