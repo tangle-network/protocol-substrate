@@ -24,12 +24,10 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod benchmarking;
 #[cfg(test)]
 pub mod mock;
 #[cfg(test)]
 mod tests;
-pub mod weights;
 
 use frame_support::{
 	pallet_prelude::{ensure, DispatchError},
@@ -37,10 +35,18 @@ use frame_support::{
 	traits::Get,
 	PalletId,
 };
+use orml_traits::{currency::transactional, MultiCurrency};
 use sp_std::{convert::TryInto, prelude::*, vec};
 
 pub use pallet::*;
-pub use weights::WeightInfo;
+
+/// Type alias for the orml_traits::MultiCurrency::Balance type
+pub type BalanceOf<T> =
+	<<T as Config>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
+/// Type alias for the orml_traits::MultiCurrency::CurrencyId type
+pub type CurrencyIdOf<T> = <<T as pallet::Config>::Currency as MultiCurrency<
+	<T as frame_system::Config>::AccountId,
+>>::CurrencyId;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -62,12 +68,16 @@ pub mod pallet {
 		/// Account Identifier from which the internal Pot is generated.
 		type PotId: Get<PalletId>;
 
+		/// Currency type for taking deposits
+		type Currency: MultiCurrency<Self::AccountId>;
+
+		/// Native currency id
+		#[pallet::constant]
+		type NativeCurrencyId: Get<CurrencyIdOf<Self>>;
+
 		/// The origin which may forcibly reset parameters or otherwise alter
 		/// privileged attributes.
 		type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
-
-		/// Weightinfo for pallet.
-		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::genesis_config]
@@ -109,22 +119,10 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(0)]
-		pub fn force_set_parameters(
-			origin: OriginFor<T>,
-			parameters: Vec<u8>,
-		) -> DispatchResultWithPostInfo {
-			T::ForceOrigin::ensure_origin(origin)?;
-			Parameters::<T>::try_mutate(|params| {
-				*params = parameters.clone();
-				Ok(().into())
-			})
-		}
-
-		#[pallet::weight(0)]
 		pub fn swap(
 			origin: OriginFor<T>,
 			recipient: T::AccountId,
-			amount: T::Balance,
+			amount: BalanceOf<T>,
 		) -> DispatchResultWithPostInfo {
 			Ok(().into())
 		}
