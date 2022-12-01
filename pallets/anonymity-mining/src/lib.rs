@@ -36,9 +36,9 @@ use frame_support::{
 	PalletId,
 };
 use orml_traits::{currency::transactional, MultiCurrency};
-use sp_std::{convert::TryInto, prelude::*, vec};
-use webb_primitives::traits::vanchor::{VAnchorInterface, VAnchorInspector};
 use pallet_vanchor::VAnchorConfigration;
+use sp_std::{convert::TryInto, prelude::*, vec};
+use webb_primitives::traits::vanchor::{VAnchorInspector, VAnchorInterface};
 
 pub use pallet::*;
 
@@ -63,7 +63,9 @@ pub mod pallet {
 
 	#[pallet::config]
 	/// The module configuration trait.
-	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_balances::Config + pallet_vanchor::Config<I> {
+	pub trait Config<I: 'static = ()>:
+		frame_system::Config + pallet_balances::Config + pallet_vanchor::Config<I>
+	{
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self, I>>
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -78,6 +80,9 @@ pub mod pallet {
 		type VAnchor: VAnchorInterface<VAnchorConfigration<Self, I>>
 			+ VAnchorInspector<VAnchorConfigration<Self, I>>;
 		
+		#[pallet::constant]
+		type AnonymityPointsAssetId: Get<CurrencyIdOf<Self, I>>;
+
 		/// Native currency id
 		#[pallet::constant]
 		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
