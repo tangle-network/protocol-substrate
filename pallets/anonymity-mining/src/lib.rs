@@ -79,9 +79,14 @@ pub mod pallet {
 		/// VAnchor Interface
 		type VAnchor: VAnchorInterface<VAnchorConfigration<Self, I>>
 			+ VAnchorInspector<VAnchorConfigration<Self, I>>;
-		
+
+		/// AP asset id
 		#[pallet::constant]
 		type AnonymityPointsAssetId: Get<CurrencyIdOf<Self, I>>;
+
+		/// Reward asset id
+		#[pallet::constant]
+		type RewardAssetId: Get<CurrencyIdOf<Self, I>>;
 
 		/// Native currency id
 		#[pallet::constant]
@@ -134,6 +139,28 @@ pub mod pallet {
 			recipient: T::AccountId,
 			amount: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin)?;
+			// Transfer tokens from pallet
+			//Currency::transfer(NativeCurrencyId, &Self::account_id(), &recipient, amount)?;
+
+			// Deposit AP tokens to the pallet
+			<T as Config<I>>::Currency::transfer(
+				T::AnonymityPointsAssetId::get(),
+				&recipient,
+				&Self::account_id(),
+				amount,
+			)?;
+
+			// TODO: calc swap conversion amount
+
+			// Pallet sends reward tokens
+			<T as Config<I>>::Currency::transfer(
+				T::RewardAssetId::get(),
+				&Self::account_id(),
+				&recipient,
+				amount,
+			)?;
+
 			Ok(().into())
 		}
 	}

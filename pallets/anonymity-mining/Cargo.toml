@@ -18,6 +18,13 @@ scale-info = { version = "2.1.1", default-features = false, features = ["derive"
 pallet-vanchor = { path = "../vanchor", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+pallet-hasher = { path = "../hasher", default-features = false }
+pallet-mixer = { path = "../mixer", default-features = false }
+pallet-mt = { path = "../mt", default-features = false }
+pallet-linkable-tree = { path = "../linkable-tree", default-features = false }
+pallet-vanchor-verifier = { path = "../vanchor-verifier", default-features = false }
+pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
+pallet-key-storage = {path = "../key-storage"}
 orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.30", default-features = false }
 orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.30", default-features = false }
 orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.30", default-features = false }
@@ -66,6 +73,10 @@ std = [
 	"pallet-asset-registry/std",
 	"pallet-balances/std",
 	"pallet-vanchor/std",
+	"pallet-mt/std",
+	"pallet-vanchor-verifier/std",
+	"pallet-token-wrapper/std"
+
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",
