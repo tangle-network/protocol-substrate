@@ -25,6 +25,7 @@ pallet-linkable-tree = { path = "../linkable-tree", default-features = false }
 pallet-vanchor-verifier = { path = "../vanchor-verifier", default-features = false }
 pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
 pallet-key-storage = {path = "../key-storage"}
+pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
 orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.30", default-features = false }
 orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.30", default-features = false }
 orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.30", default-features = false }

@@ -19,12 +19,72 @@ fn setup_environment() {
 	for account_id in [
 		account::<AccountId>("", 1, SEED),
 		account::<AccountId>("", 2, SEED),
-		account::<AccountId>("", 3, SEED)
+		account::<AccountId>("", 3, SEED),
 	] {
 		assert_ok!(Balances::set_balance(RuntimeOrigin::root(), account_id, 100_000_000, 0));
 	}
 }
 
+// Test basic get virtual reward balance
+#[test]
+fn test_basic_get_virtual_reward_balance() {
+	new_test_ext().execute_with(|| {
+		let _ = setup_environment();
+
+		let reward_currency_id = 2;
+
+		let prev_virtual_balance =
+			AnonymityMining::get_virtual_balance(&AnonymityMining::account_id());
+		assert_ok!(prev_virtual_balance);
+		assert_eq!(prev_virtual_balance.unwrap(), Zero::zero());
+
+		// add reward balance to pallet
+		let new_reward_balance = 100;
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			AnonymityMining::account_id(),
+			reward_currency_id,
+			new_reward_balance,
+		));
+
+		let new_virtual_balance =
+			AnonymityMining::get_virtual_balance(&AnonymityMining::account_id());
+		assert_ok!(new_virtual_balance);
+		assert_eq!(new_virtual_balance.unwrap().saturated_into::<i128>(), new_reward_balance);
+	})
+}
+
+// Test basic get expected return
+#[test]
+fn test_basic_get_expected_return() {
+	new_test_ext().execute_with(|| {
+		let _ = setup_environment();
+
+		let reward_currency_id = 2;
+
+		let amount = 100;
+		let prev_expected_return =
+			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+		assert_ok!(prev_expected_return);
+		assert_eq!(prev_expected_return.unwrap(), 0);
+
+		// add reward balance to pallet
+		let new_reward_balance = 100;
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			AnonymityMining::account_id(),
+			reward_currency_id,
+			new_reward_balance,
+		));
+
+		let new_expected_return =
+			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+		assert_ok!(new_expected_return);
+		assert_eq!(new_expected_return.unwrap().saturated_into::<i128>(), new_reward_balance);
+	})
+}
+
+// Test basic swap
 #[test]
 fn test_basic_swap() {
 	new_test_ext().execute_with(|| {
@@ -85,6 +145,9 @@ fn test_basic_swap() {
 
 		let amount = 100;
 
+		let expected_return =
+			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+
 		// conduct swap
 		assert_ok!(AnonymityMining::swap(
 			RuntimeOrigin::signed(sender_account_id.clone()),
@@ -103,8 +166,14 @@ fn test_basic_swap() {
 
 		// check balances update properly
 		assert_eq!(sender_ap_balance_after, sender_ap_balance_before - amount);
-		assert_eq!(sender_reward_balance_after, sender_reward_balance_before + amount);
+		assert_eq!(
+			sender_reward_balance_after,
+			sender_reward_balance_before + expected_return.unwrap()
+		);
 		assert_eq!(pallet_ap_balance_after, pallet_ap_balance_before + amount);
-		assert_eq!(pallet_reward_balance_after, pallet_reward_balance_before - amount);
+		assert_eq!(
+			pallet_reward_balance_after,
+			pallet_reward_balance_before - expected_return.unwrap()
+		);
 	});
 }

@@ -4591,6 +4591,7 @@ dependencies = [
  "pallet-linkable-tree",
  "pallet-mixer",
  "pallet-mt",
+ "pallet-timestamp",
  "pallet-token-wrapper",
  "pallet-vanchor",
  "pallet-vanchor-verifier",

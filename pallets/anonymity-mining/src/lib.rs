@@ -31,14 +31,20 @@ mod tests;
 
 use frame_support::{
 	pallet_prelude::{ensure, DispatchError},
-	sp_runtime::traits::AccountIdConversion,
-	traits::Get,
+	sp_runtime::{
+		traits::{AccountIdConversion, One, Saturating, Zero},
+		SaturatedConversion,
+	},
+	traits::{Get, Time},
 	PalletId,
 };
 use orml_traits::{currency::transactional, MultiCurrency};
 use pallet_vanchor::VAnchorConfigration;
 use sp_std::{convert::TryInto, prelude::*, vec};
-use webb_primitives::traits::vanchor::{VAnchorInspector, VAnchorInterface};
+use webb_primitives::{
+	traits::vanchor::{VAnchorInspector, VAnchorInterface},
+	types::runtime::Moment,
+};
 
 pub use pallet::*;
 
@@ -92,6 +98,18 @@ pub mod pallet {
 		#[pallet::constant]
 		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
 
+		// /// Time provider
+		type Time: Time;
+
+		/// Start time
+		type StartTimestamp: Time;
+
+		#[pallet::constant]
+		type PoolWeight: Get<u64>;
+
+		#[pallet::constant]
+		type Duration: Get<u64>;
+
 		/// The origin which may forcibly reset parameters or otherwise alter
 		/// privileged attributes.
 		type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
@@ -140,8 +158,7 @@ pub mod pallet {
 			amount: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
-			// Transfer tokens from pallet
-			//Currency::transfer(NativeCurrencyId, &Self::account_id(), &recipient, amount)?;
+			let tokens = Self::get_expected_return(&Self::account_id(), amount).unwrap();
 
 			// Deposit AP tokens to the pallet
 			<T as Config<I>>::Currency::transfer(
@@ -150,8 +167,6 @@ pub mod pallet {
 				&Self::account_id(),
 				amount,
 			)?;
-
-			// TODO: calc swap conversion amount
 
 			// Pallet sends reward tokens
 			<T as Config<I>>::Currency::transfer(
@@ -170,5 +185,39 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Get a unique, inaccessible account id from the `PotId`.
 	pub fn account_id() -> T::AccountId {
 		T::PotId::get().into_account_truncating()
+	}
+
+	/// Get expected number of tokens to swap
+	pub fn get_expected_return(
+		addr: &T::AccountId,
+		amount: BalanceOf<T, I>,
+	) -> Result<BalanceOf<T, I>, DispatchError> {
+		let old_balance = Self::get_virtual_balance(addr).unwrap();
+		// let pow =
+		// 	(amount.saturated_into::<u64>()).saturating_mul(<T as Config<I>>::PoolWeight::get());
+		let pow = 0;
+		let one: u64 = 1;
+		let exp = one.saturating_pow(pow.try_into().unwrap()) / 2;
+		let new_balance = (old_balance.saturated_into::<u64>()).saturating_mul(exp);
+		//let final_balance = old_balance - new_balance;
+		let final_balance = old_balance.saturating_sub(new_balance.saturated_into::<BalanceOf<T,
+		I>>());
+		Ok(final_balance)
+	}
+
+	/// Calculate balance to use
+	pub fn get_virtual_balance(addr: &T::AccountId) -> Result<BalanceOf<T, I>, DispatchError> {
+		let reward_balance =
+			<T as Config<I>>::Currency::total_balance(T::RewardAssetId::get(), addr);
+		let start_timestamp = T::Time::now();
+		let current_timestamp = T::Time::now();
+		let elapsed_timestamp = current_timestamp - start_timestamp;
+		let elapsed = elapsed_timestamp.saturated_into::<u64>();
+		if elapsed <= <T as Config<I>>::Duration::get() {
+			// TODO: initialLiquidity + (L * elapsed) / duration - tokensSold
+			return Ok(reward_balance)
+		} else {
+			return Ok(reward_balance)
+		}
 	}
 }

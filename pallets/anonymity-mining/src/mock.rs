@@ -17,6 +17,7 @@ use webb_primitives::{field_ops::ArkworksIntoFieldBn254, verifying::ArkworksVeri
 pub use webb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
 	hashing::ethereum::Keccak256HasherBn254,
+	types::runtime::Moment,
 	ElementTrait,
 };
 
@@ -32,6 +33,8 @@ pub type ChainId = u64;
 pub type AssetId = u32;
 /// Signed version of Balance
 pub type Amount = i128;
+
+pub const MILLISECS_PER_BLOCK: u64 = 12000;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -52,6 +55,7 @@ frame_support::construct_runtime!(
 		VAnchor: pallet_vanchor::{Pallet, Call, Storage, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>},
 		KeyStorage: pallet_key_storage::{Pallet, Call, Storage, Event<T>, Config<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
 		AnonymityMining: pallet_anonymity_mining::{Pallet, Call, Storage, Event<T>, Config<T>}
 	}
 );
@@ -218,6 +222,8 @@ parameter_types! {
 	pub const MetadataDepositBase: u64 = 1;
 	pub const MetadataDepositPerByte: u64 = 1;
 	pub const PotId: PalletId = PalletId(*b"py/anmin");
+	pub const PoolWeight: u64 = 5;
+	pub const Duration: u64 = 100;
 }
 
 impl pallet_vanchor_verifier::Config for Test {
@@ -298,6 +304,17 @@ impl pallet_key_storage::Config for Test {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const MinimumPeriod: u64 = MILLISECS_PER_BLOCK / 2;
+}
+
+impl pallet_timestamp::Config for Test {
+	type Moment = Moment;
+	type OnTimestampSet = ();
+	type MinimumPeriod = MinimumPeriod;
+	type WeightInfo = ();
+}
+
 impl pallet_anonymity_mining::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type PotId = PotId;
@@ -306,6 +323,10 @@ impl pallet_anonymity_mining::Config for Test {
 	type NativeCurrencyId = NativeCurrencyId;
 	type AnonymityPointsAssetId = AnonymityPointsAssetId;
 	type RewardAssetId = RewardAssetId;
+	type Time = Timestamp;
+	type StartTimestamp = Timestamp;
+	type PoolWeight = PoolWeight;
+	type Duration = Duration;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 }
 
