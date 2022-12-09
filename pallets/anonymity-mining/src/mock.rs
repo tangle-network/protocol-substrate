@@ -55,7 +55,7 @@ frame_support::construct_runtime!(
 		VAnchor: pallet_vanchor::{Pallet, Call, Storage, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>},
 		KeyStorage: pallet_key_storage::{Pallet, Call, Storage, Event<T>, Config<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		AnonymityMining: pallet_anonymity_mining::{Pallet, Call, Storage, Event<T>, Config<T>}
 	}
 );
@@ -222,8 +222,11 @@ parameter_types! {
 	pub const MetadataDepositBase: u64 = 1;
 	pub const MetadataDepositPerByte: u64 = 1;
 	pub const PotId: PalletId = PalletId(*b"py/anmin");
+	pub const StartTimestamp: u64 = 0;
 	pub const PoolWeight: u64 = 5;
 	pub const Duration: u64 = 100;
+	pub const InitialLiquidity: u64 = 10000000;
+	pub const Liquidity: u64 = 100000000;
 }
 
 impl pallet_vanchor_verifier::Config for Test {
@@ -324,9 +327,11 @@ impl pallet_anonymity_mining::Config for Test {
 	type AnonymityPointsAssetId = AnonymityPointsAssetId;
 	type RewardAssetId = RewardAssetId;
 	type Time = Timestamp;
-	type StartTimestamp = Timestamp;
+	type StartTimestamp = StartTimestamp;
 	type PoolWeight = PoolWeight;
 	type Duration = Duration;
+	type InitialLiquidity = InitialLiquidity;
+	type Liquidity = Liquidity;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 }
 

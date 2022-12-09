@@ -102,13 +102,20 @@ pub mod pallet {
 		type Time: Time;
 
 		/// Start time
-		type StartTimestamp: Time;
+		#[pallet::constant]
+		type StartTimestamp: Get<u64>;
 
 		#[pallet::constant]
 		type PoolWeight: Get<u64>;
 
 		#[pallet::constant]
 		type Duration: Get<u64>;
+
+		#[pallet::constant]
+		type InitialLiquidity: Get<u64>;
+
+		#[pallet::constant]
+		type Liquidity: Get<u64>;
 
 		/// The origin which may forcibly reset parameters or otherwise alter
 		/// privileged attributes.
@@ -173,7 +180,7 @@ pub mod pallet {
 				T::RewardAssetId::get(),
 				&Self::account_id(),
 				&recipient,
-				amount,
+				tokens,
 			)?;
 
 			Ok(().into())
@@ -193,15 +200,17 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		amount: BalanceOf<T, I>,
 	) -> Result<BalanceOf<T, I>, DispatchError> {
 		let old_balance = Self::get_virtual_balance(addr).unwrap();
-		// let pow =
-		// 	(amount.saturated_into::<u64>()).saturating_mul(<T as Config<I>>::PoolWeight::get());
-		let pow = 0;
-		let one: u64 = 1;
-		let exp = one.saturating_pow(pow.try_into().unwrap()) / 2;
-		let new_balance = (old_balance.saturated_into::<u64>()).saturating_mul(exp);
+		let pow =
+			(amount.saturated_into::<u64>()).saturating_mul(<T as Config<I>>::PoolWeight::get());
+		let e: u64 = 3;
+		let zero: u64 = 0;
+		//let neg_pow = zero.saturating_sub(pow);
+		let exp = e.saturating_pow((pow / 100).try_into().unwrap());
+		let new_balance = (old_balance.saturated_into::<u64>()).saturating_mul(exp) / 800;
 		//let final_balance = old_balance - new_balance;
-		let final_balance = old_balance.saturating_sub(new_balance.saturated_into::<BalanceOf<T,
-		I>>());
+		let final_balance_new =
+			old_balance.saturating_sub(new_balance.saturated_into::<BalanceOf<T, I>>());
+		let final_balance = final_balance_new.saturated_into::<BalanceOf<T, I>>();
 		Ok(final_balance)
 	}
 
@@ -209,12 +218,17 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn get_virtual_balance(addr: &T::AccountId) -> Result<BalanceOf<T, I>, DispatchError> {
 		let reward_balance =
 			<T as Config<I>>::Currency::total_balance(T::RewardAssetId::get(), addr);
-		let start_timestamp = T::Time::now();
+		let start_timestamp = T::StartTimestamp::get();
 		let current_timestamp = T::Time::now();
-		let elapsed_timestamp = current_timestamp - start_timestamp;
-		let elapsed = elapsed_timestamp.saturated_into::<u64>();
+		let elapsed = current_timestamp.saturated_into::<u64>() - start_timestamp;
 		if elapsed <= <T as Config<I>>::Duration::get() {
 			// TODO: initialLiquidity + (L * elapsed) / duration - tokensSold
+			let liquidity = T::Liquidity::get();
+			let duration = T::Duration::get();
+			let amount = T::InitialLiquidity::get() +
+				(liquidity.saturated_into::<u64>() * elapsed) / duration;
+			let modified_reward_balance = amount.saturated_into::<BalanceOf<T, I>>();
+			let elapsed_balance = elapsed.saturated_into::<BalanceOf<T, I>>();
 			return Ok(reward_balance)
 		} else {
 			return Ok(reward_balance)
