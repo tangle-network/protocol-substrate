@@ -222,11 +222,11 @@ parameter_types! {
 	pub const MetadataDepositBase: u64 = 1;
 	pub const MetadataDepositPerByte: u64 = 1;
 	pub const PotId: PalletId = PalletId(*b"py/anmin");
-	pub const StartTimestamp: u64 = 0;
-	pub const PoolWeight: u64 = 5;
-	pub const Duration: u64 = 100;
+	pub const StartTimestamp: u64 = 10;
+	//pub const PoolWeight: u64 = 800;
+	pub const Duration: u64 = 31536000;
 	pub const InitialLiquidity: u64 = 10000000;
-	pub const Liquidity: u64 = 100000000;
+	pub const Liquidity: u64 = 20000000;
 }
 
 impl pallet_vanchor_verifier::Config for Test {
@@ -328,12 +328,17 @@ impl pallet_anonymity_mining::Config for Test {
 	type RewardAssetId = RewardAssetId;
 	type Time = Timestamp;
 	type StartTimestamp = StartTimestamp;
-	type PoolWeight = PoolWeight;
+	//type PoolWeight = PoolWeight;
 	type Duration = Duration;
 	type InitialLiquidity = InitialLiquidity;
 	type Liquidity = Liquidity;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 }
+
+// impl pallet_anonymity_mining::Config for Runtime {
+//     type Time = Timestamp;
+//     // Or more easily just `Timestamp` assuming you used that name in `construct_runtime!`
+// }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {

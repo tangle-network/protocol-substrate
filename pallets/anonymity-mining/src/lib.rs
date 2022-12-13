@@ -33,7 +33,7 @@ use frame_support::{
 	pallet_prelude::{ensure, DispatchError},
 	sp_runtime::{
 		traits::{AccountIdConversion, One, Saturating, Zero},
-		SaturatedConversion,
+		FixedI64, FixedPointNumber, FixedPointOperand, SaturatedConversion,
 	},
 	traits::{Get, Time},
 	PalletId,
@@ -106,9 +106,6 @@ pub mod pallet {
 		type StartTimestamp: Get<u64>;
 
 		#[pallet::constant]
-		type PoolWeight: Get<u64>;
-
-		#[pallet::constant]
 		type Duration: Get<u64>;
 
 		#[pallet::constant]
@@ -145,8 +142,15 @@ pub mod pallet {
 	pub(super) type Parameters<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, Vec<u8>, ValueQuery>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn get_pool_weight)]
+	pub type PoolWeight<T: Config<I>, I: 'static = ()> = StorageValue<_, u64, ValueQuery>;
+
 	#[pallet::event]
-	pub enum Event<T: Config<I>, I: 'static = ()> {}
+	#[pallet::generate_deposit(pub fn deposit_event)]
+	pub enum Event<T: Config<I>, I: 'static = ()> {
+		UpdatedPoolWeight { pool_weight: u64 },
+	}
 
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
@@ -194,23 +198,50 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::PotId::get().into_account_truncating()
 	}
 
+	// Set pool weight
+	pub fn set_pool_weight(new_pool_weight: u64) -> Result<(), DispatchError> {
+		PoolWeight::<T, I>::set(new_pool_weight);
+
+		Self::deposit_event(Event::UpdatedPoolWeight { pool_weight: new_pool_weight });
+		Ok(().into())
+	}
+
+	// Get current timestamp
+	pub fn get_current_timestamp() -> Result<u64, DispatchError> {
+		let current_timestamp = T::Time::now();
+		let current_timestamp_u64 = current_timestamp.saturated_into::<u64>();
+		Ok(current_timestamp_u64)
+	}
+
 	/// Get expected number of tokens to swap
 	pub fn get_expected_return(
 		addr: &T::AccountId,
 		amount: BalanceOf<T, I>,
 	) -> Result<BalanceOf<T, I>, DispatchError> {
 		let old_balance = Self::get_virtual_balance(addr).unwrap();
-		let pow =
-			(amount.saturated_into::<u64>()).saturating_mul(<T as Config<I>>::PoolWeight::get());
-		let e: u64 = 3;
-		let zero: u64 = 0;
-		//let neg_pow = zero.saturating_sub(pow);
-		let exp = e.saturating_pow((pow / 100).try_into().unwrap());
-		let new_balance = (old_balance.saturated_into::<u64>()).saturating_mul(exp) / 800;
-		//let final_balance = old_balance - new_balance;
+		let pool_weight = Self::get_pool_weight();
+		let amount_u64: u64 = amount.saturated_into::<u64>();
+		let pool_weight_u64: u64 = pool_weight.saturated_into::<u64>();
+		let amount_i64: i64 = amount_u64 as i64;
+		let pool_weight_i64: i64 = pool_weight_u64 as i64;
+		let amount_fp: FixedI64 = FixedPointNumber::from_inner(amount_i64);
+		let pool_weight_fp: FixedI64 = FixedPointNumber::from_inner(pool_weight_i64);
+		let pow = -(amount_fp / pool_weight_fp);
+
+		let pow_f64: f64 = pow.to_float();
+		let exp = pow_f64.exp();
+
+		let old_balance_u64 = old_balance.saturated_into::<u64>();
+
+		let old_balance_f64 = old_balance_u64 as f64;
+		let final_new_balance_f64 = old_balance_f64 * exp;
+		let final_new_balance_i64 = final_new_balance_f64.round();
+		let final_new_balance_u64 = final_new_balance_i64 as u64;
+
 		let final_balance_new =
-			old_balance.saturating_sub(new_balance.saturated_into::<BalanceOf<T, I>>());
-		let final_balance = final_balance_new.saturated_into::<BalanceOf<T, I>>();
+			old_balance.saturating_sub(final_new_balance_u64.saturated_into::<BalanceOf<T, I>>());
+		let final_balance_new_u64 = old_balance_u64 - final_new_balance_u64;
+		let final_balance = final_balance_new_u64.saturated_into::<BalanceOf<T, I>>();
 		Ok(final_balance)
 	}
 
@@ -220,15 +251,18 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			<T as Config<I>>::Currency::total_balance(T::RewardAssetId::get(), addr);
 		let start_timestamp = T::StartTimestamp::get();
 		let current_timestamp = T::Time::now();
-		let elapsed = current_timestamp.saturated_into::<u64>() - start_timestamp;
+		let start_timestamp_u64 = start_timestamp.saturated_into::<u64>();
+		// TODO: why is this is 0?
+		let current_timestamp_u64 = current_timestamp.saturated_into::<u64>();
+		let elapsed = 0; //current_timestamp.saturated_into::<u64>() - start_timestamp;
 		if elapsed <= <T as Config<I>>::Duration::get() {
-			// TODO: initialLiquidity + (L * elapsed) / duration - tokensSold
 			let liquidity = T::Liquidity::get();
 			let duration = T::Duration::get();
 			let amount = T::InitialLiquidity::get() +
 				(liquidity.saturated_into::<u64>() * elapsed) / duration;
 			let modified_reward_balance = amount.saturated_into::<BalanceOf<T, I>>();
-			let elapsed_balance = elapsed.saturated_into::<BalanceOf<T, I>>();
+			//let elapsed_balance = elapsed.saturated_into::<BalanceOf<T, I>>();
+			let elapsed_balance = (current_timestamp_u64).saturated_into::<BalanceOf<T, I>>();
 			return Ok(reward_balance)
 		} else {
 			return Ok(reward_balance)
