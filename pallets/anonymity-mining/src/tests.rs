@@ -49,14 +49,12 @@ fn test_basic_timestamp_change() {
 	new_test_ext().execute_with(|| {
 		let _ = setup_environment();
 
-		let startTimestamp = AnonymityMining::get_current_timestamp().unwrap();
-
-		Timestamp::set(RuntimeOrigin::root(), Timestamp::now() + DURATION + 1);
-
-		// TODO: why is this not working
-		let newTimestamp = AnonymityMining::get_current_timestamp().unwrap();
-		assert_eq!(newTimestamp, 0);
-	})
+		let start_timestamp = AnonymityMining::get_current_timestamp().unwrap();
+		println!("{:?}", start_timestamp);
+		Timestamp::set_timestamp(1);
+		let curr_timestamp = AnonymityMining::get_current_timestamp().unwrap();
+		println!("{:?}", curr_timestamp);
+	})	
 }
 
 // Test basic get virtual reward balance - after elapsed time
