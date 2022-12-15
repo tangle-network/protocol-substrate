@@ -114,7 +114,6 @@ impl Config for Test {
 	type ChainIdentifier = ChainIdentifier;
 	type ChainType = ChainType;
 	type RuntimeEvent = RuntimeEvent;
-	type Proposal = RuntimeCall;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = u32;
 	type SetResourceProposalFilter = SetResourceProposalFilter;

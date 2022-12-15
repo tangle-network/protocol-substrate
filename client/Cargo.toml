@@ -7,16 +7,16 @@ edition = "2021"
 
 [dependencies]
 async-std = { version = "1.9.0", features = ["attributes", "tokio1"] }
-subxt = { version = "0.24.0" }
+subxt = { version = "0.25.0" }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
 
 [dev-dependencies]
 hex = "0.4"
 serde = { version = "1.0.119" }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
-sp-keyring = { version = "6.0.0" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.34" }
+sp-keyring = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.34" }
 tokio = { version = "1.17.0", features = ["full"] }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.34" }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 
 # arkworks related deps

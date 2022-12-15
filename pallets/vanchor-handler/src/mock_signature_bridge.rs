@@ -205,15 +205,8 @@ impl orml_tokens::Config for Test {
 	type DustRemovalWhitelist = Nothing;
 	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposits = AssetRegistry;
-	type OnDust = ();
 	type WeightInfo = ();
 	type MaxLocks = ();
-	type OnNewTokenAccount = ();
-	type OnSlash = ();
-	type OnDeposit = ();
-	type OnTransfer = ();
-	type OnKilledTokenAccount = ();
-	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 }
 
@@ -313,7 +306,6 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type ChainIdentifier = ChainIdentifier;
 	type ChainType = ChainType;
 	type RuntimeEvent = RuntimeEvent;
-	type Proposal = RuntimeCall;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
 	type SetResourceProposalFilter = SetResourceProposalFilter;
