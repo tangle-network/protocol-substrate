@@ -7,10 +7,8 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
-pub mod orml_token_impls;
 
 use constants::{constants::*, currency::*, time::*};
-use orml_token_impls::*;
 pub use webb_primitives::{types::runtime::Moment, *};
 pub mod impls;
 mod voter_bags;
@@ -1201,17 +1199,16 @@ pub struct CurrencyHooks<T>(marker::PhantomData<T>);
 impl<T: orml_tokens::Config> MutationHooks<T::AccountId, T::CurrencyId, T::Balance>
 	for CurrencyHooks<T>
 where
-	T::AccountId: From<AccountId32> + Into<AccountId32>,
-	T::CurrencyId: From<u32> + Into<u32>,
+	T::AccountId: From<AccountId32>,
 {
-	type OnDust = TransferDust<T, DustReceiver>;
-	type OnSlash = OnSlashHook<T>;
-	type PreDeposit = PreDeposit<T>;
-	type PostDeposit = PostDeposit<T>;
-	type PreTransfer = PreTransfer<T>;
-	type PostTransfer = PostTransfer<T>;
-	type OnNewTokenAccount = TrackCreatedAccounts<T>;
-	type OnKilledTokenAccount = TrackKilledAccounts<T>;
+	type OnDust = orml_tokens::TransferDust<T, DustReceiver>;
+	type OnSlash = ();
+	type PreDeposit = ();
+	type PostDeposit = ();
+	type PreTransfer = ();
+	type PostTransfer = ();
+	type OnNewTokenAccount = ();
+	type OnKilledTokenAccount = ();
 }
 
 impl orml_tokens::Config for Runtime {
