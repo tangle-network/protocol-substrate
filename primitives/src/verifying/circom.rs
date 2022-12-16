@@ -8,10 +8,23 @@ use ark_groth16::{
 };
 use ark_serialize::CanonicalDeserialize;
 use arkworks_native_gadgets::to_field_elements;
-use ark_circom::ethereum::Proof;
+use ark_circom::ethereum::{Proof, G1};
 use ark_circom::ethereum::VerifyingKey;
 use sp_std::marker::PhantomData;
 pub struct CircomVerifierGroth16<E: PairingEngine>(PhantomData<E>);
+
+// pub struct VerifyingKey {
+//     pub alpha1: G1,
+//     pub beta2: G2,
+//     pub gamma2: G2,
+//     pub delta2: G2,
+//     pub ic: Vec<G1>,
+// }
+pub fn parse_vk_bytes_to_circom_vk(vk_bytes: &[u8]) -> Result<VerifyingKey, Error> {
+	let alpha1 = G1::deserialize(&vk_bytes[0..32])?;
+	let circom_vk = VerifyingKey::from(vk_bytes);
+	Ok(circom_vk)
+}
 
 pub fn verify_groth16<E: PairingEngine>(
 	vk: &PreparedVerifyingKey<E>,
@@ -25,10 +38,13 @@ pub fn verify_groth16<E: PairingEngine>(
 impl<E: PairingEngine> InstanceVerifier for CircomVerifierGroth16<E> {
 	fn verify(public_inp_bytes: &[u8], proof_bytes: &[u8], vk_bytes: &[u8]) -> Result<bool, Error> {
 		let public_input_field_elts = to_field_elements::<E::Fr>(public_inp_bytes)?;
+
+		
+
         let circom_vk = VerifyingKey::from(vk_bytes);
         let circom_proof = Proof::from(proof_bytes);
-		let vk = ArkVerifyingKey::<E>::from(circom_vk)?;
-		let proof = ArkProof::<E>::from(circom_proof)?;
+		let vk = ArkVerifyingKey::<E>::from(circom_vk);
+		let proof = ArkProof::<E>::from(circom_proof);
 		let res = verify_groth16::<E>(&vk.into(), &public_input_field_elts, &proof)?;
 		Ok(res)
 	}
