@@ -20,12 +20,12 @@
 //!
 //! Should only be used for benchmarking as it may break in other contexts.
 use crate::service::{create_extrinsic, FullClient};
-use webb_runtime::{BalancesCall, SystemCall};
-use webb_primitives::{AccountId, Balance};
 use sc_cli::Result;
 use sp_inherents::{InherentData, InherentDataProvider};
 use sp_keyring::Sr25519Keyring;
 use sp_runtime::OpaqueExtrinsic;
+use webb_primitives::{AccountId, Balance};
+use webb_runtime::{BalancesCall, SystemCall};
 
 use std::{sync::Arc, time::Duration};
 

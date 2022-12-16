@@ -33,9 +33,9 @@ use std::sync::Arc;
 use webb_primitives::opaque::Block;
 use webb_runtime::RuntimeApi;
 
-use sp_runtime::SaturatedConversion;
-use sp_core::{Pair, Encode};
 use sp_api::ProvideRuntimeApi;
+use sp_core::{Encode, Pair};
+use sp_runtime::SaturatedConversion;
 use substrate_frame_rpc_system::AccountNonceApi;
 
 // Declare an instance of the native executor named `ExecutorDispatch`. Include the wasm binary as
@@ -541,9 +541,7 @@ pub fn create_extrinsic(
 		)),
 		frame_system::CheckNonce::<webb_runtime::Runtime>::from(nonce),
 		frame_system::CheckWeight::<webb_runtime::Runtime>::new(),
-		pallet_asset_tx_payment::ChargeAssetTxPayment::<webb_runtime::Runtime>::from(
-			tip, None,
-		),
+		pallet_asset_tx_payment::ChargeAssetTxPayment::<webb_runtime::Runtime>::from(tip, None),
 	);
 
 	let raw_payload = webb_runtime::SignedPayload::from_raw(
