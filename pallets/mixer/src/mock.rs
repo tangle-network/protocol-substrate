@@ -206,6 +206,7 @@ impl orml_tokens::Config for Test {
 	type MaxLocks = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
+	type CurrencyHooks = ();
 }
 
 pub type NativeCurrency = NativeCurrencyOf<Test>;

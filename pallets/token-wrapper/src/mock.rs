@@ -116,7 +116,8 @@ impl orml_tokens::Config for Test {
 	type ExistentialDeposits = AssetRegistry;
 	type WeightInfo = ();
 	type MaxLocks = ();
-	type OnNewTokenAccount = ();
+	type CurrencyHooks = ();
+	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 }
 

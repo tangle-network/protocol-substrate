@@ -194,6 +194,7 @@ impl orml_tokens::Config for Test {
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
+	type CurrencyHooks = ();
 	type ReserveIdentifier = [u8; 8];
 }
 

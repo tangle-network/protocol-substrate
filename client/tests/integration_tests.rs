@@ -29,9 +29,9 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 
 	let pk_bytes =
-		include_bytes!("../../substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin");
+		include_bytes!("../../protocol-substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin");
 	let vk_bytes =
-		include_bytes!("../../substrate-fixtures/mixer/bn254/x5/verifying_key_uncompressed.bin");
+		include_bytes!("../../protocol-substrate-fixtures/mixer/bn254/x5/verifying_key_uncompressed.bin");
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();
 	let recipient_bytes = truncate_and_pad(&&recipient.encode());
@@ -233,10 +233,10 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
 
 	let pk_bytes = include_bytes!(
-		"../../substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
+		"../../protocol-substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
 	);
 	let vk_bytes = include_bytes!(
-		"../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key_uncompressed.bin"
+		"../../protocol-substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key_uncompressed.bin"
 	);
 
 	let recipient = AccountKeyring::Bob.to_account_id();

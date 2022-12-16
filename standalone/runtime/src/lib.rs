@@ -19,7 +19,6 @@ use frame_support::{
 };
 use frame_system::EnsureSigned;
 use impls::{Author, CreditToBlockAuthor};
-use orml_tokens::TransferDust;
 use orml_traits::currency::MutationHooks;
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,

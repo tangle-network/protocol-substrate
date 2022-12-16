@@ -94,6 +94,12 @@ impl Contains<RuntimeCall> for SetResourceProposalFilter {
 	}
 }
 
+impl Contains<RuntimeOrigin> for SetResourceProposalFilter {
+	fn contains(_c: &RuntimeOrigin) -> bool {
+		false
+	}
+}
+
 pub struct ExecuteAllProposalsFilter;
 impl Contains<RuntimeCall> for ExecuteAllProposalsFilter {
 	fn contains(c: &RuntimeCall) -> bool {
@@ -119,6 +125,7 @@ impl Config for Test {
 	type SetResourceProposalFilter = SetResourceProposalFilter;
 	type ExecuteProposalFilter = ExecuteAllProposalsFilter;
 	type MaintainerNonce = u32;
+	type Proposal = RuntimeCall;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();
 }

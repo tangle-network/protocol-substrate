@@ -123,6 +123,7 @@ impl orml_tokens::Config for Test {
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
+	type CurrencyHooks = ();
 	type ReserveIdentifier = [u8; 8];
 }
 
@@ -236,6 +237,7 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type MaintainerNonce = MaintainerNonce;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();
+	type Proposal = RuntimeCall;
 }
 
 impl Config for Test {
