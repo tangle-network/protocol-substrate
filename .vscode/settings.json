@@ -1,4 +1,8 @@
 {
-  "git.ignoredRepositories": ["open-runtime-module-library"],
-  "rust-analyzer.updates.channel": "stable"
+  "git.ignoredRepositories": [
+    "open-runtime-module-library"
+  ],
+  "rust-analyzer.updates.channel": "stable",
+  "cargo.automaticCheck": false,
+  "rust-analyzer.checkOnSave.enable": false
 }

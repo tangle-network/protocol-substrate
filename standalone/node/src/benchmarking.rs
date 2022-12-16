@@ -19,10 +19,8 @@
 //! Setup code for [`super::command`] which would otherwise bloat that module.
 //!
 //! Should only be used for benchmarking as it may break in other contexts.
-
 use crate::service::{create_extrinsic, FullClient};
-
-use kitchensink_runtime::{BalancesCall, SystemCall};
+use webb_runtime::{BalancesCall, SystemCall};
 use webb_primitives::{AccountId, Balance};
 use sc_cli::Result;
 use sp_inherents::{InherentData, InherentDataProvider};
