@@ -54,9 +54,9 @@ fn test_basic_timestamp_change() {
 	new_test_ext().execute_with(|| {
 		let _ = setup_environment();
 
-		let start_timestamp = AnonymityMining::get_current_timestamp().unwrap();
+		let start_timestamp = AnonymityMining::get_current_timestamp();
 		Timestamp::set_timestamp(1);
-		let curr_timestamp = AnonymityMining::get_current_timestamp().unwrap();
+		let curr_timestamp = AnonymityMining::get_current_timestamp();
 		assert_eq!(curr_timestamp, 1);
 	})
 }
@@ -74,10 +74,9 @@ fn test_basic_get_virtual_reward_balance() {
 
 		let prev_virtual_balance =
 			AnonymityMining::get_virtual_balance(&AnonymityMining::account_id());
-		assert_ok!(prev_virtual_balance);
 
 		// Starting virtual balance is at INITIAL_LIQUIDITY
-		let starting_virtual_balance = assert_eq!(prev_virtual_balance.unwrap(), INITIAL_LIQUIDITY);
+		let starting_virtual_balance = assert_eq!(prev_virtual_balance, INITIAL_LIQUIDITY);
 
 		// add reward balance to pallet
 		let new_reward_balance = INITIAL_TOTAL_REWARDS_BALANCE;
@@ -108,9 +107,8 @@ fn test_basic_get_virtual_reward_balance() {
 		let expected_midway_virtual_balance = INITIAL_LIQUIDITY + LIQUIDITY / 2;
 		let midway_virtual_balance =
 			AnonymityMining::get_virtual_balance(&AnonymityMining::account_id());
-		assert_ok!(midway_virtual_balance);
 		assert_eq!(
-			midway_virtual_balance.unwrap().saturated_into::<u128>(),
+			midway_virtual_balance.saturated_into::<u128>(),
 			expected_midway_virtual_balance
 		);
 
@@ -119,8 +117,7 @@ fn test_basic_get_virtual_reward_balance() {
 
 		let new_virtual_balance =
 			AnonymityMining::get_virtual_balance(&AnonymityMining::account_id());
-		assert_ok!(new_virtual_balance);
-		assert_eq!(new_virtual_balance.unwrap().saturated_into::<i128>(), new_reward_balance);
+		assert_eq!(new_virtual_balance.saturated_into::<i128>(), new_reward_balance);
 	})
 }
 
@@ -151,8 +148,7 @@ fn test_basic_get_expected_return_varying_timestamp() {
 		let starting_expected_return = 6321206;
 		let start_expected_return =
 			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
-		assert_ok!(start_expected_return);
-		assert_eq!(start_expected_return.unwrap(), starting_expected_return);
+		assert_eq!(start_expected_return, starting_expected_return);
 
 		let start_timestamp = Timestamp::now();
 
@@ -163,8 +159,7 @@ fn test_basic_get_expected_return_varying_timestamp() {
 
 		let mid_expected_return =
 			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
-		assert_ok!(mid_expected_return);
-		assert_eq!(mid_expected_return.unwrap().saturated_into::<i128>(), midway_expected_return);
+		assert_eq!(mid_expected_return.saturated_into::<i128>(), midway_expected_return);
 
 		// Ending timestamp
 		// Calc: 30000000(1 - e^-1)
@@ -173,8 +168,7 @@ fn test_basic_get_expected_return_varying_timestamp() {
 
 		let end_expected_return =
 			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
-		assert_ok!(end_expected_return);
-		assert_eq!(end_expected_return.unwrap().saturated_into::<i128>(), ending_expected_return);
+		assert_eq!(end_expected_return.saturated_into::<i128>(), ending_expected_return);
 	})
 }
 
@@ -204,8 +198,7 @@ fn test_basic_get_expected_return_varying_pool_weights() {
 		let initial_expected_return = 6321206;
 		let init_expected_return =
 			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
-		assert_ok!(init_expected_return);
-		assert_eq!(init_expected_return.unwrap(), initial_expected_return);
+		assert_eq!(init_expected_return, initial_expected_return);
 
 		// Double original pool weight
 		assert_ok!(AnonymityMining::set_pool_weight(20000));
@@ -214,8 +207,7 @@ fn test_basic_get_expected_return_varying_pool_weights() {
 		let another_expected_return = 3934693;
 		let other_expected_return =
 			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
-		assert_ok!(other_expected_return);
-		assert_eq!(other_expected_return.unwrap(), another_expected_return);
+		assert_eq!(other_expected_return, another_expected_return);
 
 		// Halve original pool weight
 		assert_ok!(AnonymityMining::set_pool_weight(5000));
@@ -224,8 +216,7 @@ fn test_basic_get_expected_return_varying_pool_weights() {
 		let final_expected_return = 8646647;
 		let last_expected_return =
 			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
-		assert_ok!(last_expected_return);
-		assert_eq!(last_expected_return.unwrap(), final_expected_return);
+		assert_eq!(last_expected_return, final_expected_return);
 	})
 }
 
@@ -255,8 +246,7 @@ fn test_basic_get_expected_return_varying_amounts() {
 		let initial_expected_return = 6321206;
 		let init_expected_return =
 			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), initial_amount);
-		assert_ok!(init_expected_return);
-		assert_eq!(init_expected_return.unwrap(), initial_expected_return);
+		assert_eq!(init_expected_return, initial_expected_return);
 
 		// Half amount
 		let other_amount = 5000;
@@ -265,8 +255,7 @@ fn test_basic_get_expected_return_varying_amounts() {
 		let another_expected_return = 3934693;
 		let other_expected_return =
 			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), other_amount);
-		assert_ok!(other_expected_return);
-		assert_eq!(other_expected_return.unwrap(), another_expected_return);
+		assert_eq!(other_expected_return, another_expected_return);
 
 		// Double amount
 		let final_amount = 20000;
@@ -275,8 +264,7 @@ fn test_basic_get_expected_return_varying_amounts() {
 		let final_expected_return = 8646647;
 		let last_expected_return =
 			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), final_amount);
-		assert_ok!(last_expected_return);
-		assert_eq!(last_expected_return.unwrap(), final_expected_return);
+		assert_eq!(last_expected_return, final_expected_return);
 	})
 }
 
@@ -348,7 +336,7 @@ fn test_basic_swap() {
 		let expected_return =
 			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
 
-		assert_eq!(expected_return.unwrap(), 6321206);
+		assert_eq!(expected_return, 6321206);
 
 		// conduct swap
 		assert_ok!(AnonymityMining::swap(
@@ -371,15 +359,9 @@ fn test_basic_swap() {
 
 		// check balances update properly
 		assert_eq!(sender_ap_balance_after, sender_ap_balance_before - amount);
-		assert_eq!(
-			sender_reward_balance_after,
-			sender_reward_balance_before + expected_return.unwrap()
-		);
+		assert_eq!(sender_reward_balance_after, sender_reward_balance_before + expected_return);
 		assert_eq!(pallet_ap_balance_after, pallet_ap_balance_before + amount);
-		assert_eq!(
-			pallet_reward_balance_after,
-			pallet_reward_balance_before - expected_return.unwrap()
-		);
+		assert_eq!(pallet_reward_balance_after, pallet_reward_balance_before - expected_return);
 	});
 }
 
@@ -441,7 +423,7 @@ fn test_basic_two_swaps() {
 			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
 
 		// Calc: 10000000(1 - e^-1)
-		assert_eq!(expected_return.unwrap(), 6321206);
+		assert_eq!(expected_return, 6321206);
 
 		// conduct swap
 		assert_ok!(AnonymityMining::swap(
@@ -464,13 +446,10 @@ fn test_basic_two_swaps() {
 		assert_eq!(sender_one_ap_balance_after, sender_one_ap_balance_before - amount);
 		assert_eq!(
 			sender_one_reward_balance_after,
-			sender_one_reward_balance_before + expected_return.unwrap()
+			sender_one_reward_balance_before + expected_return
 		);
 		assert_eq!(pallet_ap_balance_after, pallet_ap_balance_before + amount);
-		assert_eq!(
-			pallet_reward_balance_after,
-			pallet_reward_balance_before - expected_return.unwrap()
-		);
+		assert_eq!(pallet_reward_balance_after, pallet_reward_balance_before - expected_return);
 
 		// sender two and pallet balances before swap
 		let sender_two_ap_balance_before =
@@ -489,7 +468,7 @@ fn test_basic_two_swaps() {
 
 		// Calc: starting = 10000000, prev swap traded for 6321206 tokens
 		// So expected return here = (10000000-6321206)(1-e^-1)
-		assert_eq!(expected_return.unwrap(), 2325441);
+		assert_eq!(expected_return, 2325441);
 
 		// conduct swap
 		assert_ok!(AnonymityMining::swap(
@@ -512,13 +491,10 @@ fn test_basic_two_swaps() {
 		assert_eq!(sender_two_ap_balance_after, sender_two_ap_balance_before - amount);
 		assert_eq!(
 			sender_two_reward_balance_after,
-			sender_two_reward_balance_before + expected_return.unwrap()
+			sender_two_reward_balance_before + expected_return
 		);
 		assert_eq!(pallet_ap_balance_after, pallet_ap_balance_before + amount);
-		assert_eq!(
-			pallet_reward_balance_after,
-			pallet_reward_balance_before - expected_return.unwrap()
-		);
+		assert_eq!(pallet_reward_balance_after, pallet_reward_balance_before - expected_return);
 
 		let start_timestamp = Timestamp::now();
 
@@ -545,7 +521,7 @@ fn test_basic_two_swaps() {
 		// Midway -> now virtual balance base is 20000000
 		// Prev tokens sold: 6321206 and 2325441
 		// Calc: (20000000-6321206-2325441)(1-e^-(1/2))
-		assert_eq!(expected_return.unwrap(), 4467196);
+		assert_eq!(expected_return, 4467196);
 
 		// conduct swap
 		assert_ok!(AnonymityMining::swap(
@@ -568,12 +544,9 @@ fn test_basic_two_swaps() {
 		assert_eq!(sender_one_ap_balance_after, sender_one_ap_balance_before - amount);
 		assert_eq!(
 			sender_one_reward_balance_after,
-			sender_one_reward_balance_before + expected_return.unwrap()
+			sender_one_reward_balance_before + expected_return
 		);
 		assert_eq!(pallet_ap_balance_after, pallet_ap_balance_before + amount);
-		assert_eq!(
-			pallet_reward_balance_after,
-			pallet_reward_balance_before - expected_return.unwrap()
-		);
+		assert_eq!(pallet_reward_balance_after, pallet_reward_balance_before - expected_return);
 	});
 }

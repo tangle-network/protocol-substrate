@@ -174,7 +174,7 @@ pub mod pallet {
 			amount: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
-			let tokens = Self::get_expected_return(&Self::account_id(), amount).unwrap();
+			let tokens = Self::get_expected_return(&Self::account_id(), amount);
 
 			let tokens_sold_u64 = tokens.saturated_into::<u64>();
 			let prev_tokens_sold_u64 = Self::get_tokens_sold();
@@ -222,18 +222,15 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	// Get current timestamp
-	pub fn get_current_timestamp() -> Result<u64, DispatchError> {
+	pub fn get_current_timestamp() -> u64 {
 		let current_timestamp = T::Time::now();
 		let current_timestamp_u64 = current_timestamp.saturated_into::<u64>();
-		Ok(current_timestamp_u64)
+		return current_timestamp_u64
 	}
 
 	/// Get expected number of tokens to swap
-	pub fn get_expected_return(
-		addr: &T::AccountId,
-		amount: BalanceOf<T, I>,
-	) -> Result<BalanceOf<T, I>, DispatchError> {
-		let old_balance = Self::get_virtual_balance(addr).unwrap();
+	pub fn get_expected_return(addr: &T::AccountId, amount: BalanceOf<T, I>) -> BalanceOf<T, I> {
+		let old_balance = Self::get_virtual_balance(addr);
 		let pool_weight = Self::get_pool_weight();
 		let amount_u64: u64 = amount.saturated_into::<u64>();
 		let pool_weight_u64: u64 = pool_weight.saturated_into::<u64>();
@@ -257,11 +254,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			old_balance.saturating_sub(final_new_balance_u64.saturated_into::<BalanceOf<T, I>>());
 		let final_balance_new_u64 = old_balance_u64 - final_new_balance_u64;
 		let final_balance = final_balance_new_u64.saturated_into::<BalanceOf<T, I>>();
-		Ok(final_balance)
+		return final_balance
 	}
 
 	/// Calculate balance to use
-	pub fn get_virtual_balance(addr: &T::AccountId) -> Result<BalanceOf<T, I>, DispatchError> {
+	pub fn get_virtual_balance(addr: &T::AccountId) -> BalanceOf<T, I> {
 		let reward_balance =
 			<T as Config<I>>::Currency::total_balance(T::RewardAssetId::get(), addr);
 		let start_timestamp = T::StartTimestamp::get();
@@ -279,9 +276,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			let modified_reward_balance = amount.saturated_into::<BalanceOf<T, I>>();
 			//let elapsed_balance = elapsed.saturated_into::<BalanceOf<T, I>>();
 			let elapsed_balance = (elapsed_u64).saturated_into::<BalanceOf<T, I>>();
-			return Ok(modified_reward_balance)
+			return modified_reward_balance
 		} else {
-			return Ok(reward_balance)
+			return reward_balance
 		}
 	}
 }
