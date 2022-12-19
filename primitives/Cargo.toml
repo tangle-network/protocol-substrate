@@ -19,6 +19,10 @@ sp-runtime = { default-features = false, git = "https://github.com/paritytech/su
 sp-consensus-aura = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.34" }
 sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.34" }
 
+byteorder = { version = "1", default-features = false }
+num-traits = { version = "0.2.0", default-features = false }
+# num-bigint = { version = "0.4", default-features = false, features = ["rand"] }
+
 # Arkworks
 ark-ff = { version = "^0.3.0", default-features = false }
 ark-ec = { version = "^0.3.0", default-features = false }
@@ -30,7 +34,7 @@ ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "cu
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 ark-groth16 = { version = "^0.3.0", default-features = false }
 # ark-circom = { git = "https://github.com/gakonst/ark-circom.git", default-features = false }
-# ark-circom = { path = "../../ark-circom", default-features = false }
+ark-circom = { path = "../../ark-circom", default-features = false }
 
 blake2 = { version = "0.9", default-features = false }
 digest = { version = "0.9", default-features = false }

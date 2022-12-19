@@ -1,12 +1,12 @@
+use crate::Instance1;
 use arkworks_setups::{common::setup_params, Curve};
 use codec::Encode;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
-use sp_runtime::traits::{One, Zero};
-use webb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
-
 use orml_traits::MultiCurrency;
 use pallet_asset_registry::AssetType;
+use sp_runtime::traits::{One, Zero};
+use webb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 
 use crate::{mock::*, test_utils::*};
 
@@ -273,7 +273,7 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 				fee_value,
 				refund_value,
 			),
-			crate::Error::<Test>::UnknownRoot
+			crate::Error::<Test, Instance1>::UnknownRoot
 		);
 	});
 }
@@ -328,7 +328,7 @@ fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation(
 				fee_value,
 				refund_value,
 			),
-			crate::Error::<Test>::InvalidWithdrawProof
+			crate::Error::<Test, Instance1>::InvalidWithdrawProof
 		);
 	});
 }
@@ -383,7 +383,7 @@ fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 				100u128,
 				refund_value,
 			),
-			crate::Error::<Test>::InvalidWithdrawProof
+			crate::Error::<Test, Instance1>::InvalidWithdrawProof
 		);
 	});
 }
@@ -438,7 +438,7 @@ fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_revers
 				fee_value,
 				refund_value,
 			),
-			crate::Error::<Test>::InvalidWithdrawProof
+			crate::Error::<Test, Instance1>::InvalidWithdrawProof
 		);
 	});
 }
@@ -511,7 +511,7 @@ fn double_spending_should_fail() {
 				fee_value,
 				refund_value,
 			),
-			crate::Error::<Test>::AlreadyRevealedNullifier
+			crate::Error::<Test, Instance1>::AlreadyRevealedNullifier
 		);
 	});
 }

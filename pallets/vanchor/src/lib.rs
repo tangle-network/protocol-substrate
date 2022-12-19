@@ -702,19 +702,34 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 				abs_amount <= MaxDepositAmount::<T, I>::get(),
 				Error::<T, I>::InvalidDepositAmount
 			);
-			// Deposit tokens to the pallet from the transactor's account
-			<T as Config<I>>::Currency::transfer(
-				vanchor.asset,
-				transactor,
-				&Self::account_id(),
-				abs_amount,
-			)?;
+			// If the token is not the same as the vanchor asset then
+			// we need to wrap the tokens into the vanchor asset
+			if ext_data.token != vanchor.asset {
+				// Wrap tokens from the transactor's account
+				T::TokenWrapper::wrap(
+					transactor.clone(),
+					ext_data.token,
+					vanchor.asset,
+					abs_amount,
+					Self::account_id(),
+				)?;
+			} else {
+				// Deposit tokens to the pallet from the transactor's account
+				<T as Config<I>>::Currency::transfer(
+					vanchor.asset,
+					transactor,
+					&Self::account_id(),
+					abs_amount,
+				)?;
+			}
 		} else if is_negative {
 			ensure!(
 				abs_amount >= MinWithdrawAmount::<T, I>::get(),
 				Error::<T, I>::InvalidWithdrawAmount
 			);
-			if ext_data.token != T::MaxCurrencyId::get() {
+			// If the token is not the same as the vanchor asset then
+			// we need to unwrap the tokens from the vanchor asset
+			if ext_data.token != vanchor.asset {
 				// Unwrap to recipient account
 				T::TokenWrapper::unwrap(
 					Self::account_id(),
