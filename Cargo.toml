@@ -6,6 +6,7 @@ codegen-units = 1
 members = [
 	"client",
 	"primitives",
+	"pallets/anonymity-mining",
 	"pallets/asset-registry",
 	"pallets/hasher",
 	"pallets/verifier",
