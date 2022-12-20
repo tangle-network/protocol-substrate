@@ -26,7 +26,7 @@ sp-std = {default-features = false, git = "https://github.com/paritytech/substra
 
 hex-literal = "0.3.4"
 
-#Optional dependencies
+# Optional dependencies
 frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30", optional = true }
 
 [dev-dependencies]
