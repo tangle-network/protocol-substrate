@@ -8,12 +8,30 @@ use ark_groth16::{
 	VerifyingKey as ArkVerifyingKey,
 };
 use ark_serialize::CanonicalDeserialize;
+use ark_std::{string::ToString, vec::Vec};
 use arkworks_native_gadgets::to_field_elements;
 use byteorder::{BigEndian, ByteOrder};
 use sp_core::U256;
 use sp_std::marker::PhantomData;
 
 pub struct CircomVerifierBn254;
+
+#[derive(Debug)]
+pub enum CircomError {
+	InvalidVerifyingKeyBytes,
+	InvalidProofBytes,
+}
+
+impl ark_std::error::Error for CircomError {}
+
+impl core::fmt::Display for CircomError {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		match self {
+			CircomError::InvalidVerifyingKeyBytes => write!(f, "Invalid verifying key bytes"),
+			CircomError::InvalidProofBytes => write!(f, "Invalid proof bytes"),
+		}
+	}
+}
 
 macro_rules! read_to_u256 {
 	($arr:expr) => {{
@@ -67,7 +85,7 @@ macro_rules! read_to_ic {
 // }
 pub fn parse_vk_bytes_to_circom_vk(vk_bytes: &[u8]) -> Result<VerifyingKey, Error> {
 	if vk_bytes.len() < 448 {
-		return Err("Invalid vk_bytes".into())
+		return Err(CircomError::InvalidVerifyingKeyBytes.into())
 	}
 
 	let circom_vk = VerifyingKey {
@@ -88,7 +106,7 @@ pub fn parse_vk_bytes_to_circom_vk(vk_bytes: &[u8]) -> Result<VerifyingKey, Erro
 // }
 pub fn parse_proof_to_circom_proof(proof_bytes: &[u8]) -> Result<Proof, Error> {
 	if proof_bytes.len() != 192 {
-		return Err("Invalid proof_bytes".into())
+		return Err(CircomError::InvalidProofBytes.into())
 	}
 
 	let circom_proof = Proof {

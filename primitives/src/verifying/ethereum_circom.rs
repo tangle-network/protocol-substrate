@@ -1,10 +1,10 @@
 //! Helpers for converting Arkworks types to U256-tuples as expected by the
 //! Solidity Groth16 Verifier smart contracts
+use ark_bn254::{Bn254, Fq, Fq2, Fr, G1Affine, G2Affine};
 use ark_ff::{BigInteger, FromBytes, PrimeField};
+use ark_std::vec::Vec;
 use num_traits::Zero;
 use sp_core::U256;
-
-use ark_bn254::{Bn254, Fq, Fq2, Fr, G1Affine, G2Affine};
 
 pub struct Inputs(pub Vec<U256>);
 

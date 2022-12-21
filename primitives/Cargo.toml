@@ -33,8 +33,6 @@ ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "cu
 ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ], optional = true }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 ark-groth16 = { version = "^0.3.0", default-features = false }
-# ark-circom = { git = "https://github.com/gakonst/ark-circom.git", default-features = false }
-ark-circom = { path = "../../ark-circom", default-features = false }
 
 blake2 = { version = "0.9", default-features = false }
 digest = { version = "0.9", default-features = false }
