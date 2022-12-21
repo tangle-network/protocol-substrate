@@ -20,7 +20,7 @@ pub use webb_primitives::{
 	types::{ElementTrait, IntoAbiToken},
 	AccountId, Element,
 };
-use webb_primitives::{hashing::ArkworksPoseidonHasherBn254, verifying::ArkworksVerifierBn254};
+use webb_primitives::{hashing::ArkworksPoseidonHasherBn254, verifying::{ArkworksVerifierBn254, CircomVerifierBn254}};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -135,7 +135,7 @@ type VAnchorVerifierInstance2 = pallet_vanchor_verifier::Instance2;
 impl pallet_vanchor_verifier::Config<VAnchorVerifierInstance2> for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Verifier = ArkworksVerifierBn254;
+	type Verifier = CircomVerifierBn254;
 	type WeightInfo = ();
 }
 
