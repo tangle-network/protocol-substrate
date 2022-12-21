@@ -43,7 +43,10 @@ use pallet_vanchor::VAnchorConfigration;
 use sp_std::{convert::TryInto, prelude::*, vec};
 use webb_primitives::{
 	traits::vanchor::{VAnchorInspector, VAnchorInterface},
-	types::runtime::Moment,
+	types::{
+		runtime::Moment,
+		vanchor::{ExtData, ProofData, VAnchorMetadata},
+	},
 };
 
 pub use pallet::*;
@@ -78,6 +81,10 @@ pub mod pallet {
 
 		/// Account Identifier from which the internal Pot is generated.
 		type PotId: Get<PalletId>;
+
+		/// The tree
+		type Tree: TreeInterface<Self::AccountId, Self::TreeId, Self::Element>
+			+ TreeInspector<Self::AccountId, Self::TreeId, Self::Element>;
 
 		/// Currency type for taking deposits
 		type Currency: MultiCurrency<Self::AccountId>;
@@ -142,6 +149,32 @@ pub mod pallet {
 	pub(super) type Parameters<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, Vec<u8>, ValueQuery>;
 
+	/// Miner
+	#[pallet::storage]
+	#[pallet::getter(fn get_reward_verifier)]
+	pub type RewardVerifier<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::AccountId, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn get_withdraw_verifier)]
+	pub type RewardVerifier<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::AccountId, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn get_tree_update_verifier)]
+	pub type TreeUpdateVerifier<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::AccountId, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn get_governance)]
+	pub type Governance<T: Config<I>, I: 'static = ()> = StorageValue<_, T::AccountId, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn get_tornado_trees)]
+	pub type TornadoTrees<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::AccountId, ValueQuery>;
+
+	/// Rewards
 	#[pallet::storage]
 	#[pallet::getter(fn get_pool_weight)]
 	pub type PoolWeight<T: Config<I>, I: 'static = ()> = StorageValue<_, u64, ValueQuery>;
@@ -153,8 +186,18 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
-		UpdatedPoolWeight { pool_weight: u64 },
-		UpdatedTokensSold { tokens_sold: u64 },
+		VerifiersUpdated {
+			sender: T::AccountId,
+			reward_verifier: T::AccountId,
+			withdraw_verifier: T::AccountId,
+			tree_update_verifier: T::AccountId,
+		},
+		UpdatedPoolWeight {
+			pool_weight: u64,
+		},
+		UpdatedTokensSold {
+			tokens_sold: u64,
+		},
 	}
 
 	#[pallet::error]
@@ -163,6 +206,10 @@ pub mod pallet {
 		ParametersNotInitialized,
 		/// Error during hashing
 		HashError,
+		/// Invalid reward proof
+		InvalidRewardProof,
+		/// Invalid withdraw proof
+		InvalidWithdrawProof,
 	}
 
 	#[pallet::call]
@@ -198,6 +245,45 @@ pub mod pallet {
 
 			Ok(().into())
 		}
+
+		// TODO: set_rates
+
+		// Set tornado trees
+		#[pallet::weight(0)]
+		pub fn set_tornado_trees(
+			origin: OriginFor<T>,
+			tornado_trees: T::AccountId,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+			ensure!(Self::governance() == sender, "Only governance can perform this action");
+			<TornadoTrees<T>>::put(tornado_trees);
+			Ok(())
+		}
+
+		// Set verifiers
+		#[pallet::weight(0)]
+		pub fn set_verifiers(
+			origin: OriginFor<T>,
+			reward_verifier: T::AccountId,
+			withdraw_verifier: T::AccountId,
+			tree_update_verifier: T::AccountId,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+			ensure!(Self::governance() == sender, "Only governance can perform this action");
+
+			<RewardVerifier<T>>::put(reward_verifier);
+			<WithdrawVerifier<T>>::put(withdraw_verifier);
+			<TreeUpdateVerifier<T>>::put(tree_update_verifier);
+
+			Self::deposit_event(Event::VerifiersUpdated(
+				sender,
+				reward_verifier,
+				withdraw_verifier,
+				tree_update_verifier,
+			));
+
+			Ok(())
+		}
 	}
 }
 
@@ -206,6 +292,130 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn account_id() -> T::AccountId {
 		T::PotId::get().into_account_truncating()
 	}
+
+	pub fn get_root(tree_id: T::TreeId) -> Result<T::Element, DispatchError> {
+		T::Tree::get_root(tree_id)
+	}
+
+	pub fn is_known_root(
+		tree_id: T::TreeId,
+		target_root: T::Element,
+	) -> Result<bool, DispatchError> {
+		T::Tree::is_known_root(tree_id, target_root)
+	}
+
+	pub fn is_nullifier_used(tree_id: T::TreeId, nullifier_hash: T::Element) -> bool {
+		NullifierHashes::<T, I>::contains_key(tree_id, nullifier_hash)
+	}
+
+	pub fn ensure_known_root(id: T::TreeId, target_root: T::Element) -> Result<(), DispatchError> {
+		let is_known: bool = Self::is_known_root(id, target_root)?;
+		ensure!(is_known, Error::<T, I>::UnknownRoot);
+		Ok(())
+	}
+
+	pub fn ensure_nullifier_unused(
+		id: T::TreeId,
+		nullifier: T::Element,
+	) -> Result<(), DispatchError> {
+		ensure!(!Self::is_nullifier_used(id, nullifier), Error::<T, I>::AlreadyRevealedNullifier);
+		Ok(())
+	}
+
+	/// Reward - TODO: modify
+	fn reward(
+		id: T::TreeId,
+		proof_bytes: &[u8],
+		root: T::Element,
+		nullifier_hash: T::Element,
+		recipient: T::AccountId,
+		relayer: T::AccountId,
+		fee: BalanceOf<T, I>,
+		refund: BalanceOf<T, I>,
+	) -> Result<(), DispatchError> {
+		let mixer = Self::get_mixer(id)?;
+		// Check if local root is known
+		ensure!(T::Tree::is_known_root(id, root)?, Error::<T, I>::UnknownRoot);
+		// Check nullifier and add or return `AlreadyRevealedNullifier`
+		Self::ensure_nullifier_unused(id, nullifier_hash)?;
+		Self::add_nullifier_hash(id, nullifier_hash)?;
+		// Format proof public inputs for verification
+		let mut bytes = Vec::new();
+		let element_encoder = |v: &[u8]| {
+			let mut output = [0u8; 32];
+			output.iter_mut().zip(v).for_each(|(b1, b2)| *b1 = *b2);
+			output
+		};
+		let recipient_bytes = truncate_and_pad(&recipient.using_encoded(element_encoder)[..]);
+		let relayer_bytes = truncate_and_pad(&relayer.using_encoded(element_encoder)[..]);
+
+		let mut arbitrary_data_bytes = Vec::new();
+		arbitrary_data_bytes.extend_from_slice(&recipient_bytes);
+		arbitrary_data_bytes.extend_from_slice(&relayer_bytes);
+		arbitrary_data_bytes.extend_from_slice(&fee.encode());
+		arbitrary_data_bytes.extend_from_slice(&refund.encode());
+		let arbitrary_data = T::ArbitraryHasher::hash(&arbitrary_data_bytes, &[])
+			.map_err(|_| Error::<T, I>::InvalidArbitraryData)?;
+
+		bytes.extend_from_slice(&nullifier_hash.encode());
+		bytes.extend_from_slice(&root.encode());
+		bytes.extend_from_slice(&arbitrary_data);
+		let result = T::Verifier::verify(&bytes, proof_bytes)?;
+		log::info!("verification result: {}", result);
+		ensure!(result, Error::<T, I>::InvalidRewardProof);
+
+		// TODO: check amount, if > fee then swap
+		Ok(())
+	}
+
+	/// Withdraw - TODO: modify
+	fn withdraw(
+		id: T::TreeId,
+		proof_bytes: &[u8],
+		root: T::Element,
+		nullifier_hash: T::Element,
+		recipient: T::AccountId,
+		relayer: T::AccountId,
+		fee: BalanceOf<T, I>,
+		refund: BalanceOf<T, I>,
+	) -> Result<(), DispatchError> {
+		let mixer = Self::get_mixer(id)?;
+		// Check if local root is known
+		ensure!(T::Tree::is_known_root(id, root)?, Error::<T, I>::UnknownRoot);
+		// Check nullifier and add or return `AlreadyRevealedNullifier`
+		Self::ensure_nullifier_unused(id, nullifier_hash)?;
+		Self::add_nullifier_hash(id, nullifier_hash)?;
+		// Format proof public inputs for verification
+		let mut bytes = Vec::new();
+		let element_encoder = |v: &[u8]| {
+			let mut output = [0u8; 32];
+			output.iter_mut().zip(v).for_each(|(b1, b2)| *b1 = *b2);
+			output
+		};
+		let recipient_bytes = truncate_and_pad(&recipient.using_encoded(element_encoder)[..]);
+		let relayer_bytes = truncate_and_pad(&relayer.using_encoded(element_encoder)[..]);
+
+		let mut arbitrary_data_bytes = Vec::new();
+		arbitrary_data_bytes.extend_from_slice(&recipient_bytes);
+		arbitrary_data_bytes.extend_from_slice(&relayer_bytes);
+		arbitrary_data_bytes.extend_from_slice(&fee.encode());
+		arbitrary_data_bytes.extend_from_slice(&refund.encode());
+		let arbitrary_data = T::ArbitraryHasher::hash(&arbitrary_data_bytes, &[])
+			.map_err(|_| Error::<T, I>::InvalidArbitraryData)?;
+
+		bytes.extend_from_slice(&nullifier_hash.encode());
+		bytes.extend_from_slice(&root.encode());
+		bytes.extend_from_slice(&arbitrary_data);
+
+		let result = T::Verifier::verify(&bytes, proof_bytes)?;
+		log::info!("verification result: {}", result);
+		ensure!(result, Error::<T, I>::InvalidWithdrawProof);
+
+		// TODO: check amount, if > fee then swap
+		Ok(())
+	}
+
+	// Rewards
 
 	// Set pool weight
 	pub fn set_pool_weight(new_pool_weight: u64) -> Result<(), DispatchError> {
