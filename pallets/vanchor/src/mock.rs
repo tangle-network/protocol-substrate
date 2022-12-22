@@ -20,7 +20,10 @@ pub use webb_primitives::{
 	types::{ElementTrait, IntoAbiToken},
 	AccountId, Element,
 };
-use webb_primitives::{hashing::ArkworksPoseidonHasherBn254, verifying::{ArkworksVerifierBn254, CircomVerifierBn254}};
+use webb_primitives::{
+	hashing::ArkworksPoseidonHasherBn254,
+	verifying::{ArkworksVerifierBn254, CircomVerifierBn254},
+};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;

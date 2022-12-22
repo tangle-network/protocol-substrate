@@ -46,6 +46,8 @@ pub mod mock;
 mod test_utils;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_circom;
 
 mod benchmarking;
 mod benchmarking_utils;
