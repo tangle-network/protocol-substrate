@@ -52,10 +52,10 @@ ark-ff = { version = "^0.3.0", default-features = false}
 ark-ec = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ]}
-ark-groth16 = { version = "^0.3.0", default-features = false }
+ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", features = ["parallel"] }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-circom = { git = "https://github.com/gakonst/ark-circom.git" }
 
 [features]
 default = ["std"]

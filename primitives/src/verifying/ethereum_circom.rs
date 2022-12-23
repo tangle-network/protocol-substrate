@@ -128,6 +128,54 @@ impl VerifyingKey {
 			self.ic.iter().map(|i| i.as_tuple()).collect(),
 		)
 	}
+
+	pub fn to_bytes(&self) -> Vec<u8> {
+		let mut bytes = Vec::new();
+
+		let mut alpha1_x_bytes = [0u8; 32];
+		self.alpha1.x.to_big_endian(&mut [0u8; 32]);
+		bytes.extend_from_slice(&alpha1_x_bytes);
+
+		let mut alpha1_y_bytes = [0u8; 32];
+		self.alpha1.y.to_big_endian(&mut [0u8; 32]);
+		bytes.extend_from_slice(&alpha1_y_bytes);
+
+		let mut beta2_x_bytes = [0u8; 32];
+		self.beta2.x[0].to_big_endian(&mut [0u8; 32]);
+		bytes.extend_from_slice(&beta2_x_bytes);
+
+		let mut beta2_y_bytes = [0u8; 32];
+		self.beta2.y[0].to_big_endian(&mut [0u8; 32]);
+		bytes.extend_from_slice(&beta2_y_bytes);
+
+		let mut gamma2_x_bytes = [0u8; 32];
+		self.gamma2.x[0].to_big_endian(&mut [0u8; 32]);
+		bytes.extend_from_slice(&gamma2_x_bytes);
+
+		let mut gamma2_y_bytes = [0u8; 32];
+		self.gamma2.y[0].to_big_endian(&mut [0u8; 32]);
+		bytes.extend_from_slice(&gamma2_y_bytes);
+
+		let mut delta2_x_bytes = [0u8; 32];
+		self.delta2.x[0].to_big_endian(&mut [0u8; 32]);
+		bytes.extend_from_slice(&delta2_x_bytes);
+
+		let mut delta2_y_bytes = [0u8; 32];
+		self.delta2.y[0].to_big_endian(&mut [0u8; 32]);
+		bytes.extend_from_slice(&delta2_y_bytes);
+
+		for g1 in self.ic.iter() {
+			let mut g1_x_bytes = [0u8; 32];
+			g1.x.to_big_endian(&mut [0u8; 32]);
+			bytes.extend_from_slice(&g1_x_bytes);
+
+			let mut g1_y_bytes = [0u8; 32];
+			g1.y.to_big_endian(&mut [0u8; 32]);
+			bytes.extend_from_slice(&g1_y_bytes);
+		}
+
+		bytes
+	}
 }
 
 impl From<ark_groth16::VerifyingKey<Bn254>> for VerifyingKey {

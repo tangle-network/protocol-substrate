@@ -32,7 +32,7 @@ ark-serialize = { version = "^0.3.0", default-features = false, features = [ "de
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ], optional = true }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
-ark-groth16 = { version = "^0.3.0", default-features = false }
+ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f" }
 
 blake2 = { version = "0.9", default-features = false }
 digest = { version = "0.9", default-features = false }

@@ -22,18 +22,18 @@ use webb_primitives::{
 
 type Bn254Fr = ark_bn254::Fr;
 
-const SEED: u32 = 0;
-const TREE_DEPTH: usize = 30;
-const EDGE_CT: usize = 1;
-const DEFAULT_BALANCE: u128 = 10_000;
-const BIG_DEFAULT_BALANCE: u128 = 20_000;
-const BIGGER_DEFAULT_BALANCE: u128 = 30_000;
+pub const SEED: u32 = 0;
+pub const TREE_DEPTH: usize = 30;
+pub const EDGE_CT: usize = 1;
+pub const DEFAULT_BALANCE: u128 = 10_000;
+pub const BIG_DEFAULT_BALANCE: u128 = 20_000;
+pub const BIGGER_DEFAULT_BALANCE: u128 = 30_000;
 
-const TRANSACTOR_ACCOUNT_ID: u32 = 0;
-const RECIPIENT_ACCOUNT_ID: u32 = 1;
-const BIG_TRANSACTOR_ACCOUNT_ID: u32 = 2;
-const BIGGER_TRANSACTOR_ACCOUNT_ID: u32 = 3;
-const RELAYER_ACCOUNT_ID: u32 = 4;
+pub const TRANSACTOR_ACCOUNT_ID: u32 = 0;
+pub const RECIPIENT_ACCOUNT_ID: u32 = 1;
+pub const BIG_TRANSACTOR_ACCOUNT_ID: u32 = 2;
+pub const BIGGER_TRANSACTOR_ACCOUNT_ID: u32 = 3;
+pub const RELAYER_ACCOUNT_ID: u32 = 4;
 
 pub fn get_account(id: u32) -> AccountId {
 	account::<AccountId>("", id, SEED)
@@ -600,19 +600,12 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		let pooled_asset_id = AssetRegistry::next_asset_id() - 1;
 		// Mint some wrapped asset / pool share by depositing the native asset
 		let alice = get_account(TRANSACTOR_ACCOUNT_ID);
-		// assert_ok!(TokenWrapper::wrap(
-		// 	RuntimeOrigin::signed(alice.clone()),
-		// 	first_asset_id,
-		// 	pooled_asset_id,
-		// 	1_000,
-		// 	alice.clone(),
-		// ));
 
 		/**** Create deposits with the newly wrapped token *** */
 		let tree_id = create_vanchor(pooled_asset_id);
 		let recipient = get_account(RECIPIENT_ACCOUNT_ID);
 		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
-		let ext_amount: Amount = 1_000_i128;
+		let ext_amount: Amount = 10_i128;
 		let fee: Balance = 0;
 		let refund: Balance = 0;
 		let public_amount = ext_amount - (fee as i128);
@@ -675,7 +668,6 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 		assert_ok!(VAnchor1::transact(RuntimeOrigin::signed(alice), tree_id, proof_data, ext_data));
-
 		/**** Withdraw and unwrap **** */
 		let custom_root = MerkleTree1::get_root(tree_id).unwrap();
 		let ext_amount: Amount = -5;
