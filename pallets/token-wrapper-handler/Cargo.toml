@@ -18,7 +18,7 @@ asset-registry = {package = "pallet-asset-registry", path = "../asset-registry",
 webb-primitives = {path = "../../primitives", default-features = false}
 frame-support = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 frame-system = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-orml-traits = { git = "https://github.com/wangjj9219/open-runtime-module-library.git", branch = "upgrade-polkadot-v0.9.34", default-features = false }
+orml-traits = { git = "https://github.com/webb-tools/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
 pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
 sp-arithmetic = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
@@ -31,8 +31,8 @@ frame-benchmarking = {default-features = false, git = "https://github.com/parity
 
 [dev-dependencies]
 pallet-signature-bridge = { path = "../signature-bridge", default-features = false }
-orml-currencies = { git = "https://github.com/wangjj9219/open-runtime-module-library.git", branch = "upgrade-polkadot-v0.9.34", default-features = false }
-orml-tokens = { git = "https://github.com/wangjj9219/open-runtime-module-library.git", branch = "upgrade-polkadot-v0.9.34", default-features = false }
+orml-currencies = { git = "https://github.com/webb-tools/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
+orml-tokens = { git = "https://github.com/webb-tools/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate",  branch = "polkadot-v0.9.36" }
 pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }

@@ -5,7 +5,7 @@ authors = ["Webb Tools"]
 edition = "2018"
 
 [dependencies]
-jsonrpsee = { version = "0.15.0", features = ["server"] }
+jsonrpsee = { version = "0.16.2", features = ["server"] }
 thiserror = "1.0"
 sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 

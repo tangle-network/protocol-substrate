@@ -20,7 +20,7 @@ sp-std = { default-features = false, git = "https://github.com/paritytech/substr
 pallet-hasher = { path = "../hasher", default-features = false }
 pallet-mt = { path = "../mt", default-features = false }
 webb-primitives = { path = "../../primitives", default-features = false }
-orml-traits = { git = "https://github.com/wangjj9219/open-runtime-module-library.git", branch = "upgrade-polkadot-v0.9.34", default-features = false }
+orml-traits = { git = "https://github.com/webb-tools/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
 
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36", optional = true }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36", optional = true }
@@ -33,8 +33,8 @@ serde = { version = "1.0.119", optional = true }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-orml-tokens = { git = "https://github.com/wangjj9219/open-runtime-module-library.git", branch = "upgrade-polkadot-v0.9.34", default-features = false }
-orml-currencies = { git = "https://github.com/wangjj9219/open-runtime-module-library.git", branch = "upgrade-polkadot-v0.9.34", default-features = false }
+orml-tokens = { git = "https://github.com/webb-tools/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
+orml-currencies = { git = "https://github.com/webb-tools/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
 rand = "0.8.4"
 
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
