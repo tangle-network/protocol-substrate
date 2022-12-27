@@ -55,7 +55,8 @@ ark-serialize = { version = "^0.3.0", default-features = false, features = [ "de
 ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", features = ["parallel"] }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-ark-circom = { git = "https://github.com/gakonst/ark-circom.git" }
+ark-circom = { git = "https://github.com/gakonst/ark-circom.git", features = ["circom-2"] }
+num-bigint = "0.4"
 
 [features]
 default = ["std"]

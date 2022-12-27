@@ -15,9 +15,9 @@ use crate::mock::Element;
 type Bn254Fr = ark_bn254::Fr;
 type Bn254 = ark_bn254::Bn254;
 
-const TREE_DEPTH: usize = 30;
-const ANCHOR_CT: usize = 2;
-const NUM_UTXOS: usize = 2;
+pub const TREE_DEPTH: usize = 30;
+pub const ANCHOR_CT: usize = 2;
+pub const NUM_UTXOS: usize = 2;
 pub const DEFAULT_LEAF: [u8; 32] = [
 	47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52, 15, 118,
 	231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,

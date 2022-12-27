@@ -29,8 +29,6 @@ ark-ec = { version = "^0.3.0", default-features = false }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ] }
-ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
-ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ], optional = true }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f" }
 
@@ -65,19 +63,13 @@ std = [
 	"webb-proposals/std"
 ]
 field_ops = [
-	"ark-bls12-381",
-	"ark-bls12-377",
 	"ark-bn254",
 ]
 hashing = [
 	"arkworks-native-gadgets",
-	"ark-bls12-381",
-	"ark-bls12-377",
 	"ark-bn254",
 ]
 verifying = [
 	"arkworks-native-gadgets",
-	"ark-bls12-381",
-	"ark-bls12-377",
 	"ark-bn254",
 ]
