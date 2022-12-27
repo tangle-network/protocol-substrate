@@ -26,7 +26,7 @@ use ark_ff::{BigInteger, PrimeField};
 #[tokio::test]
 async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
-	let signer = PairSigner::new(CustomKeyring(AccountKeyring::Alice.pair()));
+	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 
 	let pk_bytes =
 		include_bytes!("../../substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin");
@@ -123,8 +123,8 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 		proof_bytes,
 		root.into(),
 		nullifier_hash.into(),
-		<sp_core::crypto::AccountId32 as AsRef<[u8]>>::as_ref(&recipient).try_into().unwrap(),
-		<sp_core::crypto::AccountId32 as AsRef<[u8]>>::as_ref(&relayer).try_into().unwrap(),
+		(*<subxt::ext::sp_runtime::AccountId32 as AsRef<[u8; 32]>>::as_ref(&recipient)).into(),
+		(*<subxt::ext::sp_runtime::AccountId32 as AsRef<[u8; 32]>>::as_ref(&relayer)).into(),
 		fee,
 		refund,
 	);
@@ -141,22 +141,6 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	Ok(())
 }
 
-#[derive(Clone)]
-struct CustomKeyring(sp_core::sr25519::Pair);
-
-
-impl subxt::ext::sp_runtime::CryptoType for CustomKeyring {
-	type Pair = CustomKeyring;
-}
-
-impl subxt::ext::sp_core::Pair for CustomKeyring {
-	type Public = subxt::ext::sp_core::sr25519::Public;
-	type Seed = [u8; 32];
-	type Signature = subxt::ext::sp_core::sr25519::Signature;
-	type DeriveError = ();
-
-
-}
 
 async fn make_vanchor_tx(
 	pk_bytes: &[u8],
@@ -170,7 +154,7 @@ async fn make_vanchor_tx(
 	out_utxos: [Utxo<Bn254Fr>; 2],
 ) -> Result<(), Box<dyn std::error::Error>> {
 	let api = OnlineClient::<PolkadotConfig>::new().await?;
-	let signer = PairSigner::new(CustomKeyring(AccountKeyring::Alice.pair()));
+	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 
 	let chain_type = [2, 0];
 	let chain_id = compute_chain_id_type(1080u32, chain_type);

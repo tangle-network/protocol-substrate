@@ -24,7 +24,7 @@ use std::sync::Arc;
 use codec::{Decode, Encode};
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use sc_rpc::DenyUnsafe;
-use sp_api::{ProvideRuntimeApi, ApiError};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
@@ -66,45 +66,41 @@ impl<C, M> LinkableTreeClient<C, M> {
 	}
 }
 
-impl<C, B, E, CID, L> LinkableTreeApi<<B as BlockT>::Hash, E, CID, L>
+impl<C, B, E, CID, L> LinkableTreeRpcApiServer<<B as BlockT>::Hash, E, CID, L>
 	for LinkableTreeClient<C, B>
 where
 	B: BlockT,
 	E: ElementTrait,
-	CID: Encode + Decode + webb_primitives::ElementTrait,
+	CID: Encode + Decode,
 	L: Encode + Decode,
 	C: HeaderBackend<B> + ProvideRuntimeApi<B> + Send + Sync + 'static,
-	C::Api: LinkableTreeApi<B, E, CID, L>,
-	<B as BlockT>::Hash: BlockT,
-	Self: sp_api::Core<<B as BlockT>::Hash>
+	C::Api: LinkableTreeApi<B, CID, E, L>,
 {
 	fn get_neighbor_roots(
 		&self,
-		at: &BlockId<<B as BlockT>::Hash>,
 		tree_id: u32,
-	) -> Result<Vec<CID>, ApiError> {
-		self.deny_unsafe.check_if_safe()
-		.map_err(|err| ApiError::Application(Box::new(err)))?;
+		at: Option<<B as BlockT>::Hash>,
+	) -> RpcResult<Vec<E>> {
+		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
-		//let at = BlockId::hash(at.hash());
+		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		api.get_neighbor_roots(&at, tree_id)
 			.map_err(|_| error::Error::RootsRequestFailure)
-			.map_err(|err| ApiError::Application(Box::new(err)))
+			.map_err(Into::into)
 	}
 
 	fn get_neighbor_edges(
 		&self,
-		at: &BlockId<<B as BlockT>::Hash>,
 		tree_id: u32,
-	) -> Result<Vec<EdgeMetadata<E, CID, L>>, ApiError> {
-		self.deny_unsafe.check_if_safe()
-		.map_err(|err| ApiError::Application(Box::new(err)))?;
+		at: Option<<B as BlockT>::Hash>,
+	) -> RpcResult<Vec<EdgeMetadata<CID, E, L>>> {
+		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
-		//let at = sp_api::BlockT::hash(at);
+		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		api.get_neighbor_edges(&at, tree_id)
 			.map_err(|_| error::Error::EdgesRequestFailure)
-			.map_err(|err| ApiError::Application(Box::new(err)))
+			.map_err(Into::into)
 	}
 }
