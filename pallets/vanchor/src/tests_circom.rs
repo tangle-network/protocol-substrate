@@ -1,57 +1,41 @@
 use crate::{
 	mock::*,
-	test_utils::{
-		deconstruct_public_inputs_el, setup_utxos, setup_zk_circuit, ANCHOR_CT, DEFAULT_LEAF,
-		NUM_UTXOS,
-	},
+	test_utils::{deconstruct_public_inputs_el, setup_utxos, setup_zk_circuit, NUM_UTXOS, ANCHOR_CT, DEFAULT_LEAF},
 	tests::*,
 	Error, Instance2, MaxDepositAmount, MinWithdrawAmount,
 };
+use ark_ff::{ToBytes, biginteger};
 use ark_bn254::Bn254;
-use ark_circom::{read_zkey, CircomBuilder, CircomConfig};
-use ark_ff::{biginteger, BigInteger, PrimeField, ToBytes};
+use ark_circom::{read_zkey, CircomConfig, CircomBuilder};
+use ark_ff::{BigInteger, PrimeField};
+use ark_groth16::{ProvingKey};
 use ark_groth16::{
-	create_random_proof as prove, generate_random_parameters, prepare_verifying_key, verify_proof,
-	ProvingKey,
+    create_random_proof as prove, generate_random_parameters, prepare_verifying_key, verify_proof,
 };
 use ark_relations::r1cs::SynthesisError;
-use arkworks_native_gadgets::{merkle_tree::SparseMerkleTree, poseidon::Poseidon};
-use arkworks_setups::{
-	common::{setup_params, setup_tree_and_create_path},
-	utxo::Utxo,
-	Curve,
-};
+use arkworks_native_gadgets::{poseidon::Poseidon, merkle_tree::SparseMerkleTree};
+use arkworks_setups::{common::{setup_params, setup_tree_and_create_path}, utxo::Utxo, Curve};
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok, traits::OnInitialize};
-use num_bigint::{BigInt, Sign};
 use orml_traits::MultiCurrency;
 use pallet_asset_registry::AssetType;
 use pallet_linkable_tree::LinkableTreeConfigration;
 use rand::thread_rng;
 use sp_core::hashing::keccak_256;
-use std::{
-	convert::TryInto,
-	fs::{self, File},
-};
+use std::{convert::TryInto, fs::{File, self}};
 use webb_primitives::{
 	linkable_tree::LinkableTreeInspector,
 	merkle_tree::TreeInspector,
 	types::vanchor::{ExtData, ProofData},
 	utils::compute_chain_id_type,
-	verifying::{CircomError, VerifyingKey},
+	verifying::{VerifyingKey, CircomError},
 	AccountId,
 };
+use num_bigint::{BigInt, Sign};
 
 type Bn254Fr = ark_bn254::Fr;
 
-fn setup_environment_with_circom() -> (
-	Vec<u8>,
-	Vec<u8>,
-	ProvingKey<Bn254>,
-	ProvingKey<Bn254>,
-	CircomConfig<Bn254>,
-	CircomConfig<Bn254>,
-) {
+fn setup_environment_with_circom() -> (Vec<u8>, Vec<u8>, ProvingKey<Bn254>, ProvingKey<Bn254>, CircomConfig<Bn254>, CircomConfig<Bn254>) {
 	let curve = Curve::Bn254;
 	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 	// 1. Setup The Hasher Pallet.
@@ -63,22 +47,20 @@ fn setup_environment_with_circom() -> (
 
 	// Load the WASM and R1CS for witness and proof generation
 	// Get path to solidity fixtures
-	let wasm_2_2_path = fs::canonicalize(
-		"../../solidity-fixtures/solidity-fixtures/vanchor_2/2/poseidon_vanchor_2_2.wasm",
-	);
-	let r1cs_2_2_path = fs::canonicalize(
-		"../../solidity-fixtures/solidity-fixtures/vanchor_2/2/poseidon_vanchor_2_2.r1cs",
-	);
-	let cfg_2_2 =
-		CircomConfig::<Bn254>::new(wasm_2_2_path.unwrap(), r1cs_2_2_path.unwrap()).unwrap();
-	let wasm_16_2_path = fs::canonicalize(
-		"../../solidity-fixtures/solidity-fixtures/vanchor_16/2/poseidon_vanchor_16_2.wasm",
-	);
-	let r1cs_16_2_path = fs::canonicalize(
-		"../../solidity-fixtures/solidity-fixtures/vanchor_16/2/poseidon_vanchor_16_2.r1cs",
-	);
-	let cfg_16_2 =
-		CircomConfig::<Bn254>::new(wasm_16_2_path.unwrap(), r1cs_16_2_path.unwrap()).unwrap();
+	let wasm_2_2_path = fs::canonicalize("../../solidity-fixtures/solidity-fixtures/vanchor_2/2/poseidon_vanchor_2_2.wasm");
+	let r1cs_2_2_path = fs::canonicalize("../../solidity-fixtures/solidity-fixtures/vanchor_2/2/poseidon_vanchor_2_2.r1cs");
+	let cfg_2_2 = CircomConfig::<Bn254>::new(
+		wasm_2_2_path.unwrap(),
+		r1cs_2_2_path.unwrap(),
+	)
+	.unwrap();
+	let wasm_16_2_path = fs::canonicalize("../../solidity-fixtures/solidity-fixtures/vanchor_16/2/poseidon_vanchor_16_2.wasm");
+	let r1cs_16_2_path = fs::canonicalize("../../solidity-fixtures/solidity-fixtures/vanchor_16/2/poseidon_vanchor_16_2.r1cs");
+	let cfg_16_2 = CircomConfig::<Bn254>::new(
+		wasm_16_2_path.unwrap(),
+		r1cs_16_2_path.unwrap(),
+	)
+	.unwrap();
 
 	let path_2_2 = "../../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
 	let mut file_2_2 = File::open(path_2_2).unwrap();
@@ -131,7 +113,11 @@ fn setup_environment_with_circom() -> (
 	assert_ok!(VAnchor2::set_min_withdraw_amount(RuntimeOrigin::root(), 3, 2));
 
 	// finally return the provingkey bytes
-	(vk_2_2_bytes, vk_2_16_bytes, params_2_2, params_16_2, cfg_2_2, cfg_16_2)
+	(
+		vk_2_2_bytes, vk_2_16_bytes,
+		params_2_2, params_16_2,
+		cfg_2_2, cfg_16_2
+	)
 }
 
 fn insert_utxos_to_merkle_tree(
@@ -179,8 +165,12 @@ fn insert_utxos_to_merkle_tree(
 	.try_into()
 	.unwrap();
 	let in_root_set = roots_f.map(|x| x.into_repr().to_bytes_be());
-
-	(in_indices, in_root_set, tree)
+	
+	(
+		in_indices,
+		in_root_set,
+		tree,
+	)
 }
 
 pub fn setup_circom_zk_circuit(
@@ -200,23 +190,15 @@ pub fn setup_circom_zk_circuit(
 		.clone()
 		.map(|utxo| utxo.calculate_nullifier(&nullifier_hasher).unwrap());
 
+	// let (in_indices, in_root_set, tree) = 
 	let mut builder = CircomBuilder::new(config);
 	// Public inputs
 	// publicAmount, extDataHash, inputNullifier, outputCommitment, chainID, roots
-	builder.push_input(
-		"publicAmount",
-		BigInt::from_bytes_be(Sign::Plus, &public_amount.to_be_bytes()),
-	);
-	builder.push_input("extDataHash", BigInt::from_bytes_be(Sign::Plus, &ext_data_hash));
+    builder.push_input("publicAmount", BigInt::from_bytes_be(Sign::Plus, &public_amount.to_be_bytes()));
+    builder.push_input("extDataHash", BigInt::from_bytes_be(Sign::Plus, &ext_data_hash));
 	for i in 0..NUM_UTXOS {
-		builder.push_input(
-			"inputNullifier",
-			BigInt::from_bytes_be(Sign::Plus, &input_nullifiers[i].into_repr().to_bytes_be()),
-		);
-		builder.push_input(
-			"outputCommitment",
-			BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].commitment.into_repr().to_bytes_be()),
-		);
+		builder.push_input("inputNullifier", BigInt::from_bytes_be(Sign::Plus, &input_nullifiers[i].into_repr().to_bytes_be()));
+		builder.push_input("outputCommitment", BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].commitment.into_repr().to_bytes_be()));
 	}
 	builder.push_input("chainID", BigInt::from_bytes_be(Sign::Plus, &chain_id.to_be_bytes()));
 	builder.push_input("roots", BigInt::from_bytes_le(Sign::Plus, &custom_root.0));
@@ -227,48 +209,23 @@ pub fn setup_circom_zk_circuit(
 	// inAmount, inPrivateKey, inBlinding, inPathIndices, inPathElements
 	// outChainID, outAmount, outPubkey, outBlinding
 	for i in 0..NUM_UTXOS {
-		builder.push_input(
-			"inAmount",
-			BigInt::from_bytes_be(Sign::Plus, &in_utxos[i].amount.into_repr().to_bytes_be()),
-		);
-		builder.push_input(
-			"inPrivateKey",
-			BigInt::from_bytes_be(
-				Sign::Plus,
-				&in_utxos[i].keypair.secret_key.unwrap().into_repr().to_bytes_be(),
-			),
-		);
-		builder.push_input(
-			"inBlinding",
-			BigInt::from_bytes_be(Sign::Plus, &in_utxos[i].blinding.into_repr().to_bytes_be()),
-		);
+		builder.push_input("inAmount", BigInt::from_bytes_be(Sign::Plus, &in_utxos[i].amount.into_repr().to_bytes_be()));
+		builder.push_input("inPrivateKey", BigInt::from_bytes_be(Sign::Plus, &in_utxos[i].keypair.secret_key.unwrap().into_repr().to_bytes_be()));
+		builder.push_input("inBlinding", BigInt::from_bytes_be(Sign::Plus, &in_utxos[i].blinding.into_repr().to_bytes_be()));
 		builder.push_input("inPathIndices", BigInt::from(in_utxos[i].index.unwrap()));
-		// builder.push_input("inPathElements", BigInt::from_bytes_le(Sign::Plus,
-		// &in_utxos[i].path_elements[j].0));
+		// builder.push_input("inPathElements", BigInt::from_bytes_le(Sign::Plus, &in_utxos[i].path_elements[j].0));
 
-		builder.push_input(
-			"outChainID",
-			BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].chain_id.into_repr().to_bytes_be()),
-		);
-		builder.push_input(
-			"outAmount",
-			BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].amount.into_repr().to_bytes_be()),
-		);
-		builder.push_input(
-			"outPubkey",
-			BigInt::from_bytes_be(
-				Sign::Plus,
-				&out_utxos[i].keypair.public_key.into_repr().to_bytes_be(),
-			),
-		);
-		builder.push_input(
-			"outBlinding",
-			BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].blinding.into_repr().to_bytes_be()),
-		);
+		builder.push_input("outChainID", BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].chain_id.into_repr().to_bytes_be()));
+		builder.push_input("outAmount", BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].amount.into_repr().to_bytes_be()));
+		builder.push_input("outPubkey", BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].keypair.public_key.into_repr().to_bytes_be()));
+		builder.push_input("outBlinding", BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].blinding.into_repr().to_bytes_be()));
 	}
 
-	let mut rng = thread_rng();
-	let circom = builder.build().map_err(|e| CircomError::InvalidBuilderConfig)?;
+
+    let mut rng = thread_rng();
+    let circom = builder.build().map_err(|e| {
+		CircomError::InvalidBuilderConfig
+	})?;
 
 	use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystem};
 	let cs = ConstraintSystem::<Bn254Fr>::new_ref();
@@ -276,22 +233,31 @@ pub fn setup_circom_zk_circuit(
 	let is_satisfied = cs.is_satisfied().unwrap();
 	println!("is satisfied: {}", is_satisfied);
 	if !is_satisfied {
-		println!("Unsatisfied constraint: {:?}", cs.which_is_unsatisfied().unwrap());
+		println!(
+			"Unsatisfied constraint: {:?}",
+			cs.which_is_unsatisfied().unwrap()
+		);
 	}
 
-	let inputs = circom.get_public_inputs().unwrap();
+    let inputs = circom.get_public_inputs().unwrap();
 
 	let mut proof_bytes = vec![];
-	let proof = prove(circom, &proving_key, &mut rng).map_err(|e| CircomError::ProvingFailure)?;
+    let proof = prove(circom, &proving_key, &mut rng).map_err(|e| {
+		CircomError::ProvingFailure
+	})?;
 	proof.write(&mut proof_bytes).unwrap();
-	let pvk = prepare_verifying_key(&proving_key.vk);
+    let pvk = prepare_verifying_key(&proving_key.vk);
 
-	let verified =
-		verify_proof(&pvk, &proof, &inputs).map_err(|e| CircomError::VerifyingFailure)?;
+    let verified = verify_proof(&pvk, &proof, &inputs).map_err(|e| {
+		CircomError::VerifyingFailure
+	})?;
 
-	assert!(verified);
+    assert!(verified);
 
-	Ok((proof_bytes, inputs))
+	Ok((
+		proof_bytes,
+		inputs
+	))
 }
 
 pub fn create_vanchor(asset_id: u32) -> u32 {
@@ -304,8 +270,11 @@ pub fn create_vanchor(asset_id: u32) -> u32 {
 #[test]
 fn circom_should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
-		let (vk_2_2_bytes, vk_2_16_bytes, params_2_2, params_16_2, cfg_2_2, cfg_16_2) =
-			setup_environment_with_circom();
+		let (
+			vk_2_2_bytes, vk_2_16_bytes,
+			params_2_2, params_16_2,
+			cfg_2_2, cfg_16_2
+		) = setup_environment_with_circom();
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -348,10 +317,11 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree2 as LinkableTreeInspector<
 			LinkableTreeConfigration<Test, Instance2>,
 		>>::get_neighbor_roots(tree_id)
-		.unwrap()
-		.try_into()
-		.unwrap();
+			.unwrap()
+			.try_into()
+			.unwrap();
 
+		
 		let (proof, public_inputs) = setup_circom_zk_circuit(
 			cfg_2_2,
 			public_amount,
@@ -362,8 +332,7 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 			params_2_2,
 			neighbor_roots,
 			custom_root,
-		)
-		.unwrap();
+		).unwrap();
 
 		// Deconstructing public inputs
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
