@@ -148,6 +148,9 @@ mod tests {
 			ic: vec![
 				G1 { x: U256::from(15), y: U256::from(16) },
 				G1 { x: U256::from(17), y: U256::from(18) },
+				G1 { x: U256::from(19), y: U256::from(20) },
+				G1 { x: U256::from(21), y: U256::from(22) },
+				G1 { x: U256::from(23), y: U256::from(24) },
 			],
 		};
 
