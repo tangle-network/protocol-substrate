@@ -255,9 +255,8 @@ pub fn setup_circom_zk_circuit(
 
 	let mut rng = thread_rng();
 	// // Run a trusted setup
-	// let circom = builder.setup();
-	// let params = generate_random_parameters::<Bn254, _, _>(circom, &mut rng).map_err(|e|
-	// CircomError::ParameterGenerationFailure)?;
+	let circom = builder.setup();
+	let params = generate_random_parameters::<Bn254, _, _>(circom, &mut rng).map_err(|e| CircomError::ParameterGenerationFailure)?;
 	let circom = builder.build().map_err(|e| CircomError::InvalidBuilderConfig)?;
 	// let vk_key: VerifyingKey = params.vk.clone().into();
 	// println!("VK Length: {}", vk_key.to_bytes().len());
@@ -274,11 +273,11 @@ pub fn setup_circom_zk_circuit(
 	println!("inputs: {:?}", inputs.len());
 	// Generate the proof
 	let mut proof_bytes = vec![];
-	// let proof = prove(circom, &params, &mut rng).map_err(|e| CircomError::ProvingFailure)?;
-	let proof = prove(circom, &proving_key, &mut rng).map_err(|e| CircomError::ProvingFailure)?;
+	let proof = prove(circom, &params, &mut rng).map_err(|e| CircomError::ProvingFailure)?;
+	// let proof = prove(circom, &proving_key, &mut rng).map_err(|e| CircomError::ProvingFailure)?;
 	proof.write(&mut proof_bytes).unwrap();
-	let pvk = prepare_verifying_key(&proving_key.vk);
-	// let pvk = prepare_verifying_key(&params.vk);
+	// let pvk = prepare_verifying_key(&proving_key.vk);
+	let pvk = prepare_verifying_key(&params.vk);
 	let verified =
 		verify_proof(&pvk, &proof, &inputs).map_err(|e| CircomError::VerifyingFailure)?;
 
