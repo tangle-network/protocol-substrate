@@ -135,37 +135,19 @@ impl InstanceVerifier for CircomVerifierBn254 {
 }
 
 mod tests {
-	use sp_core::U256;
 	use crate::verifying::*;
+	use sp_core::U256;
 
 	#[test]
 	fn verifying_key_serialize_deserialize() {
 		let vk = VerifyingKey {
-			alpha1: G1 {
-				x: U256::from(1),
-				y: U256::from(2),
-			},
-			beta2: G2 {
-				x: [U256::from(3), U256::from(4)],
-				y: [U256::from(5), U256::from(6)],
-			},
-			gamma2: G2 {
-				x: [U256::from(7), U256::from(8)],
-				y: [U256::from(9), U256::from(10)],
-			},
-			delta2: G2 {
-				x: [U256::from(11), U256::from(12)],
-				y: [U256::from(13), U256::from(14)],
-			},
+			alpha1: G1 { x: U256::from(1), y: U256::from(2) },
+			beta2: G2 { x: [U256::from(3), U256::from(4)], y: [U256::from(5), U256::from(6)] },
+			gamma2: G2 { x: [U256::from(7), U256::from(8)], y: [U256::from(9), U256::from(10)] },
+			delta2: G2 { x: [U256::from(11), U256::from(12)], y: [U256::from(13), U256::from(14)] },
 			ic: vec![
-				G1 {
-					x: U256::from(15),
-					y: U256::from(16),
-				},
-				G1 {
-					x: U256::from(17),
-					y: U256::from(18),
-				},
+				G1 { x: U256::from(15), y: U256::from(16) },
+				G1 { x: U256::from(17), y: U256::from(18) },
 			],
 		};
 

@@ -7,7 +7,10 @@ use crate::{
 use ark_bn254::Bn254;
 use ark_circom::{read_zkey, CircomBuilder, CircomConfig};
 use ark_ff::{BigInteger, PrimeField, ToBytes};
-use ark_groth16::{create_random_proof as prove, prepare_verifying_key, verify_proof, ProvingKey, generate_random_parameters};
+use ark_groth16::{
+	create_random_proof as prove, generate_random_parameters, prepare_verifying_key, verify_proof,
+	ProvingKey,
+};
 use arkworks_native_gadgets::{
 	merkle_tree::{Path, SparseMerkleTree},
 	poseidon::Poseidon,
@@ -38,11 +41,7 @@ use webb_primitives::{
 
 type Bn254Fr = ark_bn254::Fr;
 
-fn setup_environment_with_circom() -> (
-	Vec<u8>,
-	ProvingKey<Bn254>,
-	CircomConfig<Bn254>,
-) {
+fn setup_environment_with_circom() -> (Vec<u8>, ProvingKey<Bn254>, CircomConfig<Bn254>) {
 	let curve = Curve::Bn254;
 	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 	// 1. Setup The Hasher Pallet.
@@ -66,7 +65,6 @@ fn setup_environment_with_circom() -> (
 	let path_2_2 = "../../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
 	let mut file_2_2 = File::open(path_2_2).unwrap();
 	let (params_2_2, _matrices) = read_zkey(&mut file_2_2).unwrap();
-
 
 	let vk_2_2: VerifyingKey = params_2_2.vk.clone().into();
 	let vk_2_2_bytes = vk_2_2.to_bytes();
@@ -255,13 +253,11 @@ pub fn setup_circom_zk_circuit(
 		);
 	}
 
-	
-
-	
 	let mut rng = thread_rng();
 	// // Run a trusted setup
 	// let circom = builder.setup();
-	// let params = generate_random_parameters::<Bn254, _, _>(circom, &mut rng).map_err(|e| CircomError::ParameterGenerationFailure)?;
+	// let params = generate_random_parameters::<Bn254, _, _>(circom, &mut rng).map_err(|e|
+	// CircomError::ParameterGenerationFailure)?;
 	let circom = builder.build().map_err(|e| CircomError::InvalidBuilderConfig)?;
 	// let vk_key: VerifyingKey = params.vk.clone().into();
 	// println!("VK Length: {}", vk_key.to_bytes().len());
@@ -283,7 +279,8 @@ pub fn setup_circom_zk_circuit(
 	proof.write(&mut proof_bytes).unwrap();
 	let pvk = prepare_verifying_key(&proving_key.vk);
 	// let pvk = prepare_verifying_key(&params.vk);
-	let verified = verify_proof(&pvk, &proof, &inputs).map_err(|e| CircomError::VerifyingFailure)?;
+	let verified =
+		verify_proof(&pvk, &proof, &inputs).map_err(|e| CircomError::VerifyingFailure)?;
 
 	assert!(verified);
 
@@ -300,8 +297,7 @@ pub fn create_vanchor(asset_id: u32) -> u32 {
 #[test]
 fn circom_should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
-		let (vk_2_2_bytes, params_2_2, cfg_2_2) =
-			setup_environment_with_circom();
+		let (vk_2_2_bytes, params_2_2, cfg_2_2) = setup_environment_with_circom();
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
