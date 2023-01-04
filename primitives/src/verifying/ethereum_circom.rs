@@ -109,7 +109,7 @@ impl From<Proof> for ark_groth16::Proof<Bn254> {
 	}
 }
 
-#[derive(Default, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct VerifyingKey {
 	pub alpha1: G1,
 	pub beta2: G2,
@@ -132,45 +132,69 @@ impl VerifyingKey {
 	pub fn to_bytes(&self) -> Vec<u8> {
 		let mut bytes = Vec::new();
 
-		let alpha1_x_bytes = [0u8; 32];
-		self.alpha1.x.to_big_endian(&mut [0u8; 32]);
+		let mut alpha1_x_bytes = [0u8; 32];
+		self.alpha1.x.to_big_endian(&mut alpha1_x_bytes);
 		bytes.extend_from_slice(&alpha1_x_bytes);
 
-		let alpha1_y_bytes = [0u8; 32];
-		self.alpha1.y.to_big_endian(&mut [0u8; 32]);
+		let mut alpha1_y_bytes = [0u8; 32];
+		self.alpha1.y.to_big_endian(&mut alpha1_y_bytes);
 		bytes.extend_from_slice(&alpha1_y_bytes);
 
-		let beta2_x_bytes = [0u8; 32];
-		self.beta2.x[0].to_big_endian(&mut [0u8; 32]);
-		bytes.extend_from_slice(&beta2_x_bytes);
+		let mut beta2_x0_bytes = [0u8; 32];
+		self.beta2.x[0].to_big_endian(&mut beta2_x0_bytes);
+		bytes.extend_from_slice(&beta2_x0_bytes);
 
-		let beta2_y_bytes = [0u8; 32];
-		self.beta2.y[0].to_big_endian(&mut [0u8; 32]);
-		bytes.extend_from_slice(&beta2_y_bytes);
+		let mut beta2_y0_bytes = [0u8; 32];
+		self.beta2.y[0].to_big_endian(&mut beta2_y0_bytes);
+		bytes.extend_from_slice(&beta2_y0_bytes);
 
-		let gamma2_x_bytes = [0u8; 32];
-		self.gamma2.x[0].to_big_endian(&mut [0u8; 32]);
-		bytes.extend_from_slice(&gamma2_x_bytes);
+		let mut beta2_x1_bytes = [0u8; 32];
+		self.beta2.x[1].to_big_endian(&mut beta2_x1_bytes);
+		bytes.extend_from_slice(&beta2_x1_bytes);
 
-		let gamma2_y_bytes = [0u8; 32];
-		self.gamma2.y[0].to_big_endian(&mut [0u8; 32]);
-		bytes.extend_from_slice(&gamma2_y_bytes);
+		let mut beta2_y1_bytes = [0u8; 32];
+		self.beta2.y[1].to_big_endian(&mut beta2_y1_bytes);
+		bytes.extend_from_slice(&beta2_y1_bytes);
 
-		let delta2_x_bytes = [0u8; 32];
-		self.delta2.x[0].to_big_endian(&mut [0u8; 32]);
-		bytes.extend_from_slice(&delta2_x_bytes);
+		let mut gamma2_x0_bytes = [0u8; 32];
+		self.gamma2.x[0].to_big_endian(&mut gamma2_x0_bytes);
+		bytes.extend_from_slice(&gamma2_x0_bytes);
 
-		let delta2_y_bytes = [0u8; 32];
-		self.delta2.y[0].to_big_endian(&mut [0u8; 32]);
-		bytes.extend_from_slice(&delta2_y_bytes);
+		let mut gamma2_y0_bytes = [0u8; 32];
+		self.gamma2.y[0].to_big_endian(&mut gamma2_y0_bytes);
+		bytes.extend_from_slice(&gamma2_y0_bytes);
+
+		let mut gamma2_x1_bytes = [0u8; 32];
+		self.gamma2.x[1].to_big_endian(&mut gamma2_x1_bytes);
+		bytes.extend_from_slice(&gamma2_x1_bytes);
+
+		let mut gamma2_y1_bytes = [0u8; 32];
+		self.gamma2.y[1].to_big_endian(&mut gamma2_y1_bytes);
+		bytes.extend_from_slice(&gamma2_y1_bytes);
+
+		let mut delta2_x0_bytes = [0u8; 32];
+		self.delta2.x[0].to_big_endian(&mut delta2_x0_bytes);
+		bytes.extend_from_slice(&delta2_x0_bytes);
+
+		let mut delta2_y0_bytes = [0u8; 32];
+		self.delta2.y[0].to_big_endian(&mut delta2_y0_bytes);
+		bytes.extend_from_slice(&delta2_y0_bytes);
+
+		let mut delta2_x1_bytes = [0u8; 32];
+		self.delta2.x[1].to_big_endian(&mut delta2_x1_bytes);
+		bytes.extend_from_slice(&delta2_x1_bytes);
+
+		let mut delta2_y1_bytes = [0u8; 32];
+		self.delta2.y[1].to_big_endian(&mut delta2_y1_bytes);
+		bytes.extend_from_slice(&delta2_y1_bytes);
 
 		for g1 in self.ic.iter() {
-			let g1_x_bytes = [0u8; 32];
-			g1.x.to_big_endian(&mut [0u8; 32]);
+			let mut g1_x_bytes = [0u8; 32];
+			g1.x.to_big_endian(&mut g1_x_bytes);
 			bytes.extend_from_slice(&g1_x_bytes);
 
-			let g1_y_bytes = [0u8; 32];
-			g1.y.to_big_endian(&mut [0u8; 32]);
+			let mut g1_y_bytes = [0u8; 32];
+			g1.y.to_big_endian(&mut g1_y_bytes);
 			bytes.extend_from_slice(&g1_y_bytes);
 		}
 

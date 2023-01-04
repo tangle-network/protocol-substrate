@@ -37,30 +37,20 @@ impl core::fmt::Display for CircomError {
 	}
 }
 
-macro_rules! read_to_u256 {
-	($arr:expr) => {{
-		let x0 = BigEndian::read_u64(&$arr[0..8]);
-		let x1 = BigEndian::read_u64(&$arr[8..16]);
-		let x2 = BigEndian::read_u64(&$arr[16..24]);
-		let x3 = BigEndian::read_u64(&$arr[24..32]);
-		U256([x0, x1, x2, x3])
-	}};
-}
-
 macro_rules! read_to_G1 {
 	($arr:expr) => {{
-		let x = read_to_u256!(&$arr[0..32]);
-		let y = read_to_u256!(&$arr[32..64]);
+		let x = U256::from_big_endian(&$arr[0..32]);
+		let y = U256::from_big_endian(&$arr[32..64]);
 		G1 { x, y }
 	}};
 }
 
 macro_rules! read_to_G2 {
 	($arr:expr) => {{
-		let x0 = read_to_u256!(&$arr[0..32]);
-		let y0 = read_to_u256!(&$arr[32..64]);
-		let x1 = read_to_u256!(&$arr[64..96]);
-		let y1 = read_to_u256!(&$arr[96..128]);
+		let x0 = U256::from_big_endian(&$arr[0..32]);
+		let y0 = U256::from_big_endian(&$arr[32..64]);
+		let x1 = U256::from_big_endian(&$arr[64..96]);
+		let y1 = U256::from_big_endian(&$arr[96..128]);
 		G2 { x: [x0, x1], y: [y0, y1] }
 	}};
 }
@@ -70,8 +60,8 @@ macro_rules! read_to_ic {
 		let mut ic = Vec::new();
 		let mut temp_arr = $arr.to_vec();
 		while !temp_arr.is_empty() {
-			let x0 = read_to_u256!(&temp_arr[0..32]);
-			let y0 = read_to_u256!(&temp_arr[32..64]);
+			let x0 = U256::from_big_endian(&temp_arr[0..32]);
+			let y0 = U256::from_big_endian(&temp_arr[32..64]);
 			ic.push(G1 { x: x0, y: y0 });
 			temp_arr = temp_arr[64..].to_vec();
 		}
@@ -141,5 +131,50 @@ impl InstanceVerifier for CircomVerifierBn254 {
 		let proof = ArkProof::<Bn254>::from(circom_proof);
 		let res = verify_groth16(&vk.into(), &public_input_field_elts, &proof)?;
 		Ok(res)
+	}
+}
+
+mod tests {
+	use sp_core::U256;
+	use crate::verifying::*;
+
+	#[test]
+	fn verifying_key_serialize_deserialize() {
+		let vk = VerifyingKey {
+			alpha1: G1 {
+				x: U256::from(1),
+				y: U256::from(2),
+			},
+			beta2: G2 {
+				x: [U256::from(3), U256::from(4)],
+				y: [U256::from(5), U256::from(6)],
+			},
+			gamma2: G2 {
+				x: [U256::from(7), U256::from(8)],
+				y: [U256::from(9), U256::from(10)],
+			},
+			delta2: G2 {
+				x: [U256::from(11), U256::from(12)],
+				y: [U256::from(13), U256::from(14)],
+			},
+			ic: vec![
+				G1 {
+					x: U256::from(15),
+					y: U256::from(16),
+				},
+				G1 {
+					x: U256::from(17),
+					y: U256::from(18),
+				},
+			],
+		};
+
+		let vk_bytes = vk.to_bytes();
+		let vk2 = parse_vk_bytes_to_circom_vk(&vk_bytes).unwrap();
+		assert_eq!(vk.alpha1, vk2.alpha1);
+		assert_eq!(vk.beta2, vk2.beta2);
+		assert_eq!(vk.gamma2, vk2.gamma2);
+		assert_eq!(vk.delta2, vk2.delta2);
+		assert_eq!(vk.ic, vk2.ic);
 	}
 }
