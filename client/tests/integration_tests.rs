@@ -123,8 +123,8 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 		proof_bytes,
 		root.into(),
 		nullifier_hash.into(),
-		recipient,
-		relayer,
+		(*<subxt::ext::sp_runtime::AccountId32 as AsRef<[u8; 32]>>::as_ref(&recipient)).into(),
+		(*<subxt::ext::sp_runtime::AccountId32 as AsRef<[u8; 32]>>::as_ref(&relayer)).into(),
 		fee,
 		refund,
 	);
@@ -140,6 +140,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 
 	Ok(())
 }
+
 
 async fn make_vanchor_tx(
 	pk_bytes: &[u8],
@@ -264,8 +265,8 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	make_vanchor_tx(
 		pk_bytes,
 		vk_bytes,
-		&recipient,
-		&relayer,
+		&(*AsRef::<[u8; 32]>::as_ref(&recipient)).into(),
+		&(*AsRef::<[u8; 32]>::as_ref(&relayer)).into(),
 		public_amount,
 		custom_roots,
 		leaves,
@@ -309,8 +310,8 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	make_vanchor_tx(
 		pk_bytes,
 		vk_bytes,
-		&recipient,
-		&relayer,
+		&(*AsRef::<[u8; 32]>::as_ref(&recipient)).into(),
+		&(*AsRef::<[u8; 32]>::as_ref(&relayer)).into(),
 		public_amount,
 		None,
 		leaves.clone(),
