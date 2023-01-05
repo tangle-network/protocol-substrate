@@ -8,8 +8,7 @@ use ark_bn254::Bn254;
 use ark_circom::{read_zkey, CircomBuilder, CircomConfig};
 use ark_ff::{BigInteger, PrimeField, ToBytes};
 use ark_groth16::{
-	create_random_proof as prove, generate_random_parameters, prepare_verifying_key, verify_proof,
-	ProvingKey,
+	create_random_proof as prove, generate_random_parameters, verify_proof, ProvingKey,
 };
 use arkworks_native_gadgets::{
 	merkle_tree::{Path, SparseMerkleTree},
@@ -66,8 +65,8 @@ fn setup_environment_with_circom() -> (Vec<u8>, ProvingKey<Bn254>, CircomConfig<
 	let mut file_2_2 = File::open(path_2_2).unwrap();
 	let (params_2_2, _matrices) = read_zkey(&mut file_2_2).unwrap();
 
-	let vk_2_2: VerifyingKey = params_2_2.vk.clone().into();
-	let vk_2_2_bytes = vk_2_2.to_bytes();
+	let mut vk_2_2_bytes = Vec::new();
+	params_2_2.vk.write(&mut vk_2_2_bytes).unwrap();
 	println!("vk_2_2_bytes: {:?}", vk_2_2_bytes.len());
 
 	assert_ok!(VAnchorVerifier2::force_set_parameters(
@@ -170,6 +169,8 @@ pub fn setup_circom_zk_circuit(
 	neighbor_roots: [Element; ANCHOR_CT - 1],
 	custom_root: Element,
 ) -> Result<(Vec<u8>, Vec<Bn254Fr>), CircomError> {
+	use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystem};
+
 	let (in_indices, in_root_set, _tree, in_paths) =
 		insert_utxos_to_merkle_tree(&in_utxos, neighbor_roots, custom_root);
 
@@ -254,13 +255,13 @@ pub fn setup_circom_zk_circuit(
 	}
 
 	let mut rng = thread_rng();
-	// // Run a trusted setup
-	let circom = builder.setup();
-	let params = generate_random_parameters::<Bn254, _, _>(circom, &mut rng).map_err(|e| CircomError::ParameterGenerationFailure)?;
+	// Run a trusted setup
+	// let circom = builder.setup();
+	// let params = generate_random_parameters::<Bn254, _, _>(circom, &mut rng)
+	// 	.map_err(|e| CircomError::ParameterGenerationFailure)?;
 	let circom = builder.build().map_err(|e| CircomError::InvalidBuilderConfig)?;
 	// let vk_key: VerifyingKey = params.vk.clone().into();
 	// println!("VK Length: {}", vk_key.to_bytes().len());
-	use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystem};
 	let cs = ConstraintSystem::<Bn254Fr>::new_ref();
 	circom.clone().generate_constraints(cs.clone()).unwrap();
 	let is_satisfied = cs.is_satisfied().unwrap();
@@ -273,15 +274,15 @@ pub fn setup_circom_zk_circuit(
 	println!("inputs: {:?}", inputs.len());
 	// Generate the proof
 	let mut proof_bytes = vec![];
-	let proof = prove(circom, &params, &mut rng).map_err(|e| CircomError::ProvingFailure)?;
-	// let proof = prove(circom, &proving_key, &mut rng).map_err(|e| CircomError::ProvingFailure)?;
+	// let proof = prove(circom, &params, &mut rng).map_err(|e| CircomError::ProvingFailure)?;
+	let proof = prove(circom, &proving_key, &mut rng).map_err(|e| CircomError::ProvingFailure)?;
 	proof.write(&mut proof_bytes).unwrap();
-	// let pvk = prepare_verifying_key(&proving_key.vk);
-	let pvk = prepare_verifying_key(&params.vk);
+	// let pvk = prepare_verifying_key(&params.vk);
+	let pvk = proving_key.vk.into();
 	let verified =
 		verify_proof(&pvk, &proof, &inputs).map_err(|e| CircomError::VerifyingFailure)?;
 
-	assert!(verified);
+	assert!(verified, "Proof is not verified");
 
 	Ok((proof_bytes, inputs))
 }
