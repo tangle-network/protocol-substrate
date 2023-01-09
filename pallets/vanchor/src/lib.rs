@@ -126,7 +126,7 @@ pub mod pallet {
 		/// HB Milestone Review 1
 		/// I think the tighly coupling with the pallet `+ pallet_linkable_tree::Config<I>` can be
 		/// avoided: The LinkableTreeInterface can access to the LinkableTreeConfigration without
-		/// having to TreeInterface from the pallet without requiring this inherince.
+		/// having to TreeInterface from the pallet without requiring this inheritance.
 		/// https://docs.substrate.io/build/pallet-coupling/
 
 		/// The tree type
