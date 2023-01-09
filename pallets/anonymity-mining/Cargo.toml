@@ -1,0 +1,86 @@
+[package]
+authors = ["Webb Technologies Inc."]
+description = "Pallet that handles rewards from anonymity mining."
+edition = "2018"
+homepage = "https://substrate.dev"
+license = "Unlicense"
+name = "pallet-anonymity-mining"
+repository = "https://github.com/webb-tools/protocol-substrate"
+version = "1.0.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+
+pallet-vanchor = { path = "../vanchor", default-features = false }
+pallet-asset-registry = { path = "../asset-registry", default-features = false }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+pallet-hasher = { path = "../hasher", default-features = false }
+pallet-mixer = { path = "../mixer", default-features = false }
+pallet-mt = { path = "../mt", default-features = false }
+pallet-linkable-tree = { path = "../linkable-tree", default-features = false }
+pallet-vanchor-verifier = { path = "../vanchor-verifier", default-features = false }
+pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
+pallet-key-storage = {path = "../key-storage"}
+pallet-timestamp = { default-features = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.30" }
+orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.30", default-features = false }
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.30", default-features = false }
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.30", default-features = false }
+
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+webb-primitives = { path = "../../primitives", default-features = false }
+
+# Optional dependencies
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30", optional = true }
+
+[dev-dependencies]
+hex-literal = "0.2.1"
+hex = "0.4"
+serde = { version = "1.0.119" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
+ark-ff = { version = "^0.3.0", default-features = false }
+ark-ec = { version = "^0.3.0", default-features = false }
+ark-std = { version = "^0.3.0", default-features = false }
+ark-relations = { version = "^0.3.0", default-features = false }
+ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ] }
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ] }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"frame-support/std",
+	"frame-system/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"webb-primitives/std",
+	"webb-primitives/hashing",
+	"frame-benchmarking/std",
+	"orml-currencies/std",
+	"orml-tokens/std",
+	"orml-traits/std",
+	"pallet-asset-registry/std",
+	"pallet-balances/std",
+	"pallet-vanchor/std",
+	"pallet-mt/std",
+	"pallet-vanchor-verifier/std",
+	"pallet-token-wrapper/std"
+
+]
+runtime-benchmarks = [
+	"frame-benchmarking",
+	"frame-system/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+]
