@@ -303,9 +303,9 @@ parameter_types! {
 
 parameter_types! {
 	pub const PreimageMaxSize: u32 = 4096 * 1024;
-	pub const PreimageBaseDeposit: Balance = 1 * DOLLARS;
+	pub const PreimageBaseDeposit: Balance = DOLLARS;
 	// One cent: $10,000 / MB
-	pub const PreimageByteDeposit: Balance = 1 * CENTS;
+	pub const PreimageByteDeposit: Balance = CENTS;
 }
 
 impl pallet_preimage::Config for Runtime {
@@ -981,10 +981,10 @@ impl pallet_proxy::Config for Runtime {
 
 parameter_types! {
 	pub const AssetDeposit: Balance = 100 * DOLLARS;
-	pub const ApprovalDeposit: Balance = 1 * DOLLARS;
+	pub const ApprovalDeposit: Balance = DOLLARS;
 	pub const StringLimit: u32 = 50;
 	pub const MetadataDepositBase: Balance = 10 * DOLLARS;
-	pub const MetadataDepositPerByte: Balance = 1 * DOLLARS;
+	pub const MetadataDepositPerByte: Balance = DOLLARS;
 }
 
 impl pallet_assets::Config for Runtime {
@@ -1037,7 +1037,7 @@ where
 		let tip = 0;
 		// take the biggest period possible.
 		let period =
-			BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
+			BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2);
 		let current_block = System::block_number()
 			.saturated_into::<u64>()
 			// The `System::block_number` is initialized with `n+1`,

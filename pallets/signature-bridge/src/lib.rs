@@ -253,7 +253,7 @@ pub mod pallet {
 				Error::<T, I>::InvalidPermissions
 			);
 			// set the new maintainer nonce
-			MaintainerNonce::<T, I>::put(&nonce);
+			MaintainerNonce::<T, I>::put(nonce);
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				*maintainer = message[4..].to_vec();
@@ -473,12 +473,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	/// Asserts if a resource is registered
 	pub fn resource_exists(id: ResourceId) -> bool {
-		Self::resources(id) != None
+		Self::resources(id).is_some()
 	}
 
 	/// Checks if a chain exists as a whitelisted destination
 	pub fn chain_whitelisted(id: T::ChainId) -> bool {
-		Self::chains(id) != None
+		Self::chains(id).is_some()
 	}
 
 	pub fn parse_r_id_from_proposal_data(
@@ -533,7 +533,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn whitelist(id: T::ChainId) -> DispatchResultWithPostInfo {
 		// Cannot whitelist with an existing entry
 		ensure!(!Self::chain_whitelisted(id), Error::<T, I>::ChainAlreadyWhitelisted);
-		ChainNonces::<T, I>::insert(&id, T::ProposalNonce::from(0u32));
+		ChainNonces::<T, I>::insert(id, T::ProposalNonce::from(0u32));
 		Self::deposit_event(Event::ChainWhitelisted { chain_id: id });
 		Ok(().into())
 	}

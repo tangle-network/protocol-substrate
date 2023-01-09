@@ -58,7 +58,7 @@ fn should_wrap_token() {
 		assert_ok!(TokenWrapper::set_wrapping_fee(
 			RuntimeOrigin::root(),
 			5,
-			pool_share_id.into(),
+			pool_share_id,
 			nonce
 		));
 
@@ -605,7 +605,7 @@ fn should_rescue_all_tokens() {
 		assert_ok!(TokenWrapper::set_wrapping_fee(
 			RuntimeOrigin::root(),
 			5,
-			pool_share_id.into(),
+			pool_share_id,
 			nonce
 		));
 

@@ -34,7 +34,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 		include_bytes!("../../substrate-fixtures/mixer/bn254/x5/verifying_key_uncompressed.bin");
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();
-	let recipient_bytes = truncate_and_pad(&&recipient.encode());
+	let recipient_bytes = truncate_and_pad(&recipient.encode());
 	let relayer_bytes = truncate_and_pad(&relayer.encode());
 	let fee = 0;
 	let refund = 0;
@@ -58,19 +58,19 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	>(&mut deposit_res)
 	.await?;
 
-	let tree_metadata_storage_key = mt_storage.trees(&tree_id);
+	let tree_metadata_storage_key = mt_storage.trees(tree_id);
 	let tree_metadata_res = api.storage().fetch(&tree_metadata_storage_key, None).await?;
 	let leaf_count = tree_metadata_res.unwrap().leaf_count;
 
 	let mut leaves = Vec::new();
 	for i in 0..leaf_count {
-		let leaf_storage_key = mt_storage.leaves(&tree_id, &i);
+		let leaf_storage_key = mt_storage.leaves(tree_id, i);
 		let leaf = api.storage().fetch(&leaf_storage_key, None).await?.unwrap();
 		leaves.push(leaf.0.to_vec());
 	}
 
 	println!("Number of leaves in the tree: {:?}", leaves.len());
-	println!("Leaf count: {:?}", leaf_count);
+	println!("Leaf count: {leaf_count:?}");
 	let mut rng = OsRng {};
 
 	let (proof_bytes, root) = create_mixer_proof(
@@ -87,7 +87,7 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	);
 
 	// Fetch the root from chain storage and check if it equals the local root
-	let tree_metadata_storage_key = mt_storage.trees(&0);
+	let tree_metadata_storage_key = mt_storage.trees(0);
 	let tree_metadata_res = api.storage().fetch(&tree_metadata_storage_key, None).await?;
 	if let Some(tree_metadata) = tree_metadata_res {
 		let chain_root = tree_metadata.root;
@@ -195,12 +195,12 @@ async fn make_vanchor_tx(
 	let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
 		deconstruct_vanchor_pi_el(&public_inputs);
 
-	println!("chain id {:?}", chain_id);
-	println!("public amount {:?}", public_amount);
-	println!("root set {:?}", root_set);
-	println!("nullifiers {:?}", nullifiers);
-	println!("commitments {:?}", commitments);
-	println!("ext data hash {:?}", ext_data_hash);
+	println!("chain id {chain_id:?}");
+	println!("public amount {public_amount:?}");
+	println!("root set {root_set:?}");
+	println!("nullifiers {nullifiers:?}");
+	println!("commitments {commitments:?}");
+	println!("ext data hash {ext_data_hash:?}");
 
 	// Constructing proof data
 	let proof_data =
@@ -278,7 +278,7 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let mt_storage = webb_runtime::storage().merkle_tree_bn254();
 
 	let tree_id = 6;
-	let tree_metadata_storage_key = mt_storage.trees(&tree_id);
+	let tree_metadata_storage_key = mt_storage.trees(tree_id);
 	let tree_metadata_res = api.storage().fetch(&tree_metadata_storage_key, None).await?;
 	let tree_metadata = tree_metadata_res.unwrap();
 	let leaf_count = tree_metadata.leaf_count;
@@ -286,7 +286,7 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 
 	let mut leaves = Vec::new();
 	for i in 0..leaf_count {
-		let leaf_storage_key = mt_storage.leaves(&tree_id, &i);
+		let leaf_storage_key = mt_storage.leaves(tree_id, i);
 		let leaf = api.storage().fetch(&leaf_storage_key, None).await?.unwrap();
 		leaves.push(leaf.0.to_vec());
 	}
@@ -320,8 +320,8 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	.await?;
 
 	println!("Number of leaves in the tree: {:?}", leaves.len());
-	println!("Leaf count: {:?}", leaf_count);
-	println!("Chain root {:?}", chain_root);
+	println!("Leaf count: {leaf_count:?}");
+	println!("Chain root {chain_root:?}");
 
 	Ok(())
 }

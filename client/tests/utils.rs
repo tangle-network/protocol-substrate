@@ -51,9 +51,9 @@ impl ElementTrait for Element {
 	}
 }
 
-impl Into<WebbElement> for Element {
-	fn into(self) -> WebbElement {
-		WebbElement(self.0)
+impl From<Element> for WebbElement {
+	fn from(val: Element) -> Self {
+		WebbElement(val.0)
 	}
 }
 
@@ -80,15 +80,15 @@ impl<E: ElementTrait> ProofData<E> {
 	}
 }
 
-impl Into<WebbProofData<WebbElement>> for ProofData<Element> {
-	fn into(self) -> WebbProofData<WebbElement> {
+impl From<ProofData<Element>> for WebbProofData<WebbElement> {
+	fn from(val: ProofData<Element>) -> Self {
 		WebbProofData {
-			proof: self.proof,
-			public_amount: self.public_amount.into(),
-			roots: self.roots.iter().map(|x| (*x).into()).collect(),
-			input_nullifiers: self.input_nullifiers.iter().map(|x| (*x).into()).collect(),
-			output_commitments: self.output_commitments.iter().map(|x| (*x).into()).collect(),
-			ext_data_hash: self.ext_data_hash.into(),
+			proof: val.proof,
+			public_amount: val.public_amount.into(),
+			roots: val.roots.iter().map(|x| (*x).into()).collect(),
+			input_nullifiers: val.input_nullifiers.iter().map(|x| (*x).into()).collect(),
+			output_commitments: val.output_commitments.iter().map(|x| (*x).into()).collect(),
+			ext_data_hash: val.ext_data_hash.into(),
 		}
 	}
 }
@@ -152,17 +152,17 @@ impl<I: Encode, A: Encode, B: Encode, C: Encode> IntoAbiToken for ExtData<I, A, 
 	}
 }
 
-impl Into<WebbExtData<AccountId32, i128, u128, u32>> for ExtData<AccountId32, i128, u128, u32> {
-	fn into(self) -> WebbExtData<AccountId32, i128, u128, u32> {
+impl From<ExtData<AccountId32, i128, u128, u32>> for WebbExtData<AccountId32, i128, u128, u32> {
+	fn from(val: ExtData<AccountId32, i128, u128, u32>) -> Self {
 		WebbExtData {
-			recipient: self.recipient.clone(),
-			relayer: self.relayer.clone(),
-			ext_amount: self.ext_amount,
-			fee: self.fee,
-			refund: self.refund,
-			token: self.token,
-			encrypted_output1: self.encrypted_output1,
-			encrypted_output2: self.encrypted_output2,
+			recipient: val.recipient.clone(),
+			relayer: val.relayer.clone(),
+			ext_amount: val.ext_amount,
+			fee: val.fee,
+			refund: val.refund,
+			token: val.token,
+			encrypted_output1: val.encrypted_output1,
+			encrypted_output2: val.encrypted_output2,
 		}
 	}
 }
@@ -391,7 +391,7 @@ pub async fn expect_event<E: StaticEvent + Debug, T: Config, C: OnlineClientT<T>
 				println!("Ready");
 			},
 			Broadcast(details) => {
-				println!("Broadcasted: {:?}", details);
+				println!("Broadcasted: {details:?}");
 			},
 			InBlock(details) => {
 				println!(
@@ -427,13 +427,13 @@ pub async fn expect_event<E: StaticEvent + Debug, T: Config, C: OnlineClientT<T>
 				println!("Future");
 			},
 			Retracted(details) => {
-				println!("Retracted: {:?}", details);
+				println!("Retracted: {details:?}");
 			},
 			FinalityTimeout(details) => {
-				println!("FinalityTimeout: {:?}", details);
+				println!("FinalityTimeout: {details:?}");
 			},
 			Usurped(details) => {
-				println!("Usurped: {:?}", details);
+				println!("Usurped: {details:?}");
 			},
 			Dropped => {
 				println!("Dropped");
