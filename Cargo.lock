@@ -4314,12 +4314,29 @@ checksum = "ff011a302c396a5197692431fc1948019154afc178baf7d8e37367442a4601cf"
 [[package]]
 name = "orml-currencies"
 version = "0.4.1-dev"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.36#4f5a3f34d8cbd98b7bc2e295219a3e7b99b9ecaf"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-utilities 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+]
+
+[[package]]
+name = "orml-currencies"
+version = "0.4.1-dev"
 source = "git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36#94465d1964f2ee9f895cbe837dd7e39171c794ca"
 dependencies = [
  "frame-support",
  "frame-system",
- "orml-traits",
- "orml-utilities",
+ "orml-traits 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-utilities 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -4331,11 +4348,26 @@ dependencies = [
 [[package]]
 name = "orml-tokens"
 version = "0.4.1-dev"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.36#4f5a3f34d8cbd98b7bc2e295219a3e7b99b9ecaf"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+]
+
+[[package]]
+name = "orml-tokens"
+version = "0.4.1-dev"
 source = "git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36#94465d1964f2ee9f895cbe837dd7e39171c794ca"
 dependencies = [
  "frame-support",
  "frame-system",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -4346,12 +4378,12 @@ dependencies = [
 [[package]]
 name = "orml-traits"
 version = "0.4.1-dev"
-source = "git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36#94465d1964f2ee9f895cbe837dd7e39171c794ca"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.36#4f5a3f34d8cbd98b7bc2e295219a3e7b99b9ecaf"
 dependencies = [
  "frame-support",
  "impl-trait-for-tuples",
  "num-traits",
- "orml-utilities",
+ "orml-utilities 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -4359,6 +4391,38 @@ dependencies = [
  "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "xcm",
+]
+
+[[package]]
+name = "orml-traits"
+version = "0.4.1-dev"
+source = "git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36#94465d1964f2ee9f895cbe837dd7e39171c794ca"
+dependencies = [
+ "frame-support",
+ "impl-trait-for-tuples",
+ "num-traits",
+ "orml-utilities 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "xcm",
+]
+
+[[package]]
+name = "orml-utilities"
+version = "0.4.1-dev"
+source = "git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.36#4f5a3f34d8cbd98b7bc2e295219a3e7b99b9ecaf"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
 ]
 
 [[package]]
@@ -4410,9 +4474,9 @@ dependencies = [
  "frame-system",
  "hex",
  "hex-literal 0.2.2",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
+ "orml-currencies 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-tokens 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-traits 0.4.1-dev (git+https://github.com/open-web3-stack/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
  "pallet-asset-registry",
  "pallet-balances",
  "pallet-hasher",
@@ -4427,10 +4491,10 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-core 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.30)",
- "sp-io 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.30)",
- "sp-runtime 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.30)",
- "sp-std 4.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.30)",
+ "sp-core 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "webb-primitives",
 ]
 
@@ -4442,7 +4506,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-benchmarking",
- "orml-traits",
+ "orml-traits 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
  "parity-scale-codec",
  "primitive-types 0.8.0",
  "scale-info",
@@ -4849,9 +4913,9 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-benchmarking",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
+ "orml-currencies 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-tokens 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-traits 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
  "pallet-balances",
  "pallet-hasher",
  "pallet-mt",
@@ -4914,9 +4978,9 @@ dependencies = [
  "frame-system-benchmarking",
  "hex",
  "log",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
+ "orml-currencies 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-tokens 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-traits 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
  "pallet-asset-registry",
  "pallet-balances",
  "pallet-hasher",
@@ -5236,9 +5300,9 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
+ "orml-currencies 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-tokens 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-traits 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
  "pallet-asset-registry",
  "pallet-balances",
  "pallet-treasury",
@@ -5260,9 +5324,9 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal 0.3.4",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
+ "orml-currencies 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-tokens 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-traits 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
  "pallet-asset-registry",
  "pallet-balances",
  "pallet-signature-bridge",
@@ -5375,9 +5439,9 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-benchmarking",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
+ "orml-currencies 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-tokens 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-traits 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
  "pallet-asset-registry",
  "pallet-balances",
  "pallet-hasher",
@@ -5410,9 +5474,9 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "hex-literal 0.3.4",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
+ "orml-currencies 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-tokens 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-traits 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
  "pallet-asset-registry",
  "pallet-balances",
  "pallet-hasher",
@@ -10598,9 +10662,9 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "hex-literal 0.3.4",
  "log",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
+ "orml-currencies 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-tokens 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
+ "orml-traits 0.4.1-dev (git+https://github.com/webb-tools/open-runtime-module-library.git?branch=polkadot-v0.9.36)",
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
