@@ -18,13 +18,12 @@ pub use webb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
 	hashing::ethereum::Keccak256HasherBn254,
 	types::runtime::Moment,
-	ElementTrait,
+	AccountId, ElementTrait,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
-pub type AccountId = u64;
 pub type Balance = u128;
 pub type BlockNumber = u64;
 pub type CurrencyId = u32;
@@ -116,15 +115,10 @@ impl orml_tokens::Config for Test {
 	type DustRemovalWhitelist = Nothing;
 	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposits = AssetRegistry;
-	type OnDust = ();
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
-	type OnSlash = ();
-	type OnDeposit = ();
-	type OnTransfer = ();
-	type OnNewTokenAccount = ();
-	type OnKilledTokenAccount = ();
+	type CurrencyHooks = ();
 	type ReserveIdentifier = [u8; 8];
 }
 
