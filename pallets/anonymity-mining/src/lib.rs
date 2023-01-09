@@ -30,7 +30,7 @@ pub mod mock;
 mod tests;
 
 use frame_support::{
-	pallet_prelude::{DispatchError},
+	pallet_prelude::DispatchError,
 	sp_runtime::{
 		traits::{AccountIdConversion, Saturating},
 		FixedI64, FixedPointNumber, SaturatedConversion,
@@ -38,12 +38,10 @@ use frame_support::{
 	traits::{Get, Time},
 	PalletId,
 };
-use orml_traits::{MultiCurrency};
+use orml_traits::MultiCurrency;
 use pallet_vanchor::VAnchorConfigration;
 use sp_std::{convert::TryInto, prelude::*, vec};
-use webb_primitives::{
-	traits::vanchor::{VAnchorInspector, VAnchorInterface},
-};
+use webb_primitives::traits::vanchor::{VAnchorInspector, VAnchorInterface};
 
 pub use pallet::*;
 
@@ -223,7 +221,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	// Get current timestamp
 	pub fn get_current_timestamp() -> u64 {
 		let current_timestamp = T::Time::now();
-		
+
 		current_timestamp.saturated_into::<u64>()
 	}
 
@@ -252,7 +250,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let _final_balance_new =
 			old_balance.saturating_sub(final_new_balance_u64.saturated_into::<BalanceOf<T, I>>());
 		let final_balance_new_u64 = old_balance_u64 - final_new_balance_u64;
-		
+
 		final_balance_new_u64.saturated_into::<BalanceOf<T, I>>()
 	}
 
