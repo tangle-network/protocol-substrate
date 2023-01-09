@@ -89,6 +89,10 @@ pub mod pallet {
 	use frame_system::{ensure_signed, pallet_prelude::*};
 
 	#[pallet::pallet]
+	/// HB Milestone Review 1
+	/// Macro without_storage_info should not be used any more since unbounded Vecs might interfeer
+	/// in the proof_size calculation of the new Weights v2 struct.
+	/// Please check: https://github.com/paritytech/substrate/issues/8629
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
@@ -146,11 +150,21 @@ pub mod pallet {
 	/// Fee recipient, account which will be receiving wrapping cost fee.
 	#[pallet::storage]
 	#[pallet::getter(fn fee_recipient)]
+	/// HB Milestone Review 1
+	/// Macro without_storage_info should not be used any more since unbounded Vecs might interfeer
+	/// in the proof_size calculation of the new Weights v2 struct.
+	/// Please check: https://github.com/paritytech/substrate/issues/8629
+	/// Please use BoundedVec insted Vec
 	pub type FeeRecipient<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, T::AccountId>;
 
 	/// The proposal nonce used to prevent replay attacks on execute_proposal
 	#[pallet::storage]
 	#[pallet::getter(fn proposal_nonce)]
+	/// HB Milestone Review 1
+	/// Macro without_storage_info should not be used any more since unbounded Vecs might interfeer
+	/// in the proof_size calculation of the new Weights v2 struct.
+	/// Please check: https://github.com/paritytech/substrate/issues/8629
+	/// Please use BoundedVec insted Vec
 	pub type ProposalNonce<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, T::ProposalNonce>;
 
 	#[pallet::event]

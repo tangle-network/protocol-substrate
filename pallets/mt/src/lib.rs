@@ -86,6 +86,10 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	/// HB Milestone Review 1
+	/// Macro without_storage_info should not be used any more since unbounded Vecs might interfeer
+	/// in the proof_size calculation of the new Weights v2 struct.
+	/// Please check: https://github.com/paritytech/substrate/issues/8629
 	#[pallet::without_storage_info]
 	pub struct Pallet<T, I = ()>(_);
 
@@ -173,6 +177,11 @@ pub mod pallet {
 	/// The default hashes for this tree pallet
 	#[pallet::storage]
 	#[pallet::getter(fn default_hashes)]
+	/// HB Milestone Review 1
+	/// Macro without_storage_info should not be used any more since unbounded Vecs might interfeer
+	/// in the proof_size calculation of the new Weights v2 struct.
+	/// Please check: https://github.com/paritytech/substrate/issues/8629
+	/// Please use BoundedVec insted Vec
 	pub(super) type DefaultHashes<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, Vec<T::Element>, ValueQuery>;
 
@@ -382,6 +391,9 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 	fn create(creator: Option<T::AccountId>, depth: u8) -> Result<T::TreeId, DispatchError> {
 		// Setting the next tree id
 		let tree_id = Self::next_tree_id();
+		// HB Milestone review 1:
+		// The "+=" might cause an overflow depending on the type provided on TreeId. I would change
+		// this operation to saturating_add()
 		NextTreeId::<T, I>::mutate(|id| *id += One::one());
 		// get unit of two
 		let two: T::LeafIndex = Self::two();
@@ -449,6 +461,9 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 			*i = i.saturating_add(One::one()) % T::RootHistorySize::get()
 		});
 		CachedRoots::<T, I>::insert(id, root_index, hash);
+		// HB Milestone review 1:
+		// The "+=" might cause an overflow depending on the type provided on TreeId. I would change
+		// this operation to saturating_add() ( same as NextRootIndex mutator)
 		NextLeafIndex::<T, I>::mutate(id, |i| *i += One::one());
 
 		// return the root
@@ -473,7 +488,9 @@ impl<T: Config<I>, I: 'static> TreeInspector<T::AccountId, T::TreeId, T::Element
 				if cached_root == target_root {
 					return Ok(true)
 				}
-
+				// HB Milestone review 1:
+				// The "+=" might cause an overflow depending on the type provided on TreeId. I
+				// would change this operation to saturating_add()
 				temp += One::one();
 			}
 

@@ -101,6 +101,9 @@ pub mod pallet {
 		StorageOverflow,
 	}
 
+	/// HB Milestone Review 1
+	/// All the calls from this pallet have the weights hardcoded to 195_000_000
+	/// Is that intentional?
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Execute the wrapping fee proposal by calling the update_wrapping_fee

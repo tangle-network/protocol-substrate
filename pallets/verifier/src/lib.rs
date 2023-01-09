@@ -79,6 +79,10 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	/// HB Milestone Review 1
+	/// Macro without_storage_info should not be used any more since unbounded Vecs might interfeer
+	/// in the proof_size calculation of the new Weights v2 struct.
+	/// Please check: https://github.com/paritytech/substrate/issues/8629
 	#[pallet::without_storage_info]
 	pub struct Pallet<T, I = ()>(_);
 
@@ -125,6 +129,12 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn parameters)]
 	/// Details of the module's parameters
+	///
+	/// HB Milestone Review 1
+	/// Macro without_storage_info should not be used any more since unbounded Vecs might interfeer
+	/// in the proof_size calculation of the new Weights v2 struct.
+	/// Please check: https://github.com/paritytech/substrate/issues/8629
+	/// Please use BoundedVec insted Vec
 	pub(super) type Parameters<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, Vec<u8>, ValueQuery>;
 

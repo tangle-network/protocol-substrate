@@ -78,8 +78,8 @@ use frame_support::{
 	pallet_prelude::*,
 };
 use frame_system::{pallet_prelude::*, Config as SystemConfig};
-use pallet_vanchor::{VAnchorConfigration, PostDepositHook};
 use pallet_linkable_tree::types::EdgeMetadata;
+use pallet_vanchor::{PostDepositHook, VAnchorConfigration};
 use sp_std::prelude::*;
 use webb_primitives::{
 	anchor::{AnchorInspector, AnchorInterface},
@@ -112,11 +112,18 @@ pub type LinkProposalOf<T, I> = LinkProposal<ChainIdOf<T, I>, TreeIdOf<T, I>>;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	// HB Milestone Review 1
+	// It is not necessary to declare the #[transactional] macro anymore since it is added by
+	// default. https://github.com/paritytech/substrate/pull/11431
 	use frame_support::transactional;
 	use pallet_vanchor::BalanceOf;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+		/// HB Milestone Review 1
+	/// Macro without_storage_info should not be used any more since unbounded Vecs might interfeer
+	/// in the proof_size calculation of the new Weights v2 struct. 
+	/// Please check: https://github.com/paritytech/substrate/issues/8629
 	#[pallet::without_storage_info]
 	pub struct Pallet<T, I = ()>(_);
 
@@ -124,7 +131,8 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_vanchor::Config<I> {
 		/// The overarching event type.
-		type RuntimeEvent: From<Event<Self, I>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type RuntimeEvent: From<Event<Self, I>>
+			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		type Origin: From<<Self as SystemConfig>::Origin>
 			+ Into<Result<CumulusOrigin, <Self as Config<I>>::Origin>>;
@@ -215,6 +223,9 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
 
+	// HB Milestone review 1:
+	// Is this pallet in use at any point of the code base? In case it does or it is planned weights
+	// are hardcoded to zero and it seems thatthey were not migrated to the new Weights v2 struct.
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		/// Creates a new Proposal to link two anchors cross-chain
@@ -316,6 +327,9 @@ pub mod pallet {
 
 		/// **Note**: This method requires the `origin` to be a sibling
 		/// parachain.
+		// HB Milestone Review 1
+		// It is not necessary to declare the #[transactional] macro anymore since it is added by
+		// default. https://github.com/paritytech/substrate/pull/11431
 		#[transactional]
 		#[pallet::weight(0)]
 		pub fn save_link_proposal(
@@ -496,6 +510,8 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_sibling_para(<T as Config<I>>::RuntimeOrigin::from(origin))?;
 
+			// HB Milestone review 1:
+			// Extrinsics should not unwrap() without handling the error.
 			// get the anchor update proposal struct from the bytes
 			let anchor_update_proposal =
 				AnchorUpdateProposal::try_from(anchor_update_proposal_bytes).unwrap();
@@ -650,7 +666,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let latest_leaf_index = tree.leaf_count;
 		// and the target system
 		let src_target_system = TargetSystem::new_tree_id(tree_id.try_into().unwrap_or_default());
-		let src_resource_id = webb_proposals::ResourceId::new(src_target_system, typed_chain_id).into();		
+		let src_resource_id =
+			webb_proposals::ResourceId::new(src_target_system, typed_chain_id).into();
 		let function_signature = FunctionSignature::new([0; 4]);
 		let latest_leaf_index_u32: u32 = latest_leaf_index.try_into().unwrap_or_default();
 		let nonce = Nonce::new(latest_leaf_index_u32);
@@ -678,7 +695,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 			let typed_other_chain_id = TypedChainId::Substrate(other_chain_underlying_chain_id);
 			let target_resource_id = ResourceId::new(edge_target_system, typed_other_chain_id);
-			let proposal_header = ProposalHeader::new(target_resource_id, function_signature, nonce);
+			let proposal_header =
+				ProposalHeader::new(target_resource_id, function_signature, nonce);
 
 			// construct the anchor update proposal
 			let anchor_update_proposal = AnchorUpdateProposal::builder()

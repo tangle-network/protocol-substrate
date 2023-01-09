@@ -15,6 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+	/// HB Milestone Review 1
+	/// The documentation for this pallet described other pallet than the relayer registry.
+
+
 //! # Identity Pallet
 //!
 //! - [`Config`]

@@ -95,6 +95,10 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
+	/// HB Milestone Review 1
+	/// Macro without_storage_info should not be used any more since unbounded Vecs might interfeer
+	/// in the proof_size calculation of the new Weights v2 struct.
+	/// Please check: https://github.com/paritytech/substrate/issues/8629
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
@@ -256,6 +260,9 @@ pub mod pallet {
 		///
 		/// Emits 'Registered` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::register())]
+		// HB Milestone Review 1
+		// It is not necessary to declare the #[transactional] macro anymore since it is added by
+		// default. https://github.com/paritytech/substrate/pull/11431
 		#[transactional]
 		pub fn register(
 			origin: OriginFor<T>,
@@ -283,6 +290,9 @@ pub mod pallet {
 
 		// TODO: No tests
 		#[pallet::weight(<T as Config>::WeightInfo::update())]
+		// HB Milestone Review 1
+		// It is not necessary to declare the #[transactional] macro anymore since it is added by
+		// default. https://github.com/paritytech/substrate/pull/11431
 		#[transactional]
 		pub fn update(
 			origin: OriginFor<T>,
@@ -329,6 +339,9 @@ pub mod pallet {
 		///
 		/// Emits `MetadataSet` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::set_metadata())]
+		// HB Milestone Review 1
+		// It is not necessary to declare the #[transactional] macro anymore since it is added by
+		// default. https://github.com/paritytech/substrate/pull/11431
 		#[transactional]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
@@ -363,6 +376,9 @@ pub mod pallet {
 		///
 		/// Emits `LocationSet` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::set_location())]
+		// HB Milestone Review 1
+		// It is not necessary to declare the #[transactional] macro anymore since it is added by
+		// default. https://github.com/paritytech/substrate/pull/11431
 		#[transactional]
 		pub fn set_location(
 			origin: OriginFor<T>,

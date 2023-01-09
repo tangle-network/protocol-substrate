@@ -100,11 +100,22 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	/// HB Milestone Review 1
+	/// Macro without_storage_info should not be used any more since unbounded Vecs might interfeer
+	/// in the proof_size calculation of the new Weights v2 struct.
+	/// Please check: https://github.com/paritytech/substrate/issues/8629
 	#[pallet::without_storage_info]
 	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
 	/// The module configuration trait.
+	///
+	/// HB Milestone Review 1
+	/// Is the tightly coupling `+ pallet_mt::Config<I>` needed in this case?
+	/// For example, you can get rid of `+ pallet_mt::Config<I>` and just import the  TreeInterface
+	/// from the pallet without requiring this inherince.
+	/// https://docs.substrate.io/build/pallet-coupling/
+
 	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_mt::Config<I> {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self, I>>

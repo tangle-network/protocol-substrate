@@ -101,6 +101,10 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+		/// HB Milestone Review 1
+	/// Macro without_storage_info should not be used any more since unbounded Vecs might interfeer
+	/// in the proof_size calculation of the new Weights v2 struct. 
+	/// Please check: https://github.com/paritytech/substrate/issues/8629
 	#[pallet::without_storage_info]
 	pub struct Pallet<T, I = ()>(_);
 
@@ -240,7 +244,9 @@ pub mod pallet {
 			Self::deposit_event(Event::MixerCreation { tree_id });
 			Ok(().into())
 		}
-
+		// HB Milestone Review 1
+		// It is not necessary to declare the #[transactional] macro anymore since it is added by
+		// default. https://github.com/paritytech/substrate/pull/11431
 		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
 		pub fn deposit(
@@ -254,6 +260,9 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		// HB Milestone Review 1
+		// It is not necessary to declare the #[transactional] macro anymore since it is added by
+		// default. https://github.com/paritytech/substrate/pull/11431
 		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::withdraw())]
 		pub fn withdraw(

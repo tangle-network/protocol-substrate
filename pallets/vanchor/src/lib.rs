@@ -104,6 +104,10 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	/// HB Milestone Review 1
+	/// Macro without_storage_info should not be used any more since unbounded Vecs might interfeer
+	/// in the proof_size calculation of the new Weights v2 struct.
+	/// Please check: https://github.com/paritytech/substrate/issues/8629
 	#[pallet::without_storage_info]
 	pub struct Pallet<T, I = ()>(_);
 
@@ -118,6 +122,12 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type PalletId: Get<PalletId>;
+
+		/// HB Milestone Review 1
+		/// I think the tighly coupling with the pallet `+ pallet_linkable_tree::Config<I>` can be
+		/// avoided: The LinkableTreeInterface can access to the LinkableTreeConfigration without
+		/// having to TreeInterface from the pallet without requiring this inherince.
+		/// https://docs.substrate.io/build/pallet-coupling/
 
 		/// The tree type
 		type LinkableTree: LinkableTreeInterface<pallet_linkable_tree::LinkableTreeConfigration<Self, I>>
@@ -315,6 +325,11 @@ pub mod pallet {
 					T::ProposalNonce::from(ctr),
 				)
 				.map_err(|_| panic!("Failed to create vanchor"));
+				// HB Milestone review 1:
+				// The "+=" might cause an overflow depending on the type provided on TreeId. I
+				// would change this operation to saturating_add().
+				// This comment is more theorical and clean code since i'm not sure if there is
+				// going to be a case where the ctr variable might overflow on the GenesisBuild.
 				ctr += 1;
 			});
 		}
@@ -341,6 +356,9 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		// HB Milestone Review 1
+		// It is not necessary to declare the #[transactional] macro anymore since it is added by
+		// default. https://github.com/paritytech/substrate/pull/11431
 		#[transactional]
 		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::transact())]
 		pub fn transact(
@@ -354,6 +372,9 @@ pub mod pallet {
 			Ok(().into())
 		}
 
+		// HB Milestone Review 1
+		// It is not necessary to declare the #[transactional] macro anymore since it is added by
+		// default. https://github.com/paritytech/substrate/pull/11431
 		#[transactional]
 		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::register_and_transact())]
 		pub fn register_and_transact(
