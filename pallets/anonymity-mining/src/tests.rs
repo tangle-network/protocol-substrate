@@ -1,12 +1,10 @@
 use super::*;
 use crate::mock::*;
 
-
 use frame_benchmarking::account;
-use frame_support::{assert_ok};
+use frame_support::assert_ok;
 
-
-use sp_runtime::traits::{Zero};
+use sp_runtime::traits::Zero;
 
 const SEED: u32 = 0;
 const START_TIMESTAMP: u64 = 0;

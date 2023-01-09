@@ -6,7 +6,7 @@ use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 	AccountId32,
 };
 use sp_std::convert::{TryFrom, TryInto};
@@ -91,6 +91,7 @@ impl pallet_vanchor_verifier::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
+	type MaxParameterLegth = ConstU32<100>;
 	type WeightInfo = ();
 }
 
