@@ -77,7 +77,7 @@ mod benchmarking;
 use sp_std::convert::TryInto;
 pub mod types;
 pub mod weights;
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{ensure, pallet_prelude::DispatchError, traits::Get};
 use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
 use sp_std::prelude::*;
@@ -118,7 +118,8 @@ pub mod pallet {
 			+ Default
 			+ Copy
 			+ From<u32>
-			+ From<u64>;
+			+ From<u64>
+			+ MaxEncodedLen;
 
 		/// ChainID type for this chain
 		#[pallet::constant]

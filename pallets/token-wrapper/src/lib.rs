@@ -113,12 +113,14 @@ pub mod pallet {
 				Vec<u8>,
 				Self::Balance,
 				BoundedVec<u8, Self::StringLimit>,
+				Self::MaxAssetIdInPool,
 				DispatchError,
 			> + ShareTokenRegistry<
 				Self::AssetId,
 				Vec<u8>,
 				Self::Balance,
 				BoundedVec<u8, Self::StringLimit>,
+				Self::MaxAssetIdInPool,
 				DispatchError,
 			>;
 

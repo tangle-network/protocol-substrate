@@ -1,13 +1,13 @@
 //! All the traits exposed to be used in other custom pallets
 use crate::*;
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use webb_primitives::webb_proposals::ResourceId;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo)]
+#[derive(Clone, Encode, Decode, Eq, PartialEq, Default, Debug, TypeInfo, MaxEncodedLen)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct EdgeMetadata<ChainID, Element, LastLeafIndex> {
 	/// chain id
