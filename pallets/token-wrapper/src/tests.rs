@@ -55,12 +55,7 @@ fn should_wrap_token() {
 
 		// increment nonce
 		let nonce = nonce + 1;
-		assert_ok!(TokenWrapper::set_wrapping_fee(
-			RuntimeOrigin::root(),
-			5,
-			pool_share_id.into(),
-			nonce
-		));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, nonce));
 
 		assert_ok!(TokenWrapper::wrap(
 			RuntimeOrigin::signed(recipient),
@@ -602,12 +597,7 @@ fn should_rescue_all_tokens() {
 
 		// increment nonce
 		let nonce = nonce + 1;
-		assert_ok!(TokenWrapper::set_wrapping_fee(
-			RuntimeOrigin::root(),
-			5,
-			pool_share_id.into(),
-			nonce
-		));
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 5, pool_share_id, nonce));
 
 		assert_ok!(TokenWrapper::wrap(
 			RuntimeOrigin::signed(recipient),

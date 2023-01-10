@@ -154,7 +154,7 @@ fn should_successfully_set_default_hashes_to_match_solidity() {
 			)),
 		];
 		for i in 0..solidity_merkle_tree_hashes.len() {
-			println!("{:?}", i);
+			println!("{i:?}");
 			println!(
 				"{:?}\n{:?}\n",
 				default_hashes[i].to_bytes(),

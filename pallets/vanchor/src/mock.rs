@@ -191,15 +191,10 @@ impl orml_tokens::Config for Test {
 	type DustRemovalWhitelist = Nothing;
 	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposits = AssetRegistry;
-	type OnDust = ();
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
-	type OnSlash = ();
-	type OnDeposit = ();
-	type OnTransfer = ();
-	type OnNewTokenAccount = ();
-	type OnKilledTokenAccount = ();
+	type CurrencyHooks = ();
 	type ReserveIdentifier = [u8; 8];
 }
 

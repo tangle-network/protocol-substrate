@@ -115,7 +115,7 @@ impl<T: Config<I>, I: 'static> KeyStorageInterface<T::AccountId> for Pallet<T, I
 		public_key_owners.push((owner.clone(), public_key.clone()));
 		#[cfg(feature = "std")]
 		{
-			println!("Registered public key with owner: {:?}, {:?}", owner, public_key);
+			println!("Registered public key with owner: {owner:?}, {public_key:?}");
 		}
 		Ok(())
 	}

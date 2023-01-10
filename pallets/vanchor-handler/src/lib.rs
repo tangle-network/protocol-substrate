@@ -273,7 +273,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		max_deposit_limit: VAnchorBalanceOf<T, I>,
 		nonce: T::ProposalNonce,
 	) -> DispatchResultWithPostInfo {
-		T::VAnchor::set_max_deposit_amount(max_deposit_limit.into(), nonce)?;
+		T::VAnchor::set_max_deposit_amount(max_deposit_limit, nonce)?;
 		Self::deposit_event(Event::AnchorEdgeAdded);
 		Ok(().into())
 	}
@@ -282,7 +282,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		min_withdraw_limit: VAnchorBalanceOf<T, I>,
 		nonce: T::ProposalNonce,
 	) -> DispatchResultWithPostInfo {
-		T::VAnchor::set_min_withdraw_amount(min_withdraw_limit.into(), nonce)?;
+		T::VAnchor::set_min_withdraw_amount(min_withdraw_limit, nonce)?;
 		Self::deposit_event(Event::AnchorEdgeAdded);
 		Ok(().into())
 	}

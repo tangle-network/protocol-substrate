@@ -468,7 +468,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 
 		use arkworks_setups::common::verify;
 		match verify::<ark_bn254::Bn254>(&public_inputs, &verifying_key_2x2_bytes, &proof) {
-			Ok(res) => println!("Proof verification result: {}", res),
+			Ok(res) => println!("Proof verification result: {res}"),
 			Err(e) => panic!("Proof verification failed: {:?}", e),
 		}
 
@@ -1436,7 +1436,7 @@ fn should_not_be_able_to_exceed_max_deposit() {
 
 		let more_than_max_balance = 20;
 		let ext_amount: Amount = more_than_max_balance as i128;
-		let public_amount = ext_amount as i128;
+		let public_amount = ext_amount;
 		let fee: Balance = 0;
 
 		let chain_type = [2, 0];

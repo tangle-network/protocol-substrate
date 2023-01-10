@@ -505,7 +505,7 @@ impl<T: Config> Pallet<T> {
 					AssetType::Token => return Err(Error::<T>::AssetNotFound.into()),
 					AssetType::PoolShare(pool) =>
 						if !pool.contains(&asset_id) {
-							if Self::assets(&asset_id).is_some() {
+							if Self::assets(asset_id).is_some() {
 								let mut pool_clone = pool.clone();
 								pool_clone.push(asset_id);
 								AssetType::PoolShare(pool_clone)
@@ -597,12 +597,12 @@ impl<T: Config>
 	}
 
 	fn exists(asset_id: T::AssetId) -> bool {
-		Assets::<T>::contains_key(&asset_id) || asset_id == T::NativeAssetId::get()
+		Assets::<T>::contains_key(asset_id) || asset_id == T::NativeAssetId::get()
 	}
 
 	fn retrieve_asset(name: &Vec<u8>) -> Result<T::AssetId, DispatchError> {
 		let bounded_name = Self::to_bounded_name(name.clone())?;
-		if let Some(asset_id) = AssetIds::<T>::get(&bounded_name) {
+		if let Some(asset_id) = AssetIds::<T>::get(bounded_name) {
 			Ok(asset_id)
 		} else {
 			Err(Error::<T>::AssetNotFound.into())

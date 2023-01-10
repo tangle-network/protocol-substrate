@@ -547,7 +547,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 			DispatchError,
 		>>::get_by_id(from_pool_share_id)?;
 		// Nonce should be greater than the proposal nonce in storage
-		Self::validate_and_set_nonce(&asset_details.name.clone(), nonce)?;
+		Self::validate_and_set_nonce(&asset_details.name, nonce)?;
 		// One which receives wrapping cost fees for provided asset
 		let fee_recipient = Self::get_fee_recipient(&asset_details.name);
 		let from_currency_id = Self::to_currency_id(asset_id)?;

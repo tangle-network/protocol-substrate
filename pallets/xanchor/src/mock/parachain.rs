@@ -444,12 +444,9 @@ impl orml_tokens::Config for Runtime {
 	type DustRemovalWhitelist = Nothing;
 	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposits = AssetRegistry;
-	type OnDust = ();
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
-	type OnNewTokenAccount = ();
-	type OnKilledTokenAccount = ();
 	type ReserveIdentifier = [u8; 8];
 }
 
@@ -515,33 +512,38 @@ impl pallet_xanchor::Config for Runtime {
 	type XcmSender = XcmRouter;
 }
 
+parameter_types! {
+	pub const PreimageMaxSize: u32 = 4096 * 1024;
+	pub const PreimageBaseDeposit: Balance = 1_000;
+	// One cent: $10,000 / MB
+	pub const PreimageByteDeposit: Balance = 10;
+}
+
 impl pallet_preimage::Config for Runtime {
-	type BaseDeposit = ();
-	type ByteDeposit = ();
-	type Currency = ();
+	type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
 	type RuntimeEvent = RuntimeEvent;
-	type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-	type MaxSize = frame_support::traits::ConstU32<1024>;
-	type WeightInfo = ();
+	type Currency = Balances;
+	type ManagerOrigin = EnsureRoot<AccountId>;
+	type BaseDeposit = PreimageBaseDeposit;
+	type ByteDeposit = PreimageByteDeposit;
 }
 
 parameter_types! {
-	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) * BlockWeights::get().max_block;
-	pub const NoPreimagePostponement: Option<u64> = Some(2);
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+		RuntimeBlockWeights::get().max_block;
 }
 
 impl pallet_scheduler::Config for Runtime {
-	type Call = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
-	type MaxScheduledPerBlock = ();
-	type MaximumWeight = MaximumSchedulerWeight;
-	type NoPreimagePostponement = NoPreimagePostponement;
 	type RuntimeOrigin = RuntimeOrigin;
-	type OriginPrivilegeCmp = frame_support::traits::EqualPrivilegeOnly;
 	type PalletsOrigin = OriginCaller;
-	type PreimageProvider = Preimage;
+	type RuntimeCall = RuntimeCall;
+	type MaximumWeight = MaximumSchedulerWeight;
 	type ScheduleOrigin = EnsureRoot<AccountId>;
-	type WeightInfo = ();
+	type MaxScheduledPerBlock = ConstU32<512>;
+	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+	type OriginPrivilegeCmp = EqualPrivilegeOnly;
+	type Preimages = Preimage;
 }
 
 parameter_types! {
@@ -598,13 +600,14 @@ impl pallet_democracy::Config for Runtime {
 	type MinimumDeposit = MinimumDeposit;
 	type OperationalPreimageOrigin = EnsureSignedBy<AccountSix, AccountId>;
 	type PalletsOrigin = OriginCaller;
-	type PreimageByteDeposit = PreimageByteDeposit;
-	type Proposal = RuntimeCall;
 	type Scheduler = Scheduler;
 	type Slash = ();
 	type VetoOrigin = EnsureSignedBy<OneToFive, AccountId>;
 	type VoteLockingPeriod = VoteLockingPeriod;
 	type VotingPeriod = VotingPeriod;
+	type Preimages = Preimage;
+	type MaxDeposits = ConstU32<100>;
+	type MaxBlacklisted = ConstU32<100>;
 	type WeightInfo = ();
 }
 
