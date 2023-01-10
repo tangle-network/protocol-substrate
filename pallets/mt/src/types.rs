@@ -1,10 +1,11 @@
 //! All the traits exposed to be used in other custom pallets
 use crate::*;
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
+use frame_support::BoundedVec;
 use scale_info::TypeInfo;
 
-#[derive(Default, Clone, Encode, Decode, TypeInfo)]
-pub struct TreeMetadata<AccountId, LeafIndex, Element> {
+#[derive(Default, Clone, Encode, Decode, TypeInfo, MaxEncodedLen)]
+pub struct TreeMetadata<AccountId, LeafIndex, Element, MaxEdges: Get<u32>> {
 	/// Creator account
 	pub creator: Option<AccountId>,
 	/// Is paused
@@ -18,5 +19,5 @@ pub struct TreeMetadata<AccountId, LeafIndex, Element> {
 	/// The root hash of the tree
 	pub root: Element,
 	/// Edge nodes of tree, used to compute roots on the fly
-	pub edge_nodes: Vec<Element>,
+	pub edge_nodes: BoundedVec<Element, MaxEdges>,
 }

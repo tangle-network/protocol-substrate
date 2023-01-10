@@ -5,12 +5,14 @@ use crate as pallet_mt;
 use sp_core::H256;
 
 use arkworks_setups::{common::setup_params, Curve};
+use codec::MaxEncodedLen;
 use frame_support::{parameter_types, traits::GenesisBuild};
 use frame_system as system;
+use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
@@ -90,6 +92,7 @@ parameter_types! {
 impl pallet_hasher::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<u64>;
+	type MaxParameterLegth = ConstU32<10000>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
 }
@@ -120,6 +123,7 @@ parameter_types! {
 	scale_info::TypeInfo,
 	Deserialize,
 	Serialize,
+	MaxEncodedLen,
 )]
 pub struct Element([u8; 32]);
 
@@ -133,6 +137,13 @@ impl ElementTrait for Element {
 		buf.iter_mut().zip(input).for_each(|(a, b)| *a = *b);
 		Self(buf)
 	}
+}
+
+parameter_types! {
+	#[derive(Debug, TypeInfo)]
+	pub const MaxEdges: u32 = 1000;
+	#[derive(Debug, TypeInfo)]
+	pub const MaxDefaultHashes: u32 = 1000;
 }
 
 impl Config for Test {
@@ -151,14 +162,16 @@ impl Config for Test {
 	type StringLimit = StringLimit;
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
+	type MaxEdges = MaxEdges;
+	type MaxDefaultHashes = MaxDefaultHashes;
 	type Two = Two;
 	type WeightInfo = ();
 }
 
-pub fn hasher_params() -> Vec<u8> {
+pub fn hasher_params() -> BoundedVec<u8, ConstU32<10000>> {
 	let curve = Curve::Bn254;
 	let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-	params.to_bytes()
+	BoundedVec::<u8, ConstU32<10000>>::try_from(params.to_bytes()).unwrap()
 }
 
 #[derive(Default)]
