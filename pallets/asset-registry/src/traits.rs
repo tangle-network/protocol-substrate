@@ -1,7 +1,18 @@
 use crate::*;
+use frame_support::dispatch::fmt::Debug;
 
-pub trait Registry<AssetId, AssetName, Balance, BoundedString, Error> {
-	fn get_by_id(id: AssetId) -> Result<AssetDetails<AssetId, Balance, BoundedString>, Error>;
+pub trait Registry<
+	AssetId,
+	AssetName,
+	Balance,
+	BoundedString,
+	MaxAssetIdInPool: Get<u32> + Clone + Debug + Eq + PartialEq,
+	Error,
+>
+{
+	fn get_by_id(
+		id: AssetId,
+	) -> Result<AssetDetails<AssetId, Balance, BoundedString, MaxAssetIdInPool>, Error>;
 
 	fn exists(name: AssetId) -> bool;
 
@@ -21,8 +32,14 @@ pub trait Registry<AssetId, AssetName, Balance, BoundedString, Error> {
 	}
 }
 
-pub trait ShareTokenRegistry<AssetId, AssetName, Balance, BoundedString, Error>:
-	Registry<AssetId, AssetName, Balance, BoundedString, Error>
+pub trait ShareTokenRegistry<
+	AssetId,
+	AssetName,
+	Balance,
+	BoundedString,
+	MaxAssetIdInPool: Get<u32> + Clone + Debug + Eq + PartialEq,
+	Error,
+>: Registry<AssetId, AssetName, Balance, BoundedString, MaxAssetIdInPool, Error>
 {
 	fn retrieve_shared_asset(name: &AssetName, assets: &[AssetId]) -> Result<AssetId, Error>;
 
