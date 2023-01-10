@@ -21,7 +21,7 @@ use frame_support::{
 	traits::{Everything, GenesisBuild},
 };
 use frame_system as system;
-use polkadot_xcm::v0::MultiLocation;
+use polkadot_xcm::v1::MultiLocation;
 use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::{
@@ -31,7 +31,7 @@ use sp_runtime::{
 use sp_std::convert::{TryFrom, TryInto};
 use webb_primitives::{AssetId, Balance};
 
-use crate::{self as asset_registry, Config};
+use crate::{self as asset_registry, BoundedVec, Config};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -84,13 +84,18 @@ impl system::Config for Test {
 
 use codec::{Decode, Encode};
 
-#[derive(Debug, Encode, Decode, Clone, PartialEq, Eq, TypeInfo)]
+#[derive(Debug, Encode, Decode, Clone, PartialEq, Eq, TypeInfo, codec::MaxEncodedLen)]
 pub struct AssetLocation(pub MultiLocation);
 
 impl Default for AssetLocation {
 	fn default() -> Self {
-		AssetLocation(MultiLocation::Null)
+		AssetLocation(MultiLocation::default())
 	}
+}
+
+parameter_types! {
+	#[derive(Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
+	pub const MaxAssetIdInPool: u32 = 100;
 }
 
 impl Config for Test {
@@ -99,6 +104,7 @@ impl Config for Test {
 	type Balance = Balance;
 	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = NativeAssetId;
+	type MaxAssetIdInPool = MaxAssetIdInPool;
 	type RegistryOrigin = frame_system::EnsureRoot<u64>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
@@ -107,13 +113,18 @@ pub type AssetRegistryPallet = crate::Pallet<Test>;
 
 #[derive(Default)]
 pub struct ExtBuilder {
-	assets: Vec<(Vec<u8>, Balance)>,
+	assets: Vec<(BoundedVec<u8, RegistryStringLimit>, Balance)>,
 	native_asset_name: Option<Vec<u8>>,
 }
 
 impl ExtBuilder {
 	pub fn with_assets(mut self, assets: Vec<(Vec<u8>, Balance)>) -> Self {
-		self.assets = assets;
+		let bounded_assets: Vec<(BoundedVec<u8, RegistryStringLimit>, Balance)> =
+			Default::default();
+		for asset in assets {
+			bounded_assets.push((asset.0.try_into().unwrap(), asset.1));
+		}
+		self.assets = bounded_assets;
 		self
 	}
 
@@ -128,7 +139,7 @@ impl ExtBuilder {
 		if let Some(name) = self.native_asset_name {
 			crate::GenesisConfig::<Test> {
 				asset_names: self.assets,
-				native_asset_name: name,
+				native_asset_name: name.try_into().unwrap(),
 				native_existential_deposit: 1_000_000u128,
 			}
 		} else {

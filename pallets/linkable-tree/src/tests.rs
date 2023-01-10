@@ -18,7 +18,10 @@ fn should_create_new_linkable_tree() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let _res = HasherPallet::force_set_parameters(RuntimeOrigin::root(), params.to_bytes().try_into().unwrap());
+		let _res = HasherPallet::force_set_parameters(
+			RuntimeOrigin::root(),
+			params.to_bytes().try_into().unwrap(),
+		);
 
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;
@@ -58,7 +61,10 @@ fn should_be_able_to_add_neighbors_and_check_history() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let _res = HasherPallet::force_set_parameters(RuntimeOrigin::root(), params.to_bytes().try_into().unwrap());
+		let _res = HasherPallet::force_set_parameters(
+			RuntimeOrigin::root(),
+			params.to_bytes().try_into().unwrap(),
+		);
 
 		let max_edges = M as _;
 		let depth = TREE_DEPTH as u8;

@@ -71,6 +71,7 @@ use orml_traits::MultiCurrency;
 use sp_arithmetic::traits::Saturating;
 use sp_runtime::traits::AtLeast32Bit;
 use sp_std::convert::TryInto;
+use std::convert::TryFrom;
 use traits::TokenWrapperInterface;
 use weights::WeightInfo;
 
@@ -148,12 +149,14 @@ pub mod pallet {
 	/// Fee recipient, account which will be receiving wrapping cost fee.
 	#[pallet::storage]
 	#[pallet::getter(fn fee_recipient)]
-	pub type FeeRecipient<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, T::AccountId>;
+	pub type FeeRecipient<T: Config> =
+		StorageMap<_, Blake2_128Concat, BoundedVec<u8, T::StringLimit>, T::AccountId>;
 
 	/// The proposal nonce used to prevent replay attacks on execute_proposal
 	#[pallet::storage]
 	#[pallet::getter(fn proposal_nonce)]
-	pub type ProposalNonce<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, T::ProposalNonce>;
+	pub type ProposalNonce<T: Config> =
+		StorageMap<_, Blake2_128Concat, BoundedVec<u8, T::StringLimit>, T::ProposalNonce>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -200,6 +203,8 @@ pub mod pallet {
 		NoWrappingFeePercentFound,
 		/// Invalid nonce
 		InvalidNonce,
+		/// Name exceeds maximum limit
+		NameExceedsMaximumLimit,
 	}
 
 	#[pallet::call]
@@ -307,7 +312,7 @@ impl<T: Config> Pallet<T> {
 		T::TreasuryId::get().into_account_truncating()
 	}
 
-	pub fn get_fee_recipient(name: &Vec<u8>) -> T::AccountId {
+	pub fn get_fee_recipient(name: &BoundedVec<u8, T::StringLimit>) -> T::AccountId {
 		FeeRecipient::<T>::get(name).unwrap_or(Self::treasury_id())
 	}
 
@@ -351,7 +356,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub fn validate_and_set_nonce(
-		name: &Vec<u8>,
+		name: &BoundedVec<u8, T::StringLimit>,
 		nonce: T::ProposalNonce,
 	) -> Result<(), DispatchError> {
 		// Nonce should be greater than the proposal nonce in storage
@@ -389,6 +394,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 				Vec<u8>,
 				T::Balance,
 				BoundedVec<u8, T::StringLimit>,
+				T::MaxAssetIdInPool,
 				DispatchError,
 			>>::exists(from_asset_id),
 			Error::<T>::UnregisteredAssetId
@@ -400,6 +406,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 				Vec<u8>,
 				T::Balance,
 				BoundedVec<u8, T::StringLimit>,
+				T::MaxAssetIdInPool,
 				DispatchError,
 			>>::contains_asset(into_pool_share_id, from_asset_id),
 			Error::<T>::NotFoundInPool
@@ -418,6 +425,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 			Vec<u8>,
 			T::Balance,
 			BoundedVec<u8, T::StringLimit>,
+			T::MaxAssetIdInPool,
 			DispatchError,
 		>>::get_by_id(into_pool_share_id)?;
 
@@ -456,6 +464,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 				Vec<u8>,
 				T::Balance,
 				BoundedVec<u8, T::StringLimit>,
+				T::MaxAssetIdInPool,
 				DispatchError,
 			>>::exists(into_asset_id),
 			Error::<T>::UnregisteredAssetId
@@ -467,6 +476,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 				Vec<u8>,
 				T::Balance,
 				BoundedVec<u8, T::StringLimit>,
+				T::MaxAssetIdInPool,
 				DispatchError,
 			>>::contains_asset(from_pool_share_id, into_asset_id),
 			Error::<T>::NotFoundInPool
@@ -498,6 +508,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 			Vec<u8>,
 			T::Balance,
 			BoundedVec<u8, T::StringLimit>,
+			T::MaxAssetIdInPool,
 			DispatchError,
 		>>::get_by_id(into_pool_share_id)?;
 		// Nonce should be greater than the proposal nonce in storage
@@ -522,6 +533,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 			Vec<u8>,
 			T::Balance,
 			BoundedVec<u8, T::StringLimit>,
+			T::MaxAssetIdInPool,
 			DispatchError,
 		>>::get_by_id(pool_share_id)?;
 		// nonce should be greater than the proposal nonce in storage
@@ -546,6 +558,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 			Vec<u8>,
 			T::Balance,
 			BoundedVec<u8, T::StringLimit>,
+			T::MaxAssetIdInPool,
 			DispatchError,
 		>>::get_by_id(from_pool_share_id)?;
 		// Nonce should be greater than the proposal nonce in storage
@@ -577,12 +590,15 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 		nonce: T::ProposalNonce,
 	) -> Result<T::AssetId, DispatchError> {
 		// Nonce should be greater than the proposal nonce in storage
-		Self::validate_and_set_nonce(name, nonce)?;
+		let bounded_name = BoundedVec::<u8, T::StringLimit>::try_from(name.clone())
+			.map_err(|e| Error::<T>::NameExceedsMaximumLimit)?;
+		Self::validate_and_set_nonce(&bounded_name, nonce)?;
 		<T::AssetRegistry as ShareTokenRegistry<
 			T::AssetId,
 			Vec<u8>,
 			T::Balance,
 			BoundedVec<u8, T::StringLimit>,
+			T::MaxAssetIdInPool,
 			DispatchError,
 		>>::add_asset_to_existing_pool(name, asset_id)
 	}
@@ -593,13 +609,15 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 		nonce: T::ProposalNonce,
 	) -> Result<T::AssetId, DispatchError> {
 		// Nonce should be greater than the proposal nonce in storage
-		Self::validate_and_set_nonce(name, nonce)?;
-
+		let bounded_name = BoundedVec::<u8, T::StringLimit>::try_from(name.clone())
+			.map_err(|e| Error::<T>::NameExceedsMaximumLimit)?;
+		Self::validate_and_set_nonce(&bounded_name, nonce)?;
 		<T::AssetRegistry as ShareTokenRegistry<
 			T::AssetId,
 			Vec<u8>,
 			T::Balance,
 			BoundedVec<u8, T::StringLimit>,
+			T::MaxAssetIdInPool,
 			DispatchError,
 		>>::delete_asset_from_existing_pool(name, asset_id)
 	}

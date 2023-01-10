@@ -22,7 +22,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use sp_arithmetic::traits::BaseArithmetic;
-use sp_std::{convert::TryInto, vec::Vec};
+use sp_std::{convert::{TryInto,TryFrom}, vec::Vec};
 
 #[cfg(test)]
 mod mock;
@@ -34,7 +34,6 @@ mod benchmarking;
 mod traits;
 mod types;
 pub mod weights;
-use std::convert::TryFrom;
 
 use weights::WeightInfo;
 

@@ -5,12 +5,14 @@ use crate as pallet_linkable_tree;
 use codec::{Decode, Encode};
 use sp_core::H256;
 
+use codec::MaxEncodedLen;
 use frame_support::parameter_types;
 use frame_system as system;
+use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup, ConstU32},
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
 pub use webb_primitives::{
@@ -18,8 +20,6 @@ pub use webb_primitives::{
 	types::ElementTrait,
 	AccountId,
 };
-use scale_info::TypeInfo;
-use codec::MaxEncodedLen;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -138,7 +138,7 @@ parameter_types! {
 	scale_info::TypeInfo,
 	Serialize,
 	Deserialize,
-	MaxEncodedLen
+	MaxEncodedLen,
 )]
 pub struct Element([u8; 32]);
 
