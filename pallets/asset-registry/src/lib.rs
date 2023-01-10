@@ -22,7 +22,10 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use sp_arithmetic::traits::BaseArithmetic;
-use sp_std::{convert::{TryInto,TryFrom}, vec::Vec};
+use sp_std::{
+	convert::{TryFrom, TryInto},
+	vec::Vec,
+};
 
 #[cfg(test)]
 mod mock;

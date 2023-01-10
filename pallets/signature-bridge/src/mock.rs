@@ -8,7 +8,7 @@ use sp_core::H256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
 use sp_runtime::{
 	testing::Header,
-	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
+	traits::{AccountIdConversion, BlakeTwo256, ConstU32, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
 use std::{sync::Arc, vec};
@@ -125,6 +125,7 @@ impl Config for Test {
 	type SetResourceProposalFilter = SetResourceProposalFilter;
 	type ExecuteProposalFilter = ExecuteAllProposalsFilter;
 	type MaintainerNonce = u32;
+	type MaxStringLength = ConstU32<1000>;
 	type Proposal = RuntimeCall;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();

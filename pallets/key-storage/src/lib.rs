@@ -29,7 +29,10 @@ pub mod tests;
 pub mod weights;
 
 use frame_support::{pallet_prelude::DispatchError, BoundedVec};
-use sp_std::{convert::{TryInto,TryFrom}, prelude::*};
+use sp_std::{
+	convert::{TryFrom, TryInto},
+	prelude::*,
+};
 use webb_primitives::traits::key_storage::*;
 
 pub use pallet::*;

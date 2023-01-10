@@ -70,8 +70,7 @@ use frame_support::{
 use orml_traits::MultiCurrency;
 use sp_arithmetic::traits::Saturating;
 use sp_runtime::traits::AtLeast32Bit;
-use sp_std::convert::TryInto;
-use std::convert::TryFrom;
+use sp_std::convert::{TryFrom, TryInto};
 use traits::TokenWrapperInterface;
 use weights::WeightInfo;
 
