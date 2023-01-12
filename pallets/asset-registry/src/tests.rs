@@ -21,11 +21,11 @@ use crate::{
 	types::{AssetDetails, AssetMetadata, AssetType},
 	ShareTokenRegistry,
 };
-use codec::Encode;
+
 use frame_support::{assert_noop, assert_ok, BoundedVec};
 use polkadot_xcm::{
-	opaque::latest::{Junctions, Parent},
-	v1::{Junction::*, MultiLocation},
+	opaque::latest::{Junctions},
+	v1::{MultiLocation},
 };
 use sp_runtime::DispatchError;
 use sp_std::convert::TryInto;

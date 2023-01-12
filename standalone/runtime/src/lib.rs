@@ -78,7 +78,7 @@ use frame_support::{
 		KeyOwnerProofSystem, LockIdentifier, OnUnbalanced, U128CurrencyToVote,
 	},
 	weights::{
-		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
+		constants::{BlockExecutionWeight, WEIGHT_REF_TIME_PER_SECOND},
 		IdentityFee, Weight,
 	},
 	PalletId, RuntimeDebug,
