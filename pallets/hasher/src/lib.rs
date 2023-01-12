@@ -78,7 +78,7 @@ pub mod pallet {
 		type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// The max parameter length accepted by the hasher
-		type MaxParameterLegth: Get<u32>;
+		type MaxParameterLength: Get<u32>;
 
 		/// Weightinfo for pallet.
 		type WeightInfo: WeightInfo;
@@ -87,7 +87,7 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
 		pub phantom: (PhantomData<T>, PhantomData<I>),
-		pub parameters: Option<BoundedVec<u8, T::MaxParameterLegth>>,
+		pub parameters: Option<BoundedVec<u8, T::MaxParameterLength>>,
 	}
 
 	#[cfg(feature = "std")]
@@ -110,7 +110,7 @@ pub mod pallet {
 	#[pallet::getter(fn parameters)]
 	/// Details of the module's parameters
 	pub(super) type Parameters<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, BoundedVec<u8, T::MaxParameterLegth>, ValueQuery>;
+		StorageValue<_, BoundedVec<u8, T::MaxParameterLength>, ValueQuery>;
 
 	#[pallet::event]
 	pub enum Event<T: Config<I>, I: 'static = ()> {}
@@ -131,7 +131,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::force_set_parameters(parameters.len() as u32))]
 		pub fn force_set_parameters(
 			origin: OriginFor<T>,
-			parameters: BoundedVec<u8, T::MaxParameterLegth>,
+			parameters: BoundedVec<u8, T::MaxParameterLength>,
 		) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			Parameters::<T, I>::try_mutate(|params| {

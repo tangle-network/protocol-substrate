@@ -244,7 +244,7 @@ parameter_types! {
 impl pallet_vanchor_verifier::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MaxParameterLegth = ConstU32<1000>;
+	type MaxParameterLength = ConstU32<1000>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
@@ -252,7 +252,7 @@ impl pallet_vanchor_verifier::Config for Test {
 impl pallet_hasher::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MaxParameterLegth = ConstU32<100>;
+	type MaxParameterLength = ConstU32<100>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
 }

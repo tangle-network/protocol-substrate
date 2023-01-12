@@ -11,6 +11,7 @@ use sp_runtime::{
 	traits::{IdentifyAccount, Verify},
 	Perbill,
 };
+use sp_std::convert::TryInto;
 use webb_runtime::{
 	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
 	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
@@ -246,8 +247,8 @@ fn testnet_genesis(
 	GenesisConfig {
 		system: webb_runtime::SystemConfig { code: wasm_binary_unwrap().to_vec() },
 		asset_registry: AssetRegistryConfig {
-			asset_names: vec![(b"TEST".to_vec(), 1)],
-			native_asset_name: b"WEBB".to_vec(),
+			asset_names: vec![(b"TEST".to_vec().try_into().unwrap(), 1)],
+			native_asset_name: b"WEBB".to_vec().try_into().unwrap(),
 			native_existential_deposit: webb_runtime::constants::currency::EXISTENTIAL_DEPOSIT,
 		},
 		tokens: webb_runtime::TokensConfig {
@@ -300,17 +301,17 @@ fn testnet_genesis(
 		grandpa: GrandpaConfig { authorities: vec![] },
 		treasury: Default::default(),
 		hasher_bn_254: HasherBn254Config {
-			parameters: Some(bn254_x5_3_params.to_bytes()),
+			parameters: Some(bn254_x5_3_params.to_bytes().try_into().unwrap()),
 			phantom: Default::default(),
 		},
 		mixer_verifier_bn_254: MixerVerifierBn254Config {
-			parameters: Some(mixer_verifier_bn254_params),
+			parameters: Some(mixer_verifier_bn254_params.try_into().unwrap()),
 			phantom: Default::default(),
 		},
 		v_anchor_verifier: VAnchorVerifierConfig {
 			parameters: Some(vec![
-				(2, 2, vanchor_verifier_2_2_bn254_params),
-				(2, 16, vanchor_verifier_2_16_bn254_params),
+				(2, 2, vanchor_verifier_2_2_bn254_params.try_into().unwrap()),
+				(2, 16, vanchor_verifier_2_16_bn254_params.try_into().unwrap()),
 			]),
 			phantom: Default::default(),
 		},

@@ -90,7 +90,7 @@ parameter_types! {
 impl pallet_verifier::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MaxParameterLegth = ConstU32<100>;
+	type MaxParameterLength = ConstU32<100>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }

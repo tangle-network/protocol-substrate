@@ -91,7 +91,7 @@ impl pallet_vanchor_verifier::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
-	type MaxParameterLegth = ConstU32<100>;
+	type MaxParameterLength = ConstU32<100>;
 	type WeightInfo = ();
 }
 
