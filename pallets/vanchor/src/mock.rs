@@ -7,9 +7,10 @@ use sp_core::H256;
 use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
+use scale_info::TypeInfo;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 	Permill,
 };
 use sp_std::convert::{TryFrom, TryInto};
@@ -116,6 +117,7 @@ parameter_types! {
 impl pallet_vanchor_verifier::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxParameterLength = ConstU32<10000>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
@@ -123,6 +125,7 @@ impl pallet_vanchor_verifier::Config for Test {
 impl pallet_hasher::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxParameterLength = ConstU32<10000>;
 	type Hasher = ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
 }
@@ -216,12 +219,18 @@ impl orml_currencies::Config for Test {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	#[derive(Copy, Clone, Debug, PartialEq, Eq, scale_info::TypeInfo)]
+	pub const MaxAssetIdInPool: u32 = 100;
+}
+
 impl pallet_asset_registry::Config for Test {
 	type AssetId = AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
 	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = NativeCurrencyId;
+	type MaxAssetIdInPool = MaxAssetIdInPool;
 	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
@@ -303,6 +312,8 @@ impl pallet_vanchor::Config for Test {
 
 impl pallet_key_storage::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type MaxPubkeyLength = ConstU32<1000>;
+	type MaxPubKeyOwners = ConstU32<1000>;
 	type WeightInfo = ();
 }
 

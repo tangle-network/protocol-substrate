@@ -1,6 +1,5 @@
 use frame_support::{dispatch::fmt::Debug, pallet_prelude::*, BoundedVec};
 use scale_info::TypeInfo;
-use sp_std::vec::Vec;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};

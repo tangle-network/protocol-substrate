@@ -119,7 +119,7 @@ pub struct ExtBuilder {
 
 impl ExtBuilder {
 	pub fn with_assets(mut self, assets: Vec<(Vec<u8>, Balance)>) -> Self {
-		let bounded_assets: Vec<(BoundedVec<u8, RegistryStringLimit>, Balance)> =
+		let mut bounded_assets: Vec<(BoundedVec<u8, RegistryStringLimit>, Balance)> =
 			Default::default();
 		for asset in assets {
 			bounded_assets.push((asset.0.try_into().unwrap(), asset.1));

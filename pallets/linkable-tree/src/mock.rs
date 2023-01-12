@@ -108,7 +108,7 @@ impl pallet_hasher::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
-	type MaxParameterLength = ConstU32<1000>;
+	type MaxParameterLength = ConstU32<10000>;
 	type WeightInfo = ();
 }
 

@@ -627,7 +627,7 @@ impl<T: Config>
 		existential_deposit: T::Balance,
 	) -> Result<T::AssetId, DispatchError> {
 		let bounded_name = Self::to_bounded_name(name.clone())?;
-		Self::get_or_create_asset(bounded_name.clone(), AssetType::Token, existential_deposit)
+		Self::get_or_create_asset(bounded_name, AssetType::Token, existential_deposit)
 	}
 }
 

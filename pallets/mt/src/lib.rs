@@ -409,7 +409,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 
 		let bounded_edge_nodes =
 			BoundedVec::<T::Element, T::MaxEdges>::try_from(default_edge_nodes.clone())
-				.map_err(|e| Error::<T, I>::ExceedsMaxEdges)?;
+				.map_err(|_e| Error::<T, I>::ExceedsMaxEdges)?;
 		// Setting up the tree
 		let tree_metadata = TreeMetadata {
 			creator,

@@ -590,7 +590,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 	) -> Result<T::AssetId, DispatchError> {
 		// Nonce should be greater than the proposal nonce in storage
 		let bounded_name = BoundedVec::<u8, T::StringLimit>::try_from(name.clone())
-			.map_err(|e| Error::<T>::NameExceedsMaximumLimit)?;
+			.map_err(|_e| Error::<T>::NameExceedsMaximumLimit)?;
 		Self::validate_and_set_nonce(&bounded_name, nonce)?;
 		<T::AssetRegistry as ShareTokenRegistry<
 			T::AssetId,
@@ -609,7 +609,7 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 	) -> Result<T::AssetId, DispatchError> {
 		// Nonce should be greater than the proposal nonce in storage
 		let bounded_name = BoundedVec::<u8, T::StringLimit>::try_from(name.clone())
-			.map_err(|e| Error::<T>::NameExceedsMaximumLimit)?;
+			.map_err(|_e| Error::<T>::NameExceedsMaximumLimit)?;
 		Self::validate_and_set_nonce(&bounded_name, nonce)?;
 		<T::AssetRegistry as ShareTokenRegistry<
 			T::AssetId,

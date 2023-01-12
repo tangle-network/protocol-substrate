@@ -23,8 +23,10 @@ fn should_initialize_parameters() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<Fr>(curve, 5, 3);
-		let res =
-			DefaultPalletHasher::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
+		let res = DefaultPalletHasher::force_set_parameters(
+			RuntimeOrigin::root(),
+			params.to_bytes().try_into().unwrap(),
+		);
 		assert_ok!(res);
 	});
 }
@@ -34,8 +36,10 @@ fn should_output_correct_hash() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<Fr>(curve, 5, 3);
-		let res =
-			DefaultPalletHasher::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
+		let res = DefaultPalletHasher::force_set_parameters(
+			RuntimeOrigin::root(),
+			params.to_bytes().try_into().unwrap(),
+		);
 		assert_ok!(res);
 		let left = Fr::one().into_repr().to_bytes_be(); // one
 		let right = Fr::one().double().into_repr().to_bytes_be(); // two
@@ -53,8 +57,10 @@ fn should_build_the_same_merkle_tree_solidity() {
 	new_test_ext().execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<Fr>(curve, 5, 3);
-		let res =
-			DefaultPalletHasher::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
+		let res = DefaultPalletHasher::force_set_parameters(
+			RuntimeOrigin::root(),
+			params.to_bytes().try_into().unwrap(),
+		);
 		assert_ok!(res);
 		let solidity_merkle_tree_hashes = vec![
 			hex!("2fe54c60d3acabf3343a35b6eba15db4821b340f76e741e2249685ed4899af6c"),

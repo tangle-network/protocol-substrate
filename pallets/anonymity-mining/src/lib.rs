@@ -40,7 +40,7 @@ use frame_support::{
 };
 use orml_traits::MultiCurrency;
 use pallet_vanchor::VAnchorConfigration;
-use sp_std::{convert::TryInto, prelude::*, vec};
+use sp_std::{convert::TryInto, vec};
 use webb_primitives::traits::vanchor::{VAnchorInspector, VAnchorInterface};
 
 pub use pallet::*;

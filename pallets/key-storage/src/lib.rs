@@ -133,11 +133,11 @@ pub mod pallet {
 impl<T: Config<I>, I: 'static> KeyStorageInterface<T::AccountId> for Pallet<T, I> {
 	fn register(owner: T::AccountId, public_key: Vec<u8>) -> Result<(), DispatchError> {
 		let bounded_public_key = BoundedVec::<u8, T::MaxPubkeyLength>::try_from(public_key.clone())
-			.map_err(|e| Error::<T, I>::PubKeyOutOfBounds)?;
+			.map_err(|_e| Error::<T, I>::PubKeyOutOfBounds)?;
 		let mut public_key_owners = <PublicKeyOwners<T, I>>::get();
 		public_key_owners
 			.try_push((owner.clone(), bounded_public_key))
-			.map_err(|e| Error::<T, I>::MaxPubkeyOwnersExceeded)?;
+			.map_err(|_e| Error::<T, I>::MaxPubkeyOwnersExceeded)?;
 		#[cfg(feature = "std")]
 		{
 			println!("Registered public key with owner: {owner:?}, {public_key:?}");

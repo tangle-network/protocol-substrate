@@ -1108,7 +1108,7 @@ impl pallet_hasher::Config<pallet_hasher::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = ArkworksPoseidonHasherBn254;
-	type MaxParameterLength = ConstU32<1000>;
+	type MaxParameterLength = ConstU32<10000>;
 	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
