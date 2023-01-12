@@ -125,18 +125,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ark-bls12-377"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc41c02c0d18a226947ee9ee023b1d957bdb6a68fc22ac296722935a9fef423c"
-dependencies = [
- "ark-ec",
- "ark-ff",
- "ark-r1cs-std",
- "ark-std",
-]
-
-[[package]]
 name = "ark-bls12-381"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -452,16 +440,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e22d1f4b888c298a027c99dc9048015fac177587de20fc30232a057dfbe24a21"
 
 [[package]]
-name = "async-attributes"
-version = "1.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3203e79f4dd9bdda415ed03cf14dae5a2bf775c683a00f94e9cd1faf0f596e5"
-dependencies = [
- "quote",
- "syn",
-]
-
-[[package]]
 name = "async-channel"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -499,7 +477,6 @@ dependencies = [
  "blocking",
  "futures-lite",
  "once_cell",
- "tokio",
 ]
 
 [[package]]
@@ -530,33 +507,6 @@ checksum = "c8101efe8695a6c17e02911402145357e718ac92d3ff88ae8419e84b1707b685"
 dependencies = [
  "event-listener",
  "futures-lite",
-]
-
-[[package]]
-name = "async-std"
-version = "1.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62565bb4402e926b29953c785397c6dc0391b7b446e45008b0049eb43cec6f5d"
-dependencies = [
- "async-attributes",
- "async-channel",
- "async-global-executor",
- "async-io",
- "async-lock",
- "crossbeam-utils",
- "futures-channel",
- "futures-core",
- "futures-io",
- "futures-lite",
- "gloo-timers",
- "kv-log-macro",
- "log",
- "memchr",
- "once_cell",
- "pin-project-lite 0.2.9",
- "pin-utils",
- "slab",
- "wasm-bindgen-futures",
 ]
 
 [[package]]
@@ -1360,16 +1310,6 @@ checksum = "b1d1a86f49236c215f271d40892d5fc950490551400b02ef360692c29815c714"
 dependencies = [
  "generic-array 0.14.6",
  "subtle",
-]
-
-[[package]]
-name = "ctor"
-version = "0.1.26"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d2301688392eb071b0bf1a37be05c469d3cc4dbbd95df672fe28ab021e6a096"
-dependencies = [
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -2542,18 +2482,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gloo-timers"
-version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98c4a8d6391675c6b2ee1a6c8d06e8e2d03605c44cec1270675985a4c2a5500b"
-dependencies = [
- "futures-channel",
- "futures-core",
- "js-sys",
- "wasm-bindgen",
-]
-
-[[package]]
 name = "group"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3213,15 +3141,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "kv-log-macro"
-version = "1.0.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0de8b303297635ad57c9f5059fd9cee7a47f8e8daa09df0fcd07dd39fb22977f"
-dependencies = [
- "log",
-]
-
-[[package]]
 name = "kvdb"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3763,7 +3682,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "abb12e687cfb44aa40f41fc3978ef76448f9b6038cad6aef4259d3c095a2382e"
 dependencies = [
  "cfg-if",
- "value-bag",
 ]
 
 [[package]]
@@ -4396,7 +4314,6 @@ dependencies = [
 name = "pallet-anonymity-mining"
 version = "1.0.0"
 dependencies = [
- "ark-bls12-377",
  "ark-bls12-381",
  "ark-bn254",
  "ark-crypto-primitives",
@@ -4405,12 +4322,10 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",
- "hex-literal 0.2.2",
  "orml-currencies",
  "orml-tokens",
  "orml-traits",
@@ -4419,7 +4334,6 @@ dependencies = [
  "pallet-hasher",
  "pallet-key-storage",
  "pallet-linkable-tree",
- "pallet-mixer",
  "pallet-mt",
  "pallet-timestamp",
  "pallet-token-wrapper",
@@ -4735,7 +4649,6 @@ dependencies = [
 name = "pallet-hasher"
 version = "1.0.0"
 dependencies = [
- "ark-bls12-377",
  "ark-bls12-381",
  "ark-bn254",
  "ark-crypto-primitives",
@@ -4850,9 +4763,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-benchmarking",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
  "pallet-balances",
  "pallet-hasher",
  "pallet-mt",
@@ -4899,7 +4809,6 @@ dependencies = [
 name = "pallet-mixer"
 version = "1.0.0"
 dependencies = [
- "ark-bls12-377",
  "ark-bls12-381",
  "ark-bn254",
  "ark-crypto-primitives",
@@ -4965,7 +4874,6 @@ name = "pallet-mt-rpc"
 version = "0.1.0"
 dependencies = [
  "jsonrpsee",
- "pallet-mt",
  "pallet-mt-rpc-runtime-api",
  "parity-scale-codec",
  "sc-rpc",
@@ -4981,7 +4889,6 @@ dependencies = [
 name = "pallet-mt-rpc-runtime-api"
 version = "1.0.0"
 dependencies = [
- "pallet-mt",
  "sp-api",
  "webb-primitives",
 ]
@@ -5153,8 +5060,6 @@ dependencies = [
  "impl-trait-for-tuples",
  "libsecp256k1",
  "pallet-balances",
- "pallet-token-wrapper-handler",
- "pallet-vanchor-handler",
  "parity-scale-codec",
  "scale-info",
  "sp-core 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
@@ -5419,7 +5324,6 @@ dependencies = [
  "pallet-hasher",
  "pallet-key-storage",
  "pallet-linkable-tree",
- "pallet-mixer",
  "pallet-mt",
  "pallet-signature-bridge",
  "pallet-token-wrapper",
@@ -10011,16 +9915,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
 
 [[package]]
-name = "value-bag"
-version = "1.0.0-alpha.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2209b78d1249f7e6f3293657c9779fe31ced465df091bbd433a1cf88e916ec55"
-dependencies = [
- "ctor",
- "version_check",
-]
-
-[[package]]
 name = "vcpkg"
 version = "0.2.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10440,7 +10334,6 @@ dependencies = [
 name = "webb-client"
 version = "0.1.0"
 dependencies = [
- "ark-bls12-377",
  "ark-bls12-381",
  "ark-bn254",
  "ark-crypto-primitives",
@@ -10451,7 +10344,6 @@ dependencies = [
  "ark-std",
  "arkworks-native-gadgets",
  "arkworks-setups",
- "async-std",
  "hex",
  "parity-scale-codec",
  "scale-info",
@@ -10468,7 +10360,6 @@ dependencies = [
 name = "webb-primitives"
 version = "0.1.0"
 dependencies = [
- "ark-bls12-377",
  "ark-bls12-381",
  "ark-bn254",
  "ark-crypto-primitives",
@@ -10483,8 +10374,6 @@ dependencies = [
  "digest 0.9.0",
  "ethabi",
  "frame-support",
- "frame-system",
- "hex-literal 0.3.4",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -10536,7 +10425,6 @@ dependencies = [
  "pallet-mt-rpc",
  "pallet-mt-rpc-runtime-api",
  "pallet-transaction-payment-rpc",
- "parity-scale-codec",
  "rand 0.8.5",
  "sc-authority-discovery",
  "sc-basic-authorship",
