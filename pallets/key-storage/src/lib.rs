@@ -114,6 +114,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(T::WeightInfo::register(public_key.len() as u32))]
+		#[pallet::call_index(0)]
 		pub fn register(
 			origin: OriginFor<T>,
 			owner: T::AccountId,

@@ -84,11 +84,8 @@ impl system::Config for Test {
 
 use codec::{Decode, Encode};
 
-#[derive(Debug, Encode, Decode, Clone, PartialEq, Eq, TypeInfo, codec::MaxEncodedLen)]
-#[derive(Default)]
+#[derive(Debug, Encode, Decode, Clone, PartialEq, Eq, TypeInfo, codec::MaxEncodedLen, Default)]
 pub struct AssetLocation(pub MultiLocation);
-
-
 
 parameter_types! {
 	#[derive(Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]

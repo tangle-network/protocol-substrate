@@ -216,6 +216,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(<T as Config<I>>::WeightInfo::create(*depth as u32, *max_edges))]
+		#[pallet::call_index(0)]
 		pub fn create(
 			origin: OriginFor<T>,
 			max_edges: u32,

@@ -268,6 +268,7 @@ pub mod pallet {
 		///
 		/// Emits 'Registered` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::register())]
+		#[pallet::call_index(0)]
 		#[transactional]
 		pub fn register(
 			origin: OriginFor<T>,
@@ -293,6 +294,7 @@ pub mod pallet {
 
 		// TODO: No tests
 		#[pallet::weight(<T as Config>::WeightInfo::update())]
+		#[pallet::call_index(1)]
 		#[transactional]
 		pub fn update(
 			origin: OriginFor<T>,
@@ -337,6 +339,7 @@ pub mod pallet {
 		///
 		/// Emits `MetadataSet` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::set_metadata())]
+		#[pallet::call_index(2)]
 		#[transactional]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
@@ -369,6 +372,7 @@ pub mod pallet {
 		///
 		/// Emits `LocationSet` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::set_location())]
+		#[pallet::call_index(3)]
 		#[transactional]
 		pub fn set_location(
 			origin: OriginFor<T>,
@@ -389,6 +393,7 @@ pub mod pallet {
 
 		/// Add an asset to an existing pool.
 		#[pallet::weight(0)]
+		#[pallet::call_index(4)]
 		pub fn add_asset_to_pool(
 			origin: OriginFor<T>,
 			pool: BoundedVec<u8, T::StringLimit>,
@@ -405,6 +410,7 @@ pub mod pallet {
 
 		/// Remove an asset from an existing pool.
 		#[pallet::weight(0)]
+		#[pallet::call_index(5)]
 		pub fn delete_asset_from_pool(
 			origin: OriginFor<T>,
 			pool: BoundedVec<u8, T::StringLimit>,

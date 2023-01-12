@@ -209,6 +209,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(<T as Config>::WeightInfo::set_wrapping_fee())]
+		#[pallet::call_index(0)]
 		pub fn set_wrapping_fee(
 			origin: OriginFor<T>,
 			fee: BalanceOf<T>,
@@ -226,6 +227,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(195_000_000)]
+		#[pallet::call_index(1)]
 		pub fn set_fee_recipient(
 			origin: OriginFor<T>,
 			pool_share_id: T::AssetId,
@@ -243,6 +245,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(<T as Config>::WeightInfo::wrap())]
+		#[pallet::call_index(2)]
 		pub fn wrap(
 			origin: OriginFor<T>,
 			from_asset_id: T::AssetId,
@@ -262,6 +265,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(<T as Config>::WeightInfo::unwrap())]
+		#[pallet::call_index(3)]
 		pub fn unwrap(
 			origin: OriginFor<T>,
 			from_pool_share_id: T::AssetId,
@@ -281,6 +285,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(195_000_000)]
+		#[pallet::call_index(4)]
 		pub fn rescue_tokens(
 			origin: OriginFor<T>,
 			from_pool_share_id: T::AssetId,

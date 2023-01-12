@@ -228,6 +228,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(<T as Config<I>>::WeightInfo::create(*depth as u32))]
+		#[pallet::call_index(0)]
 		pub fn create(
 			origin: OriginFor<T>,
 			deposit_size: BalanceOf<T, I>,
@@ -243,6 +244,7 @@ pub mod pallet {
 
 		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
+		#[pallet::call_index(1)]
 		pub fn deposit(
 			origin: OriginFor<T>,
 			tree_id: T::TreeId,
@@ -256,6 +258,7 @@ pub mod pallet {
 
 		#[transactional]
 		#[pallet::weight(<T as Config<I>>::WeightInfo::withdraw())]
+		#[pallet::call_index(2)]
 		pub fn withdraw(
 			origin: OriginFor<T>,
 			id: T::TreeId,

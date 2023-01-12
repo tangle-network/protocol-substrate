@@ -157,6 +157,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
+		#[pallet::call_index(0)]
 		pub fn swap(
 			origin: OriginFor<T>,
 			recipient: T::AccountId,

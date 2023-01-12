@@ -159,6 +159,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(T::WeightInfo::force_set_parameters(parameters.len() as u32))]
+		#[pallet::call_index(0)]
 		pub fn force_set_parameters(
 			origin: OriginFor<T>,
 			configuration: (u8, u8),

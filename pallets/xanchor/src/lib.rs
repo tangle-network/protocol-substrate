@@ -223,6 +223,7 @@ pub mod pallet {
 		///
 		/// TODO: Add a bond (a payment that gets locked up) when calling this xt.
 		#[pallet::weight(0)]
+		#[pallet::call_index(0)]
 		pub fn propose_to_link_anchor(
 			origin: OriginFor<T>,
 			payload: LinkProposalOf<T, I>,
@@ -274,6 +275,7 @@ pub mod pallet {
 		/// **Note**: This method requires the `origin` to be
 		/// [T::DemocracyOrigin].
 		#[pallet::weight(0)]
+		#[pallet::call_index(1)]
 		pub fn send_link_anchor_message(
 			origin: OriginFor<T>,
 			payload: LinkProposalOf<T, I>,
@@ -318,6 +320,7 @@ pub mod pallet {
 		/// parachain.
 		#[transactional]
 		#[pallet::weight(0)]
+		#[pallet::call_index(2)]
 		pub fn save_link_proposal(
 			origin: OriginFor<T>,
 			payload: LinkProposalOf<T, I>,
@@ -354,6 +357,7 @@ pub mod pallet {
 		/// It also signals back to the caller chain with the proposal
 		/// hash, so the caller chain knows that the link process is complete.
 		#[pallet::weight(0)]
+		#[pallet::call_index(2)]
 		pub fn handle_link_anchor_message(
 			origin: OriginFor<T>,
 			payload: LinkProposalOf<T, I>,
@@ -384,6 +388,7 @@ pub mod pallet {
 
 		/// **Note**: This method requires the `origin` to be the democracy.
 		#[pallet::weight(0)]
+		#[pallet::call_index(3)]
 		pub fn link_anchors(
 			origin: OriginFor<T>,
 			payload: LinkProposalOf<T, I>,
@@ -427,6 +432,7 @@ pub mod pallet {
 		/// Handles the signal back from the other parachain, if the link
 		/// process is there is done to complete the link process here too.
 		#[pallet::weight(0)]
+		#[pallet::call_index(4)]
 		pub fn handle_link_anchors(
 			origin: OriginFor<T>,
 			payload: LinkProposalOf<T, I>,
@@ -466,6 +472,7 @@ pub mod pallet {
 		///
 		/// **Note**: Only could be called by [T::DemocracyOrigin].
 		#[pallet::weight(0)]
+		#[pallet::call_index(5)]
 		pub fn register_resource_id(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
@@ -479,6 +486,7 @@ pub mod pallet {
 		/// A Forced version of [Self::register_resource_id] which can be only
 		/// called by the Root.
 		#[pallet::weight(0)]
+		#[pallet::call_index(6)]
 		pub fn force_register_resource_id(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
@@ -490,6 +498,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(0)]
+		#[pallet::call_index(7)]
 		pub fn update(
 			origin: OriginFor<T>,
 			anchor_update_proposal_bytes: Vec<u8>,
@@ -536,6 +545,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(0)]
+		#[pallet::call_index(8)]
 		pub fn force_update(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
@@ -553,6 +563,7 @@ pub mod pallet {
 		/// Sync All the Anchors in this chain to the other chains that are
 		/// already linked.
 		#[pallet::weight(0)]
+		#[pallet::call_index(9)]
 		pub fn sync_anchors(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
 			let vanchors = pallet_vanchor::Anchors::<T, I>::iter_keys();

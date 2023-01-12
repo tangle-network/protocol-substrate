@@ -289,6 +289,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(T::WeightInfo::create(*depth as u32))]
+		#[pallet::call_index(0)]
 		pub fn create(origin: OriginFor<T>, depth: u8) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			ensure!(depth <= T::MaxTreeDepth::get() && depth > 0, Error::<T, I>::InvalidTreeDepth);
@@ -306,6 +307,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(T::WeightInfo::insert())]
+		#[pallet::call_index(1)]
 		pub fn insert(
 			origin: OriginFor<T>,
 			tree_id: T::TreeId,
@@ -329,6 +331,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(T::WeightInfo::force_set_default_hashes(default_hashes.len() as u32))]
+		#[pallet::call_index(2)]
 		pub fn force_set_default_hashes(
 			origin: OriginFor<T>,
 			default_hashes: BoundedVec<T::Element, T::MaxDefaultHashes>,

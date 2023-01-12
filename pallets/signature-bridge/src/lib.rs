@@ -249,6 +249,7 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		/// Sets the maintainer.
 		#[pallet::weight(T::WeightInfo::set_maintainer())]
+		#[pallet::call_index(0)]
 		pub fn set_maintainer(
 			origin: OriginFor<T>,
 			// message contains the nonce as the first 4 bytes and the laste bytes of the message
@@ -291,6 +292,7 @@ pub mod pallet {
 
 		// Forcefully set the maintainer.
 		#[pallet::weight(T::WeightInfo::force_set_maintainer())]
+		#[pallet::call_index(1)]
 		pub fn force_set_maintainer(
 			origin: OriginFor<T>,
 			new_maintainer: BoundedVec<u8, T::MaxStringLength>,
@@ -311,6 +313,7 @@ pub mod pallet {
 		/// - O(1) write
 		/// # </weight>
 		#[pallet::weight(T::WeightInfo::set_resource())]
+		#[pallet::call_index(2)]
 		pub fn set_resource(origin: OriginFor<T>, id: ResourceId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::register_resource(id)
@@ -325,6 +328,7 @@ pub mod pallet {
 		/// - O(1) removal
 		/// # </weight>
 		#[pallet::weight(T::WeightInfo::remove_resource())]
+		#[pallet::call_index(3)]
 		pub fn remove_resource(origin: OriginFor<T>, id: ResourceId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::unregister_resource(id)
@@ -336,6 +340,7 @@ pub mod pallet {
 		/// - O(1) lookup and insert
 		/// # </weight>
 		#[pallet::weight(T::WeightInfo::whitelist_chain())]
+		#[pallet::call_index(4)]
 		pub fn whitelist_chain(origin: OriginFor<T>, id: T::ChainId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::whitelist(id)
@@ -364,6 +369,7 @@ pub mod pallet {
 		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
 		#[pallet::weight((T::WeightInfo::set_resource_with_signature(), Pays::Yes))]
+		#[pallet::call_index(5)]
 		pub fn set_resource_with_signature(
 			origin: OriginFor<T>,
 			src_id: T::ChainId,
@@ -442,6 +448,7 @@ pub mod pallet {
 		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
 		#[pallet::weight((T::WeightInfo::execute_proposal() , Pays::Yes))]
+		#[pallet::call_index(6)]
 		pub fn execute_proposal(
 			origin: OriginFor<T>,
 			src_id: T::ChainId,

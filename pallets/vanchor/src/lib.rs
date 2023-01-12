@@ -323,6 +323,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::create(*depth as u32))]
+		#[pallet::call_index(0)]
 		pub fn create(
 			origin: OriginFor<T>,
 			max_edges: u32,
@@ -343,6 +344,7 @@ pub mod pallet {
 
 		#[transactional]
 		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::transact())]
+		#[pallet::call_index(1)]
 		pub fn transact(
 			origin: OriginFor<T>,
 			id: T::TreeId,
@@ -356,6 +358,7 @@ pub mod pallet {
 
 		#[transactional]
 		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::register_and_transact())]
+		#[pallet::call_index(2)]
 		pub fn register_and_transact(
 			origin: OriginFor<T>,
 			owner: T::AccountId,
@@ -372,6 +375,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::set_max_deposit_amount())]
+		#[pallet::call_index(3)]
 		pub fn set_max_deposit_amount(
 			origin: OriginFor<T>,
 			max_deposit_amount: BalanceOf<T, I>,
@@ -383,6 +387,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::set_min_withdraw_amount())]
+		#[pallet::call_index(4)]
 		pub fn set_min_withdraw_amount(
 			origin: OriginFor<T>,
 			min_withdraw_amount: BalanceOf<T, I>,
