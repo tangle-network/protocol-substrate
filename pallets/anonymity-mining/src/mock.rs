@@ -1,11 +1,13 @@
 use super::*;
 use crate::{self as pallet_anonymity_mining};
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
+use sp_runtime::traits::ConstU32;
 //pub use pallet_balances;
 pub use pallet::*;
+use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use sp_runtime::{
@@ -157,6 +159,7 @@ parameter_types! {
 	scale_info::TypeInfo,
 	Serialize,
 	Deserialize,
+	MaxEncodedLen,
 )]
 pub struct Element([u8; 32]);
 
@@ -172,12 +175,21 @@ impl ElementTrait for Element {
 	}
 }
 
+parameter_types! {
+	#[derive(Debug, TypeInfo)]
+	pub const MaxEdges: u32 = 1000;
+	#[derive(Debug, TypeInfo)]
+	pub const MaxDefaultHashes: u32 = 1000;
+}
+
 impl pallet_mt::Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
 	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
+	type MaxEdges = MaxEdges;
+	type MaxDefaultHashes = MaxDefaultHashes;
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
@@ -199,12 +211,18 @@ parameter_types! {
 	pub const RegistryStringLimit: u32 = 10;
 }
 
+parameter_types! {
+	#[derive(Debug, TypeInfo, PartialEq, Clone, Eq)]
+	pub const MaxAssetIdInPool: u32 = 1000;
+}
+
 impl pallet_asset_registry::Config for Test {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = Balance;
 	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = NativeCurrencyId;
+	type MaxAssetIdInPool = MaxAssetIdInPool;
 	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
@@ -226,6 +244,7 @@ parameter_types! {
 impl pallet_vanchor_verifier::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxParameterLegth = ConstU32<1000>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
@@ -299,6 +318,8 @@ impl pallet_vanchor::Config for Test {
 
 impl pallet_key_storage::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type MaxPubkeyLength = ConstU32<1000>;
+	type MaxPubKeyOwners = ConstU32<1000>;
 	type WeightInfo = ();
 }
 

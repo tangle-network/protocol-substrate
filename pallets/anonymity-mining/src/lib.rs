@@ -134,12 +134,6 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn parameters)]
-	/// Details of the module's parameters
-	pub(super) type Parameters<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, Vec<u8>, ValueQuery>;
-
-	#[pallet::storage]
 	#[pallet::getter(fn get_pool_weight)]
 	pub type PoolWeight<T: Config<I>, I: 'static = ()> = StorageValue<_, u64, ValueQuery>;
 
@@ -156,8 +150,6 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
-		/// Parameters haven't been initialized
-		ParametersNotInitialized,
 		/// Error during hashing
 		HashError,
 	}
