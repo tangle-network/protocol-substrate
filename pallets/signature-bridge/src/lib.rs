@@ -57,7 +57,7 @@ mod tests;
 mod benchmarking;
 
 mod weights;
-use codec::{self, Decode, Encode, EncodeLike};
+use codec::{self, Decode, Encode, EncodeLike, MaxEncodedLen};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
@@ -89,7 +89,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
+
 	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
@@ -117,11 +117,24 @@ pub mod pallet {
 			+ Default
 			+ Copy
 			+ From<u64>
-			+ From<u32>;
+			+ From<u32>
+			+ MaxEncodedLen;
 		/// Proposal nonce type
-		type ProposalNonce: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+		type ProposalNonce: Encode
+			+ Decode
+			+ Parameter
+			+ AtLeast32Bit
+			+ Default
+			+ Copy
+			+ MaxEncodedLen;
 		/// Maintainer nonce type
-		type MaintainerNonce: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+		type MaintainerNonce: Encode
+			+ Decode
+			+ Parameter
+			+ AtLeast32Bit
+			+ Default
+			+ Copy
+			+ MaxEncodedLen;
 
 		/// Signature verification utility over public key infrastructure
 		type SignatureVerifier: SigningSystem;
@@ -141,13 +154,16 @@ pub mod pallet {
 		#[pallet::constant]
 		type BridgeAccountId: Get<PalletId>;
 
+		type MaxStringLength: Get<u32>;
+
 		type WeightInfo: WeightInfo;
 	}
 
 	/// The parameter maintainer who can change the parameters
 	#[pallet::storage]
 	#[pallet::getter(fn maintainer)]
-	pub type Maintainer<T: Config<I>, I: 'static = ()> = StorageValue<_, Vec<u8>, ValueQuery>;
+	pub type Maintainer<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, BoundedVec<u8, T::MaxStringLength>, ValueQuery>;
 
 	/// All whitelisted chains and their respective transaction counts
 	#[pallet::storage]
@@ -175,7 +191,10 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// Maintainer is set
-		MaintainerSet { old_maintainer: Vec<u8>, new_maintainer: Vec<u8> },
+		MaintainerSet {
+			old_maintainer: BoundedVec<u8, T::MaxStringLength>,
+			new_maintainer: BoundedVec<u8, T::MaxStringLength>,
+		},
 		/// Chain now available for transfers (chain_id)
 		ChainWhitelisted { chain_id: T::ChainId },
 		/// Proposal has been approved
@@ -219,6 +238,8 @@ pub mod pallet {
 		InvalidProposalData,
 		/// Invalid call - calls must be delegated to handler pallets
 		InvalidCall,
+		/// The max limit for string is exceeded
+		StringLimitExceeded,
 	}
 
 	#[pallet::hooks]
@@ -228,12 +249,13 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		/// Sets the maintainer.
 		#[pallet::weight(T::WeightInfo::set_maintainer())]
+		#[pallet::call_index(0)]
 		pub fn set_maintainer(
 			origin: OriginFor<T>,
 			// message contains the nonce as the first 4 bytes and the laste bytes of the message
 			// is the new_maintainer
-			message: Vec<u8>,
-			signature: Vec<u8>,
+			message: BoundedVec<u8, T::MaxStringLength>,
+			signature: BoundedVec<u8, T::MaxStringLength>,
 		) -> DispatchResultWithPostInfo {
 			let _origin = ensure_signed(origin)?;
 			let old_maintainer = <Maintainer<T, I>>::get();
@@ -256,7 +278,10 @@ pub mod pallet {
 			MaintainerNonce::<T, I>::put(nonce);
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
-				*maintainer = message[4..].to_vec();
+				*maintainer = message[4..]
+					.to_vec()
+					.try_into()
+					.map_err(|_| Error::<T, I>::StringLimitExceeded)?;
 				Self::deposit_event(Event::MaintainerSet {
 					old_maintainer,
 					new_maintainer: message,
@@ -267,9 +292,10 @@ pub mod pallet {
 
 		// Forcefully set the maintainer.
 		#[pallet::weight(T::WeightInfo::force_set_maintainer())]
+		#[pallet::call_index(1)]
 		pub fn force_set_maintainer(
 			origin: OriginFor<T>,
-			new_maintainer: Vec<u8>,
+			new_maintainer: BoundedVec<u8, T::MaxStringLength>,
 		) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			// set the new maintainer
@@ -287,6 +313,7 @@ pub mod pallet {
 		/// - O(1) write
 		/// # </weight>
 		#[pallet::weight(T::WeightInfo::set_resource())]
+		#[pallet::call_index(2)]
 		pub fn set_resource(origin: OriginFor<T>, id: ResourceId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::register_resource(id)
@@ -301,6 +328,7 @@ pub mod pallet {
 		/// - O(1) removal
 		/// # </weight>
 		#[pallet::weight(T::WeightInfo::remove_resource())]
+		#[pallet::call_index(3)]
 		pub fn remove_resource(origin: OriginFor<T>, id: ResourceId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::unregister_resource(id)
@@ -312,6 +340,7 @@ pub mod pallet {
 		/// - O(1) lookup and insert
 		/// # </weight>
 		#[pallet::weight(T::WeightInfo::whitelist_chain())]
+		#[pallet::call_index(4)]
 		pub fn whitelist_chain(origin: OriginFor<T>, id: T::ChainId) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
 			Self::whitelist(id)
@@ -340,11 +369,12 @@ pub mod pallet {
 		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
 		#[pallet::weight((T::WeightInfo::set_resource_with_signature(), Pays::Yes))]
+		#[pallet::call_index(5)]
 		pub fn set_resource_with_signature(
 			origin: OriginFor<T>,
 			src_id: T::ChainId,
-			proposal_data: Vec<u8>,
-			signature: Vec<u8>,
+			proposal_data: BoundedVec<u8, T::MaxStringLength>,
+			signature: BoundedVec<u8, T::MaxStringLength>,
 		) -> DispatchResultWithPostInfo {
 			let _ = ensure_signed(origin)?;
 			let r_id = Self::parse_r_id_from_proposal_data(&proposal_data)?;
@@ -418,11 +448,12 @@ pub mod pallet {
 		/// - weight of proposed call, regardless of whether execution is performed
 		/// # </weight>
 		#[pallet::weight((T::WeightInfo::execute_proposal() , Pays::Yes))]
+		#[pallet::call_index(6)]
 		pub fn execute_proposal(
 			origin: OriginFor<T>,
 			src_id: T::ChainId,
-			proposal_data: Vec<u8>,
-			signature: Vec<u8>,
+			proposal_data: BoundedVec<u8, T::MaxStringLength>,
+			signature: BoundedVec<u8, T::MaxStringLength>,
 		) -> DispatchResultWithPostInfo {
 			let _ = ensure_signed(origin)?;
 			let r_id = Self::parse_r_id_from_proposal_data(&proposal_data)?;

@@ -1,9 +1,9 @@
 use super::{ElementTrait, IntoAbiToken, Token};
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_std::vec::Vec;
 
-#[derive(Clone, Encode, Decode, TypeInfo)]
+#[derive(Clone, Encode, Decode, TypeInfo, MaxEncodedLen)]
 pub struct VAnchorMetadata<AccountId, CurrencyId> {
 	/// Creator account
 	pub creator: Option<AccountId>,

@@ -25,7 +25,7 @@ fn should_wrap_token() {
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+			AssetType::PoolShare(vec![second_token_id, first_token_id].try_into().unwrap()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -101,7 +101,7 @@ fn should_unwrap_token() {
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+			AssetType::PoolShare(vec![second_token_id, first_token_id].try_into().unwrap()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -175,7 +175,7 @@ fn wrapping_should_fail_if_asset_is_not_in_pool() {
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![second_token_id]),
+			AssetType::PoolShare(vec![second_token_id].try_into().unwrap()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -224,7 +224,7 @@ fn only_root_should_update_wrapping_fee() {
 		.unwrap();
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+			AssetType::PoolShare(vec![second_token_id, first_token_id].try_into().unwrap()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -257,7 +257,7 @@ fn should_not_unwrap_if_no_liquidity_exists_for_selected_assets() {
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+			AssetType::PoolShare(vec![second_token_id, first_token_id].try_into().unwrap()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -327,7 +327,7 @@ fn should_unwrap_when_liquidity_exists_for_selected_asset() {
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+			AssetType::PoolShare(vec![second_token_id, first_token_id].try_into().unwrap()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -407,7 +407,7 @@ fn should_not_wrap_invalid_amount() {
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+			AssetType::PoolShare(vec![second_token_id, first_token_id].try_into().unwrap()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -457,7 +457,7 @@ fn test_two_different_pool_shares() {
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+			AssetType::PoolShare(vec![second_token_id, first_token_id].try_into().unwrap()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -477,7 +477,7 @@ fn test_two_different_pool_shares() {
 
 		let second_pool_share_id = AssetRegistry::register_asset(
 			b"real".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![third_token_id, fourth_token_id]),
+			AssetType::PoolShare(vec![third_token_id, fourth_token_id].try_into().unwrap()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -568,7 +568,7 @@ fn should_rescue_all_tokens() {
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![second_token_id, first_token_id]),
+			AssetType::PoolShare(vec![second_token_id, first_token_id].try_into().unwrap()),
 			existential_balance.into(),
 		)
 		.unwrap();

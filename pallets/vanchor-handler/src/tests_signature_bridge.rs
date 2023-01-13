@@ -12,6 +12,7 @@ use sp_core::{
 	ecdsa::{self, Signature},
 	keccak_256, Pair,
 };
+use sp_std::convert::TryInto;
 
 use webb_proposals::{
 	FunctionSignature, ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId,
@@ -128,7 +129,10 @@ fn should_create_vanchor_with_sig_succeed() {
 	.execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let _ = HasherPallet::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(
+			RuntimeOrigin::root(),
+			params.to_bytes().try_into().unwrap(),
+		);
 		let nonce = 1;
 		let anchor_create_call = make_vanchor_create_proposal(src_id.chain_id(), &r_id, nonce);
 		let anchor_create_call_encoded = anchor_create_call.encode();
@@ -146,23 +150,23 @@ fn should_create_vanchor_with_sig_succeed() {
 			SignatureBridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id.chain_id(),
-				prop_data.clone(),
-				sig.0.to_vec(),
+				prop_data.clone().try_into().unwrap(),
+				sig.0.to_vec().try_into().unwrap(),
 			),
 			pallet_signature_bridge::Error::<Test, _>::InvalidPermissions
 		);
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
 
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id.chain_id(),
-			prop_data,
-			sig.0.to_vec(),
+			prop_data.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 
 		assert!(<pallet_mt::Trees<Test>>::contains_key(0));
@@ -187,12 +191,15 @@ fn should_add_vanchor_edge_with_sig_succeed() {
 	new_test_ext_initialized(
 		src_id.chain_id(),
 		r_id,
-		b"VAnchorHandler.execute_vanchor_update_proposal".to_vec(),
+		b"VAnchorHandler.execute_vanchor_update_proposal".to_vec().try_into().unwrap(),
 	)
 	.execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let _ = HasherPallet::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(
+			RuntimeOrigin::root(),
+			params.to_bytes().try_into().unwrap(),
+		);
 
 		mock_vanchor_creation_using_pallet_call(&r_id);
 
@@ -214,14 +221,14 @@ fn should_add_vanchor_edge_with_sig_succeed() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id.chain_id(),
-			prop_data,
-			sig.0.to_vec(),
+			prop_data.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 		// the anchor-handler callback must have been called by bridge
 		// event must be emitted in callback should exist
@@ -270,7 +277,10 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 	.execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let _ = HasherPallet::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(
+			RuntimeOrigin::root(),
+			params.to_bytes().try_into().unwrap(),
+		);
 		println!("here");
 		mock_vanchor_creation_using_pallet_call(&r_id);
 		println!("there");
@@ -293,14 +303,14 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id.chain_id(),
-			prop_data,
-			sig.0.to_vec(),
+			prop_data.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 		// the anchor-handler callback must have been called by bridge
 		// event must be emitted in callback should exist
@@ -344,8 +354,8 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id.chain_id(),
-			prop_data,
-			sig.0.to_vec(),
+			prop_data.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 		// the anchor-handler callback must have been called by bridge
 		// event must be emitted in callback should exist
@@ -421,7 +431,7 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
 
@@ -429,8 +439,8 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 			SignatureBridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id.chain_id() + 1,
-				prop_data,
-				sig.0.to_vec(),
+				prop_data.try_into().unwrap(),
+				sig.0.to_vec().try_into().unwrap(),
 			),
 			pallet_signature_bridge::Error::<Test, _>::ChainNotWhitelisted
 		);
@@ -475,7 +485,7 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
 
@@ -483,8 +493,8 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 			SignatureBridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id.chain_id(),
-				prop_data,
-				sig.0.to_vec(),
+				prop_data.try_into().unwrap(),
+				sig.0.to_vec().try_into().unwrap(),
 			),
 			pallet_signature_bridge::Error::<Test, _>::ResourceDoesNotExist
 		);
@@ -523,7 +533,7 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
 		let mut tampered_sig = sig.0.to_vec();
@@ -535,8 +545,8 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 			SignatureBridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id.chain_id(),
-				prop_data,
-				tampered_sig.clone(),
+				prop_data.try_into().unwrap(),
+				tampered_sig.clone().try_into().unwrap(),
 			),
 			pallet_signature_bridge::Error::<Test, _>::InvalidPermissions
 		);
@@ -559,7 +569,10 @@ fn should_add_resource_sig_succeed_using_webb_proposals() {
 	new_test_ext_for_set_resource_proposal_initialized(src_id.chain_id()).execute_with(|| {
 		let curve = Curve::Bn254;
 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-		let _ = HasherPallet::force_set_parameters(RuntimeOrigin::root(), params.to_bytes());
+		let _ = HasherPallet::force_set_parameters(
+			RuntimeOrigin::root(),
+			params.to_bytes().try_into().unwrap(),
+		);
 		let nonce = webb_proposals::Nonce::from(0x0001);
 		let header = make_proposal_header(resource, SET_RESOURCE_FUNCTION_SIG, nonce);
 		//create anchor
@@ -576,14 +589,14 @@ fn should_add_resource_sig_succeed_using_webb_proposals() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap(),
 		));
 
 		assert_ok!(SignatureBridge::set_resource_with_signature(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id.chain_id(),
-			set_resource_proposal_bytes,
-			sig.0.to_vec(),
+			set_resource_proposal_bytes.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 
 		// the anchor-handler callback must have been called by bridge

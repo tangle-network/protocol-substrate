@@ -43,7 +43,10 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	let curve = Curve::Bn254;
 	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 	// 1. Setup The Hasher Pallet.
-	assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), params3.to_bytes()));
+	assert_ok!(HasherPallet::force_set_parameters(
+		RuntimeOrigin::root(),
+		params3.to_bytes().try_into().unwrap()
+	));
 	// 2. Initialize MerkleTree pallet.
 	<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 	// 3. Setup the VerifierPallet
@@ -68,12 +71,12 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	assert_ok!(VAnchorVerifier::force_set_parameters(
 		RuntimeOrigin::root(),
 		(2, 2),
-		vk_2_2_bytes.clone()
+		vk_2_2_bytes.clone().try_into().unwrap()
 	));
 	assert_ok!(VAnchorVerifier::force_set_parameters(
 		RuntimeOrigin::root(),
 		(2, 16),
-		vk_2_16_bytes.clone()
+		vk_2_16_bytes.clone().try_into().unwrap()
 	));
 
 	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
@@ -395,8 +398,8 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		// Register a new wrapped asset / pool share over native assets
 		assert_ok!(AssetRegistry::register(
 			RuntimeOrigin::root(),
-			b"webbWEBB".to_vec(),
-			AssetType::PoolShare(vec![0]),
+			b"webbWEBB".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![0].try_into().unwrap()),
 			0
 		));
 		let asset_id = AssetRegistry::next_asset_id() - 1;
@@ -576,7 +579,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		// Register a new asset that will be wrapped
 		assert_ok!(AssetRegistry::register(
 			RuntimeOrigin::root(),
-			b"temp".to_vec(),
+			b"temp".to_vec().try_into().unwrap(),
 			AssetType::Token,
 			0
 		));
@@ -584,8 +587,8 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		assert_ok!(Tokens::set_balance(RuntimeOrigin::root(), alice, first_asset_id, 10_000, 0));
 		assert_ok!(AssetRegistry::register(
 			RuntimeOrigin::root(),
-			b"webbTemp".to_vec(),
-			AssetType::PoolShare(vec![first_asset_id]),
+			b"webbTemp".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![first_asset_id].try_into().unwrap()),
 			0
 		));
 		let pooled_asset_id = AssetRegistry::next_asset_id() - 1;

@@ -68,7 +68,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
+
 	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
@@ -126,6 +126,7 @@ pub mod pallet {
 		/// This will be called by bridge when proposal to create a
 		/// vanchor has been successfully voted on.
 		#[pallet::weight(195_000_000)]
+		#[pallet::call_index(0)]
 		pub fn execute_vanchor_create_proposal(
 			origin: OriginFor<T>,
 			src_chain_id: T::ChainId,
@@ -142,6 +143,7 @@ pub mod pallet {
 		/// This will be called by bridge when proposal to add/update edge of a
 		/// vanchor has been successfully voted on.
 		#[pallet::weight(195_000_000)]
+		#[pallet::call_index(1)]
 		pub fn execute_vanchor_update_proposal(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
@@ -163,6 +165,7 @@ pub mod pallet {
 		/// This will by called by bridge when proposal to set new resource for
 		/// handler has been successfully voted on.
 		#[pallet::weight(195_000_000)]
+		#[pallet::call_index(2)]
 		pub fn execute_set_resource_proposal(
 			origin: OriginFor<T>,
 			r_id: ResourceId,
@@ -179,6 +182,7 @@ pub mod pallet {
 		/// The `MaxDepositLimitProposal` updates the maximum deposit amount allowed on the variable
 		/// anchor system.
 		#[pallet::weight(195_000_000)]
+		#[pallet::call_index(3)]
 		pub fn execute_set_max_deposit_limit_proposal(
 			origin: OriginFor<T>,
 			max_deposit_limit: VAnchorBalanceOf<T, I>,
@@ -193,6 +197,7 @@ pub mod pallet {
 		/// The `MinWithdrawalLimitProposal` updates the minimum withdrawal amount allowed on the
 		/// variable anchor system.
 		#[pallet::weight(195_000_000)]
+		#[pallet::call_index(4)]
 		pub fn execute_set_minx_withdrawal_limit_proposal(
 			origin: OriginFor<T>,
 			min_withdraw_limit: VAnchorBalanceOf<T, I>,

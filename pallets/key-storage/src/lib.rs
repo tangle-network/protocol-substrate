@@ -28,8 +28,11 @@ mod mock;
 pub mod tests;
 pub mod weights;
 
-use frame_support::pallet_prelude::DispatchError;
-use sp_std::{convert::TryInto, prelude::*};
+use frame_support::{pallet_prelude::DispatchError, BoundedVec};
+use sp_std::{
+	convert::{TryFrom, TryInto},
+	prelude::*,
+};
 use webb_primitives::traits::key_storage::*;
 
 pub use pallet::*;
@@ -43,7 +46,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
+
 	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
@@ -52,6 +55,12 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self, I>>
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		/// The max length accepted for Pubkey
+		type MaxPubkeyLength: Get<u32>;
+
+		/// The max number of pubkey owneres we can store
+		type MaxPubKeyOwners: Get<u32>;
 
 		/// Weightinfo for pallet.
 		type WeightInfo: WeightInfo;
@@ -77,18 +86,27 @@ pub mod pallet {
 	/// The map of owners to public keys
 	#[pallet::storage]
 	#[pallet::getter(fn public_key_owners)]
-	pub type PublicKeyOwners<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, Vec<(T::AccountId, Vec<u8>)>, ValueQuery>;
+	pub type PublicKeyOwners<T: Config<I>, I: 'static = ()> = StorageValue<
+		_,
+		BoundedVec<(T::AccountId, BoundedVec<u8, T::MaxPubkeyLength>), T::MaxPubKeyOwners>,
+		ValueQuery,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		/// Public key registration
-		PublicKeyRegistration { owner: T::AccountId, public_key: Vec<u8> },
+		PublicKeyRegistration {
+			owner: T::AccountId,
+			public_key: BoundedVec<u8, T::MaxPubkeyLength>,
+		},
 	}
 
 	#[pallet::error]
-	pub enum Error<T, I = ()> {}
+	pub enum Error<T, I = ()> {
+		PubKeyOutOfBounds,
+		MaxPubkeyOwnersExceeded,
+	}
 
 	#[pallet::hooks]
 	impl<T: Config<I>, I: 'static> Hooks<BlockNumberFor<T>> for Pallet<T, I> {}
@@ -96,13 +114,17 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(T::WeightInfo::register(public_key.len() as u32))]
+		#[pallet::call_index(0)]
 		pub fn register(
 			origin: OriginFor<T>,
 			owner: T::AccountId,
-			public_key: Vec<u8>,
+			public_key: BoundedVec<u8, T::MaxPubkeyLength>,
 		) -> DispatchResultWithPostInfo {
 			ensure_signed(origin)?;
-			<Self as KeyStorageInterface<_>>::register(owner.clone(), public_key.clone())?;
+			<Self as KeyStorageInterface<_>>::register(
+				owner.clone(),
+				public_key.clone().into_inner(),
+			)?;
 			Self::deposit_event(Event::PublicKeyRegistration { owner, public_key });
 			Ok(().into())
 		}
@@ -111,8 +133,12 @@ pub mod pallet {
 
 impl<T: Config<I>, I: 'static> KeyStorageInterface<T::AccountId> for Pallet<T, I> {
 	fn register(owner: T::AccountId, public_key: Vec<u8>) -> Result<(), DispatchError> {
+		let bounded_public_key = BoundedVec::<u8, T::MaxPubkeyLength>::try_from(public_key.clone())
+			.map_err(|_e| Error::<T, I>::PubKeyOutOfBounds)?;
 		let mut public_key_owners = <PublicKeyOwners<T, I>>::get();
-		public_key_owners.push((owner.clone(), public_key.clone()));
+		public_key_owners
+			.try_push((owner.clone(), bounded_public_key))
+			.map_err(|_e| Error::<T, I>::MaxPubkeyOwnersExceeded)?;
 		#[cfg(feature = "std")]
 		{
 			println!("Registered public key with owner: {owner:?}, {public_key:?}");

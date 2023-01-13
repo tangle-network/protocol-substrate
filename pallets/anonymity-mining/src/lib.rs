@@ -40,7 +40,7 @@ use frame_support::{
 };
 use orml_traits::MultiCurrency;
 use pallet_vanchor::VAnchorConfigration;
-use sp_std::{convert::TryInto, prelude::*, vec};
+use sp_std::{convert::TryInto, vec};
 use webb_primitives::traits::vanchor::{VAnchorInspector, VAnchorInterface};
 
 pub use pallet::*;
@@ -61,7 +61,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
+
 	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
@@ -134,12 +134,6 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn parameters)]
-	/// Details of the module's parameters
-	pub(super) type Parameters<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, Vec<u8>, ValueQuery>;
-
-	#[pallet::storage]
 	#[pallet::getter(fn get_pool_weight)]
 	pub type PoolWeight<T: Config<I>, I: 'static = ()> = StorageValue<_, u64, ValueQuery>;
 
@@ -156,8 +150,6 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
-		/// Parameters haven't been initialized
-		ParametersNotInitialized,
 		/// Error during hashing
 		HashError,
 	}
@@ -165,6 +157,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
+		#[pallet::call_index(0)]
 		pub fn swap(
 			origin: OriginFor<T>,
 			recipient: T::AccountId,

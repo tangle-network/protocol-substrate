@@ -58,12 +58,15 @@ pub mod weights;
 pub mod types;
 use codec::{Decode, Encode};
 use frame_support::{ensure, pallet_prelude::DispatchError};
-use sp_std::convert::TryInto;
+use sp_std::convert::{TryFrom, TryInto};
 use types::TreeMetadata;
 
 pub use weights::WeightInfo;
 
-use frame_support::traits::{Currency, Get, ReservableCurrency};
+use frame_support::{
+	traits::{Currency, Get, ReservableCurrency},
+	BoundedVec,
+};
 use frame_system::Config as SystemConfig;
 use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
 use sp_std::prelude::*;
@@ -72,7 +75,6 @@ use webb_primitives::{
 	traits::merkle_tree::{TreeInspector, TreeInterface},
 	types::{DepositDetails, ElementTrait},
 };
-
 type DepositBalanceOf<T, I = ()> =
 	<<T as Config<I>>::Currency as Currency<<T as SystemConfig>::AccountId>>::Balance;
 
@@ -81,12 +83,12 @@ pub use pallet::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
+	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*, BoundedVec};
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
+
 	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
@@ -97,16 +99,16 @@ pub mod pallet {
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// The overarching tree ID type
-		type TreeId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+		type TreeId: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy + MaxEncodedLen;
 
 		/// The overarching leaf index type
-		type LeafIndex: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+		type LeafIndex: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy + MaxEncodedLen;
 
 		/// The overarching leaf index type
-		type RootIndex: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy;
+		type RootIndex: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy + MaxEncodedLen;
 
 		/// the leaf type
-		type Element: ElementTrait;
+		type Element: ElementTrait + MaxEncodedLen;
 
 		/// the default zero element
 		type DefaultZeroElement: Get<Self::Element>;
@@ -143,6 +145,12 @@ pub mod pallet {
 		/// The maximum length of a name or symbol stored on-chain.
 		type StringLimit: Get<u32>;
 
+		/// The maximum count of edges nodes to be stored for a tree detail
+		type MaxEdges: Get<u32> + TypeInfo;
+
+		/// The maximum count of default hashes to store
+		type MaxDefaultHashes: Get<u32> + TypeInfo;
+
 		/// WeightInfo for pallet
 		type WeightInfo: WeightInfo;
 	}
@@ -166,7 +174,7 @@ pub mod pallet {
 		_,
 		Blake2_128Concat,
 		T::TreeId,
-		TreeMetadata<T::AccountId, T::LeafIndex, T::Element>,
+		TreeMetadata<T::AccountId, T::LeafIndex, T::Element, T::MaxEdges>,
 		OptionQuery,
 	>;
 
@@ -174,7 +182,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn default_hashes)]
 	pub(super) type DefaultHashes<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, Vec<T::Element>, ValueQuery>;
+		StorageValue<_, BoundedVec<T::Element, T::MaxDefaultHashes>, ValueQuery>;
 
 	/// The map of (tree_id, index) to the leaf commitment
 	#[pallet::storage]
@@ -237,6 +245,8 @@ pub mod pallet {
 		TreeDoesntExist,
 		/// Invalid length for default hashes
 		ExceedsMaxDefaultHashes,
+		/// Invalid length for edges
+		ExceedsMaxEdges,
 	}
 
 	#[pallet::hooks]
@@ -253,7 +263,7 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
 		pub phantom: PhantomData<T>,
-		pub default_hashes: Option<Vec<T::Element>>,
+		pub default_hashes: Option<BoundedVec<T::Element, T::MaxDefaultHashes>>,
 	}
 
 	#[cfg(feature = "std")]
@@ -279,6 +289,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(T::WeightInfo::create(*depth as u32))]
+		#[pallet::call_index(0)]
 		pub fn create(origin: OriginFor<T>, depth: u8) -> DispatchResultWithPostInfo {
 			let origin = ensure_signed(origin)?;
 			ensure!(depth <= T::MaxTreeDepth::get() && depth > 0, Error::<T, I>::InvalidTreeDepth);
@@ -296,6 +307,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(T::WeightInfo::insert())]
+		#[pallet::call_index(1)]
 		pub fn insert(
 			origin: OriginFor<T>,
 			tree_id: T::TreeId,
@@ -319,9 +331,10 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(T::WeightInfo::force_set_default_hashes(default_hashes.len() as u32))]
+		#[pallet::call_index(2)]
 		pub fn force_set_default_hashes(
 			origin: OriginFor<T>,
-			default_hashes: Vec<T::Element>,
+			default_hashes: BoundedVec<T::Element, T::MaxDefaultHashes>,
 		) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			let len_of_hashes = default_hashes.len();
@@ -335,7 +348,8 @@ pub mod pallet {
 		}
 	}
 
-	pub fn generate_default_hashes<T: Config<I>, I: 'static>() -> Vec<T::Element> {
+	pub fn generate_default_hashes<T: Config<I>, I: 'static>(
+	) -> BoundedVec<T::Element, T::MaxDefaultHashes> {
 		let mut temp_hashes: Vec<T::Element> = Vec::with_capacity(T::MaxTreeDepth::get() as usize);
 		let default_zero = T::DefaultZeroElement::get();
 		temp_hashes.push(default_zero);
@@ -349,7 +363,8 @@ pub mod pallet {
 			panic!("Default hashes length is not equal to max tree depth");
 		}
 
-		temp_hashes
+		BoundedVec::<T::Element, T::MaxDefaultHashes>::try_from(temp_hashes)
+			.expect("Default hashes bound exceeded. This should never happen!")
 	}
 }
 
@@ -371,7 +386,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	#[allow(clippy::type_complexity)]
 	fn get_tree(
 		tree_id: T::TreeId,
-	) -> Result<TreeMetadata<T::AccountId, T::LeafIndex, T::Element>, DispatchError> {
+	) -> Result<TreeMetadata<T::AccountId, T::LeafIndex, T::Element, T::MaxEdges>, DispatchError> {
 		let tree = Trees::<T, I>::get(tree_id);
 		ensure!(tree.is_some(), Error::<T, I>::TreeDoesntExist);
 		Ok(tree.unwrap())
@@ -394,6 +409,10 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 		}
 		let default_edge_nodes: Vec<T::Element> =
 			Self::default_hashes().into_iter().take(num_of_zero_nodes as _).collect();
+
+		let bounded_edge_nodes =
+			BoundedVec::<T::Element, T::MaxEdges>::try_from(default_edge_nodes.clone())
+				.map_err(|_e| Error::<T, I>::ExceedsMaxEdges)?;
 		// Setting up the tree
 		let tree_metadata = TreeMetadata {
 			creator,
@@ -402,7 +421,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 			max_leaves: two.saturating_pow(depth.into()),
 			leaf_count: T::LeafIndex::zero(),
 			root: default_edge_nodes[(depth - 1) as usize],
-			edge_nodes: default_edge_nodes,
+			edge_nodes: bounded_edge_nodes,
 		};
 
 		Trees::<T, I>::insert(tree_id, tree_metadata);

@@ -106,6 +106,7 @@ pub mod pallet {
 		/// Execute the wrapping fee proposal by calling the update_wrapping_fee
 		/// method. Ensures that only the bridge can call this function.
 		#[pallet::weight(195_000_000)]
+		#[pallet::call_index(0)]
 		pub fn execute_wrapping_fee_proposal(
 			origin: OriginFor<T>,
 			wrapping_fee_percent: BalanceOf<T>,
@@ -119,6 +120,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(195_000_000)]
+		#[pallet::call_index(1)]
 		pub fn execute_add_token_to_pool_share(
 			origin: OriginFor<T>,
 			name: Vec<u8>,
@@ -132,6 +134,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(195_000_000)]
+		#[pallet::call_index(2)]
 		pub fn execute_remove_token_from_pool_share(
 			origin: OriginFor<T>,
 			name: Vec<u8>,
@@ -147,6 +150,7 @@ pub mod pallet {
 		/// who will be receiving wrapping fee cost for given asset.
 		/// Ensures that only the bridge can call this function.
 		#[pallet::weight(195_000_000)]
+		#[pallet::call_index(3)]
 		pub fn execute_set_fee_recipient_proposal(
 			origin: OriginFor<T>,
 			pool_share_id: T::AssetId,
@@ -162,6 +166,7 @@ pub mod pallet {
 		/// fee recipient to given recipient address from given asset.
 		/// Ensures that only the bridge can call this function.
 		#[pallet::weight(195_000_000)]
+		#[pallet::call_index(4)]
 		pub fn execute_rescue_tokens_proposal(
 			origin: OriginFor<T>,
 			pool_share_id: T::AssetId,

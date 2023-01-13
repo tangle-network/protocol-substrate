@@ -78,7 +78,7 @@ use frame_support::{
 		KeyOwnerProofSystem, LockIdentifier, OnUnbalanced, U128CurrencyToVote,
 	},
 	weights::{
-		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND},
+		constants::{BlockExecutionWeight, WEIGHT_REF_TIME_PER_SECOND},
 		IdentityFee, Weight,
 	},
 	PalletId, RuntimeDebug,
@@ -1108,6 +1108,7 @@ impl pallet_hasher::Config<pallet_hasher::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = ArkworksPoseidonHasherBn254;
+	type MaxParameterLength = ConstU32<10000>;
 	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
@@ -1125,6 +1126,10 @@ parameter_types! {
 		47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52,
 		15, 118, 231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,
 	]);
+	#[derive(Debug, scale_info::TypeInfo)]
+	pub const MaxEdges: u32 = 1000;
+	#[derive(Debug, scale_info::TypeInfo)]
+	pub const MaxDefaultHashes: u32 = 1000;
 }
 
 impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
@@ -1141,16 +1146,23 @@ impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
 	type RootHistorySize = RootHistorySize;
 	type RootIndex = u32;
 	type StringLimit = StringLimit;
+	type MaxEdges = MaxEdges;
+	type MaxDefaultHashes = MaxDefaultHashes;
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
 	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const MaxParameterLength : u32 = 1000;
+}
+
 impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
+	type MaxParameterLength = MaxParameterLength;
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
@@ -1158,7 +1170,13 @@ impl pallet_vanchor_verifier::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
+	type MaxParameterLength = MaxParameterLength;
 	type WeightInfo = pallet_vanchor_verifier::weights::WebbWeight<Runtime>;
+}
+
+parameter_types! {
+	#[derive(Copy, Clone, Debug, PartialEq, Eq, scale_info::TypeInfo)]
+	pub const MaxAssetIdInPool: u32 = 100;
 }
 
 impl pallet_asset_registry::Config for Runtime {
@@ -1167,6 +1185,7 @@ impl pallet_asset_registry::Config for Runtime {
 	type Balance = Balance;
 	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = GetNativeCurrencyId;
+	type MaxAssetIdInPool = MaxAssetIdInPool;
 	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
@@ -1326,6 +1345,7 @@ impl Contains<RuntimeCall> for ExecuteProposalFilter {
 parameter_types! {
 	pub const ProposalLifetime: BlockNumber = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
+	pub const MaxStringLength: u32 = 1000;
 }
 
 type SignatureBridgeInstance = pallet_signature_bridge::Instance1;
@@ -1338,6 +1358,7 @@ impl pallet_signature_bridge::Config<SignatureBridgeInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Proposal = RuntimeCall;
 	type ProposalLifetime = ProposalLifetime;
+	type MaxStringLength = MaxStringLength;
 	type ProposalNonce = u32;
 	type SetResourceProposalFilter = SetResourceProposalFilter;
 	type ExecuteProposalFilter = ExecuteProposalFilter;
@@ -1386,6 +1407,8 @@ impl pallet_relayer_registry::Config for Runtime {
 
 impl pallet_key_storage::Config<pallet_key_storage::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type MaxPubkeyLength = ConstU32<1000>;
+	type MaxPubKeyOwners = ConstU32<100>;
 	type WeightInfo = pallet_key_storage::weights::WebbWeight<Runtime>;
 }
 
