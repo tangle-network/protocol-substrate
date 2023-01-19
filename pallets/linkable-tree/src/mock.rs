@@ -5,12 +5,14 @@ use crate as pallet_linkable_tree;
 use codec::{Decode, Encode};
 use sp_core::H256;
 
+use codec::MaxEncodedLen;
 use frame_support::parameter_types;
 use frame_system as system;
+use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
 pub use webb_primitives::{
@@ -106,6 +108,7 @@ impl pallet_hasher::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
+	type MaxParameterLength = ConstU32<10000>;
 	type WeightInfo = ();
 }
 
@@ -135,6 +138,7 @@ parameter_types! {
 	scale_info::TypeInfo,
 	Serialize,
 	Deserialize,
+	MaxEncodedLen,
 )]
 pub struct Element([u8; 32]);
 
@@ -150,12 +154,21 @@ impl ElementTrait for Element {
 	}
 }
 
+parameter_types! {
+	#[derive(Debug, TypeInfo)]
+	pub const MaxEdges: u32 = 1000;
+	#[derive(Debug, TypeInfo)]
+	pub const MaxDefaultHashes: u32 = 1000;
+}
+
 impl pallet_mt::Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
 	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
+	type MaxEdges = MaxEdges;
+	type MaxDefaultHashes = MaxDefaultHashes;
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;

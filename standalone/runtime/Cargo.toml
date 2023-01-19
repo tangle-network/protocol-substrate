@@ -24,9 +24,9 @@ static_assertions = "1.1.0"
 
 # local dependencies
 webb-primitives = {path = "../../primitives", default-features = false, features = ["hashing"]}
-orml-currencies = { git = "https://github.com/webb-tools/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
-orml-tokens = { git = "https://github.com/webb-tools/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
-orml-traits = { git = "https://github.com/webb-tools/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
+orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
 pallet-vanchor = {path = "../../pallets/vanchor", default-features = false }
 pallet-vanchor-handler = {path = "../../pallets/vanchor-handler", default-features = false }
 pallet-asset-registry = {path = "../../pallets/asset-registry", default-features = false }

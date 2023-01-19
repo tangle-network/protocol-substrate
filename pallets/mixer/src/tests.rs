@@ -6,6 +6,7 @@ use frame_support::{assert_err, assert_ok, traits::OnInitialize};
 use orml_traits::MultiCurrency;
 use pallet_asset_registry::AssetType;
 use sp_runtime::traits::{One, Zero};
+use sp_std::convert::TryInto;
 use webb_primitives::{merkle_tree::TreeInspector, AccountId, ElementTrait};
 
 use crate::{mock::*, test_utils::*};
@@ -35,7 +36,10 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			let params3 = hasher_params();
 
 			// 1. Setup The Hasher Pallet.
-			assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), params3));
+			assert_ok!(HasherPallet::force_set_parameters(
+				RuntimeOrigin::root(),
+				params3.try_into().unwrap()
+			));
 			// 2. Initialize MerkleTree pallet.
 			<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 			// 3. Setup the VerifierPallet
@@ -48,7 +52,7 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 
 			assert_ok!(VerifierPallet::force_set_parameters(
 				RuntimeOrigin::root(),
-				vk_bytes.to_vec()
+				vk_bytes.to_vec().try_into().unwrap()
 			));
 
 			// finally return the provingkey bytes
@@ -64,7 +68,10 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 fn should_create_new_mixer() {
 	new_test_ext().execute_with(|| {
 		// init hasher pallet first.
-		assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), hasher_params()));
+		assert_ok!(HasherPallet::force_set_parameters(
+			RuntimeOrigin::root(),
+			hasher_params().try_into().unwrap()
+		));
 		// then the merkle tree.
 		<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 		assert_ok!(Mixer::create(RuntimeOrigin::root(), One::one(), 3, 0));
@@ -76,7 +83,10 @@ fn should_be_able_to_deposit() {
 	new_test_ext().execute_with(|| {
 		let _ = setup_environment(Curve::Bn254);
 		// init hasher pallet first.
-		assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), hasher_params()));
+		assert_ok!(HasherPallet::force_set_parameters(
+			RuntimeOrigin::root(),
+			hasher_params().try_into().unwrap()
+		));
 		// then the merkle tree.
 		<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 		let deposit_size = One::one();
@@ -522,7 +532,7 @@ fn deposit_with_non_native_asset_should_work() {
 		// create an Asset first
 		assert_ok!(
 			AssetRegistry::get_or_create_asset(
-				String::from("ETH").into(),
+				String::from("ETH").into_bytes().try_into().unwrap(),
 				AssetType::Token,
 				Zero::zero()
 			),

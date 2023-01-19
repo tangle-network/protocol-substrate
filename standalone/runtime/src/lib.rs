@@ -78,15 +78,12 @@ use frame_support::{
 		KeyOwnerProofSystem, LockIdentifier, OnUnbalanced, U128CurrencyToVote,
 	},
 	weights::{
-		constants::{BlockExecutionWeight, ExtrinsicBaseWeight},
+		constants::{BlockExecutionWeight, WEIGHT_REF_TIME_PER_SECOND},
 		IdentityFee, Weight,
 	},
 	PalletId, RuntimeDebug,
 };
-use frame_system::{
-	limits::{BlockLength, BlockWeights},
-	EnsureRoot,
-};
+use frame_system::EnsureRoot;
 
 use frame_support::traits::Nothing;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
@@ -167,26 +164,14 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
 	pub const Version: RuntimeVersion = VERSION;
-	pub RuntimeBlockLength: BlockLength =
-		BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
-		.base_block(BlockExecutionWeight::get())
-		.for_class(DispatchClass::all(), |weights| {
-			weights.base_extrinsic = ExtrinsicBaseWeight::get();
-		})
-		.for_class(DispatchClass::Normal, |weights| {
-			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-		})
-		.for_class(DispatchClass::Operational, |weights| {
-			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
-			// Operational transactions have some extra reserved space, so that they
-			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
-			weights.reserved = Some(
-				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
-			);
-		})
-		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
-		.build_or_panic();
+	/// We allow for 2 seconds of compute with a 6 second average block time.
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::with_sensible_defaults(
+			Weight::from_parts(2u64 * WEIGHT_REF_TIME_PER_SECOND, u64::MAX),
+			NORMAL_DISPATCH_RATIO,
+		);
+	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
+		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 	pub const SS58Prefix: u16 = 42;
 }
 
@@ -195,9 +180,9 @@ impl frame_system::Config for Runtime {
 	type AccountId = AccountId;
 	type BaseCallFilter = Everything;
 	type BlockHashCount = BlockHashCount;
-	type BlockLength = RuntimeBlockLength;
+	type BlockLength = BlockLength;
 	type BlockNumber = BlockNumber;
-	type BlockWeights = RuntimeBlockWeights;
+	type BlockWeights = BlockWeights;
 	type RuntimeCall = RuntimeCall;
 	type DbWeight = RocksDbWeight;
 	type RuntimeEvent = RuntimeEvent;
@@ -303,9 +288,9 @@ parameter_types! {
 
 parameter_types! {
 	pub const PreimageMaxSize: u32 = 4096 * 1024;
-	pub const PreimageBaseDeposit: Balance = 1 * DOLLARS;
+	pub const PreimageBaseDeposit: Balance = DOLLARS;
 	// One cent: $10,000 / MB
-	pub const PreimageByteDeposit: Balance = 1 * CENTS;
+	pub const PreimageByteDeposit: Balance = CENTS;
 }
 
 impl pallet_preimage::Config for Runtime {
@@ -319,7 +304,7 @@ impl pallet_preimage::Config for Runtime {
 
 parameter_types! {
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-		RuntimeBlockWeights::get().max_block;
+		BlockWeights::get().max_block;
 }
 
 impl pallet_scheduler::Config for Runtime {
@@ -461,13 +446,13 @@ parameter_types! {
 
 	// miner configs
 	pub const MultiPhaseUnsignedPriority: TransactionPriority = StakingUnsignedPriority::get() - 1u64;
-	pub MinerMaxWeight: Weight = RuntimeBlockWeights::get()
+	pub MinerMaxWeight: Weight = BlockWeights::get()
 		.get(DispatchClass::Normal)
 		.max_extrinsic.expect("Normal extrinsics have a weight limit configured; qed")
 		.saturating_sub(BlockExecutionWeight::get());
 	// Solution can occupy 90% of normal block size
 	pub MinerMaxLength: u32 = Perbill::from_rational(9u32, 10) *
-		*RuntimeBlockLength::get()
+		*BlockLength::get()
 		.max
 		.get(DispatchClass::Normal);
 }
@@ -981,10 +966,10 @@ impl pallet_proxy::Config for Runtime {
 
 parameter_types! {
 	pub const AssetDeposit: Balance = 100 * DOLLARS;
-	pub const ApprovalDeposit: Balance = 1 * DOLLARS;
+	pub const ApprovalDeposit: Balance = DOLLARS;
 	pub const StringLimit: u32 = 50;
 	pub const MetadataDepositBase: Balance = 10 * DOLLARS;
-	pub const MetadataDepositPerByte: Balance = 1 * DOLLARS;
+	pub const MetadataDepositPerByte: Balance = DOLLARS;
 }
 
 impl pallet_assets::Config for Runtime {
@@ -1036,8 +1021,7 @@ where
 	) -> Option<(RuntimeCall, <UncheckedExtrinsic as traits::Extrinsic>::SignaturePayload)> {
 		let tip = 0;
 		// take the biggest period possible.
-		let period =
-			BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2) as u64;
+		let period = BlockHashCount::get().checked_next_power_of_two().map(|c| c / 2).unwrap_or(2);
 		let current_block = System::block_number()
 			.saturated_into::<u64>()
 			// The `System::block_number` is initialized with `n+1`,
@@ -1124,6 +1108,7 @@ impl pallet_hasher::Config<pallet_hasher::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = ArkworksPoseidonHasherBn254;
+	type MaxParameterLength = ConstU32<10000>;
 	type WeightInfo = pallet_hasher::weights::WebbWeight<Runtime>;
 }
 
@@ -1141,6 +1126,10 @@ parameter_types! {
 		47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52,
 		15, 118, 231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,
 	]);
+	#[derive(Debug, scale_info::TypeInfo)]
+	pub const MaxEdges: u32 = 1000;
+	#[derive(Debug, scale_info::TypeInfo)]
+	pub const MaxDefaultHashes: u32 = 1000;
 }
 
 impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
@@ -1157,16 +1146,23 @@ impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
 	type RootHistorySize = RootHistorySize;
 	type RootIndex = u32;
 	type StringLimit = StringLimit;
+	type MaxEdges = MaxEdges;
+	type MaxDefaultHashes = MaxDefaultHashes;
 	type TreeDeposit = TreeDeposit;
 	type TreeId = u32;
 	type Two = Two;
 	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
 }
 
+parameter_types! {
+	pub const MaxParameterLength : u32 = 1000;
+}
+
 impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
+	type MaxParameterLength = MaxParameterLength;
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
@@ -1174,7 +1170,13 @@ impl pallet_vanchor_verifier::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
+	type MaxParameterLength = MaxParameterLength;
 	type WeightInfo = pallet_vanchor_verifier::weights::WebbWeight<Runtime>;
+}
+
+parameter_types! {
+	#[derive(Copy, Clone, Debug, PartialEq, Eq, scale_info::TypeInfo)]
+	pub const MaxAssetIdInPool: u32 = 100;
 }
 
 impl pallet_asset_registry::Config for Runtime {
@@ -1183,6 +1185,7 @@ impl pallet_asset_registry::Config for Runtime {
 	type Balance = Balance;
 	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = GetNativeCurrencyId;
+	type MaxAssetIdInPool = MaxAssetIdInPool;
 	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
@@ -1342,6 +1345,7 @@ impl Contains<RuntimeCall> for ExecuteProposalFilter {
 parameter_types! {
 	pub const ProposalLifetime: BlockNumber = 50;
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
+	pub const MaxStringLength: u32 = 1000;
 }
 
 type SignatureBridgeInstance = pallet_signature_bridge::Instance1;
@@ -1354,6 +1358,7 @@ impl pallet_signature_bridge::Config<SignatureBridgeInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Proposal = RuntimeCall;
 	type ProposalLifetime = ProposalLifetime;
+	type MaxStringLength = MaxStringLength;
 	type ProposalNonce = u32;
 	type SetResourceProposalFilter = SetResourceProposalFilter;
 	type ExecuteProposalFilter = ExecuteProposalFilter;
@@ -1402,6 +1407,8 @@ impl pallet_relayer_registry::Config for Runtime {
 
 impl pallet_key_storage::Config<pallet_key_storage::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type MaxPubkeyLength = ConstU32<1000>;
+	type MaxPubKeyOwners = ConstU32<100>;
 	type WeightInfo = pallet_key_storage::weights::WebbWeight<Runtime>;
 }
 

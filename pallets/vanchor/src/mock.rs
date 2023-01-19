@@ -7,9 +7,10 @@ use sp_core::H256;
 use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
+use scale_info::TypeInfo;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 	Permill,
 };
 use sp_std::convert::{TryFrom, TryInto};
@@ -130,6 +131,7 @@ type VAnchorVerifierInstance1 = pallet_vanchor_verifier::Instance1;
 impl pallet_vanchor_verifier::Config<VAnchorVerifierInstance1> for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxParameterLength = ConstU32<10000>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
@@ -154,6 +156,7 @@ type HasherInstance2 = pallet_hasher::Instance2;
 impl pallet_hasher::Config<HasherInstance2> for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxParameterLength = ConstU32<10000>;
 	type Hasher = ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
 }
@@ -172,34 +175,21 @@ parameter_types! {
 	]);
 }
 
-type MerkleInstance1 = pallet_mt::Instance1;
-impl pallet_mt::Config<MerkleInstance1> for Test {
-	type Currency = Balances;
-	type DataDepositBase = LeafDepositBase;
-	type DataDepositPerByte = LeafDepositPerByte;
-	type DefaultZeroElement = DefaultZeroElement;
-	type Element = Element;
-	type RuntimeEvent = RuntimeEvent;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = Hasher1;
-	type LeafIndex = u32;
-	type MaxTreeDepth = MaxTreeDepth;
-	type RootHistorySize = RootHistorySize;
-	type RootIndex = u32;
-	type StringLimit = StringLimit;
-	type TreeDeposit = TreeDeposit;
-	type TreeId = u32;
-	type Two = Two;
-	type WeightInfo = ();
+parameter_types! {
+	#[derive(Debug, TypeInfo)]
+	pub const MaxEdges: u32 = 1000;
+	#[derive(Debug, TypeInfo)]
+	pub const MaxDefaultHashes: u32 = 1000;
 }
 
-type MerkleInstance2 = pallet_mt::Instance2;
-impl pallet_mt::Config<MerkleInstance2> for Test {
+impl pallet_mt::Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
 	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
+	type MaxEdges = MaxEdges;
+	type MaxDefaultHashes = MaxDefaultHashes;
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = Hasher2;
@@ -272,12 +262,18 @@ impl orml_currencies::Config for Test {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	#[derive(Copy, Clone, Debug, PartialEq, Eq, scale_info::TypeInfo)]
+	pub const MaxAssetIdInPool: u32 = 100;
+}
+
 impl pallet_asset_registry::Config for Test {
 	type AssetId = AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
 	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = NativeCurrencyId;
+	type MaxAssetIdInPool = MaxAssetIdInPool;
 	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
@@ -380,6 +376,8 @@ impl pallet_vanchor::Config<Instance2> for Test {
 
 impl pallet_key_storage::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type MaxPubkeyLength = ConstU32<1000>;
+	type MaxPubKeyOwners = ConstU32<1000>;
 	type WeightInfo = ();
 }
 

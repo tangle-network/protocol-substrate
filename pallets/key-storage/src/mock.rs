@@ -6,7 +6,7 @@ use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
 use webb_primitives::AccountId;
@@ -71,6 +71,8 @@ parameter_types! {
 
 impl pallet_key_storage::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type MaxPubkeyLength = ConstU32<100>;
+	type MaxPubKeyOwners = ConstU32<100>;
 	type WeightInfo = ();
 }
 

@@ -1,12 +1,10 @@
 use super::*;
 use crate::mock::*;
-use ark_ff::prelude::*;
-use arkworks_setups::{common::setup_params, Curve};
+
 use frame_benchmarking::account;
-use frame_support::{assert_err, assert_ok};
-use hex_literal::hex;
-use sp_core::bytes;
-use sp_runtime::traits::{One, Zero};
+use frame_support::assert_ok;
+
+use sp_runtime::traits::Zero;
 
 const SEED: u32 = 0;
 const START_TIMESTAMP: u64 = 0;
@@ -36,7 +34,7 @@ fn setup_environment() {
 #[test]
 fn test_basic_set_pool_weight() {
 	new_test_ext().execute_with(|| {
-		let _ = setup_environment();
+		setup_environment();
 
 		// Set pool weight to 800
 		assert_ok!(AnonymityMining::set_pool_weight(800));
@@ -52,9 +50,9 @@ fn test_basic_set_pool_weight() {
 #[test]
 fn test_basic_timestamp_change() {
 	new_test_ext().execute_with(|| {
-		let _ = setup_environment();
+		setup_environment();
 
-		let start_timestamp = AnonymityMining::get_current_timestamp();
+		let _start_timestamp = AnonymityMining::get_current_timestamp();
 		Timestamp::set_timestamp(1);
 		let curr_timestamp = AnonymityMining::get_current_timestamp();
 		assert_eq!(curr_timestamp, 1);
@@ -65,7 +63,7 @@ fn test_basic_timestamp_change() {
 #[test]
 fn test_basic_get_virtual_reward_balance() {
 	new_test_ext().execute_with(|| {
-		let _ = setup_environment();
+		setup_environment();
 
 		// Set pool weight to 800
 		assert_ok!(AnonymityMining::set_pool_weight(800));
@@ -76,7 +74,7 @@ fn test_basic_get_virtual_reward_balance() {
 			AnonymityMining::get_virtual_balance(&AnonymityMining::account_id());
 
 		// Starting virtual balance is at INITIAL_LIQUIDITY
-		let starting_virtual_balance = assert_eq!(prev_virtual_balance, INITIAL_LIQUIDITY);
+		assert_eq!(prev_virtual_balance, INITIAL_LIQUIDITY);
 
 		// add reward balance to pallet
 		let new_reward_balance = INITIAL_TOTAL_REWARDS_BALANCE;
@@ -125,7 +123,7 @@ fn test_basic_get_virtual_reward_balance() {
 #[test]
 fn test_basic_get_expected_return_varying_timestamp() {
 	new_test_ext().execute_with(|| {
-		let _ = setup_environment();
+		setup_environment();
 
 		// Set pool weight to 10000
 		assert_ok!(AnonymityMining::set_pool_weight(10000));
@@ -176,7 +174,7 @@ fn test_basic_get_expected_return_varying_timestamp() {
 #[test]
 fn test_basic_get_expected_return_varying_pool_weights() {
 	new_test_ext().execute_with(|| {
-		let _ = setup_environment();
+		setup_environment();
 
 		// Set pool weight to 10000
 		assert_ok!(AnonymityMining::set_pool_weight(10000));
@@ -224,7 +222,7 @@ fn test_basic_get_expected_return_varying_pool_weights() {
 #[test]
 fn test_basic_get_expected_return_varying_amounts() {
 	new_test_ext().execute_with(|| {
-		let _ = setup_environment();
+		setup_environment();
 
 		// Set pool weight to 10000
 		assert_ok!(AnonymityMining::set_pool_weight(10000));
@@ -272,7 +270,7 @@ fn test_basic_get_expected_return_varying_amounts() {
 #[test]
 fn test_basic_swap() {
 	new_test_ext().execute_with(|| {
-		let _ = setup_environment();
+		setup_environment();
 
 		// Set pool weight to 10000
 		assert_ok!(AnonymityMining::set_pool_weight(10000));
@@ -341,7 +339,7 @@ fn test_basic_swap() {
 		// conduct swap
 		assert_ok!(AnonymityMining::swap(
 			RuntimeOrigin::signed(sender_account_id.clone()),
-			sender_account_id,
+			sender_account_id.clone(),
 			amount
 		));
 
@@ -369,7 +367,7 @@ fn test_basic_swap() {
 #[test]
 fn test_basic_two_swaps() {
 	new_test_ext().execute_with(|| {
-		let _ = setup_environment();
+		setup_environment();
 
 		// Set pool weight to 800
 		assert_ok!(AnonymityMining::set_pool_weight(10000));
@@ -428,7 +426,7 @@ fn test_basic_two_swaps() {
 		// conduct swap
 		assert_ok!(AnonymityMining::swap(
 			RuntimeOrigin::signed(sender_one_account_id.clone()),
-			sender_one_account_id,
+			sender_one_account_id.clone(),
 			amount
 		));
 
@@ -473,7 +471,7 @@ fn test_basic_two_swaps() {
 		// conduct swap
 		assert_ok!(AnonymityMining::swap(
 			RuntimeOrigin::signed(sender_two_account_id.clone()),
-			sender_two_account_id,
+			sender_two_account_id.clone(),
 			amount
 		));
 
@@ -526,7 +524,7 @@ fn test_basic_two_swaps() {
 		// conduct swap
 		assert_ok!(AnonymityMining::swap(
 			RuntimeOrigin::signed(sender_one_account_id.clone()),
-			sender_one_account_id,
+			sender_one_account_id.clone(),
 			amount
 		));
 

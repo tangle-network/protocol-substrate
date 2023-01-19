@@ -1,7 +1,7 @@
 pub mod runtime;
 pub mod vanchor;
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 pub use ethabi::{encode, Token};
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -11,7 +11,7 @@ use sp_std::vec::Vec;
 // Deposit details used in hasher / verifier pallets for
 // tracking the reserved deposits of maintainers of various
 // parameters
-#[derive(Clone, Default, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo)]
+#[derive(Clone, Default, Encode, Decode, Eq, PartialEq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct DepositDetails<AccountId, Balance> {
 	pub depositor: AccountId,
 	pub deposit: Balance,

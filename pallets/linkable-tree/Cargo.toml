@@ -17,13 +17,10 @@ frame-support = { default-features = false, git = "https://github.com/paritytech
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-pallet-hasher = { path = "../hasher", default-features = false }
 pallet-mt = { path = "../mt", default-features = false }
 webb-primitives = { path = "../../primitives", default-features = false }
-orml-traits = { git = "https://github.com/webb-tools/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
 
 frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36", optional = true }
-frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36", optional = true }
 
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 
@@ -33,8 +30,7 @@ serde = { version = "1.0.119", optional = true }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-orml-tokens = { git = "https://github.com/webb-tools/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
-orml-currencies = { git = "https://github.com/webb-tools/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
+pallet-hasher = { path = "../hasher", default-features = false }
 rand = "0.8.4"
 
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
@@ -46,7 +42,7 @@ ark-std = { version = "^0.3.0", default-features = false }
 
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
 arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
-
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 
 [features]
 default = ["std"]
@@ -65,7 +61,6 @@ std = [
     "frame-benchmarking/std"
 ]
 runtime-benchmarks = [
-    "frame-benchmarking",
     "frame-system/runtime-benchmarks",
     "frame-support/runtime-benchmarks",
 ]

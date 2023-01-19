@@ -96,10 +96,7 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder {
 		let extrinsic: OpaqueExtrinsic = create_extrinsic(
 			self.client.as_ref(),
 			acc,
-			BalancesCall::transfer_keep_alive {
-				dest: self.dest.clone().into(),
-				value: self.value.into(),
-			},
+			BalancesCall::transfer_keep_alive { dest: self.dest.clone().into(), value: self.value },
 			Some(nonce),
 		)
 		.into();
@@ -115,6 +112,6 @@ pub fn inherent_benchmark_data() -> Result<InherentData> {
 	let timestamp = sp_timestamp::InherentDataProvider::new(d.into());
 
 	futures::executor::block_on(timestamp.provide_inherent_data(&mut inherent_data))
-		.map_err(|e| format!("creating inherent data: {:?}", e))?;
+		.map_err(|e| format!("creating inherent data: {e:?}"))?;
 	Ok(inherent_data)
 }

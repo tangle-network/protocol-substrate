@@ -179,6 +179,7 @@ pub mod pallet {
 		///
 		/// Emits `ResourceSet` if successful.
 		#[pallet::weight(T::WeightInfo::set_resource())]
+		#[pallet::call_index(0)]
 		pub fn set_resource(
 			origin: OriginFor<T>,
 			resource_id: ResourceId,
@@ -222,6 +223,7 @@ pub mod pallet {
 		///
 		/// Emits `ResourceCleared` if successful.
 		#[pallet::weight(T::WeightInfo::clear_resource())]
+		#[pallet::call_index(1)]
 		pub fn clear_resource(
 			origin: OriginFor<T>,
 			resource_id: ResourceId,

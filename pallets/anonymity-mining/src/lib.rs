@@ -30,21 +30,18 @@ pub mod mock;
 mod tests;
 
 use frame_support::{
-	pallet_prelude::{ensure, DispatchError},
+	pallet_prelude::DispatchError,
 	sp_runtime::{
-		traits::{AccountIdConversion, One, Saturating, Zero},
-		FixedI64, FixedPointNumber, FixedPointOperand, SaturatedConversion,
+		traits::{AccountIdConversion, Saturating},
+		FixedI64, FixedPointNumber, SaturatedConversion,
 	},
 	traits::{Get, Time},
 	PalletId,
 };
-use orml_traits::{currency::transactional, MultiCurrency};
+use orml_traits::MultiCurrency;
 use pallet_vanchor::VAnchorConfigration;
-use sp_std::{convert::TryInto, prelude::*, vec};
-use webb_primitives::{
-	traits::vanchor::{VAnchorInspector, VAnchorInterface},
-	types::runtime::Moment,
-};
+use sp_std::{convert::TryInto, vec};
+use webb_primitives::traits::vanchor::{VAnchorInspector, VAnchorInterface};
 
 pub use pallet::*;
 
@@ -64,7 +61,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
+
 	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
@@ -137,12 +134,6 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn parameters)]
-	/// Details of the module's parameters
-	pub(super) type Parameters<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, Vec<u8>, ValueQuery>;
-
-	#[pallet::storage]
 	#[pallet::getter(fn get_pool_weight)]
 	pub type PoolWeight<T: Config<I>, I: 'static = ()> = StorageValue<_, u64, ValueQuery>;
 
@@ -159,8 +150,6 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
-		/// Parameters haven't been initialized
-		ParametersNotInitialized,
 		/// Error during hashing
 		HashError,
 	}
@@ -168,6 +157,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
+		#[pallet::call_index(0)]
 		pub fn swap(
 			origin: OriginFor<T>,
 			recipient: T::AccountId,
@@ -178,7 +168,7 @@ pub mod pallet {
 
 			let tokens_sold_u64 = tokens.saturated_into::<u64>();
 			let prev_tokens_sold_u64 = Self::get_tokens_sold();
-			Self::set_tokens_sold(prev_tokens_sold_u64 + tokens_sold_u64);
+			Self::set_tokens_sold(prev_tokens_sold_u64 + tokens_sold_u64)?;
 
 			// Deposit AP tokens to the pallet
 			<T as Config<I>>::Currency::transfer(
@@ -211,21 +201,21 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn set_pool_weight(new_pool_weight: u64) -> Result<(), DispatchError> {
 		PoolWeight::<T, I>::set(new_pool_weight);
 		Self::deposit_event(Event::UpdatedPoolWeight { pool_weight: new_pool_weight });
-		Ok(().into())
+		Ok(())
 	}
 
 	// Set tokens sold
 	pub fn set_tokens_sold(new_tokens_sold: u64) -> Result<(), DispatchError> {
 		TokensSold::<T, I>::set(new_tokens_sold);
 		Self::deposit_event(Event::UpdatedTokensSold { tokens_sold: new_tokens_sold });
-		Ok(().into())
+		Ok(())
 	}
 
 	// Get current timestamp
 	pub fn get_current_timestamp() -> u64 {
 		let current_timestamp = T::Time::now();
-		let current_timestamp_u64 = current_timestamp.saturated_into::<u64>();
-		return current_timestamp_u64
+
+		current_timestamp.saturated_into::<u64>()
 	}
 
 	/// Get expected number of tokens to swap
@@ -250,11 +240,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let final_new_balance_i64 = final_new_balance_f64.round();
 		let final_new_balance_u64 = final_new_balance_i64 as u64;
 
-		let final_balance_new =
+		let _final_balance_new =
 			old_balance.saturating_sub(final_new_balance_u64.saturated_into::<BalanceOf<T, I>>());
 		let final_balance_new_u64 = old_balance_u64 - final_new_balance_u64;
-		let final_balance = final_balance_new_u64.saturated_into::<BalanceOf<T, I>>();
-		return final_balance
+
+		final_balance_new_u64.saturated_into::<BalanceOf<T, I>>()
 	}
 
 	/// Calculate balance to use
@@ -269,16 +259,16 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let liquidity_u64 = T::Liquidity::get().saturated_into::<u64>();
 		let tokens_sold = Self::get_tokens_sold();
 		if elapsed_u64 <= <T as Config<I>>::Duration::get() {
-			let liquidity = T::Liquidity::get();
+			let _liquidity = T::Liquidity::get();
 			let duration = T::Duration::get();
 			let amount =
 				T::InitialLiquidity::get() + (liquidity_u64 * elapsed_u64) / duration - tokens_sold;
 			let modified_reward_balance = amount.saturated_into::<BalanceOf<T, I>>();
 			//let elapsed_balance = elapsed.saturated_into::<BalanceOf<T, I>>();
-			let elapsed_balance = (elapsed_u64).saturated_into::<BalanceOf<T, I>>();
-			return modified_reward_balance
+			let _elapsed_balance = (elapsed_u64).saturated_into::<BalanceOf<T, I>>();
+			modified_reward_balance
 		} else {
-			return reward_balance
+			reward_balance
 		}
 	}
 }

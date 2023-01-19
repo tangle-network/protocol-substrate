@@ -22,7 +22,10 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use sp_arithmetic::traits::BaseArithmetic;
-use sp_std::{convert::TryInto, vec::Vec};
+use sp_std::{
+	convert::{TryFrom, TryInto},
+	vec::Vec,
+};
 
 #[cfg(test)]
 mod mock;
@@ -48,13 +51,16 @@ pub use traits::{Registry, ShareTokenRegistry};
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::sp_runtime::traits::AtLeast32BitUnsigned;
+	use frame_support::{dispatch::fmt::Debug, sp_runtime::traits::AtLeast32BitUnsigned};
 
 	pub type AssetDetailsT<T> = AssetDetails<
 		<T as Config>::AssetId,
 		<T as Config>::Balance,
 		BoundedVec<u8, <T as Config>::StringLimit>,
+		<T as Config>::MaxAssetIdInPool,
 	>;
+
+	pub type AssetTypeOf<T> = AssetType<<T as Config>::AssetId, <T as Config>::MaxAssetIdInPool>;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -78,13 +84,17 @@ pub mod pallet {
 			+ AtLeast32BitUnsigned
 			+ Default
 			+ Copy
-			+ MaybeSerializeDeserialize;
+			+ MaybeSerializeDeserialize
+			+ MaxEncodedLen;
 
 		/// Asset location type
-		type AssetNativeLocation: Parameter + Member + Default;
+		type AssetNativeLocation: Parameter + Member + Default + MaxEncodedLen;
 
 		/// The maximum length of a name or symbol stored on-chain.
 		type StringLimit: Get<u32>;
+
+		/// The maximum number of assets in a pool
+		type MaxAssetIdInPool: Get<u32> + Clone + Debug + TypeInfo + Eq + PartialEq;
 
 		/// Native Asset Id
 		#[pallet::constant]
@@ -95,7 +105,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::hooks]
@@ -127,6 +136,9 @@ pub mod pallet {
 
 		/// Asset not found in pool
 		AssetNotFoundInPool,
+
+		/// Max number of assets in pool is reached
+		MaxAssetIdInPoolReached,
 	}
 
 	#[pallet::storage]
@@ -172,8 +184,8 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
-		pub asset_names: Vec<(Vec<u8>, T::Balance)>,
-		pub native_asset_name: Vec<u8>,
+		pub asset_names: Vec<(BoundedVec<u8, T::StringLimit>, T::Balance)>,
+		pub native_asset_name: BoundedVec<u8, T::StringLimit>,
 		pub native_existential_deposit: T::Balance,
 	}
 
@@ -182,7 +194,7 @@ pub mod pallet {
 		fn default() -> Self {
 			GenesisConfig::<T> {
 				asset_names: vec![],
-				native_asset_name: b"WEBB".to_vec(),
+				native_asset_name: b"WEBB".to_vec().try_into().unwrap(),
 				native_existential_deposit: Default::default(),
 			}
 		}
@@ -224,14 +236,14 @@ pub mod pallet {
 		Registered {
 			asset_id: T::AssetId,
 			name: BoundedVec<u8, T::StringLimit>,
-			asset_type: AssetType<T::AssetId>,
+			asset_type: AssetTypeOf<T>,
 		},
 
 		/// Asset was updated.
 		Updated {
 			asset_id: T::AssetId,
 			name: BoundedVec<u8, T::StringLimit>,
-			asset_type: AssetType<T::AssetId>,
+			asset_type: AssetTypeOf<T>,
 		},
 
 		/// Metadata set for an asset.
@@ -256,20 +268,19 @@ pub mod pallet {
 		///
 		/// Emits 'Registered` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::register())]
+		#[pallet::call_index(0)]
 		#[transactional]
 		pub fn register(
 			origin: OriginFor<T>,
-			name: Vec<u8>,
-			asset_type: AssetType<T::AssetId>,
+			name: BoundedVec<u8, T::StringLimit>,
+			asset_type: AssetTypeOf<T>,
 			existential_deposit: T::Balance,
 		) -> DispatchResult {
 			T::RegistryOrigin::ensure_origin(origin)?;
 
-			let bounded_name = Self::to_bounded_name(name)?;
+			ensure!(Self::asset_ids(&name).is_none(), Error::<T>::AssetAlreadyRegistered);
 
-			ensure!(Self::asset_ids(&bounded_name).is_none(), Error::<T>::AssetAlreadyRegistered);
-
-			Self::register_asset(bounded_name, asset_type, existential_deposit)?;
+			Self::register_asset(name, asset_type, existential_deposit)?;
 
 			Ok(())
 		}
@@ -283,20 +294,19 @@ pub mod pallet {
 
 		// TODO: No tests
 		#[pallet::weight(<T as Config>::WeightInfo::update())]
+		#[pallet::call_index(1)]
 		#[transactional]
 		pub fn update(
 			origin: OriginFor<T>,
 			asset_id: T::AssetId,
-			name: Vec<u8>,
-			asset_type: AssetType<T::AssetId>,
+			bounded_name: BoundedVec<u8, T::StringLimit>,
+			asset_type: AssetTypeOf<T>,
 			existential_deposit: Option<T::Balance>,
 		) -> DispatchResult {
 			T::RegistryOrigin::ensure_origin(origin)?;
 
 			Assets::<T>::try_mutate(asset_id, |maybe_detail| -> DispatchResult {
 				let mut detail = maybe_detail.as_mut().ok_or(Error::<T>::AssetNotFound)?;
-
-				let bounded_name = Self::to_bounded_name(name)?;
 
 				if bounded_name != detail.name {
 					// Make sure that there is no such name already registered
@@ -329,27 +339,26 @@ pub mod pallet {
 		///
 		/// Emits `MetadataSet` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::set_metadata())]
+		#[pallet::call_index(2)]
 		#[transactional]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			asset_id: T::AssetId,
-			symbol: Vec<u8>,
+			symbol: BoundedVec<u8, T::StringLimit>,
 			decimals: u8,
 		) -> DispatchResult {
 			T::RegistryOrigin::ensure_origin(origin)?;
 
 			ensure!(Self::assets(asset_id).is_some(), Error::<T>::AssetNotFound);
 
-			let b_symbol = Self::to_bounded_name(symbol)?;
-
 			let metadata = AssetMetadata::<BoundedVec<u8, T::StringLimit>> {
-				symbol: b_symbol.clone(),
+				symbol: symbol.clone(),
 				decimals,
 			};
 
 			AssetMetadataMap::<T>::insert(asset_id, metadata);
 
-			Self::deposit_event(Event::MetadataSet { asset_id, symbol: b_symbol, decimals });
+			Self::deposit_event(Event::MetadataSet { asset_id, symbol, decimals });
 
 			Ok(())
 		}
@@ -363,6 +372,7 @@ pub mod pallet {
 		///
 		/// Emits `LocationSet` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::set_location())]
+		#[pallet::call_index(3)]
 		#[transactional]
 		pub fn set_location(
 			origin: OriginFor<T>,
@@ -383,9 +393,10 @@ pub mod pallet {
 
 		/// Add an asset to an existing pool.
 		#[pallet::weight(0)]
+		#[pallet::call_index(4)]
 		pub fn add_asset_to_pool(
 			origin: OriginFor<T>,
-			pool: Vec<u8>,
+			pool: BoundedVec<u8, T::StringLimit>,
 			asset_id: T::AssetId,
 		) -> DispatchResult {
 			ensure_root(origin)?;
@@ -399,9 +410,10 @@ pub mod pallet {
 
 		/// Remove an asset from an existing pool.
 		#[pallet::weight(0)]
+		#[pallet::call_index(5)]
 		pub fn delete_asset_from_pool(
 			origin: OriginFor<T>,
-			pool: Vec<u8>,
+			pool: BoundedVec<u8, T::StringLimit>,
 			asset_id: T::AssetId,
 		) -> DispatchResult {
 			ensure_root(origin)?;
@@ -416,7 +428,7 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	/// Convert Vec<u8> to BoundedVec so it respects the max set limit,
+	/// Convert BoundedVec<u8, T::StringLimit> to BoundedVec so it respects the max set limit,
 	/// otherwise return TooLong error
 	fn to_bounded_name(name: Vec<u8>) -> Result<BoundedVec<u8, T::StringLimit>, Error<T>> {
 		name.try_into().map_err(|_| Error::<T>::TooLong)
@@ -428,7 +440,7 @@ impl<T: Config> Pallet<T> {
 	/// exists. This has to be prior to calling this function.
 	pub fn register_asset(
 		name: BoundedVec<u8, T::StringLimit>,
-		asset_type: AssetType<T::AssetId>,
+		asset_type: AssetTypeOf<T>,
 		existential_deposit: T::Balance,
 	) -> Result<T::AssetId, DispatchError> {
 		NextAssetId::<T>::mutate(|value| -> Result<T::AssetId, DispatchError> {
@@ -467,16 +479,14 @@ impl<T: Config> Pallet<T> {
 	/// Create asset for given name or return existing AssetId if such asset
 	/// already exists.
 	pub fn get_or_create_asset(
-		name: Vec<u8>,
-		asset_type: AssetType<T::AssetId>,
+		name: BoundedVec<u8, T::StringLimit>,
+		asset_type: AssetTypeOf<T>,
 		existential_deposit: T::Balance,
 	) -> Result<T::AssetId, DispatchError> {
-		let bounded_name: BoundedVec<u8, T::StringLimit> = Self::to_bounded_name(name)?;
-
-		if let Some(asset_id) = AssetIds::<T>::get(&bounded_name) {
+		if let Some(asset_id) = AssetIds::<T>::get(&name) {
 			Ok(asset_id)
 		} else {
-			Self::register_asset(bounded_name, asset_type, existential_deposit)
+			Self::register_asset(name, asset_type, existential_deposit)
 		}
 	}
 
@@ -505,9 +515,11 @@ impl<T: Config> Pallet<T> {
 					AssetType::Token => return Err(Error::<T>::AssetNotFound.into()),
 					AssetType::PoolShare(pool) =>
 						if !pool.contains(&asset_id) {
-							if Self::assets(&asset_id).is_some() {
+							if Self::assets(asset_id).is_some() {
 								let mut pool_clone = pool.clone();
-								pool_clone.push(asset_id);
+								pool_clone
+									.try_push(asset_id)
+									.map_err(|_| Error::<T>::MaxAssetIdInPoolReached)?;
 								AssetType::PoolShare(pool_clone)
 							} else {
 								return Err(Error::<T>::AssetNotRegistered.into())
@@ -550,7 +562,12 @@ impl<T: Config> Pallet<T> {
 								.filter(|id| **id != asset_id)
 								.copied()
 								.collect::<Vec<T::AssetId>>();
-							AssetType::PoolShare(filtered_pool)
+							let bounded_pool =
+								BoundedVec::<T::AssetId, T::MaxAssetIdInPool>::try_from(
+									filtered_pool,
+								)
+								.map_err(|_| Error::<T>::MaxAssetIdInPoolReached)?;
+							AssetType::PoolShare(bounded_pool)
 						} else {
 							return Err(Error::<T>::AssetNotFoundInPool.into())
 						},
@@ -575,6 +592,7 @@ impl<T: Config> Pallet<T> {
 			Vec<u8>,
 			T::Balance,
 			BoundedVec<u8, T::StringLimit>,
+			<T as Config>::MaxAssetIdInPool,
 			DispatchError,
 		>>::contains_asset(pool_share_id, asset_id)
 	}
@@ -585,7 +603,8 @@ impl<T: Config>
 		T::AssetId,
 		Vec<u8>,
 		T::Balance,
-		BoundedVec<u8, <T as Config>::StringLimit>,
+		BoundedVec<u8, T::StringLimit>,
+		<T as Config>::MaxAssetIdInPool,
 		DispatchError,
 	> for Pallet<T>
 {
@@ -597,12 +616,12 @@ impl<T: Config>
 	}
 
 	fn exists(asset_id: T::AssetId) -> bool {
-		Assets::<T>::contains_key(&asset_id) || asset_id == T::NativeAssetId::get()
+		Assets::<T>::contains_key(asset_id) || asset_id == T::NativeAssetId::get()
 	}
 
 	fn retrieve_asset(name: &Vec<u8>) -> Result<T::AssetId, DispatchError> {
 		let bounded_name = Self::to_bounded_name(name.clone())?;
-		if let Some(asset_id) = AssetIds::<T>::get(&bounded_name) {
+		if let Some(asset_id) = AssetIds::<T>::get(bounded_name) {
 			Ok(asset_id)
 		} else {
 			Err(Error::<T>::AssetNotFound.into())
@@ -613,7 +632,8 @@ impl<T: Config>
 		name: &Vec<u8>,
 		existential_deposit: T::Balance,
 	) -> Result<T::AssetId, DispatchError> {
-		Self::get_or_create_asset(name.clone(), AssetType::Token, existential_deposit)
+		let bounded_name = Self::to_bounded_name(name.clone())?;
+		Self::get_or_create_asset(bounded_name, AssetType::Token, existential_deposit)
 	}
 }
 
@@ -622,7 +642,8 @@ impl<T: Config>
 		T::AssetId,
 		Vec<u8>,
 		T::Balance,
-		BoundedVec<u8, <T as Config>::StringLimit>,
+		BoundedVec<u8, T::StringLimit>,
+		<T as Config>::MaxAssetIdInPool,
 		DispatchError,
 	> for Pallet<T>
 {
@@ -638,9 +659,12 @@ impl<T: Config>
 		assets: &[T::AssetId],
 		existential_deposit: T::Balance,
 	) -> Result<T::AssetId, DispatchError> {
+		let bounded_name = Self::to_bounded_name(name.clone())?;
+		let bounded_pool = BoundedVec::<T::AssetId, T::MaxAssetIdInPool>::try_from(assets.to_vec())
+			.map_err(|_| Error::<T>::MaxAssetIdInPoolReached)?;
 		Self::get_or_create_asset(
-			name.clone(),
-			AssetType::PoolShare(assets.to_vec()),
+			bounded_name,
+			AssetType::PoolShare(bounded_pool),
 			existential_deposit,
 		)
 	}

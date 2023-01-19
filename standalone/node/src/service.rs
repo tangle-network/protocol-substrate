@@ -17,6 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #![warn(unused_extern_crates)]
+#![allow(clippy::type_complexity)]
 
 //! Service implementation. Specialized wrapper over substrate service.
 
@@ -261,7 +262,7 @@ pub fn new_full_base(
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {
-			let _ = std::fs::create_dir_all(&database_path);
+			let _ = std::fs::create_dir_all(database_path);
 			sc_sysinfo::gather_hwbench(Some(database_path))
 		})
 	} else {
@@ -528,7 +529,7 @@ pub fn create_extrinsic(
 	let period = webb_runtime::BlockHashCount::get()
 		.checked_next_power_of_two()
 		.map(|c| c / 2)
-		.unwrap_or(2) as u64;
+		.unwrap_or(2);
 	let tip = 0;
 	let extra: webb_runtime::SignedExtra = (
 		frame_system::CheckNonZeroSender::<webb_runtime::Runtime>::new(),
