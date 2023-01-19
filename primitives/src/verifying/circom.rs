@@ -133,7 +133,12 @@ impl InstanceVerifier for CircomVerifierBn254 {
 	}
 }
 
+#[cfg(test)]
 mod tests {
+	use super::*;
+	use crate::verifying::ethereum_circom::*;
+	use sp_core::U256;
+
 	#[test]
 	fn verifying_key_serialize_deserialize() {
 		let vk = VerifyingKey {
