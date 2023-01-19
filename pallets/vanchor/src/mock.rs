@@ -140,6 +140,7 @@ type VAnchorVerifierInstance2 = pallet_vanchor_verifier::Instance2;
 impl pallet_vanchor_verifier::Config<VAnchorVerifierInstance2> for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxParameterLength = ConstU32<10000>;
 	type Verifier = CircomVerifierBn254;
 	type WeightInfo = ();
 }
@@ -148,6 +149,7 @@ type HasherInstance1 = pallet_hasher::Instance1;
 impl pallet_hasher::Config<HasherInstance1> for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxParameterLength = ConstU32<10000>;
 	type Hasher = ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
 }
@@ -182,7 +184,31 @@ parameter_types! {
 	pub const MaxDefaultHashes: u32 = 1000;
 }
 
-impl pallet_mt::Config for Test {
+type MerkleInstance1 = pallet_mt::Instance1;
+impl pallet_mt::Config<MerkleInstance1> for Test {
+	type Currency = Balances;
+	type DataDepositBase = LeafDepositBase;
+	type DataDepositPerByte = LeafDepositPerByte;
+	type DefaultZeroElement = DefaultZeroElement;
+	type Element = Element;
+	type MaxEdges = MaxEdges;
+	type MaxDefaultHashes = MaxDefaultHashes;
+	type RuntimeEvent = RuntimeEvent;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Hasher = Hasher1;
+	type LeafIndex = u32;
+	type MaxTreeDepth = MaxTreeDepth;
+	type RootHistorySize = RootHistorySize;
+	type RootIndex = u32;
+	type StringLimit = StringLimit;
+	type TreeDeposit = TreeDeposit;
+	type TreeId = u32;
+	type Two = Two;
+	type WeightInfo = ();
+}
+
+type MerkleInstance2 = pallet_mt::Instance2;
+impl pallet_mt::Config<MerkleInstance2> for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
@@ -335,7 +361,7 @@ parameter_types! {
 }
 
 type VAnchorInstance1 = pallet_vanchor::Instance1;
-impl pallet_vanchor::Config<Instance1> for Test {
+impl pallet_vanchor::Config<VAnchorInstance1> for Test {
 	type Currency = Currencies;
 	type EthereumHasher = Keccak256HasherBn254;
 	type RuntimeEvent = RuntimeEvent;
@@ -355,7 +381,7 @@ impl pallet_vanchor::Config<Instance1> for Test {
 }
 
 type VAnchorInstance2 = pallet_vanchor::Instance2;
-impl pallet_vanchor::Config<Instance2> for Test {
+impl pallet_vanchor::Config<VAnchorInstance2> for Test {
 	type Currency = Currencies;
 	type EthereumHasher = Keccak256HasherBn254;
 	type RuntimeEvent = RuntimeEvent;

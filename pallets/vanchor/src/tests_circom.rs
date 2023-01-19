@@ -8,7 +8,8 @@ use ark_bn254::Bn254;
 use ark_circom::{read_zkey, CircomBuilder, CircomConfig};
 use ark_ff::{BigInteger, PrimeField, ToBytes};
 use ark_groth16::{
-	create_random_proof as prove, generate_random_parameters, verify_proof, ProvingKey,
+	create_random_proof as prove, generate_random_parameters, prepare_verifying_key, verify_proof,
+	ProvingKey,
 };
 use arkworks_native_gadgets::{
 	merkle_tree::{Path, SparseMerkleTree},
@@ -34,7 +35,7 @@ use webb_primitives::{
 	merkle_tree::TreeInspector,
 	types::vanchor::{ExtData, ProofData},
 	utils::compute_chain_id_type,
-	verifying::{CircomError, VerifyingKey},
+	verifying::CircomError,
 	AccountId,
 };
 
@@ -44,23 +45,33 @@ fn setup_environment_with_circom() -> (Vec<u8>, ProvingKey<Bn254>, CircomConfig<
 	let curve = Curve::Bn254;
 	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 	// 1. Setup The Hasher Pallet.
-	assert_ok!(Hasher2::force_set_parameters(RuntimeOrigin::root(), params3.to_bytes()));
+	println!("Setting up the hasher pallet");
+	assert_ok!(Hasher2::force_set_parameters(
+		RuntimeOrigin::root(),
+		params3.to_bytes().try_into().unwrap()
+	));
 	// 2. Initialize MerkleTree pallet.
+	println!("Initializing the merkle tree pallet");
 	<MerkleTree2 as OnInitialize<u64>>::on_initialize(1);
 	// 3. Setup the VerifierPallet
 	//    but to do so, we need to have a VerifyingKey
 
 	// Load the WASM and R1CS for witness and proof generation
 	// Get path to solidity fixtures
+	println!("Setting up the verifier pallet");
 	let wasm_2_2_path = fs::canonicalize(
 		"../../solidity-fixtures/solidity-fixtures/vanchor_2/2/poseidon_vanchor_2_2.wasm",
 	);
 	let r1cs_2_2_path = fs::canonicalize(
 		"../../solidity-fixtures/solidity-fixtures/vanchor_2/2/poseidon_vanchor_2_2.r1cs",
 	);
+	println!("Setting up CircomConfig");
+	println!("wasm_2_2_path: {:?}", wasm_2_2_path);
+	println!("r1cs_2_2_path: {:?}", r1cs_2_2_path);
 	let cfg_2_2 =
 		CircomConfig::<Bn254>::new(wasm_2_2_path.unwrap(), r1cs_2_2_path.unwrap()).unwrap();
 
+	println!("Setting up ZKey");
 	let path_2_2 = "../../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
 	let mut file_2_2 = File::open(path_2_2).unwrap();
 	let (params_2_2, _matrices) = read_zkey(&mut file_2_2).unwrap();
@@ -72,7 +83,7 @@ fn setup_environment_with_circom() -> (Vec<u8>, ProvingKey<Bn254>, CircomConfig<
 	assert_ok!(VAnchorVerifier2::force_set_parameters(
 		RuntimeOrigin::root(),
 		(2, 2),
-		vk_2_2_bytes.clone()
+		vk_2_2_bytes.clone().try_into().unwrap()
 	));
 
 	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
@@ -165,13 +176,13 @@ pub fn setup_circom_zk_circuit(
 	ext_data_hash: Vec<u8>,
 	in_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
 	out_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
-	proving_key: ProvingKey<Bn254>,
+	_proving_key: ProvingKey<Bn254>,
 	neighbor_roots: [Element; ANCHOR_CT - 1],
 	custom_root: Element,
 ) -> Result<(Vec<u8>, Vec<Bn254Fr>), CircomError> {
 	use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystem};
 
-	let (in_indices, in_root_set, _tree, in_paths) =
+	let (in_indices, _in_root_set, _tree, in_paths) =
 		insert_utxos_to_merkle_tree(&in_utxos, neighbor_roots, custom_root);
 
 	let params4 = setup_params::<Bn254Fr>(Curve::Bn254, 5, 4);
@@ -180,7 +191,6 @@ pub fn setup_circom_zk_circuit(
 		.clone()
 		.map(|utxo| utxo.calculate_nullifier(&nullifier_hasher).unwrap());
 
-	// let (in_indices, in_root_set, tree) =
 	let mut builder = CircomBuilder::new(config);
 	// Public inputs
 	// publicAmount, extDataHash, inputNullifier, outputCommitment, chainID, roots
@@ -256,12 +266,10 @@ pub fn setup_circom_zk_circuit(
 
 	let mut rng = thread_rng();
 	// Run a trusted setup
-	// let circom = builder.setup();
-	// let params = generate_random_parameters::<Bn254, _, _>(circom, &mut rng)
-	// 	.map_err(|e| CircomError::ParameterGenerationFailure)?;
-	let circom = builder.build().map_err(|e| CircomError::InvalidBuilderConfig)?;
-	// let vk_key: VerifyingKey = params.vk.clone().into();
-	// println!("VK Length: {}", vk_key.to_bytes().len());
+	let circom = builder.setup();
+	let params = generate_random_parameters::<Bn254, _, _>(circom.clone(), &mut rng)
+		.map_err(|_e| CircomError::ParameterGenerationFailure)?;
+	// let circom = builder.build().map_err(|_e| CircomError::InvalidBuilderConfig)?;
 	let cs = ConstraintSystem::<Bn254Fr>::new_ref();
 	circom.clone().generate_constraints(cs.clone()).unwrap();
 	let is_satisfied = cs.is_satisfied().unwrap();
@@ -274,13 +282,14 @@ pub fn setup_circom_zk_circuit(
 	println!("inputs: {:?}", inputs.len());
 	// Generate the proof
 	let mut proof_bytes = vec![];
-	// let proof = prove(circom, &params, &mut rng).map_err(|e| CircomError::ProvingFailure)?;
-	let proof = prove(circom, &proving_key, &mut rng).map_err(|e| CircomError::ProvingFailure)?;
+	let proof = prove(circom, &params, &mut rng).map_err(|_e| CircomError::ProvingFailure)?;
+	// let proof = prove(circom, &_proving_key, &mut rng).map_err(|_e|
+	// CircomError::ProvingFailure)?;
 	proof.write(&mut proof_bytes).unwrap();
-	// let pvk = prepare_verifying_key(&params.vk);
-	let pvk = proving_key.vk.into();
+	let pvk = prepare_verifying_key(&params.vk);
+	// let pvk = _proving_key.vk.into();
 	let verified =
-		verify_proof(&pvk, &proof, &inputs).map_err(|e| CircomError::VerifyingFailure)?;
+		verify_proof(&pvk, &proof, &inputs).map_err(|_e| CircomError::VerifyingFailure)?;
 
 	assert!(verified, "Proof is not verified");
 
@@ -297,7 +306,7 @@ pub fn create_vanchor(asset_id: u32) -> u32 {
 #[test]
 fn circom_should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
-		let (vk_2_2_bytes, params_2_2, cfg_2_2) = setup_environment_with_circom();
+		let (_, params_2_2, cfg_2_2) = setup_environment_with_circom();
 		let tree_id = create_vanchor(0);
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
@@ -333,7 +342,7 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 			// Mock encryption value, not meant to be used in production
 			output2.to_vec(),
 		);
-
+		println!("ext_data: {:?}", ext_data);
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
 		let custom_root = MerkleTree2::get_default_root(tree_id).unwrap();
@@ -343,7 +352,7 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		.unwrap()
 		.try_into()
 		.unwrap();
-
+		println!("neighbor_roots: {:?}", neighbor_roots);
 		let (proof, public_inputs) = setup_circom_zk_circuit(
 			cfg_2_2,
 			public_amount,

@@ -36,7 +36,7 @@ benchmarks_instance_pallet! {
 		let public_key = vec![0u8;c as usize];
 	}: _(RawOrigin::Signed(owner.clone()), owner.clone(), public_key.clone())
 	verify {
-		assert_last_event::<T, I>(Event::PublicKeyRegistration{owner, public_key}.into());
+		assert_last_event::<T, I>(Event::PublicKeyRegistration{ owner, public_key }.into());
 	}
 }
 

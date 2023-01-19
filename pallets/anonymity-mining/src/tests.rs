@@ -7,7 +7,6 @@ use frame_support::assert_ok;
 use sp_runtime::traits::Zero;
 
 const SEED: u32 = 0;
-const START_TIMESTAMP: u64 = 0;
 const INITIAL_LIQUIDITY: u128 = 10000000;
 const LIQUIDITY: u128 = 20000000;
 const INITIAL_TOTAL_REWARDS_BALANCE: i128 = 30000000;

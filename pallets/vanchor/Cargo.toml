@@ -52,7 +52,8 @@ ark-serialize = { version = "^0.3.0", default-features = false, features = [ "de
 ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", features = ["parallel"] }
 ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
+ark-circom = { git = "https://github.com/gakonst/ark-circom.git", default-features = false, features = ["circom-2"] }
+num-bigint = { version = "0.4", default-features = false, features = ["rand"] }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 
 [features]

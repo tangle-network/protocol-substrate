@@ -43,7 +43,7 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	let curve = Curve::Bn254;
 	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 	// 1. Setup The Hasher Pallet.
-	assert_ok!(HasherPallet::force_set_parameters(
+	assert_ok!(Hasher1::force_set_parameters(
 		RuntimeOrigin::root(),
 		params3.to_bytes().try_into().unwrap()
 	));
