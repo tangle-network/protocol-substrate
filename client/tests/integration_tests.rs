@@ -141,7 +141,6 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	Ok(())
 }
 
-
 async fn make_vanchor_tx(
 	pk_bytes: &[u8],
 	vk_bytes: &[u8],
