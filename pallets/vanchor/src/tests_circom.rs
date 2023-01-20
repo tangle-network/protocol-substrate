@@ -200,7 +200,7 @@ pub fn setup_circom_zk_circuit(
 			BigInt::from_bytes_be(Sign::Plus, &public_amount.to_be_bytes())
 		} else {
 			BigInt::from_bytes_be(Sign::Minus, &(-public_amount).to_be_bytes())
-		}
+		},
 	);
 	builder.push_input("extDataHash", BigInt::from_bytes_be(Sign::Plus, &ext_data_hash));
 	for i in 0..NUM_UTXOS {
@@ -286,7 +286,8 @@ pub fn setup_circom_zk_circuit(
 	// Generate the proof
 	let mut proof_bytes = vec![];
 	let proof = prove(circom, &params, &mut rng).map_err(|_e| CircomError::ProvingFailure)?;
-	// let proof = prove(circom, &_proving_key, &mut rng).map_err(|_e| CircomError::ProvingFailure)?;
+	// let proof = prove(circom, &_proving_key, &mut rng).map_err(|_e|
+	// CircomError::ProvingFailure)?;
 	proof.write(&mut proof_bytes).unwrap();
 	let pvk = prepare_verifying_key(&params.vk);
 	// let pvk = _proving_key.vk.into();
