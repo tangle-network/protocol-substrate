@@ -196,7 +196,11 @@ pub fn setup_circom_zk_circuit(
 	// publicAmount, extDataHash, inputNullifier, outputCommitment, chainID, roots
 	builder.push_input(
 		"publicAmount",
-		BigInt::from_bytes_be(Sign::Plus, &public_amount.to_be_bytes()),
+		if public_amount > 0 {
+			BigInt::from_bytes_be(Sign::Plus, &public_amount.to_be_bytes())
+		} else {
+			BigInt::from_bytes_be(Sign::Minus, &(-public_amount).to_be_bytes())
+		}
 	);
 	builder.push_input("extDataHash", BigInt::from_bytes_be(Sign::Plus, &ext_data_hash));
 	for i in 0..NUM_UTXOS {
