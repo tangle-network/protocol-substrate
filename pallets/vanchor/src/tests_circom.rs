@@ -271,8 +271,8 @@ pub fn setup_circom_zk_circuit(
 	let mut rng = thread_rng();
 	// Run a trusted setup
 	let circom = builder.setup();
-	let params = generate_random_parameters::<Bn254, _, _>(circom.clone(), &mut rng)
-		.map_err(|_e| CircomError::ParameterGenerationFailure)?;
+	// let params = generate_random_parameters::<Bn254, _, _>(circom.clone(), &mut rng)
+	// 	.map_err(|_e| CircomError::ParameterGenerationFailure)?;
 	let circom = builder.build().map_err(|_e| CircomError::InvalidBuilderConfig)?;
 	let cs = ConstraintSystem::<Bn254Fr>::new_ref();
 	circom.clone().generate_constraints(cs.clone()).unwrap();
@@ -285,16 +285,19 @@ pub fn setup_circom_zk_circuit(
 	let inputs = circom.get_public_inputs().unwrap();
 	// Generate the proof
 	let mut proof_bytes = vec![];
-	let proof = prove(circom, &params, &mut rng).map_err(|_e| CircomError::ProvingFailure)?;
-	// let proof = prove(circom, &_proving_key, &mut rng).map_err(|_e|
-	// CircomError::ProvingFailure)?;
+	// let proof = prove(circom, &params, &mut rng).map_err(|_e| CircomError::ProvingFailure)?;
+	let proof = prove(circom, &_proving_key, &mut rng).map_err(|_e| CircomError::ProvingFailure)?;
 	proof.write(&mut proof_bytes).unwrap();
-	let pvk = prepare_verifying_key(&params.vk);
-	// let pvk = _proving_key.vk.into();
+	// let pvk = prepare_verifying_key(&params.vk);
+	let pvk = _proving_key.vk.into();
 	let verified =
 		verify_proof(&pvk, &proof, &inputs).map_err(|_e| CircomError::VerifyingFailure)?;
 
 	assert!(verified, "Proof is not verified");
+
+	// let mut vk_bytes = vec![];
+	// params.vk.write(&mut vk_bytes).unwrap();
+	// println!("generated vk_bytes len: {:?}", vk_bytes.len());
 
 	Ok((proof_bytes, inputs))
 }
