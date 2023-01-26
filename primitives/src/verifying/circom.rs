@@ -1,4 +1,3 @@
-use super::ethereum_circom::{Proof, VerifyingKey, G1, G2};
 use crate::*;
 use ark_bn254::{Bn254, Fr};
 use ark_crypto_primitives::Error;
@@ -53,37 +52,5 @@ impl InstanceVerifier for CircomVerifierBn254 {
 		let proof = ArkProof::deserialize(proof_bytes)?;
 		let res = verify_groth16(&vk.into(), &public_input_field_elts, &proof)?;
 		Ok(res)
-	}
-}
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-	use crate::verifying::ethereum_circom::*;
-	use sp_core::U256;
-
-	#[test]
-	fn verifying_key_serialize_deserialize() {
-		let vk = VerifyingKey {
-			alpha1: G1 { x: U256::from(1), y: U256::from(2) },
-			beta2: G2 { x: [U256::from(3), U256::from(4)], y: [U256::from(5), U256::from(6)] },
-			gamma2: G2 { x: [U256::from(7), U256::from(8)], y: [U256::from(9), U256::from(10)] },
-			delta2: G2 { x: [U256::from(11), U256::from(12)], y: [U256::from(13), U256::from(14)] },
-			ic: vec![
-				G1 { x: U256::from(15), y: U256::from(16) },
-				G1 { x: U256::from(17), y: U256::from(18) },
-				G1 { x: U256::from(19), y: U256::from(20) },
-				G1 { x: U256::from(21), y: U256::from(22) },
-				G1 { x: U256::from(23), y: U256::from(24) },
-			],
-		};
-
-		let vk_bytes = vk.to_bytes();
-		let vk2 = parse_vk_bytes_to_circom_vk(&vk_bytes).unwrap();
-		assert_eq!(vk.alpha1, vk2.alpha1);
-		assert_eq!(vk.beta2, vk2.beta2);
-		assert_eq!(vk.gamma2, vk2.gamma2);
-		assert_eq!(vk.delta2, vk2.delta2);
-		assert_eq!(vk.ic, vk2.ic);
 	}
 }

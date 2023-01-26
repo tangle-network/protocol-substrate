@@ -268,6 +268,15 @@ pub fn setup_circom_zk_circuit(
 		);
 	}
 
+	println!("\n****************\n");
+	// println!("PVK: {:#?}", _proving_key.vk);
+	println!("alpha_g1: {:#?}", _proving_key.vk.alpha_g1.to_string());
+	println!("beta_g2: {:#?}", _proving_key.vk.beta_g2.to_string());
+	println!("delta_g2: {:#?}", _proving_key.vk.delta_g2.to_string());
+	println!("gamma_g2: {:#?}", _proving_key.vk.gamma_g2.to_string());
+	println!("gamma_abc_g1: {:#?}", _proving_key.vk.gamma_abc_g1.iter().map(|x| x.to_string()).collect::<Vec<String>>());
+	println!("\n****************\n");
+
 	let mut rng = thread_rng();
 	// Run a trusted setup
 	let circom = builder.setup();

@@ -3,5 +3,3 @@ pub use arkworks::*;
 
 pub mod circom;
 pub use circom::*;
-
-pub mod ethereum_circom;
