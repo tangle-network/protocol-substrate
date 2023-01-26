@@ -5838,6 +5838,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-benchmarking",
+ "hex",
  "num-bigint",
  "orml-currencies",
  "orml-tokens",

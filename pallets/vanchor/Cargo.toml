@@ -31,6 +31,8 @@ ark-std = { version = "^0.3.0", default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false}
 
 [dev-dependencies]
+hex = "0.4"
+rand = "0.8.4"
 serde = { version = "1.0.119" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
@@ -42,7 +44,6 @@ pallet-hasher = { path = "../hasher", default-features = false }
 pallet-vanchor-verifier = { path = "../vanchor-verifier", default-features = false }
 orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
 orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
-rand = "0.8.4"
 arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false}
