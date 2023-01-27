@@ -269,31 +269,45 @@ pub fn setup_circom_zk_circuit(
 	}
 
 	println!("\n****************\n");
-	// println!("PVK: {:#?}", _proving_key.vk);
-	let mut alpha_g1_bytes = vec![];
-	_proving_key.vk.alpha_g1.write(&mut alpha_g1_bytes).unwrap();
-	println!("alpha_g1: {:#?}", hex::encode(alpha_g1_bytes));
-
-	let mut beta_g2_bytes = vec![];
-	_proving_key.vk.beta_g2.write(&mut beta_g2_bytes).unwrap();
-	println!("beta_g2: {:#?}", hex::encode(beta_g2_bytes));
-	
-	let mut delta_g2_bytes = vec![];
-	_proving_key.vk.delta_g2.write(&mut delta_g2_bytes).unwrap();
-	println!("delta_g2: {:#?}", hex::encode(delta_g2_bytes));
-
-	let mut gamma_g2_bytes = vec![];
-	_proving_key.vk.gamma_g2.write(&mut gamma_g2_bytes).unwrap();
-	println!("gamma_g2: {:#?}", hex::encode(gamma_g2_bytes));
-	
-	let mut gamma_abc_g1_bytes = vec![];
-	for i in 0.._proving_key.vk.gamma_abc_g1.len() {
-		let mut gamma_abc_g1_i_bytes = vec![];
-		_proving_key.vk.gamma_abc_g1[i].write(&mut gamma_abc_g1_i_bytes).unwrap();
-		gamma_abc_g1_bytes.push(hex::encode(gamma_abc_g1_i_bytes));
-	}
-	println!("gamma_abc_g1: {:#?}", gamma_abc_g1_bytes);
+	println!("alpha_g1 x: {:#?}", _proving_key.vk.alpha_g1.x.to_string());
+	println!("alpha_g1 y: {:#?}", _proving_key.vk.alpha_g1.y.to_string());
+	println!("beta_g2 x: {:#?}", _proving_key.vk.beta_g2.x.to_string());
+	println!("beta_g2 y: {:#?}", _proving_key.vk.beta_g2.y.to_string());
+	println!("delta_g2 x: {:#?}", _proving_key.vk.delta_g2.x.to_string());
+	println!("delta_g2 y: {:#?}", _proving_key.vk.delta_g2.y.to_string());
+	println!("gamma_g2 x: {:#?}", _proving_key.vk.gamma_g2.x.to_string());
+	println!("gamma_g2 y: {:#?}", _proving_key.vk.gamma_g2.y.to_string());
+	println!("gamma_abc_g1 x|y: {:#?}", _proving_key.vk.gamma_abc_g1.iter().map(|a|
+		(a.x.to_string(), a.y.to_string())
+	).collect::<Vec<(String, String)>>());
 	println!("\n****************\n");
+
+	// println!("\n****************\n");
+	// // println!("PVK: {:#?}", _proving_key.vk);
+	// let mut alpha_g1_bytes = vec![];
+	// _proving_key.vk.alpha_g1.write(&mut alpha_g1_bytes).unwrap();
+	// println!("alpha_g1: {:#?}", hex::encode(alpha_g1_bytes));
+
+	// let mut beta_g2_bytes = vec![];
+	// _proving_key.vk.beta_g2.write(&mut beta_g2_bytes).unwrap();
+	// println!("beta_g2: {:#?}", hex::encode(beta_g2_bytes));
+	
+	// let mut delta_g2_bytes = vec![];
+	// _proving_key.vk.delta_g2.write(&mut delta_g2_bytes).unwrap();
+	// println!("delta_g2: {:#?}", hex::encode(delta_g2_bytes));
+
+	// let mut gamma_g2_bytes = vec![];
+	// _proving_key.vk.gamma_g2.write(&mut gamma_g2_bytes).unwrap();
+	// println!("gamma_g2: {:#?}", hex::encode(gamma_g2_bytes));
+	
+	// let mut gamma_abc_g1_bytes = vec![];
+	// for i in 0.._proving_key.vk.gamma_abc_g1.len() {
+	// 	let mut gamma_abc_g1_i_bytes = vec![];
+	// 	_proving_key.vk.gamma_abc_g1[i].write(&mut gamma_abc_g1_i_bytes).unwrap();
+	// 	gamma_abc_g1_bytes.push(hex::encode(gamma_abc_g1_i_bytes));
+	// }
+	// println!("gamma_abc_g1: {:#?}", gamma_abc_g1_bytes);
+	// println!("\n****************\n");
 
 	let mut rng = thread_rng();
 	// Run a trusted setup
