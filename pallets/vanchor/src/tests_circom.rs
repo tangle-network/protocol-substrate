@@ -4,12 +4,15 @@ use crate::{
 	tests::*,
 	Instance2,
 };
-use ark_bn254::Bn254;
+use ark_bn254::{
+	Bn254, Fq as ArkFq, Fq2 as ArkFq2, Fr as ArkFr, G1Affine as ArkG1Affine,
+	G1Projective as ArkG1Projective, G2Affine as ArkG2Affine, G2Projective as ArkG2Projective,
+};
 use ark_circom::{read_zkey, CircomBuilder, CircomConfig};
 use ark_ff::{BigInteger, PrimeField, ToBytes};
 use ark_groth16::{
 	create_random_proof as prove, generate_random_parameters, prepare_verifying_key, verify_proof,
-	ProvingKey,
+	Proof, ProvingKey,
 };
 use arkworks_native_gadgets::{
 	merkle_tree::{Path, SparseMerkleTree},
@@ -40,6 +43,14 @@ use webb_primitives::{
 };
 
 type Bn254Fr = ark_bn254::Fr;
+pub type MyCurve = Bn254;
+pub type Fr = ArkFr;
+pub type Fq = ArkFq;
+pub type Fq2 = ArkFq2;
+pub type G1Affine = ArkG1Affine;
+pub type G1Projective = ArkG1Projective;
+pub type G2Affine = ArkG2Affine;
+pub type G2Projective = ArkG2Projective;
 
 fn setup_environment_with_circom() -> (Vec<u8>, ProvingKey<Bn254>, CircomConfig<Bn254>) {
 	let curve = Curve::Bn254;
@@ -277,9 +288,15 @@ pub fn setup_circom_zk_circuit(
 	println!("delta_g2 y: {:#?}", _proving_key.vk.delta_g2.y.to_string());
 	println!("gamma_g2 x: {:#?}", _proving_key.vk.gamma_g2.x.to_string());
 	println!("gamma_g2 y: {:#?}", _proving_key.vk.gamma_g2.y.to_string());
-	println!("gamma_abc_g1 x|y: {:#?}", _proving_key.vk.gamma_abc_g1.iter().map(|a|
-		(a.x.to_string(), a.y.to_string())
-	).collect::<Vec<(String, String)>>());
+	println!(
+		"gamma_abc_g1 x|y: {:#?}",
+		_proving_key
+			.vk
+			.gamma_abc_g1
+			.iter()
+			.map(|a| (a.x.to_string(), a.y.to_string()))
+			.collect::<Vec<(String, String)>>()
+	);
 	println!("\n****************\n");
 
 	// println!("\n****************\n");
@@ -291,7 +308,7 @@ pub fn setup_circom_zk_circuit(
 	// let mut beta_g2_bytes = vec![];
 	// _proving_key.vk.beta_g2.write(&mut beta_g2_bytes).unwrap();
 	// println!("beta_g2: {:#?}", hex::encode(beta_g2_bytes));
-	
+
 	// let mut delta_g2_bytes = vec![];
 	// _proving_key.vk.delta_g2.write(&mut delta_g2_bytes).unwrap();
 	// println!("delta_g2: {:#?}", hex::encode(delta_g2_bytes));
@@ -299,7 +316,7 @@ pub fn setup_circom_zk_circuit(
 	// let mut gamma_g2_bytes = vec![];
 	// _proving_key.vk.gamma_g2.write(&mut gamma_g2_bytes).unwrap();
 	// println!("gamma_g2: {:#?}", hex::encode(gamma_g2_bytes));
-	
+
 	// let mut gamma_abc_g1_bytes = vec![];
 	// for i in 0.._proving_key.vk.gamma_abc_g1.len() {
 	// 	let mut gamma_abc_g1_i_bytes = vec![];
@@ -457,5 +474,92 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		// money to the mixer
 		let transactor_balance_after = Balances::free_balance(transactor);
 		assert_eq!(transactor_balance_after, transactor_balance_before - ext_amount.unsigned_abs());
+	});
+}
+
+#[test]
+fn circom_should_complete_toy_verification() {
+	// use std::path::Path;
+	new_test_ext().execute_with(|| {
+		let cfg = CircomConfig::<Bn254>::new("./tmp/test_js/test.wasm", "./tmp/test.r1cs").unwrap();
+
+		// Insert inputs as key value pairs
+		let mut builder = CircomBuilder::new(cfg);
+		builder.push_input("a", 3);
+		builder.push_input("b", 5);
+		builder.push_input("c", 15);
+
+		println!("builder created");
+
+		// Create an empty instance for setting it up
+		let _circom = builder.setup();
+		let circom = builder.build().unwrap();
+		println!("builder setup");
+
+		let inputs = circom.get_public_inputs().unwrap();
+		println!("INPUTS:::::: {:?}", inputs);
+
+		let zkey_path = "./tmp/circuit_final.zkey";
+		let mut zkey_file = File::open(zkey_path).unwrap();
+		let (params, _matrices) = read_zkey(&mut zkey_file).unwrap();
+		let mut rng = thread_rng();
+		// generating random proof just to see struct
+		let proof = prove(circom, &params, &mut rng)
+			.map_err(|_e| CircomError::ProvingFailure)
+			.unwrap();
+
+		println!("Proof: {:?}", proof);
+		let mut buf = Vec::new();
+		proof.a.write(&mut buf).unwrap();
+		let pi_a_x_hex = "27322DA7BCFECADD2FD3F280230A03564F83AA0FBE5DE6EFA6E364E7DA63EBA3";
+		let pi_a_x_raw = hex::decode(pi_a_x_hex).expect("Decoding failed");
+		let pi_a_y_hex = "1919B6EC96FD0E1D118FFCA49B5551CCED56D68F4161881F6D8B02604392CDC0";
+		let pi_a_y_raw = hex::decode(pi_a_y_hex).expect("Decoding failed");
+		let pi_a_x_be = Fq::from_be_bytes_mod_order(&pi_a_x_raw);
+		let pi_a_y_be = Fq::from_be_bytes_mod_order(&pi_a_y_raw);
+		let pi_a = G1Affine::new(pi_a_x_be, pi_a_y_be, false);
+
+		let pi_b_x_c0_hex = "2D779A024FD408E7A985C0480E166CA97C61F880C543E08DB99CB9984837C8E1";
+		let pi_b_x_c0_raw = hex::decode(pi_b_x_c0_hex).expect("Decoding failed");
+		let pi_b_x_c1_hex = "1039EA79647F2172B2108C4C29DB8D1F3E1749531BE7B6B3374BD0F8D722D01F";
+		let pi_b_x_c1_raw = hex::decode(pi_b_x_c1_hex).expect("Decoding failed");
+		let pi_b_x_c0 = Fq::from_be_bytes_mod_order(&pi_b_x_c0_raw);
+		let pi_b_x_c1 = Fq::from_be_bytes_mod_order(&pi_b_x_c1_raw);
+		let pi_b_x = Fq2::new(pi_b_x_c0, pi_b_x_c1);
+
+		let pi_b_y_c0_hex = "29AE34DDCBCB4CAD5F82109FFE40E95FABBE968BF44184E88A6E0324883EA3AE";
+		let pi_b_y_c0_raw = hex::decode(pi_b_y_c0_hex).expect("Decoding failed");
+		let pi_b_y_c1_hex = "2FBC231DEF3905F1D3AE3665F5633D2B1D1095643409A58FC56B6296F9A7E208";
+		let pi_b_y_c1_raw = hex::decode(pi_b_y_c1_hex).expect("Decoding failed");
+		let pi_b_y_c0 = Fq::from_be_bytes_mod_order(&pi_b_y_c0_raw);
+		let pi_b_y_c1 = Fq::from_be_bytes_mod_order(&pi_b_y_c1_raw);
+		let pi_b_y = Fq2::new(pi_b_y_c0, pi_b_y_c1);
+		let pi_b = G2Affine::new(pi_b_x, pi_b_y, false);
+
+		let pi_c_x_hex = "1DC3FAA037892281F667784F9FB0988DD229DB92C314097A0898F67CE038070D";
+		let pi_c_x_raw = hex::decode(pi_c_x_hex).expect("Decoding failed");
+		let pi_c_y_hex = "229DB635DFD207D769D7E683C7A3D2A062845D0DB800C5994B126A4DF97B3619";
+		let pi_c_y_raw = hex::decode(pi_c_y_hex).expect("Decoding failed");
+		let pi_c_x_be = Fq::from_be_bytes_mod_order(&pi_c_x_raw);
+		let pi_c_y_be = Fq::from_be_bytes_mod_order(&pi_c_y_raw);
+		let pi_c = G1Affine::new(pi_c_x_be, pi_c_y_be, false);
+
+		let ps_hex = "0000000000000000000000000000000000000000000000000000000000000012";
+		let ps_raw = hex::decode(ps_hex).expect("Decoding failed");
+		let ps = Fr::from_be_bytes_mod_order(&ps_raw);
+
+		println!("pi_a: {}", pi_a);
+		println!("pi_b: {}", pi_b);
+		println!("pi_c: {}", pi_c);
+		println!("ps: {}", ps);
+
+		let pvk = prepare_verifying_key(&params.vk);
+
+		let proof = Proof { a: pi_a, b: pi_b, c: pi_c };
+		let inputs = [ps];
+		println!("NEW PROOF {:?}", &inputs);
+		let verified = verify_proof(&pvk, &proof, &inputs).unwrap();
+		println!("verified {:?}", &verified);
+		assert!(verified);
 	});
 }
