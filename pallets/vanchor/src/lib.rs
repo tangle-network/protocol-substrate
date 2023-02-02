@@ -43,6 +43,8 @@
 #[cfg(test)]
 pub mod mock;
 #[cfg(test)]
+mod proof_error;
+#[cfg(test)]
 mod test_utils;
 #[cfg(test)]
 mod tests;

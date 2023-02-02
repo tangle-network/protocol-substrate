@@ -1,5 +1,6 @@
 use crate::{
 	mock::*,
+	proof_error::{self, *},
 	test_utils::{deconstruct_public_inputs_el, setup_utxos, ANCHOR_CT, DEFAULT_LEAF, NUM_UTXOS},
 	tests::*,
 	Instance2,
@@ -8,12 +9,14 @@ use ark_bn254::{
 	Bn254, Fq as ArkFq, Fq2 as ArkFq2, Fr as ArkFr, G1Affine as ArkG1Affine,
 	G1Projective as ArkG1Projective, G2Affine as ArkG2Affine, G2Projective as ArkG2Projective,
 };
-use ark_circom::{read_zkey, CircomBuilder, CircomConfig};
-use ark_ff::{BigInteger, PrimeField, ToBytes};
+use ark_circom::{read_zkey, CircomBuilder, CircomConfig, CircomReduction, WitnessCalculator};
+use ark_ff::{BigInteger, BigInteger256, PrimeField, ToBytes};
 use ark_groth16::{
-	create_random_proof as prove, generate_random_parameters, prepare_verifying_key, verify_proof,
-	Proof, ProvingKey,
+	create_proof_with_reduction_and_matrices, create_random_proof as prove,
+	generate_random_parameters, prepare_verifying_key, verify_proof, Proof, ProvingKey,
 };
+use ark_relations::r1cs::ConstraintMatrices;
+use ark_std::UniformRand;
 use arkworks_native_gadgets::{
 	merkle_tree::{Path, SparseMerkleTree},
 	poseidon::Poseidon,
@@ -25,14 +28,18 @@ use arkworks_setups::{
 };
 use frame_benchmarking::account;
 use frame_support::{assert_ok, traits::OnInitialize};
-use num_bigint::{BigInt, Sign};
+use num_bigint::{BigInt, BigUint, Sign};
+use once_cell::sync::OnceCell;
 use pallet_linkable_tree::LinkableTreeConfigration;
 use rand::thread_rng;
 use sp_core::hashing::keccak_256;
 use std::{
 	convert::TryInto,
 	fs::{self, File},
+	sync::Mutex,
+	time::Instant,
 };
+use wasmer::{Module, Store};
 use webb_primitives::{
 	linkable_tree::LinkableTreeInspector,
 	merkle_tree::TreeInspector,
@@ -51,6 +58,219 @@ pub type G1Affine = ArkG1Affine;
 pub type G1Projective = ArkG1Projective;
 pub type G2Affine = ArkG2Affine;
 pub type G2Projective = ArkG2Projective;
+
+#[cfg(not(target_arch = "wasm32"))]
+static WITNESS_CALCULATOR: OnceCell<Mutex<WitnessCalculator>> = OnceCell::new();
+static WASM_FILENAME: &str = "test.wasm";
+// static WASM_FILENAME = "test.wasm";
+
+// Initializes the witness calculator using a bytes vector
+#[cfg(not(target_arch = "wasm32"))]
+pub fn circom_from_raw(wasm_buffer: Vec<u8>) -> &'static Mutex<WitnessCalculator> {
+	WITNESS_CALCULATOR.get_or_init(|| {
+		let store = Store::default();
+		let module = Module::new(&store, wasm_buffer).unwrap();
+		let result =
+			WitnessCalculator::from_module(module).expect("Failed to create witness calculator");
+		Mutex::new(result)
+	})
+}
+
+// Initializes the witness calculator
+#[cfg(not(target_arch = "wasm32"))]
+pub fn circom_from_folder(resources_folder: &str) -> &'static Mutex<WitnessCalculator> {
+	// We read the wasm file
+	let wasm_path = format!("{resources_folder}{WASM_FILENAME}");
+	println!("wasm_path: {}", wasm_path);
+	// std::fs::e
+	let wasm_buffer = std::fs::read(&wasm_path).unwrap();
+	circom_from_raw(wasm_buffer)
+}
+
+pub fn to_bigint(el: &Fr) -> BigInt {
+	let res: BigUint = (*el).try_into().unwrap();
+	res.try_into().unwrap()
+}
+
+pub struct WitnessInput {
+	a: Fr,
+	b: Fr,
+	c: Fr,
+}
+pub fn inputs_for_witness_calculation(witness: &WitnessInput) -> [(String, Vec<BigInt>); 3] {
+	[
+		("a".to_string(), vec![to_bigint(&witness.a)]),
+		("b".to_string(), vec![to_bigint(&witness.b)]),
+		("c".to_string(), vec![to_bigint(&witness.c)]),
+	]
+}
+/// Generates a toy proof
+/// Returns a [`ProofError`] if proving fails.
+pub fn generate_proof(
+	#[cfg(not(target_arch = "wasm32"))] witness_calculator: &Mutex<WitnessCalculator>,
+	#[cfg(target_arch = "wasm32")] witness_calculator: &mut WitnessCalculator,
+	proving_key: &(ProvingKey<MyCurve>, ConstraintMatrices<Fr>),
+	// rln_witness: &WitnessInput,
+	inputs: [(String, Vec<BigInt>); 3], // ) -> Result<Proof<MyCurve>, String> {
+) -> Result<Proof<MyCurve>, ProofError> {
+	// let inputs = inputs_for_witness_calculation(rln_witness);
+
+	let now = Instant::now();
+
+	// cfg_if! {
+	// 	if #[cfg(target_arch = "wasm32")] {
+	// 		let full_assignment = witness_calculator
+	// 		.calculate_witness_element::<Curve, _>(inputs, false)
+	// 		.map_err(ProofError::WitnessError)?;
+	// 	} else {
+	// 		let full_assignment = witness_calculator
+	// 		.lock()
+	// 		.expect("witness_calculator mutex should not get poisoned")
+	// 		.calculate_witness_element::<Curve, _>(inputs, false)
+	// 		.map_err(ProofError::WitnessError)?;
+	// 	}
+	// }
+	let full_assignment = witness_calculator
+		.lock()
+		.expect("witness_calculator mutex should not get poisoned")
+		.calculate_witness_element::<MyCurve, _>(inputs, false)
+		.map_err(|_e| proof_error::ProofError::WitnessGenerationError)?;
+	// .map_err(ProofError::WitnessError)?;
+
+	#[cfg(debug_assertions)]
+	println!("witness generation took: {:.2?}", now.elapsed());
+
+	// Random Values
+	let mut rng = thread_rng();
+	let r = Fr::rand(&mut rng);
+	let s = Fr::rand(&mut rng);
+
+	// If in debug mode, we measure and later print time take to compute proof
+	#[cfg(debug_assertions)]
+	let now = Instant::now();
+
+	let proof = create_proof_with_reduction_and_matrices::<_, CircomReduction>(
+		&proving_key.0,
+		r,
+		s,
+		&proving_key.1,
+		proving_key.1.num_instance_variables,
+		proving_key.1.num_constraints,
+		full_assignment.as_slice(),
+	)
+	.map_err(|_e| proof_error::ProofError::WitnessGenerationError)?;
+
+	println!("proof generation took: {:.2?}", now.elapsed());
+
+	Ok(proof)
+}
+
+// pub fn generate_proof_with_witness(
+// 	witness: Vec<BigInt>,
+// 	proving_key: &(ProvingKey<MyCurve>, ConstraintMatrices<Fr>),
+// ) -> Result<Proof<MyCurve>, ProofError> {
+// 	// If in debug mode, we measure and later print time take to compute witness
+// 	#[cfg(debug_assertions)]
+// 	let now = Instant::now();
+//
+// 	let full_assignment = calculate_witness_element::<Curve>(witness)
+// 		.map_err(ProofError::WitnessError)
+// 		.unwrap();
+//
+// 	#[cfg(debug_assertions)]
+// 	println!("witness generation took: {:.2?}", now.elapsed());
+//
+// 	// Random Values
+// 	let mut rng = thread_rng();
+// 	let r = Fr::rand(&mut rng);
+// 	let s = Fr::rand(&mut rng);
+//
+// 	// If in debug mode, we measure and later print time take to compute proof
+// 	#[cfg(debug_assertions)]
+// 	let now = Instant::now();
+//
+// 	let proof = create_proof_with_reduction_and_matrices::<_, CircomReduction>(
+// 		&proving_key.0,
+// 		r,
+// 		s,
+// 		&proving_key.1,
+// 		proving_key.1.num_instance_variables,
+// 		proving_key.1.num_constraints,
+// 		full_assignment.as_slice(),
+// 	)
+// 	.unwrap();
+//
+// 	#[cfg(debug_assertions)]
+// 	println!("proof generation took: {:.2?}", now.elapsed());
+//
+// 	Ok(proof)
+// }
+
+// struct WitnessInput {
+// 	a: Fr,
+// 	b: Fr,
+// 	c: Fr,
+// }
+/// Generates a proof
+///
+/// # Errors
+///
+/// Returns a [`ProofError`] if proving fails.
+// pub fn generate_proof(
+// 	#[cfg(not(target_arch = "wasm32"))] witness_calculator: &Mutex<WitnessCalculator>,
+// 	// #[cfg(target_arch = "wasm32")] witness_calculator: &mut WitnessCalculator,
+// 	proving_key: &(ProvingKey<MyCurve>, ConstraintMatrices<Fr>),
+// 	witness: WitnessInput,
+// ) -> Result<ArkProof<MyCurve>, ProofError> {
+// 	let inputs = inputs_for_witness_calculation(witness)
+// 		.into_iter()
+// 		.map(|(name, values)| (name.to_string(), values));
+//
+// 	// If in debug mode, we measure and later print time take to compute witness
+// 	#[cfg(debug_assertions)]
+// 	let now = Instant::now();
+//
+// 	cfg_if! {
+// 		if #[cfg(target_arch = "wasm32")] {
+// 			let full_assignment = witness_calculator
+// 			.calculate_witness_element::<Curve, _>(inputs, false)
+// 			.map_err(ProofError::WitnessError)?;
+// 		} else {
+// 			let full_assignment = witness_calculator
+// 			.lock()
+// 			.expect("witness_calculator mutex should not get poisoned")
+// 			.calculate_witness_element::<Curve, _>(inputs, false)
+// 			.map_err(ProofError::WitnessError)?;
+// 		}
+// 	}
+//
+// 	#[cfg(debug_assertions)]
+// 	println!("witness generation took: {:.2?}", now.elapsed());
+//
+// 	// Random Values
+// 	let mut rng = thread_rng();
+// 	let r = Fr::rand(&mut rng);
+// 	let s = Fr::rand(&mut rng);
+//
+// 	// If in debug mode, we measure and later print time take to compute proof
+// 	#[cfg(debug_assertions)]
+// 	let now = Instant::now();
+//
+// 	let proof = create_proof_with_reduction_and_matrices::<_, CircomReduction>(
+// 		&proving_key.0,
+// 		r,
+// 		s,
+// 		&proving_key.1,
+// 		proving_key.1.num_instance_variables,
+// 		proving_key.1.num_constraints,
+// 		full_assignment.as_slice(),
+// 	)?;
+//
+// 	#[cfg(debug_assertions)]
+// 	println!("proof generation took: {:.2?}", now.elapsed());
+//
+// 	Ok(proof)
+// }
 
 fn setup_environment_with_circom() -> (Vec<u8>, ProvingKey<Bn254>, CircomConfig<Bn254>) {
 	let curve = Curve::Bn254;
@@ -478,7 +698,7 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 }
 
 #[test]
-fn circom_should_complete_toy_verification() {
+fn circom_should_verify_hardcoded_proof() {
 	// use std::path::Path;
 	new_test_ext().execute_with(|| {
 		let cfg = CircomConfig::<Bn254>::new("./tmp/test_js/test.wasm", "./tmp/test.r1cs").unwrap();
@@ -562,4 +782,37 @@ fn circom_should_complete_toy_verification() {
 		println!("verified {:?}", &verified);
 		assert!(verified);
 	});
+}
+
+#[test]
+fn circom_should_verify_toy_circuit() {
+	// use std::path::Path;
+	new_test_ext().execute_with(|| {
+		let wasm_path = format!("./tmp/test_js/test.wasm");
+		let zkey_path = format!("./tmp/circuit_final.zkey");
+		let wasm_buffer = std::fs::read(&wasm_path).unwrap();
+		let circom = circom_from_raw(wasm_buffer);
+		println!("Circom: {circom:?}");
+		let mut file = File::open(&zkey_path).unwrap();
+		let proving_key_and_matrices = read_zkey(&mut file).unwrap();
+		let a = Fr::new(BigInteger256::from(3u64));
+		let b = Fr::new(BigInteger256::from(5u64));
+		let c = Fr::new(BigInteger256::from(15u64));
+		let witness_input = WitnessInput { a, b, c };
+		//
+		let inputs = inputs_for_witness_calculation(&witness_input);
+		let result = generate_proof(circom, &proving_key_and_matrices, inputs).unwrap();
+
+		println!("Result!: {result:?}");
+
+		let pvk = prepare_verifying_key(&proving_key_and_matrices.0.vk);
+		let inputs = vec![witness_input.a, witness_input.b, witness_input.c];
+		let verified = verify_proof(&pvk, &result, inputs.as_slice())
+			.map_err(|_e| CircomError::VerifyingFailure)
+			.unwrap();
+
+		let tmp = circom.lock().unwrap();
+		println!("Circom: {:?}", tmp);
+		println!("verified!: {verified:?}");
+	})
 }
