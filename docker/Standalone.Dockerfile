@@ -12,7 +12,7 @@ COPY . .
 
 # Build Standalone Node.
 RUN dvc pull -f 
-RUN cargo build --release 
+RUN cargo build --release -p webb-standalone-node
 
 # This is the 2nd stage: a very small image where we copy the Node binary."
 
