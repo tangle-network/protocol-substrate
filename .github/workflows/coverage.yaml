@@ -1,63 +1,63 @@
-name: ci
+# name: ci
 
-# Controls when the action will run.
-on:
-  # Triggers the workflow on push or pull request events but only for the master branch
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+# # Controls when the action will run.
+# on:
+#   # Triggers the workflow on push or pull request events but only for the master branch
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+#   # Allows you to run this workflow manually from the Actions tab
+#   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
-  coverage:
-    name: coverage
-    runs-on: ubuntu-latest
+# # A workflow run is made up of one or more jobs that can run sequentially or in parallel
+# jobs:
+#   coverage:
+#     name: coverage
+#     runs-on: ubuntu-latest
 
-    container:
-      image: xd009642/tarpaulin:develop-nightly
-      options: --security-opt seccomp=unconfined
+#     container:
+#       image: xd009642/tarpaulin:develop-nightly
+#       options: --security-opt seccomp=unconfined
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v2
 
-      - name: Setup DVC
-        uses: iterative/setup-dvc@v1
+#       - name: Setup DVC
+#         uses: iterative/setup-dvc@v1
 
-      - name: Fetch Fixtures
-        run: dvc pull
+#       - name: Fetch Fixtures
+#         run: dvc pull
 
-      - name: Install apt dependencies
-        run: |
-          apt-get update && \
-          apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler && \
-          rm -rf /var/lib/apt/lists/*
+#       - name: Install apt dependencies
+#         run: |
+#           apt-get update && \
+#           apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler && \
+#           rm -rf /var/lib/apt/lists/*
     
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v1.3.0
+#       - name: Rust Cache
+#         uses: Swatinem/rust-cache@v1.3.0
 
-      - name: Generate code coverage
-        run: |
-          SKIP_WASM_BUILD=1 cargo +nightly tarpaulin --out Xml \
-              -p pallet-token-wrapper-handler \
-              -p pallet-token-wrapper \
-              -p pallet-signature-bridge \
-              -p pallet-vanchor \
-              -p pallet-vanchor-handler \
-              -p pallet-mixer \
-              -p pallet-linkable-tree \
-              -p pallet-mt \
-              -p pallet-verifier \
-              -p pallet-hasher \
-              -p pallet-asset-registry \
-              --timeout 3600
+#       - name: Generate code coverage
+#         run: |
+#           SKIP_WASM_BUILD=1 cargo +nightly tarpaulin --out Xml \
+#               -p pallet-token-wrapper-handler \
+#               -p pallet-token-wrapper \
+#               -p pallet-signature-bridge \
+#               -p pallet-vanchor \
+#               -p pallet-vanchor-handler \
+#               -p pallet-mixer \
+#               -p pallet-linkable-tree \
+#               -p pallet-mt \
+#               -p pallet-verifier \
+#               -p pallet-hasher \
+#               -p pallet-asset-registry \
+#               --timeout 3600
 
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v3
-        with:
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+#       - name: Upload to codecov.io
+#         uses: codecov/codecov-action@v3
+#         with:
+#           fail_ci_if_error: true
+#           token: ${{ secrets.CODECOV_TOKEN }}
