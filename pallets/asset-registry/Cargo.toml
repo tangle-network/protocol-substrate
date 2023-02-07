@@ -40,6 +40,7 @@ webb-primitives = { path = "../../primitives", default-features = false }
 [features]
 default = ["std"]
 runtime-benchmarks = [
+  "frame-benchmarking",
   "frame-system/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
 ]

@@ -65,7 +65,7 @@ fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u
 fn set_maintainer_on_chain<T: Config<I>, I: 'static>(pub_key: sp_core::ecdsa::Public) -> Vec<u8> {
 	let maintainer_key =
 		libsecp256k1::PublicKey::parse_compressed(&pub_key.0).unwrap().serialize()[1..].to_vec();
-	Maintainer::<T, _>::put(maintainer_key.clone());
+	Maintainer::<T, _>::put(maintainer_key.clone().try_into().unwrap());
 	maintainer_key
 }
 
@@ -90,9 +90,9 @@ benchmarks_instance_pallet! {
 	force_set_maintainer {
 		let caller: T::AccountId = whitelisted_caller();
 		let new_maintainer = ecdsa_generate(DUMMY, None);
-	}: _(RawOrigin::Root, new_maintainer.encode())
+	}: _(RawOrigin::Root, new_maintainer.encode().try_into().unwrap())
 	verify {
-		assert_last_event::<T, I>(Event::MaintainerSet{old_maintainer: Default::default(), new_maintainer: new_maintainer.encode()}.into());
+		assert_last_event::<T, I>(Event::MaintainerSet{old_maintainer: Default::default(), new_maintainer: new_maintainer.encode().try_into().unwrap()}.into());
 	}
 
 	set_resource {

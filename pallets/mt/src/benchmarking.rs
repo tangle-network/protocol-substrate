@@ -49,7 +49,7 @@ benchmarks_instance_pallet! {
 
 	create {
 		let d in 1..<T as pallet::Config<I>>::MaxTreeDepth::get() as u32;
-		pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params()).unwrap();
+		pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params().try_into().unwrap()).unwrap();
 		let caller: T::AccountId = whitelisted_caller();
 		<<T as pallet::Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller, BalanceOf::<T, I>::max_value());
 		let tree_id = Pallet::<T, I>::next_tree_id();
@@ -61,7 +61,7 @@ benchmarks_instance_pallet! {
 
 	insert {
 		let caller: T::AccountId = whitelisted_caller();
-		pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params()).unwrap();
+		pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params().try_into().unwrap()).unwrap();
 		let tree_id: T::TreeId = <Pallet<T, I> as TreeInterface<_,_,_>>::create(Some(caller.clone()), T::MaxTreeDepth::get()).unwrap();
 		let leaf_index = Pallet::<T, I>::next_leaf_index(tree_id);
 		let element: T::Element = T::DefaultZeroElement::get();

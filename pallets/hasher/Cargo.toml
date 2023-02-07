@@ -54,6 +54,7 @@ std = [
 	"webb-primitives/hashing",
 ]
 runtime-benchmarks = [
+	"frame-benchmarking",
 	"frame-system/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 ]
