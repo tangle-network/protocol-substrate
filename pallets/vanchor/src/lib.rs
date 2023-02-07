@@ -342,7 +342,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[transactional]
+		
 		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::transact())]
 		#[pallet::call_index(1)]
 		pub fn transact(
@@ -356,7 +356,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[transactional]
+		
 		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::register_and_transact())]
 		#[pallet::call_index(2)]
 		pub fn register_and_transact(

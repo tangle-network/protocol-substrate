@@ -1153,7 +1153,6 @@ impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
 	type Two = Two;
 	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
 }
-
 parameter_types! {
 	pub const MaxParameterLength : u32 = 1000;
 }

@@ -242,7 +242,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[transactional]
+		
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
 		#[pallet::call_index(1)]
 		pub fn deposit(
@@ -256,7 +256,7 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[transactional]
+		
 		#[pallet::weight(<T as Config<I>>::WeightInfo::withdraw())]
 		#[pallet::call_index(2)]
 		pub fn withdraw(

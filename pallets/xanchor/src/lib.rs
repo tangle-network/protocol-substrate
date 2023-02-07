@@ -318,7 +318,7 @@ pub mod pallet {
 
 		/// **Note**: This method requires the `origin` to be a sibling
 		/// parachain.
-		#[transactional]
+		
 		#[pallet::weight(0)]
 		#[pallet::call_index(2)]
 		pub fn save_link_proposal(
