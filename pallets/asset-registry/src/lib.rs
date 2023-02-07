@@ -269,7 +269,7 @@ pub mod pallet {
 		/// Emits 'Registered` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::register())]
 		#[pallet::call_index(0)]
-		
+
 		pub fn register(
 			origin: OriginFor<T>,
 			name: BoundedVec<u8, T::StringLimit>,
@@ -295,7 +295,7 @@ pub mod pallet {
 		// TODO: No tests
 		#[pallet::weight(<T as Config>::WeightInfo::update())]
 		#[pallet::call_index(1)]
-		
+
 		pub fn update(
 			origin: OriginFor<T>,
 			asset_id: T::AssetId,
@@ -340,7 +340,7 @@ pub mod pallet {
 		/// Emits `MetadataSet` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::set_metadata())]
 		#[pallet::call_index(2)]
-		
+
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			asset_id: T::AssetId,
@@ -373,7 +373,7 @@ pub mod pallet {
 		/// Emits `LocationSet` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::set_location())]
 		#[pallet::call_index(3)]
-		
+
 		pub fn set_location(
 			origin: OriginFor<T>,
 			asset_id: T::AssetId,

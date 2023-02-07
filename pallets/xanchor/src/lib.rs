@@ -210,6 +210,8 @@ pub mod pallet {
 		SendingLinkProposalFailed,
 		/// Anchor Link is not found!
 		AnchorLinkNotFound,
+		/// Invalid data for anchor update proposa
+		InvalidAnchorUpdateProposal
 	}
 
 	#[pallet::hooks]
@@ -507,7 +509,7 @@ pub mod pallet {
 
 			// get the anchor update proposal struct from the bytes
 			let anchor_update_proposal =
-				AnchorUpdateProposal::try_from(anchor_update_proposal_bytes).unwrap();
+				AnchorUpdateProposal::try_from(anchor_update_proposal_bytes).ok_or(Error::InvalidAnchorUpdateProposal)?;
 
 			let (src_system, src_chain_id) = utils::parse_resource_id::<T::ChainId>(
 				anchor_update_proposal.header().resource_id().into(),

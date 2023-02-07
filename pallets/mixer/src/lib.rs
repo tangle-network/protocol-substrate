@@ -71,7 +71,7 @@ use frame_support::{
 	ensure, pallet_prelude::DispatchError, sp_runtime::traits::AccountIdConversion, traits::Get,
 	PalletId,
 };
-use orml_traits::{currency::transactional, MultiCurrency};
+use orml_traits::MultiCurrency;
 use sp_std::prelude::*;
 use webb_primitives::{
 	hasher::InstanceHasher,
@@ -242,7 +242,6 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		
 		#[pallet::weight(<T as Config<I>>::WeightInfo::deposit())]
 		#[pallet::call_index(1)]
 		pub fn deposit(
@@ -256,7 +255,6 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		
 		#[pallet::weight(<T as Config<I>>::WeightInfo::withdraw())]
 		#[pallet::call_index(2)]
 		pub fn withdraw(
