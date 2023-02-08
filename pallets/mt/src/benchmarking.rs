@@ -76,7 +76,7 @@ benchmarks_instance_pallet! {
 
 		let default_hashes = vec![<T as pallet::Config<I>>::DefaultZeroElement::get();p as usize];
 
-	}:_(RawOrigin::Root, default_hashes)
+	}:_(RawOrigin::Root, default_hashes.try_into().unwrap())
 	verify {
 		assert_eq!(DefaultHashes::<T, I>::get().len(), p as usize)
 	}

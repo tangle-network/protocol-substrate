@@ -47,7 +47,7 @@ benchmarks_instance_pallet! {
 		let parameters = vec![0u8;c as usize];
 	}: _(RawOrigin::Root, parameters.clone().try_into().unwrap())
 	verify {
-		assert_eq!(Pallet::<T, I>::parameters(), parameters.try_into().unwrap());
+		assert_eq!(Pallet::<T, I>::parameters().into_inner(), parameters);
 	}
 }
 

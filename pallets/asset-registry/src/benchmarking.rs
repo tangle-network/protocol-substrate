@@ -33,7 +33,7 @@ benchmarks! {
 		// In such case, one additional operation is performed to skip the id (aka worst case)
 		assert_eq!(crate::Pallet::<T>::next_asset_id(), T::AssetId::from(0u8));
 
-	}: _(RawOrigin::Root, name.clone(), AssetType::Token, ed)
+	}: _(RawOrigin::Root, name.clone().try_into().unwrap(), AssetType::Token, ed)
 	verify {
 		let bname = crate::Pallet::<T>::to_bounded_name(name).unwrap();
 		assert_eq!(crate::Pallet::<T>::asset_ids(bname), Some(T::AssetId::from(1u8)));
@@ -43,7 +43,7 @@ benchmarks! {
 		let name = b"NAME".to_vec();
 		let ed = T::Balance::from(1_000_000u32);
 		assert_eq!(crate::Pallet::<T>::next_asset_id(), T::AssetId::from(0u8));
-		let _ = crate::Pallet::<T>::register(RawOrigin::Root.into(), name, AssetType::Token, ed);
+		let _ = crate::Pallet::<T>::register(RawOrigin::Root.into(), name.try_into().unwrap(), AssetType::Token, ed);
 
 		let new_name= vec![1; T::StringLimit::get() as usize];
 

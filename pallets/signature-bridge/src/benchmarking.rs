@@ -30,6 +30,7 @@ use webb_primitives::{
 	utils::{compute_chain_id_type, derive_resource_id},
 	webb_proposals::SubstrateTargetSystem,
 };
+use frame_support::BoundedVec;
 
 /// Helper function to test last event
 fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::RuntimeEvent) {
@@ -63,10 +64,10 @@ fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u
 
 /// Helper function to set maintainer on chain
 fn set_maintainer_on_chain<T: Config<I>, I: 'static>(pub_key: sp_core::ecdsa::Public) -> Vec<u8> {
-	let maintainer_key =
-		libsecp256k1::PublicKey::parse_compressed(&pub_key.0).unwrap().serialize()[1..].to_vec();
-	Maintainer::<T, _>::put(maintainer_key.clone().try_into().unwrap());
-	maintainer_key
+	let maintainer_key : BoundedVec<u8, T::MaxStringLength> =
+		libsecp256k1::PublicKey::parse_compressed(&pub_key.0).unwrap().serialize()[1..].to_vec().try_into().unwrap();
+	Maintainer::<T, _>::put(maintainer_key.clone());
+	maintainer_key.into_inner()
 }
 
 /// Return the src_chain_id in correct format
@@ -82,9 +83,9 @@ benchmarks_instance_pallet! {
 	set_maintainer {
 		let caller: T::AccountId = whitelisted_caller();
 		let (old_maintainer, message, signature) = generate_maintainer_signatures::<T, I>();
-	}: _(RawOrigin::Signed(caller), message.clone(), signature)
+	}: _(RawOrigin::Signed(caller), message.clone().try_into().unwrap(), signature.try_into().unwrap())
 	verify {
-		assert_last_event::<T, I>(Event::MaintainerSet{old_maintainer: old_maintainer, new_maintainer: message}.into());
+		assert_last_event::<T, I>(Event::MaintainerSet{old_maintainer: old_maintainer.try_into().unwrap(), new_maintainer: message.try_into().unwrap()}.into());
 	}
 
 	force_set_maintainer {
@@ -135,7 +136,7 @@ benchmarks_instance_pallet! {
 		let prop_data = make_proposal_data(r_id.encode(), nonce, call_encoded);
 		let msg = keccak_256(&prop_data);
 		let signature = ecdsa_sign_prehashed(DUMMY, &maintainer, &msg).unwrap();
-	}: _(RawOrigin::Signed(caller), src_id.into(), prop_data, signature.encode())
+	}: _(RawOrigin::Signed(caller), src_id.into(), prop_data.try_into().unwrap(), signature.encode().try_into().unwrap())
 	verify {
 		assert_last_event::<T, I>(Event::ProposalSucceeded{chain_id : src_id.into(), proposal_nonce : 1_u32.into()}.into());
 	}
