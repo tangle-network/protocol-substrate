@@ -31,7 +31,7 @@ jobs:
         run: |
           sudo apt-get update && \
           sudo apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler && \
-          rm -rf /var/lib/apt/lists/*
+          sudo rm -rf /var/lib/apt/lists/*
       
       - name: Install cargo-binstall
         run: cargo install cargo-binstall
