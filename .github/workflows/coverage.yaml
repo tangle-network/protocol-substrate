@@ -37,7 +37,7 @@ jobs:
         run: cargo install cargo-binstall
 
       - name: Install Tarpaulin
-        run: cargo binstall tarpaulin
+        run: cargo binstall --no-confirm cargo-tarpaulin
       
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1.3.0
