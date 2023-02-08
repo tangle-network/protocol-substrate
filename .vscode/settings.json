@@ -1,4 +1,0 @@
-{
-  "git.ignoredRepositories": ["open-runtime-module-library"],
-  "rust-analyzer.updates.channel": "stable"
-}

@@ -6,6 +6,7 @@ use crate as pallet_token_wrapper;
 use frame_support::{pallet_prelude::GenesisBuild, parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
+use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -79,12 +80,18 @@ pub type Amount = i128;
 /// Unsigned version of Balance
 pub type Balance = u128;
 
+parameter_types! {
+	#[derive(Copy, Clone, Debug, PartialEq, Eq, TypeInfo)]
+	pub const MaxAssetIdInPool: u32 = 100;
+}
+
 impl asset_registry::Config for Test {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
 	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = NativeAssetId;
+	type MaxAssetIdInPool = MaxAssetIdInPool;
 	type RegistryOrigin = frame_system::EnsureRoot<u64>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
@@ -114,14 +121,9 @@ impl orml_tokens::Config for Test {
 	type DustRemovalWhitelist = Nothing;
 	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposits = AssetRegistry;
-	type OnDust = ();
 	type WeightInfo = ();
 	type MaxLocks = ();
-	type OnNewTokenAccount = ();
-	type OnKilledTokenAccount = ();
-	type OnSlash = ();
-	type OnDeposit = ();
-	type OnTransfer = ();
+	type CurrencyHooks = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 }

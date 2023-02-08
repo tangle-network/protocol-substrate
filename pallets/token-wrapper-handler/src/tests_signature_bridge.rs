@@ -111,7 +111,7 @@ fn should_update_fee_with_sig_succeed() {
 		let existential_balance: u32 = 1000;
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![]),
+			AssetType::PoolShare(Default::default()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -126,8 +126,8 @@ fn should_update_fee_with_sig_succeed() {
 			SignatureBridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
-				wrapping_fee_proposal_bytes.clone(),
-				sig.0.to_vec(),
+				wrapping_fee_proposal_bytes.clone().try_into().unwrap(),
+				sig.0.to_vec().try_into().unwrap(),
 			),
 			pallet_signature_bridge::Error::<Test, _>::InvalidPermissions
 		);
@@ -135,14 +135,14 @@ fn should_update_fee_with_sig_succeed() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
-			wrapping_fee_proposal_bytes,
-			sig.0.to_vec(),
+			wrapping_fee_proposal_bytes.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 
 		assert_eq!(TokenWrapper::get_wrapping_fee(1000_u128, pool_share_id).unwrap(), 52);
@@ -176,7 +176,7 @@ fn should_add_token_with_sig_succeed() {
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![]),
+			AssetType::PoolShare(Default::default()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -190,14 +190,14 @@ fn should_add_token_with_sig_succeed() {
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
-			add_token_proposal_bytes,
-			sig.0.to_vec(),
+			add_token_proposal_bytes.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 		// Check that first_token_id is part of pool
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
@@ -235,7 +235,7 @@ fn should_remove_token_with_sig_succeed() {
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![]),
+			AssetType::PoolShare(vec![].try_into().unwrap()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -250,15 +250,15 @@ fn should_remove_token_with_sig_succeed() {
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 
 		// Create proposal (& vote)
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
-			add_token_proposal_bytes,
-			sig.0.to_vec(),
+			add_token_proposal_bytes.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 		// Check that first_token_id is part of pool
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
@@ -272,8 +272,8 @@ fn should_remove_token_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
-			remove_token_proposal_bytes,
-			sig.0.to_vec(),
+			remove_token_proposal_bytes.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), false);
@@ -307,7 +307,7 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 
 		AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![]),
+			AssetType::PoolShare(Default::default()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -315,7 +315,7 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		let nonce = webb_proposals::Nonce::from(0x0001);
 		let header = make_proposal_header(r_id, REMOVE_TOKEN_FUNCTION_SIG, nonce);
@@ -328,8 +328,8 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 			SignatureBridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
-				remove_token_proposal_bytes,
-				sig.0.to_vec(),
+				remove_token_proposal_bytes.try_into().unwrap(),
+				sig.0.to_vec().try_into().unwrap(),
 			),
 			asset_registry::Error::<Test>::AssetNotFoundInPool
 		);
@@ -377,14 +377,14 @@ fn should_add_many_tokens_with_sig_succeed() {
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![]),
+			AssetType::PoolShare(Default::default()),
 			existential_balance.into(),
 		)
 		.unwrap();
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		let nonce = webb_proposals::Nonce::from(0x0001);
 		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
@@ -397,8 +397,8 @@ fn should_add_many_tokens_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
-			add_token_proposal_bytes,
-			sig.0.to_vec(),
+			add_token_proposal_bytes.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 		let nonce = webb_proposals::Nonce::from(0x0002);
 		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
@@ -412,8 +412,8 @@ fn should_add_many_tokens_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
-			add_token_proposal_bytes,
-			sig.0.to_vec(),
+			add_token_proposal_bytes.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 		let nonce = webb_proposals::Nonce::from(0x0003);
 		let header = make_proposal_header(r_id, ADD_TOKEN_FUNCTION_SIG, nonce);
@@ -427,8 +427,8 @@ fn should_add_many_tokens_with_sig_succeed() {
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
-			add_token_proposal_bytes,
-			sig.0.to_vec(),
+			add_token_proposal_bytes.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 
 		// Check that first_token_id is part of pool
@@ -469,7 +469,7 @@ fn should_fail_to_add_same_token_with_sig() {
 
 		let pool_share_id = AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![]),
+			AssetType::PoolShare(Default::default()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -484,14 +484,14 @@ fn should_fail_to_add_same_token_with_sig() {
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		// Create proposal
 		assert_ok!(SignatureBridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
-			add_token_proposal_bytes,
-			sig.0.to_vec(),
+			add_token_proposal_bytes.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 		// Check that first_token_id is part of pool
 		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
@@ -509,8 +509,8 @@ fn should_fail_to_add_same_token_with_sig() {
 			SignatureBridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
-				add_token_proposal_bytes,
-				sig.0.to_vec(),
+				add_token_proposal_bytes.try_into().unwrap(),
+				sig.0.to_vec().try_into().unwrap(),
 			),
 			asset_registry::Error::<Test>::AssetExistsInPool
 		);
@@ -544,7 +544,7 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 
 		AssetRegistry::register_asset(
 			b"meme".to_vec().try_into().unwrap(),
-			AssetType::PoolShare(vec![]),
+			AssetType::PoolShare(Default::default()),
 			existential_balance.into(),
 		)
 		.unwrap();
@@ -559,15 +559,15 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		// Create proposal (& vote)
 		assert_err!(
 			SignatureBridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
-				add_token_proposal_bytes,
-				sig.0.to_vec(),
+				add_token_proposal_bytes.try_into().unwrap(),
+				sig.0.to_vec().try_into().unwrap(),
 			),
 			asset_registry::Error::<Test>::AssetNotRegistered
 		);

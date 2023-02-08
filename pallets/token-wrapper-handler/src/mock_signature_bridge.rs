@@ -12,7 +12,7 @@ use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
+	traits::{AccountIdConversion, BlakeTwo256, ConstU32, IdentityLookup},
 	Permill,
 };
 use sp_std::convert::{TryFrom, TryInto};
@@ -85,12 +85,18 @@ pub type Amount = i128;
 /// Unsigned version of Balance
 pub type Balance = u128;
 
+parameter_types! {
+	#[derive(Copy, Clone, Debug, PartialEq, Eq, scale_info::TypeInfo)]
+	pub const MaxAssetIdInPool: u32 = 100;
+}
+
 impl asset_registry::Config for Test {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
 	type Balance = u128;
 	type RuntimeEvent = RuntimeEvent;
 	type NativeAssetId = NativeAssetId;
+	type MaxAssetIdInPool = MaxAssetIdInPool;
 	type RegistryOrigin = frame_system::EnsureRoot<u64>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
@@ -120,15 +126,10 @@ impl orml_tokens::Config for Test {
 	type DustRemovalWhitelist = Nothing;
 	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposits = AssetRegistry;
-	type OnDust = ();
 	type WeightInfo = ();
 	type MaxLocks = ();
-	type OnSlash = ();
-	type OnDeposit = ();
-	type OnTransfer = ();
 	type MaxReserves = ();
-	type OnNewTokenAccount = ();
-	type OnKilledTokenAccount = ();
+	type CurrencyHooks = ();
 	type ReserveIdentifier = [u8; 8];
 }
 
@@ -234,8 +235,8 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type ChainId = ChainId;
 	type ChainIdentifier = ChainIdentifier;
 	type ChainType = ChainType;
+	type MaxStringLength = ConstU32<1000>;
 	type RuntimeEvent = RuntimeEvent;
-	type Proposal = RuntimeCall;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = ProposalNonce;
 	type SetResourceProposalFilter = SetResourceProposalFilter;
@@ -243,6 +244,7 @@ impl pallet_signature_bridge::Config<BridgeInstance> for Test {
 	type MaintainerNonce = MaintainerNonce;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();
+	type Proposal = RuntimeCall;
 }
 
 impl Config for Test {

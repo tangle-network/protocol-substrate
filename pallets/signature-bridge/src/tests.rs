@@ -11,12 +11,13 @@ use crate::{
 	mock::new_test_ext_initialized,
 	{self as pallet_bridge},
 };
-use frame_support::{assert_err, assert_ok};
+use frame_support::{assert_err, assert_ok, BoundedVec};
 use hex_literal::hex;
 use sp_core::{
 	ecdsa::{self, Signature},
 	keccak_256, Pair,
 };
+use sp_runtime::traits::ConstU32;
 use webb_primitives::{
 	utils::{compute_chain_id_type, derive_resource_id},
 	webb_proposals::SubstrateTargetSystem,
@@ -70,8 +71,8 @@ fn create_proposal_tests() {
 			Bridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
-				prop_data.clone(),
-				sig.0.to_vec(),
+				prop_data.clone().try_into().unwrap(),
+				sig.0.to_vec().try_into().unwrap(),
 			),
 			Error::<Test>::InvalidPermissions
 		);
@@ -79,14 +80,14 @@ fn create_proposal_tests() {
 		// set the new maintainer
 		assert_ok!(Bridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		// Create proposal (& vote)
 		assert_ok!(Bridge::execute_proposal(
 			RuntimeOrigin::signed(RELAYER_A),
 			src_id,
-			prop_data,
-			sig.0.to_vec(),
+			prop_data.try_into().unwrap(),
+			sig.0.to_vec().try_into().unwrap(),
 		));
 
 		assert_events(vec![
@@ -189,8 +190,8 @@ fn should_fail_to_set_resource_id_when_nonce_increments_by_more_than_1048() {
 			Bridge::set_resource_with_signature(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
-				prop_data,
-				sig.0.to_vec(),
+				prop_data.try_into().unwrap(),
+				sig.0.to_vec().try_into().unwrap(),
 			),
 			Error::<Test>::InvalidNonce
 		);
@@ -212,7 +213,9 @@ fn set_maintainer_should_work() {
 			.to_vec();
 
 	new_test_ext_initialized(1u64, r_id, b"System.remark".to_vec()).execute_with(|| {
-		Maintainer::<Test, _>::put(old_maintainer);
+		let bounded_old_maintainer: BoundedVec<u8, ConstU32<1000>> =
+			old_maintainer.try_into().unwrap();
+		Maintainer::<Test, _>::put(bounded_old_maintainer);
 		let mut message = vec![];
 		let nonce = 1u32.encode();
 		message.extend_from_slice(&nonce);
@@ -221,7 +224,11 @@ fn set_maintainer_should_work() {
 		let sig: Signature = pair.sign_prehashed(&msg);
 
 		// set the new maintainer
-		assert_ok!(Bridge::set_maintainer(RuntimeOrigin::signed(RELAYER_A), message, sig.encode()));
+		assert_ok!(Bridge::set_maintainer(
+			RuntimeOrigin::signed(RELAYER_A),
+			message.try_into().unwrap(),
+			sig.encode().try_into().unwrap()
+		));
 	})
 }
 
@@ -248,7 +255,7 @@ fn should_fail_on_invalid_proposal_call() {
 		// set the new maintainer
 		assert_ok!(Bridge::force_set_maintainer(
 			RuntimeOrigin::root(),
-			public_uncompressed.to_vec()
+			public_uncompressed.to_vec().try_into().unwrap()
 		));
 
 		// should fail to execute proposal as invalid call is provided
@@ -256,8 +263,8 @@ fn should_fail_on_invalid_proposal_call() {
 			Bridge::execute_proposal(
 				RuntimeOrigin::signed(RELAYER_A),
 				src_id,
-				prop_data,
-				sig.0.to_vec(),
+				prop_data.try_into().unwrap(),
+				sig.0.to_vec().try_into().unwrap(),
 			),
 			Error::<Test>::InvalidCall
 		);

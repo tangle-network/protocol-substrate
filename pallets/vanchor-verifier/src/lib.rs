@@ -82,7 +82,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
+
 	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
@@ -99,6 +99,9 @@ pub mod pallet {
 		/// privileged attributes.
 		type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
+		/// The max parameter length accepted by the vanchor-verifier
+		type MaxParameterLength: Get<u32>;
+
 		/// WeightInfo for pallet
 		type WeightInfo: WeightInfo;
 	}
@@ -107,7 +110,7 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
 		pub phantom: (PhantomData<T>, PhantomData<I>),
 		/// Optional vec of parameters (max edges, num_inputs, parameters)
-		pub parameters: Option<Vec<(u8, u8, Vec<u8>)>>,
+		pub parameters: Option<Vec<(u8, u8, BoundedVec<u8, T::MaxParameterLength>)>>,
 	}
 
 	#[cfg(feature = "std")]
@@ -131,8 +134,13 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn parameters)]
 	/// Details of the module's parameters for different vanchor configurations
-	pub(super) type Parameters<T: Config<I>, I: 'static = ()> =
-		StorageMap<_, Blake2_128Concat, (u8, u8), Vec<u8>, ValueQuery>;
+	pub(super) type Parameters<T: Config<I>, I: 'static = ()> = StorageMap<
+		_,
+		Blake2_128Concat,
+		(u8, u8),
+		BoundedVec<u8, T::MaxParameterLength>,
+		ValueQuery,
+	>;
 
 	#[pallet::event]
 	pub enum Event<T: Config<I>, I: 'static = ()> {}
@@ -151,10 +159,11 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(T::WeightInfo::force_set_parameters(parameters.len() as u32))]
+		#[pallet::call_index(0)]
 		pub fn force_set_parameters(
 			origin: OriginFor<T>,
 			configuration: (u8, u8),
-			parameters: Vec<u8>,
+			parameters: BoundedVec<u8, T::MaxParameterLength>,
 		) -> DispatchResultWithPostInfo {
 			T::ForceOrigin::ensure_origin(origin)?;
 			Parameters::<T, I>::try_mutate(configuration, |params| {

@@ -10,10 +10,11 @@ use webb_primitives::verifying::ArkworksVerifierBn254;
 use frame_support::{parameter_types, traits::Nothing};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
+use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
@@ -100,6 +101,7 @@ parameter_types! {
 impl pallet_hasher::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxParameterLength = ConstU32<10000>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
 }
@@ -130,6 +132,7 @@ parameter_types! {
 	scale_info::TypeInfo,
 	Deserialize,
 	Serialize,
+	codec::MaxEncodedLen,
 )]
 pub struct Element([u8; 32]);
 
@@ -145,12 +148,21 @@ impl ElementTrait for Element {
 	}
 }
 
+parameter_types! {
+	#[derive(Debug, TypeInfo)]
+	pub const MaxEdges: u32 = 1000;
+	#[derive(Debug, TypeInfo)]
+	pub const MaxDefaultHashes: u32 = 1000;
+}
+
 impl pallet_mt::Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
 	type DefaultZeroElement = DefaultZeroElement;
 	type Element = Element;
+	type MaxEdges = MaxEdges;
+	type MaxDefaultHashes = MaxDefaultHashes;
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Hasher = HasherPallet;
@@ -168,6 +180,7 @@ impl pallet_mt::Config for Test {
 impl pallet_verifier::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxParameterLength = ConstU32<10000>;
 	type Verifier = ArkworksVerifierBn254;
 	type WeightInfo = ();
 }
@@ -183,12 +196,18 @@ pub type AssetId = u32;
 pub type Amount = i128;
 pub type Balance = u128;
 
+parameter_types! {
+	#[derive(Debug, TypeInfo, PartialEq, Clone, Eq)]
+	pub const MaxAssetIdInPool: u32 = 1000;
+}
+
 impl pallet_asset_registry::Config for Test {
 	type AssetId = webb_primitives::AssetId;
 	type AssetNativeLocation = ();
-	type Balance = u128;
+	type Balance = Balance;
 	type RuntimeEvent = RuntimeEvent;
-	type NativeAssetId = NativeAssetId;
+	type NativeAssetId = NativeCurrencyId;
+	type MaxAssetIdInPool = MaxAssetIdInPool;
 	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
@@ -202,16 +221,11 @@ impl orml_tokens::Config for Test {
 	type DustRemovalWhitelist = Nothing;
 	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposits = AssetRegistry;
-	type OnDust = ();
 	type WeightInfo = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
-	type OnSlash = ();
-	type OnDeposit = ();
-	type OnTransfer = ();
-	type OnNewTokenAccount = ();
-	type OnKilledTokenAccount = ();
 	type ReserveIdentifier = [u8; 8];
+	type CurrencyHooks = ();
 }
 
 pub type NativeCurrency = NativeCurrencyOf<Test>;
@@ -244,8 +258,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	use sp_runtime::traits::Zero;
 	let mut storage = system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	pallet_asset_registry::GenesisConfig::<Test> {
-		asset_names: vec![],
-		native_asset_name: b"UNIT".to_vec(),
+		asset_names: Default::default(),
+		native_asset_name: b"UNIT".to_vec().try_into().unwrap(),
 		native_existential_deposit: Zero::zero(),
 	}
 	.assimilate_storage(&mut storage)

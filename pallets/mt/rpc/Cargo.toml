@@ -5,18 +5,17 @@ authors = ["Webb Tools"]
 edition = "2018"
 
 [dependencies]
-jsonrpsee = { version = "0.15.0", features = ["server"] }
+jsonrpsee = { version = "0.16.2", features = ["server"] }
 thiserror = "1.0"
-sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 
 webb-primitives = { path = "../../../primitives", default-features = false }
-pallet-mt = { path = "../", default-features = false }
 pallet-mt-rpc-runtime-api = { path = "./runtime-api", default-features = false }
 
 [features]
@@ -24,7 +23,6 @@ default = ["std"]
 std = [
     "codec/std",
     "webb-primitives/std",
-    "pallet-mt/std",
     "pallet-mt-rpc-runtime-api/std",
     "sp-core/std",
     "sp-runtime/std",

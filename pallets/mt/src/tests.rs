@@ -43,6 +43,8 @@ fn should_fail_in_case_when_max_default_hashes_is_exceeded() {
 					<Test as Config>::DefaultZeroElement::get();
 					(max_default_hashes + 1) as usize
 				]
+				.try_into()
+				.unwrap()
 			),
 			crate::Error::<Test, _>::ExceedsMaxDefaultHashes
 		);
@@ -54,7 +56,7 @@ fn should_successfully_set_default_hashes_to_match_solidity() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(HasherPallet::force_set_parameters(RuntimeOrigin::root(), hasher_params()));
 		assert_ok!(MerkleTree::create(RuntimeOrigin::signed(1), 32));
-		let default_hashes: Vec<Element> = MerkleTree::default_hashes();
+		let default_hashes: Vec<Element> = MerkleTree::default_hashes().into_inner();
 		let solidity_merkle_tree_hashes: Vec<Element> = vec![
 			Element::from_bytes(&hex!(
 				"2fe54c60d3acabf3343a35b6eba15db4821b340f76e741e2249685ed4899af6c"
@@ -154,7 +156,7 @@ fn should_successfully_set_default_hashes_to_match_solidity() {
 			)),
 		];
 		for i in 0..solidity_merkle_tree_hashes.len() {
-			println!("{:?}", i);
+			println!("{i:?}");
 			println!(
 				"{:?}\n{:?}\n",
 				default_hashes[i].to_bytes(),

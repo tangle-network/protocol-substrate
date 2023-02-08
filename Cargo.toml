@@ -1,6 +1,11 @@
 [profile.release]
 panic = "unwind"
-codegen-units = 1
+strip = "symbols"
+lto = "thin"
+
+[profile.dev]
+strip = "symbols"
+debug = 0
 
 [workspace]
 members = [

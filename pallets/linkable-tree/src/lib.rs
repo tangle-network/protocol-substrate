@@ -77,7 +77,7 @@ mod benchmarking;
 use sp_std::convert::TryInto;
 pub mod types;
 pub mod weights;
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{ensure, pallet_prelude::DispatchError, traits::Get};
 use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
 use sp_std::prelude::*;
@@ -100,7 +100,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
+
 	pub struct Pallet<T, I = ()>(_);
 
 	#[pallet::config]
@@ -118,7 +118,8 @@ pub mod pallet {
 			+ Default
 			+ Copy
 			+ From<u32>
-			+ From<u64>;
+			+ From<u64>
+			+ MaxEncodedLen;
 
 		/// ChainID type for this chain
 		#[pallet::constant]
@@ -215,6 +216,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(<T as Config<I>>::WeightInfo::create(*depth as u32, *max_edges))]
+		#[pallet::call_index(0)]
 		pub fn create(
 			origin: OriginFor<T>,
 			max_edges: u32,

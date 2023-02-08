@@ -10,14 +10,13 @@ edition = "2018"
 serde = { version = "1.0.119", optional = true, features = ["derive"] }
 codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "3" }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
-sp-consensus-aura = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
-sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.30" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-consensus-aura = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 
 # Arkworks
 ark-ff = { version = "^0.3.0", default-features = false }
@@ -26,9 +25,9 @@ ark-std = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ] }
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
-ark-bls12-377 = { version = "^0.3.0", default-features = false, features = [ "curve", "r1cs" ], optional = true }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
 ark-groth16 = { version = "^0.3.0", default-features = false }
+# ark-circom = { git = "https://github.com/gakonst/ark-circom.git", default-features = false }
 
 blake2 = { version = "0.9", default-features = false }
 digest = { version = "0.9", default-features = false }
@@ -37,7 +36,6 @@ ark-crypto-primitives = { version = "^0.3.0", default-features = false }
 arkworks-native-gadgets = { version = "1.2.0", default-features = false, optional = true }
 
 ethabi = { version = "15.0.0", default-features = false }
-hex-literal = { version = "0.3.4", default-features = false }
 
 webb-proposals = { version = "0.5.4", default-features = false, features = ["scale", "substrate", "evm"] }
 
@@ -47,7 +45,6 @@ std = [
 	"serde",
 	"codec/std",
 	"frame-support/std",
-	"frame-system/std",
 	"sp-core/std",
 	"sp-std/std",
 	"sp-io/std",
@@ -62,18 +59,15 @@ std = [
 ]
 field_ops = [
 	"ark-bls12-381",
-	"ark-bls12-377",
 	"ark-bn254",
 ]
 hashing = [
 	"arkworks-native-gadgets",
 	"ark-bls12-381",
-	"ark-bls12-377",
 	"ark-bn254",
 ]
 verifying = [
 	"arkworks-native-gadgets",
 	"ark-bls12-381",
-	"ark-bls12-377",
 	"ark-bn254",
 ]

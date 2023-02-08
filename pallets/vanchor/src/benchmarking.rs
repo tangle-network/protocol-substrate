@@ -83,12 +83,12 @@ where
 	assert_ok!(<pallet_vanchor_verifier::Pallet<T, I>>::force_set_parameters(
 		RawOrigin::Root.into(),
 		(2, 2),
-		vk_2_2_bytes.clone()
+		vk_2_2_bytes.clone().try_into().unwrap()
 	));
 	assert_ok!(<pallet_vanchor_verifier::Pallet<T, I>>::force_set_parameters(
 		RawOrigin::Root.into(),
 		(2, 16),
-		vk_2_16_bytes.clone()
+		vk_2_16_bytes.clone().try_into().unwrap()
 	));
 
 	pk_2_2_bytes

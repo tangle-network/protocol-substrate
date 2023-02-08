@@ -8,7 +8,7 @@ use sp_core::H256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
 use sp_runtime::{
 	testing::Header,
-	traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
+	traits::{AccountIdConversion, BlakeTwo256, ConstU32, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
 use std::{sync::Arc, vec};
@@ -94,6 +94,12 @@ impl Contains<RuntimeCall> for SetResourceProposalFilter {
 	}
 }
 
+impl Contains<RuntimeOrigin> for SetResourceProposalFilter {
+	fn contains(_c: &RuntimeOrigin) -> bool {
+		false
+	}
+}
+
 pub struct ExecuteAllProposalsFilter;
 impl Contains<RuntimeCall> for ExecuteAllProposalsFilter {
 	fn contains(c: &RuntimeCall) -> bool {
@@ -114,12 +120,13 @@ impl Config for Test {
 	type ChainIdentifier = ChainIdentifier;
 	type ChainType = ChainType;
 	type RuntimeEvent = RuntimeEvent;
-	type Proposal = RuntimeCall;
 	type ProposalLifetime = ProposalLifetime;
 	type ProposalNonce = u32;
 	type SetResourceProposalFilter = SetResourceProposalFilter;
 	type ExecuteProposalFilter = ExecuteAllProposalsFilter;
 	type MaintainerNonce = u32;
+	type MaxStringLength = ConstU32<1000>;
+	type Proposal = RuntimeCall;
 	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
 	type WeightInfo = ();
 }
