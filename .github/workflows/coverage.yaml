@@ -17,6 +17,14 @@ jobs:
     name: coverage
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        version:
+          - nightly
+        target:
+          - x86_64-unknown-linux-gnu
+      fail-fast: false
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -33,18 +41,13 @@ jobs:
           sudo apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler && \
           sudo rm -rf /var/lib/apt/lists/*
       
-      - name: Install cargo-binstall
-        run: cargo install cargo-binstall
-
-      - name: Install Tarpaulin
-        run: cargo binstall --no-confirm cargo-tarpaulin
       
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1.3.0
 
       - name: Generate code coverage
         run: |
-          SKIP_WASM_BUILD=1 cargo +nightly tarpaulin --out Xml \
+          SKIP_WASM_BUILD=1 cargo run --release -- tarpaulin --engine llvm --follow-exec --post-test-delay 10 \
               -p pallet-token-wrapper-handler \
               -p pallet-token-wrapper \
               -p pallet-signature-bridge \
