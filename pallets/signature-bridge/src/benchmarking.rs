@@ -20,6 +20,7 @@ use super::*;
 use frame_benchmarking::{
 	benchmarks_instance_pallet, impl_benchmark_test_suite, whitelisted_caller,
 };
+use frame_support::BoundedVec;
 use frame_system::RawOrigin;
 use sp_io::{
 	crypto::{ecdsa_generate, ecdsa_sign_prehashed},
@@ -30,7 +31,6 @@ use webb_primitives::{
 	utils::{compute_chain_id_type, derive_resource_id},
 	webb_proposals::SubstrateTargetSystem,
 };
-use frame_support::BoundedVec;
 
 /// Helper function to test last event
 fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::RuntimeEvent) {
@@ -64,8 +64,11 @@ fn make_proposal_data(encoded_r_id: Vec<u8>, nonce: [u8; 4], encoded_call: Vec<u
 
 /// Helper function to set maintainer on chain
 fn set_maintainer_on_chain<T: Config<I>, I: 'static>(pub_key: sp_core::ecdsa::Public) -> Vec<u8> {
-	let maintainer_key : BoundedVec<u8, T::MaxStringLength> =
-		libsecp256k1::PublicKey::parse_compressed(&pub_key.0).unwrap().serialize()[1..].to_vec().try_into().unwrap();
+	let maintainer_key: BoundedVec<u8, T::MaxStringLength> =
+		libsecp256k1::PublicKey::parse_compressed(&pub_key.0).unwrap().serialize()[1..]
+			.to_vec()
+			.try_into()
+			.unwrap();
 	Maintainer::<T, _>::put(maintainer_key.clone());
 	maintainer_key.into_inner()
 }

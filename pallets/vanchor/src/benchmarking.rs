@@ -56,8 +56,11 @@ where
 	T: pallet_hasher::Config<I>,
 {
 	// Initialize hasher pallet
-	pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params().try_into().unwrap())
-		.unwrap();
+	pallet_hasher::Pallet::<T, I>::force_set_parameters(
+		RawOrigin::Root.into(),
+		hasher_params().try_into().unwrap(),
+	)
+	.unwrap();
 
 	// 2. Initialize MerkleTree pallet.
 	<pallet_mt::Pallet<T, I> as OnInitialize<_>>::on_initialize(Default::default());

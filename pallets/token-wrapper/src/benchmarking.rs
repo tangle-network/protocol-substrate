@@ -21,11 +21,10 @@
 
 use super::*;
 
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
-use frame_support::BoundedVec;
 use crate::traits::TokenWrapperInterface;
 use asset_registry::{Registry, ShareTokenRegistry};
-use frame_support::dispatch::DispatchError;
+use frame_benchmarking::{benchmarks, impl_benchmark_test_suite, whitelisted_caller};
+use frame_support::{dispatch::DispatchError, BoundedVec};
 use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
 use sp_std::vec;
