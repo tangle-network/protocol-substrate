@@ -107,4 +107,7 @@ default = ["cli"]
 cli = [
     "clap"
 ]
-runtime-benchmarks = ["webb-runtime/runtime-benchmarks"]
+runtime-benchmarks = ["webb-runtime/runtime-benchmarks",
+                     "frame-benchmarking/runtime-benchmarks",
+	                "frame-benchmarking-cli/runtime-benchmarks",
+]

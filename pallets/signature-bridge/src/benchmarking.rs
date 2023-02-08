@@ -163,7 +163,7 @@ benchmarks_instance_pallet! {
 		let prop_data = make_proposal_data(r_id.encode(), nonce, call_encoded);
 		let msg = keccak_256(&prop_data);
 		let signature = ecdsa_sign_prehashed(DUMMY, &maintainer, &msg).unwrap();
-	}: _(RawOrigin::Signed(caller), src_id.into(), prop_data, signature.encode())
+	}: _(RawOrigin::Signed(caller), src_id.into(), prop_data.try_into().unwrap(), signature.encode().try_into().unwrap())
 	verify {
 		assert_last_event::<T, I>(Event::ProposalSucceeded{chain_id : src_id.into(), proposal_nonce : 1_u32.into()}.into());
 	}

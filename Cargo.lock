@@ -5281,6 +5281,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-benchmarking",
+ "getrandom 0.2.8",
  "orml-currencies",
  "orml-tokens",
  "orml-traits",

@@ -56,7 +56,7 @@ where
 	T: pallet_hasher::Config<I>,
 {
 	// Initialize hasher pallet
-	pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params())
+	pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params().try_into().unwrap())
 		.unwrap();
 
 	// 2. Initialize MerkleTree pallet.
@@ -118,7 +118,7 @@ benchmarks_instance_pallet! {
 	  let i in 1..MAX_EDGES;
 	  let d in 1..<T as pallet_mt::Config<I>>::MaxTreeDepth::get() as u32;
 
-	  pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params()).unwrap();
+	  pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params().try_into().unwrap()).unwrap();
 
 	  let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
 	}: _(RawOrigin::Root, i, d as u8, asset_id)

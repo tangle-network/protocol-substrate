@@ -20,7 +20,7 @@ orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-li
 pallet-mt = {path = "../mt", default-features = false}
 sp-runtime = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-std = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-
+frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36", optional = true  }
 frame-system-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36", optional = true }
 
 [dev-dependencies]
@@ -46,11 +46,11 @@ hex = "0.4"
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 
 [features]
 default = ["std"]
 runtime-benchmarks = [
+  "frame-benchmarking",
   "frame-system/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
 ]
