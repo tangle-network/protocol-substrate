@@ -2,7 +2,7 @@
 name = "pallet-mt-rpc"
 version = "0.1.0"
 authors = ["Webb Tools"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 jsonrpsee = { version = "0.16.2", features = ["server"] }

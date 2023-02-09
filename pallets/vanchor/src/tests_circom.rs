@@ -6,14 +6,17 @@ use crate::{
 	zerokit_utils::*,
 };
 use cfg_if::cfg_if;
+use std::convert::{TryInto, TryFrom};
 use ark_relations::r1cs::ConstraintMatrices;
 use ark_relations::r1cs::SynthesisError;
-use ark_bn254::{Fr, Bn254};
+use ark_bn254::{Fr, Fq, Fq2, Bn254, G1Affine, G1Projective, G2Affine, G2Projective };
 use once_cell::sync::OnceCell;
 use std::sync::Mutex;
+use std::str::FromStr;
+use serde_json::Value;
 use wasmer::{Module, Store};
 use ark_circom::{read_zkey, WitnessCalculator, CircomReduction, CircomConfig};
-use ark_ff::{BigInteger, PrimeField, ToBytes};
+use ark_ff::{BigInteger, PrimeField, ToBytes, BigInteger256};
 use ark_groth16::{ Proof as ArkProof, create_proof_with_reduction_and_matrices, VerifyingKey,
 	create_random_proof as prove, generate_random_parameters, prepare_verifying_key,
 	ProvingKey, verify_proof as ark_verify_proof,
@@ -32,12 +35,11 @@ use arkworks_setups::{
 };
 use frame_benchmarking::account;
 use frame_support::{assert_ok, traits::OnInitialize};
-use num_bigint::{BigInt, Sign};
+use num_bigint::{BigInt, BigUint, Sign};
 use pallet_linkable_tree::LinkableTreeConfigration;
 use ark_std::{rand::thread_rng, UniformRand};
 use sp_core::hashing::keccak_256;
 use std::{
-	convert::TryInto,
 	fs::{self, File},
 };
 use webb_primitives::{
@@ -65,6 +67,98 @@ pub enum ProofError {
 #[cfg(not(target_arch = "wasm32"))]
 static WITNESS_CALCULATOR: OnceCell<Mutex<WitnessCalculator>> = OnceCell::new();
 
+// Utilities to convert a json verification key in a groth16::VerificationKey
+fn fq_from_str(s: &str) -> Fq {
+    Fq::try_from(BigUint::from_str(s).unwrap()).unwrap()
+}
+
+// Extracts the element in G1 corresponding to its JSON serialization
+fn json_to_g1(json: &Value, key: &str) -> G1Affine {
+    let els: Vec<String> = json
+        .get(key)
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| i.as_str().unwrap().to_string())
+        .collect();
+    G1Affine::from(G1Projective::new(
+        fq_from_str(&els[0]),
+        fq_from_str(&els[1]),
+        fq_from_str(&els[2]),
+    ))
+}
+
+// Extracts the vector of G1 elements corresponding to its JSON serialization
+fn json_to_g1_vec(json: &Value, key: &str) -> Vec<G1Affine> {
+    let els: Vec<Vec<String>> = json
+        .get(key)
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| {
+            i.as_array()
+                .unwrap()
+                .iter()
+                .map(|x| x.as_str().unwrap().to_string())
+                .collect::<Vec<String>>()
+        })
+        .collect();
+
+    els.iter()
+        .map(|coords| {
+            G1Affine::from(G1Projective::new(
+                fq_from_str(&coords[0]),
+                fq_from_str(&coords[1]),
+                fq_from_str(&coords[2]),
+            ))
+        })
+        .collect()
+}
+
+// Extracts the element in G2 corresponding to its JSON serialization
+fn json_to_g2(json: &Value, key: &str) -> G2Affine {
+    let els: Vec<Vec<String>> = json
+        .get(key)
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| {
+            i.as_array()
+                .unwrap()
+                .iter()
+                .map(|x| x.as_str().unwrap().to_string())
+                .collect::<Vec<String>>()
+        })
+        .collect();
+
+    let x = Fq2::new(fq_from_str(&els[0][0]), fq_from_str(&els[0][1]));
+    let y = Fq2::new(fq_from_str(&els[1][0]), fq_from_str(&els[1][1]));
+    let z = Fq2::new(fq_from_str(&els[2][0]), fq_from_str(&els[2][1]));
+    G2Affine::from(G2Projective::new(x, y, z))
+}
+
+// Converts JSON to a VerifyingKey
+fn to_verifying_key(json: serde_json::Value) -> VerifyingKey<Bn254> {
+    VerifyingKey {
+        alpha_g1: json_to_g1(&json, "vk_alpha_1"),
+        beta_g2: json_to_g2(&json, "vk_beta_2"),
+        gamma_g2: json_to_g2(&json, "vk_gamma_2"),
+        delta_g2: json_to_g2(&json, "vk_delta_2"),
+        gamma_abc_g1: json_to_g1_vec(&json, "IC"),
+    }
+}
+
+// Computes the verification key from its JSON serialization
+fn vk_from_json(vk_path: &str) -> VerifyingKey<Bn254> {
+    let json = std::fs::read_to_string(vk_path).unwrap();
+    let json: Value = serde_json::from_str(&json).unwrap();
+
+    to_verifying_key(json)
+}
+
 pub fn generate_proof(
     #[cfg(not(target_arch = "wasm32"))] witness_calculator: &Mutex<WitnessCalculator>,
     #[cfg(target_arch = "wasm32")] witness_calculator: &mut WitnessCalculator,
@@ -75,6 +169,7 @@ pub fn generate_proof(
         .into_iter()
         .map(|(name, values)| (name.to_string(), values.clone()));
 
+	println!("inputs {:?}", inputs);
 
     cfg_if! {
         if #[cfg(target_arch = "wasm32")] {
@@ -147,7 +242,6 @@ pub fn circom_from_folder(wasm_path: &str) -> &'static Mutex<WitnessCalculator> 
     let wasm_buffer = std::fs::read(wasm_path).unwrap();
     circom_from_raw(wasm_buffer)
 }
-
 
 fn setup_environment_with_circom() -> ((ProvingKey<Bn254>, ConstraintMatrices<Fr>), &'static Mutex<WitnessCalculator>) {
 	let curve = Curve::Bn254;
@@ -346,7 +440,7 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 			vec![BigInt::from_bytes_be(Sign::Minus, &(-public_amount).to_be_bytes())]
 		};
 
-		let mut ext_data_hash = vec![BigInt::from_bytes_be(Sign::Plus, &ext_data_hash)];
+		let mut ext_data_hash = public_amount.clone();
 		let mut input_nullifier = Vec::new();
 		let mut output_commitment = Vec::new();
 		for i in 0..NUM_UTXOS {
@@ -420,88 +514,81 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		}
 
 		let inputs_for_proof = [
-			("public_amount", public_amount.clone()),
-			("ext_data_hash", ext_data_hash.clone()),
-			("input_nullifier", input_nullifier.clone()),
-			("output_commitment", output_commitment.clone()),
-			("chain_id", chain_id.clone()),
+			("publicAmount", public_amount.clone()),
+			("extDataHash", ext_data_hash.clone()),
+			("inputNullifier", input_nullifier.clone()),
+			("inAmount", in_amount.clone()),
+			("inPrivateKey", in_private_key.clone()),
+			("inBlinding", in_blinding.clone()),
+			("inPathIndices", in_path_indices.clone()),
+			("inPathElements", in_path_elements.clone()),
+			("outputCommitment", output_commitment.clone()),
+			("outChainID", out_chain_id.clone()),
+			("outAmount", out_amount.clone()),
+			("outPubkey", out_pub_key.clone()),
+			("outBlinding", out_blinding.clone()),
+			("chainID", chain_id.clone()),
 			("roots", roots.clone()),
-			("in_amount", in_amount.clone()),
-			("in_private_key", in_private_key.clone()),
-			("in_blinding", in_blinding.clone()),
-			("in_path_indices", in_path_indices.clone()),
-			("in_path_elements", in_path_elements.clone()),
-			("out_chain_id", out_chain_id.clone()),
-			("out_amount", out_amount.clone()),
-			("out_pub_key", out_pub_key.clone()),
-			("out_blinding", out_blinding.clone()),
 		];
 
-		let proof = generate_proof(wc_2_2, &params_2_2, inputs_for_proof);
+		let proof = generate_proof(wc_2_2, &params_2_2, inputs_for_proof.clone());
 		
 		let mut inputs_for_verification = Vec::new();
-
+		let mut count = 0;
 		for x in public_amount.iter() {
 			inputs_for_verification.push(from_bigint(x));
+			println!("should be 10 maybe {:?}", to_bigint(&from_bigint(x)));
+			count+=1;
 		}
 
+		println!("1");
+
 		for x in ext_data_hash.iter() {
+			println!("ext data hash {:?}", x);
 			inputs_for_verification.push(from_bigint(x));
+			println!("extdata {:?}", to_bigint(&from_bigint(x)));
+			assert_eq!(&to_bigint(&from_bigint(x)), x);
+			count+=1;
 		}
+
+		println!("2");
 
 		for x in input_nullifier.iter() {
 			inputs_for_verification.push(from_bigint(x));
+			count+=1;
 		}
+
+		println!("3");
 
 		for x in output_commitment.iter() {
 			inputs_for_verification.push(from_bigint(x));
+			count+=1;
 		}
+
+		println!("4");
 
 		for x in chain_id.iter() {
 			inputs_for_verification.push(from_bigint(x));
+			count+=1;
 		}
+
+		println!("5");
 
 		for x in roots.iter() {
 			inputs_for_verification.push(from_bigint(x));
+			count+=1;
 		}
 
-		for x in in_amount.iter() {
-			inputs_for_verification.push(from_bigint(x));
-		}
+		println!("{:?} count", count);
 
-		for x in in_private_key.iter() {
-			inputs_for_verification.push(from_bigint(x));
-		}
+		let verification_key = vk_from_json("../../solidity-fixtures/solidity-fixtures/vanchor_2/2/verification_key.json");
 
-		for x in in_blinding.iter() {
-			inputs_for_verification.push(from_bigint(x));
-		}
+		let unwrapped_proof = proof.unwrap();
 
-		for x in in_path_indices.iter() {
-			inputs_for_verification.push(from_bigint(x));
-		}
-		for x in in_path_elements.iter() {
-			inputs_for_verification.push(from_bigint(x));
-		}
+		println!("proof {:?}", unwrapped_proof.clone());
 
-		for x in out_chain_id.iter() {
-			inputs_for_verification.push(from_bigint(x));
-		}
-
-		for x in out_amount.iter() {
-			inputs_for_verification.push(from_bigint(x));
-		}
-
-		for x in out_pub_key.iter() {
-			inputs_for_verification.push(from_bigint(x));
-		}
-
-		for x in out_blinding.iter() {
-			inputs_for_verification.push(from_bigint(x));
-		}
-
-		verify_proof(&params_2_2.0.vk, &proof.unwrap(), inputs_for_verification);
-		
+		let did_proof_work = verify_proof(&params_2_2.0.vk, &unwrapped_proof, inputs_for_verification).unwrap();
+		assert!(did_proof_work);
 
 		// // Constructing external data
 		// let output1 = commitments[0];

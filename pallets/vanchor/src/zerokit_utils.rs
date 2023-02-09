@@ -1,15 +1,16 @@
 // This crate provides cross-module useful utilities (mainly type conversions) not necessarily specific to RLN
 
 use ark_bn254::Fr;
-use ark_ff::PrimeField;
+use ark_ff::{BigInteger256, PrimeField};
 use num_bigint::{BigInt, BigUint};
 use num_traits::Num;
 use std::iter::Extend;
 use std::convert::{TryInto, TryFrom};
 
 pub fn from_bigint(el: &BigInt) -> Fr {
-    let res: BigUint = (el.clone()).try_into().unwrap();
-    res.try_into().unwrap()
+    let res_1: BigUint = (el.clone()).try_into().unwrap();
+    let res_2 = BigInteger256::try_from(res_1).unwrap();
+    Fr::from(res_2)
 }
 
 pub fn to_bigint(el: &Fr) -> BigInt {

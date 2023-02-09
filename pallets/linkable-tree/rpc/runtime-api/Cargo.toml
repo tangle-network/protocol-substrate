@@ -2,7 +2,7 @@
 name = "pallet-linkable-tree-rpc-runtime-api"
 version = "1.0.0"
 authors = ["Webb"]
-edition = "2018"
+edition = "2021"
 license = "Apache-2.0"
 description = "Linkable tree RPC API for linkable tree pallet"
 readme = "README.md"

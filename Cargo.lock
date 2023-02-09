@@ -149,7 +149,7 @@ dependencies = [
 [[package]]
 name = "ark-circom"
 version = "0.1.0"
-source = "git+https://github.com/gakonst/ark-circom.git#e226f90591e16429f3001edf5dfb72801fc8b6f9"
+source = "git+https://github.com/vacp2p/ark-circom?branch=wasm#0e587145cb05e08b2d1a01509eb578670088eb2f"
 dependencies = [
  "ark-bn254",
  "ark-ec",
@@ -5895,6 +5895,7 @@ dependencies = [
  "rand 0.8.5",
  "scale-info",
  "serde",
+ "serde_json",
  "sp-core 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
@@ -10172,11 +10173,10 @@ checksum = "3bf63baf9f5039dadc247375c29eb13706706cfde997d0330d05aa63a77d8820"
 
 [[package]]
 name = "thread_local"
-version = "1.1.5"
+version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d805f96b7e61fce8728f142e213a3eb2f6b10538efff2d637c923efa4bfca048"
+checksum = "5516c27b78311c50bf42c071425c560ac799b11c30b31f87e3081965fe5e0180"
 dependencies = [
- "cfg-if",
  "once_cell",
 ]
 
