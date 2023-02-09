@@ -45,6 +45,9 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1.3.0
 
+      - name: Install Tarpaulin
+        run: cargo install cargo-tarpaulin
+
       - name: Generate code coverage
         run: |
           SKIP_WASM_BUILD=1 cargo tarpaulin --engine llvm --follow-exec --post-test-delay 10 \
