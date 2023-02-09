@@ -164,7 +164,7 @@ pub fn generate_proof(
     #[cfg(target_arch = "wasm32")] witness_calculator: &mut WitnessCalculator,
     proving_key: &(ProvingKey<Bn254>, ConstraintMatrices<Fr>),
     vanchor_witness: [(&str, Vec<BigInt>); 15],
-) -> Result<ArkProof<Bn254>, ProofError> {
+) -> Result<(ArkProof<Bn254>, Vec<Fr>), ProofError> {
     let inputs = vanchor_witness
         .into_iter()
         .map(|(name, values)| (name.to_string(), values.clone()));
@@ -200,7 +200,7 @@ pub fn generate_proof(
         full_assignment.as_slice(),
     )?;
 
-    Ok(proof)
+    Ok((proof, full_assignment))
 }
 
 /// Verifies a given RLN proof
@@ -531,63 +531,17 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 			("roots", roots.clone()),
 		];
 
-		let proof = generate_proof(wc_2_2, &params_2_2, inputs_for_proof.clone());
-		
-		let mut inputs_for_verification = Vec::new();
-		let mut count = 0;
-		for x in public_amount.iter() {
-			inputs_for_verification.push(from_bigint(x));
-			println!("should be 10 maybe {:?}", to_bigint(&from_bigint(x)));
-			count+=1;
-		}
+		let x = generate_proof(wc_2_2, &params_2_2, inputs_for_proof.clone());
 
-		println!("1");
+		let num_inputs = params_2_2.1.num_instance_variables;
 
-		for x in ext_data_hash.iter() {
-			println!("ext data hash {:?}", x);
-			inputs_for_verification.push(from_bigint(x));
-			println!("extdata {:?}", to_bigint(&from_bigint(x)));
-			assert_eq!(&to_bigint(&from_bigint(x)), x);
-			count+=1;
-		}
+		let (proof, full_assignment) = x.unwrap();
 
-		println!("2");
+		let mut inputs_for_verification = &full_assignment[1..num_inputs];
 
-		for x in input_nullifier.iter() {
-			inputs_for_verification.push(from_bigint(x));
-			count+=1;
-		}
+		println!("v {:?} {:?}", inputs_for_verification.len(), inputs_for_verification.into_iter().map(|x| to_bigint(&x)).collect::<Vec<BigInt>>());
 
-		println!("3");
-
-		for x in output_commitment.iter() {
-			inputs_for_verification.push(from_bigint(x));
-			count+=1;
-		}
-
-		println!("4");
-
-		for x in chain_id.iter() {
-			inputs_for_verification.push(from_bigint(x));
-			count+=1;
-		}
-
-		println!("5");
-
-		for x in roots.iter() {
-			inputs_for_verification.push(from_bigint(x));
-			count+=1;
-		}
-
-		println!("{:?} count", count);
-
-		let verification_key = vk_from_json("../../solidity-fixtures/solidity-fixtures/vanchor_2/2/verification_key.json");
-
-		let unwrapped_proof = proof.unwrap();
-
-		println!("proof {:?}", unwrapped_proof.clone());
-
-		let did_proof_work = verify_proof(&params_2_2.0.vk, &unwrapped_proof, inputs_for_verification).unwrap();
+		let did_proof_work = verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
 		assert!(did_proof_work);
 
 		// // Constructing external data
