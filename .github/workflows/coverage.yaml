@@ -47,7 +47,7 @@ jobs:
 
       - name: Generate code coverage
         run: |
-          SKIP_WASM_BUILD=1 cargo run --release -- tarpaulin --engine llvm --follow-exec --post-test-delay 10 \
+          SKIP_WASM_BUILD=1 cargo tarpaulin --engine llvm --follow-exec --post-test-delay 10 \
               -p pallet-token-wrapper-handler \
               -p pallet-token-wrapper \
               -p pallet-signature-bridge \
