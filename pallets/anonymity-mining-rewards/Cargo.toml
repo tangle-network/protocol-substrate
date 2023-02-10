@@ -4,7 +4,7 @@ description = "Pallet that handles rewards from anonymity mining."
 edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
-name = "pallet-anonymity-mining"
+name = "pallet-anonymity-mining-rewards"
 repository = "https://github.com/webb-tools/protocol-substrate"
 version = "1.0.0"
 

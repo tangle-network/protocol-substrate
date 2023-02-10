@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Anonymity Mining Module
+//! # Anonymity Mining Claims Module
 //!
 //! ## Overview
 //!
@@ -85,16 +85,8 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self, I>>
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// The overarching leaf index type
-		// type RootIndex: Encode + Decode + Parameter + AtLeast32Bit + Default + Copy +
-		// MaxEncodedLen;
-
 		/// Account Identifier from which the internal Pot is generated.
 		type PotId: Get<PalletId>;
-
-		// /// Pallet id
-		// #[pallet::constant]
-		// type PalletId: Get<PalletId>;
 
 		/// History size of roots for each deposit tree
 		type DepositRootHistorySize: Get<Self::RootIndex>;
@@ -121,33 +113,10 @@ pub mod pallet {
 		#[pallet::constant]
 		type NativeCurrencyId: Get<CurrencyIdOf<Self, I>>;
 
-		// /// Time provider
-		type Time: Time;
-
-		/// Start time
-		#[pallet::constant]
-		type StartTimestamp: Get<u64>;
-
-		#[pallet::constant]
-		type Duration: Get<u64>;
-
-		#[pallet::constant]
-		type InitialLiquidity: Get<u64>;
-
-		#[pallet::constant]
-		type Liquidity: Get<u64>;
-
 		/// The origin which may forcibly reset parameters or otherwise alter
 		/// privileged attributes.
 		type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
-
-	/// TODO: keep track of last (30) deposit roots
-	/// Mapping from vanchor id to array of deposit roots and withdraw roots
-	/// ResourceId (webb rs) -> where proposal is stored, what data to execute etc.
-
-	/// Just need map of resource id to edge metadata
-	/// Similar to linkable tree but without chain id etc.
 
 	/// A helper map for denoting whether an tree is bridged to given chain
 	#[pallet::storage]
@@ -192,12 +161,6 @@ pub mod pallet {
 		T::Element,
 		ValueQuery,
 	>;
-
-	// /// Map of resourceId to array of withdraw roots
-	// #[pallet::storage]
-	// #[pallet::getter(fn withdraw_roots)]
-	// pub type WithdrawRoots<T: Config<I>, I: 'static = ()> =
-	// 	StorageMap<_, Blake2_128Concat, T::TreeId, Vec<T::Element>, ValueQuery>;
 
 	/// The map of deposit trees to their spent nullifier hashes
 	#[pallet::storage]
@@ -271,34 +234,11 @@ pub mod pallet {
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
 		#[pallet::call_index(0)]
-		pub fn swap(
+		pub fn claim(
 			origin: OriginFor<T>,
 			recipient: T::AccountId,
 			amount: BalanceOf<T, I>,
 		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
-			let tokens = Self::get_expected_return(&Self::account_id(), amount);
-
-			let tokens_sold_u64 = tokens.saturated_into::<u64>();
-			let prev_tokens_sold_u64 = Self::get_tokens_sold();
-			Self::set_tokens_sold(prev_tokens_sold_u64 + tokens_sold_u64);
-
-			// Deposit AP tokens to the pallet
-			<T as Config<I>>::Currency::transfer(
-				T::AnonymityPointsAssetId::get(),
-				&recipient,
-				&Self::account_id(),
-				amount,
-			)?;
-
-			// Pallet sends reward tokens
-			<T as Config<I>>::Currency::transfer(
-				T::RewardAssetId::get(),
-				&Self::account_id(),
-				&recipient,
-				tokens,
-			)?;
-
 			Ok(().into())
 		}
 	}
@@ -334,6 +274,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 
+	/// Handle proof verification
 	pub fn handle_proof_verification(
 		proof_data: &ProofData<T::Element>,
 	) -> Result<(), DispatchError> {
@@ -341,76 +282,60 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 
-	/// Update vanchor
-	fn update_vanchor(
-		tree_id: T::TreeId,
-		merkle_root: T::Element,
-		src_resource_id: ResourceId,
-		latest_leaf_index: T::LeafIndex,
-	) -> DispatchResultWithPostInfo {
-		let src_chain_id: T::ChainId = src_resource_id.typed_chain_id().chain_id().into();
-		if T::VAnchor::has_edge(tree_id, src_chain_id) {
-			T::VAnchor::update_edge(
-				tree_id,
-				src_chain_id,
-				merkle_root,
-				latest_leaf_index,
-				src_resource_id,
-			)?;
-			Self::deposit_event(Event::AnchorEdgeUpdated);
-		} else {
-			T::VAnchor::add_edge(
-				tree_id,
-				src_chain_id,
-				merkle_root,
-				latest_leaf_index,
-				src_resource_id,
-			)?;
-			Self::deposit_event(Event::AnchorEdgeAdded);
-		}
-		Ok(().into())
+	/// Update deposit root
+	fn update_deposit_root(
+		deposit_tree_id: T::TreeId,
+		deposit_root_index: T::RootIndex,
+		deposit_root: T::Element,
+	) {
+		// Update deposit root
+		CachedDepositRoots::<T, I>::insert(deposit_tree_id, deposit_root_index, deposit_root);
 	}
 
-	fn update_roots(
-		src_tree_id: T::TreeId,
-		dest_tree_id: T::TreeId,
-		src_root_index: T::RootIndex,
-		dest_root_index: T::RootIndex,
-		src_deposit_root: T::Element,
-		src_withdraw_root: T::Element,
-		dest_deposit_root: T::Element,
-		dest_withdraw_root: T::Element,
+	/// Update withdraw root
+	fn update_withdraw_root(
+		withdraw_tree_id: T::TreeId,
+		withdraw_root_index: T::RootIndex,
+		withdraw_root: T::Element,
 	) {
-		// Update roots
-		CachedDepositRoots::<T, I>::insert(src_tree_id, src_root_index, src_deposit_root);
-		CachedWithdrawRoots::<T, I>::insert(src_tree_id, src_root_index, src_withdraw_root);
-		CachedDepositRoots::<T, I>::insert(dest_tree_id, dest_root_index, dest_deposit_root);
-		CachedWithdrawRoots::<T, I>::insert(dest_tree_id, dest_root_index, dest_withdraw_root);
+		// Update withdraw root
+		CachedWithdrawRoots::<T, I>::insert(withdraw_tree_id, withdraw_root_index, withdraw_root);
 	}
+
+	/// TODO: keep track of last (30) deposit roots
+	/// Mapping from vanchor id to array of deposit roots and withdraw roots
+	/// ResourceId (webb rs) -> where proposal is stored, what data to execute etc.
+
+	/// Just need map of resource id to edge metadata
+	/// Similar to linkable tree but without chain id etc.
 
 	/// Claim AP tokens and update rewards VAnchor
+	/// Which resourceId the deposit happened on
+	/// DepositRoot array lookup
+	/// Which resourceId the withdraw happened on
+	/// Same w/ withdraw
+	/// Only one deposit/withdraw root no src/dest
+	/// Should not be calling update_deposit_root etc when claiming
+	/// That should be done by relayer or proposal
+	/// Edges don't need to be updated - VAnchor exists only on here
+	/// Commitment into VAnchor for how much AP owed
+	/// No AP actually transferred, just a commitment
+	/// When withdraw from APVanchor, minted AP tokens
 	pub fn claim_ap(
-		src_resource_id: ResourceId,
-		dest_resource_id: ResourceId,
+		deposit_resource_id: ResourceId,
+		withdraw_resource_id: ResourceId,
 		recipient: T::AccountId,
 		amount: BalanceOf<T, I>,
 		merkle_root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 		proof_data: ProofData<T::Element>,
-		src_deposit_root: T::Element,
-		src_withdraw_root: T::Element,
-		dest_deposit_root: T::Element,
-		dest_withdraw_root: T::Element,
+		deposit_root: T::Element,
+		withdraw_root: T::Element,
 	) -> DispatchResultWithPostInfo {
-		// Transfer AP tokens to recipient
-		<T as Config<I>>::Currency::transfer(
-			T::AnonymityPointsAssetId::get(),
-			&Self::account_id(),
-			&recipient,
-			amount,
-		)?;
+		// Handle proof verification
+		Self::handle_proof_verification(&proof_data)?;
 
-		let source_tree_id: T::TreeId = match src_resource_id.target_system() {
+		let deposit_tree_id: T::TreeId = match deposit_resource_id.target_system() {
 			TargetSystem::Substrate(system) => system.tree_id.into(),
 			_ => {
 				ensure!(false, Error::<T, I>::InvalidResourceId);
@@ -418,7 +343,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			},
 		};
 
-		let dest_tree_id: T::TreeId = match dest_resource_id.target_system() {
+		let withdraw_tree_id: T::TreeId = match withdraw_resource_id.target_system() {
 			TargetSystem::Substrate(system) => system.tree_id.into(),
 			_ => {
 				ensure!(false, Error::<T, I>::InvalidResourceId);
@@ -436,36 +361,19 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			*i = i.saturating_add(One::one()) % T::DepositRootHistorySize::get()
 		});
 
-		// Update roots - TODO: modify
-		Self::update_roots(
-			source_tree_id,
-			dest_tree_id,
-			deposit_root_index,
-			withdraw_root_index,
-			src_deposit_root,
-			src_withdraw_root,
-			dest_deposit_root,
-			dest_withdraw_root,
-		);
-
-		// Update rewards VAnchor
-		let vanchor =
-			Self::update_vanchor(source_tree_id, merkle_root, src_resource_id, latest_leaf_index)?;
-
-		// Handle proof verification
-		Self::handle_proof_verification(&proof_data)?;
+		// Updating roots, TODO: modify
+		Self::update_deposit_root(deposit_tree_id, deposit_root_index, deposit_root);
+		Self::update_withdraw_root(withdraw_tree_id, withdraw_root_index, withdraw_root);
 
 		// Flag deposit nullifier as being used, TODO: modify
 		for nullifier in &proof_data.input_nullifiers {
-			Self::add_deposit_nullifier_hash(source_tree_id, *nullifier)?;
+			Self::add_deposit_nullifier_hash(deposit_tree_id, *nullifier)?;
 		}
 
 		// Insert output commitments into the AP tree
 		for comm in &proof_data.output_commitments {
-			T::LinkableTree::insert_in_order(source_tree_id, *comm)?;
+			T::LinkableTree::insert_in_order(deposit_tree_id, *comm)?;
 		}
-
-		// TODO: event?
 
 		Ok(().into())
 	}
@@ -473,80 +381,5 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Get a unique, inaccessible account id from the `PotId`.
 	pub fn account_id() -> T::AccountId {
 		T::PotId::get().into_account_truncating()
-	}
-
-	// Set pool weight
-	pub fn set_pool_weight(new_pool_weight: u64) -> Result<(), DispatchError> {
-		PoolWeight::<T, I>::set(new_pool_weight);
-		Self::deposit_event(Event::UpdatedPoolWeight { pool_weight: new_pool_weight });
-		Ok(())
-	}
-
-	// Set tokens sold
-	pub fn set_tokens_sold(new_tokens_sold: u64) -> Result<(), DispatchError> {
-		TokensSold::<T, I>::set(new_tokens_sold);
-		Self::deposit_event(Event::UpdatedTokensSold { tokens_sold: new_tokens_sold });
-		Ok(())
-	}
-
-	// Get current timestamp
-	pub fn get_current_timestamp() -> u64 {
-		let current_timestamp = T::Time::now();
-
-		current_timestamp.saturated_into::<u64>()
-	}
-
-	/// Get expected number of tokens to swap
-	pub fn get_expected_return(addr: &T::AccountId, amount: BalanceOf<T, I>) -> BalanceOf<T, I> {
-		let old_balance = Self::get_virtual_balance(addr);
-		let pool_weight = Self::get_pool_weight();
-		let amount_u64: u64 = amount.saturated_into::<u64>();
-		let pool_weight_u64: u64 = pool_weight.saturated_into::<u64>();
-		let amount_i64: i64 = amount_u64 as i64;
-		let pool_weight_i64: i64 = pool_weight_u64 as i64;
-		let amount_fp: FixedI64 = FixedPointNumber::from_inner(amount_i64);
-		let pool_weight_fp: FixedI64 = FixedPointNumber::from_inner(pool_weight_i64);
-		let pow = -(amount_fp / pool_weight_fp);
-
-		let pow_f64: f64 = pow.to_float();
-		let exp = pow_f64.exp();
-
-		let old_balance_u64 = old_balance.saturated_into::<u64>();
-
-		let old_balance_f64 = old_balance_u64 as f64;
-		let final_new_balance_f64 = old_balance_f64 * exp;
-		let final_new_balance_i64 = final_new_balance_f64.round();
-		let final_new_balance_u64 = final_new_balance_i64 as u64;
-
-		let _final_balance_new =
-			old_balance.saturating_sub(final_new_balance_u64.saturated_into::<BalanceOf<T, I>>());
-		let final_balance_new_u64 = old_balance_u64 - final_new_balance_u64;
-
-		final_balance_new_u64.saturated_into::<BalanceOf<T, I>>()
-	}
-
-	/// Calculate balance to use
-	pub fn get_virtual_balance(addr: &T::AccountId) -> BalanceOf<T, I> {
-		let reward_balance =
-			<T as Config<I>>::Currency::total_balance(T::RewardAssetId::get(), addr);
-		let start_timestamp = T::StartTimestamp::get();
-		let current_timestamp = T::Time::now();
-		let start_timestamp_u64 = start_timestamp.saturated_into::<u64>();
-		let current_timestamp_u64 = current_timestamp.saturated_into::<u64>();
-		let elapsed_u64 = current_timestamp_u64.saturating_sub(start_timestamp_u64);
-		let liquidity_u64 = T::Liquidity::get().saturated_into::<u64>();
-		let tokens_sold = Self::get_tokens_sold();
-		if elapsed_u64 <= <T as Config<I>>::Duration::get() {
-			let _liquidity = T::Liquidity::get();
-			let duration = T::Duration::get();
-			let amount =
-				T::InitialLiquidity::get() + (liquidity_u64 * elapsed_u64) / duration - tokens_sold;
-			let modified_reward_balance = amount.saturated_into::<BalanceOf<T, I>>();
-			//let elapsed_balance = elapsed.saturated_into::<BalanceOf<T, I>>();
-			let _elapsed_balance = (elapsed_u64).saturated_into::<BalanceOf<T, I>>();
-			modified_reward_balance
-		} else {
-			reward_balance
-		}
 	}
 }
