@@ -92,7 +92,7 @@ fn test_claim_ap() {
 		let new_reward_balance = INITIAL_TOTAL_REWARDS_BALANCE;
 		assert_ok!(Currencies::update_balance(
 			RuntimeOrigin::root(),
-			AnonymityMining::account_id(),
+			AnonymityMiningClaims::account_id(),
 			reward_currency_id,
 			new_reward_balance,
 		));
@@ -101,7 +101,7 @@ fn test_claim_ap() {
 		let new_ap_balance = 50000;
 		assert_ok!(Currencies::update_balance(
 			RuntimeOrigin::root(),
-			AnonymityMining::account_id(),
+			AnonymityMiningClaims::account_id(),
 			ap_currency_id,
 			new_ap_balance,
 		));
@@ -134,7 +134,7 @@ fn test_claim_ap() {
 		let deposit_root = Default::default();
 		let withdraw_root = Default::default();
 
-		let claim_ap_call = AnonymityMining::claim_ap(
+		let claim_ap_call = AnonymityMiningClaims::claim_ap(
 			src_resource_id,
 			dest_resource_id,
 			recipient_one_account_id,
