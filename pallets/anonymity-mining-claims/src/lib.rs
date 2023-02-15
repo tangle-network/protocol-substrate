@@ -88,13 +88,16 @@ pub mod pallet {
 		/// Account Identifier from which the internal Pot is generated.
 		type PotId: Get<PalletId>;
 
-		/// History size of roots for each deposit tree
-		type DepositRootHistorySize: Get<Self::RootIndex>;
+		/// AP Vanchor Tree Id
+		type APVanchorTreeId: Get<Self::TreeId>;
 
-		/// History size of roots for each withdraw tree
-		type WithdrawRootHistorySize: Get<Self::RootIndex>;
+		/// History size of roots for each unspent tree
+		type UnspentRootHistorySize: Get<Self::RootIndex>;
 
-		/// Currency type for taking deposits
+		/// History size of roots for each spent tree
+		type SpentRootHistorySize: Get<Self::RootIndex>;
+
+		/// Currency type for taking unspents
 		type Currency: MultiCurrency<Self::AccountId>;
 
 		/// VAnchor Interface
@@ -124,22 +127,22 @@ pub mod pallet {
 	pub type LinkableTreeHasEdge<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, (T::TreeId, T::ChainId), bool, ValueQuery>;
 
-	/// The next deposit tree root index
+	/// The next unspent tree root index
 	#[pallet::storage]
-	#[pallet::getter(fn next_deposit_root_index)]
-	pub(super) type NextDepositRootIndex<T: Config<I>, I: 'static = ()> =
+	#[pallet::getter(fn next_unspent_root_index)]
+	pub(super) type NextUnspentRootIndex<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, T::RootIndex, ValueQuery>;
 
-	/// The next withdraw tree root index
+	/// The next spent tree root index
 	#[pallet::storage]
-	#[pallet::getter(fn next_withdraw_root_index)]
-	pub(super) type NextWithdrawRootIndex<T: Config<I>, I: 'static = ()> =
+	#[pallet::getter(fn next_spent_root_index)]
+	pub(super) type NextSpentRootIndex<T: Config<I>, I: 'static = ()> =
 		StorageValue<_, T::RootIndex, ValueQuery>;
 
-	// Map of treeId -> root index -> root value for deposit roots
+	// Map of treeId -> root index -> root value for unspent roots
 	#[pallet::storage]
-	#[pallet::getter(fn cached_deposit_roots)]
-	pub type CachedDepositRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
+	#[pallet::getter(fn cached_unspent_roots)]
+	pub type CachedUnspentRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
 		T::TreeId,
@@ -149,10 +152,10 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	// Map of treeId -> root index -> root value for withdraw roots
+	// Map of treeId -> root index -> root value for spent roots
 	#[pallet::storage]
-	#[pallet::getter(fn cached_withdraw_roots)]
-	pub type CachedWithdrawRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
+	#[pallet::getter(fn cached_spent_roots)]
+	pub type CachedSpentRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
 		T::TreeId,
@@ -162,10 +165,10 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	/// The map of deposit trees to their spent nullifier hashes
+	/// The map of unspent trees to their spent nullifier hashes
 	#[pallet::storage]
-	#[pallet::getter(fn deposit_nullifier_hashes)]
-	pub type DepositNullifierHashes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
+	#[pallet::getter(fn unspent_nullifier_hashes)]
+	pub type UnspentNullifierHashes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
 		T::TreeId,
@@ -175,10 +178,10 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	/// The map of withdraw trees to their spent nullifier hashes
+	/// The map of spent trees to their spent nullifier hashes
 	#[pallet::storage]
-	#[pallet::getter(fn withdraw_nullifier_hashes)]
-	pub type WithdrawNullifierHashes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
+	#[pallet::getter(fn spent_nullifier_hashes)]
+	pub type SpentNullifierHashes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
 		T::TreeId,
@@ -245,32 +248,32 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	// Add deposit nullifier hash
-	fn add_deposit_nullifier_hash(
+	// Add unspent nullifier hash
+	fn add_unspent_nullifier_hash(
 		id: T::TreeId,
 		nullifier_hash: T::Element,
 	) -> Result<(), DispatchError> {
-		DepositNullifierHashes::<T, I>::insert(id, nullifier_hash, true);
+		UnspentNullifierHashes::<T, I>::insert(id, nullifier_hash, true);
 		Ok(())
 	}
 
-	// Add withdraw nullifier hash
-	fn add_withdraw_nullifier_hash(
+	// Add spent nullifier hash
+	fn add_spent_nullifier_hash(
 		id: T::TreeId,
 		nullifier_hash: T::Element,
 	) -> Result<(), DispatchError> {
-		WithdrawNullifierHashes::<T, I>::insert(id, nullifier_hash, true);
+		SpentNullifierHashes::<T, I>::insert(id, nullifier_hash, true);
 		Ok(())
 	}
 
-	/// Store nullifier hashes in deposit and withdraw reward trees
+	/// Store nullifier hashes in unspent and spent reward trees
 	fn store_nullifier_hashes(
 		id: T::TreeId,
-		deposit_nullifier_hash: T::Element,
-		withdraw_nullifier_hash: T::Element,
+		unspent_nullifier_hash: T::Element,
+		spent_nullifier_hash: T::Element,
 	) -> Result<(), DispatchError> {
-		Self::add_deposit_nullifier_hash(id, deposit_nullifier_hash)?;
-		Self::add_withdraw_nullifier_hash(id, withdraw_nullifier_hash)?;
+		Self::add_unspent_nullifier_hash(id, unspent_nullifier_hash)?;
+		Self::add_spent_nullifier_hash(id, spent_nullifier_hash)?;
 		Ok(())
 	}
 
@@ -282,60 +285,42 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 
-	/// Update deposit root
-	fn update_deposit_root(
-		deposit_tree_id: T::TreeId,
-		deposit_root_index: T::RootIndex,
-		deposit_root: T::Element,
+	/// Update unspent root
+	fn update_unspent_root(
+		unspent_tree_id: T::TreeId,
+		unspent_root_index: T::RootIndex,
+		unspent_root: T::Element,
 	) {
-		// Update deposit root
-		CachedDepositRoots::<T, I>::insert(deposit_tree_id, deposit_root_index, deposit_root);
+		// Update unspent root
+		CachedUnspentRoots::<T, I>::insert(unspent_tree_id, unspent_root_index, unspent_root);
 	}
 
-	/// Update withdraw root
-	fn update_withdraw_root(
-		withdraw_tree_id: T::TreeId,
-		withdraw_root_index: T::RootIndex,
-		withdraw_root: T::Element,
+	/// Update spent root
+	fn update_spent_root(
+		spent_tree_id: T::TreeId,
+		spent_root_index: T::RootIndex,
+		spent_root: T::Element,
 	) {
-		// Update withdraw root
-		CachedWithdrawRoots::<T, I>::insert(withdraw_tree_id, withdraw_root_index, withdraw_root);
+		// Update spent root
+		CachedSpentRoots::<T, I>::insert(spent_tree_id, spent_root_index, spent_root);
 	}
 
-	/// TODO: keep track of last (30) deposit roots
-	/// Mapping from vanchor id to array of deposit roots and withdraw roots
-	/// ResourceId (webb rs) -> where proposal is stored, what data to execute etc.
-
-	/// Just need map of resource id to edge metadata
-	/// Similar to linkable tree but without chain id etc.
-
-	/// Claim AP tokens and update rewards VAnchor
-	/// Which resourceId the deposit happened on
-	/// DepositRoot array lookup
-	/// Which resourceId the withdraw happened on
-	/// Same w/ withdraw
-	/// Only one deposit/withdraw root no src/dest
-	/// Should not be calling update_deposit_root etc when claiming
-	/// That should be done by relayer or proposal
-	/// Edges don't need to be updated - VAnchor exists only on here
-	/// Commitment into VAnchor for how much AP owed
-	/// No AP actually transferred, just a commitment
-	/// When withdraw from APVanchor, minted AP tokens
+	/// Handle claiming of AP tokens
 	pub fn claim_ap(
-		deposit_resource_id: ResourceId,
-		withdraw_resource_id: ResourceId,
+		unspent_resource_id: ResourceId,
+		spent_resource_id: ResourceId,
 		recipient: T::AccountId,
 		amount: BalanceOf<T, I>,
 		merkle_root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 		proof_data: ProofData<T::Element>,
-		deposit_root: T::Element,
-		withdraw_root: T::Element,
+		unspent_root: T::Element,
+		spent_root: T::Element,
 	) -> DispatchResultWithPostInfo {
 		// Handle proof verification
 		Self::handle_proof_verification(&proof_data)?;
 
-		let deposit_tree_id: T::TreeId = match deposit_resource_id.target_system() {
+		let unspent_tree_id: T::TreeId = match unspent_resource_id.target_system() {
 			TargetSystem::Substrate(system) => system.tree_id.into(),
 			_ => {
 				ensure!(false, Error::<T, I>::InvalidResourceId);
@@ -343,7 +328,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			},
 		};
 
-		let withdraw_tree_id: T::TreeId = match withdraw_resource_id.target_system() {
+		let spent_tree_id: T::TreeId = match spent_resource_id.target_system() {
 			TargetSystem::Substrate(system) => system.tree_id.into(),
 			_ => {
 				ensure!(false, Error::<T, I>::InvalidResourceId);
@@ -351,28 +336,25 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			},
 		};
 
-		let deposit_root_index = Self::next_deposit_root_index();
-		let withdraw_root_index = Self::next_withdraw_root_index();
+		let unspent_root_index = Self::next_unspent_root_index();
+		let spent_root_index = Self::next_spent_root_index();
 
-		NextDepositRootIndex::<T, I>::mutate(|i| {
-			*i = i.saturating_add(One::one()) % T::DepositRootHistorySize::get()
+		NextUnspentRootIndex::<T, I>::mutate(|i| {
+			*i = i.saturating_add(One::one()) % T::UnspentRootHistorySize::get()
 		});
-		NextWithdrawRootIndex::<T, I>::mutate(|i| {
-			*i = i.saturating_add(One::one()) % T::DepositRootHistorySize::get()
+		NextSpentRootIndex::<T, I>::mutate(|i| {
+			*i = i.saturating_add(One::one()) % T::UnspentRootHistorySize::get()
 		});
 
-		// Updating roots, TODO: modify
-		Self::update_deposit_root(deposit_tree_id, deposit_root_index, deposit_root);
-		Self::update_withdraw_root(withdraw_tree_id, withdraw_root_index, withdraw_root);
-
-		// Flag deposit nullifier as being used, TODO: modify
+		// Flag unspent/spent nullifiers as being used, TODO: modify
 		for nullifier in &proof_data.input_nullifiers {
-			Self::add_deposit_nullifier_hash(deposit_tree_id, *nullifier)?;
+			Self::add_unspent_nullifier_hash(unspent_tree_id, *nullifier)?;
+			Self::add_spent_nullifier_hash(spent_tree_id, *nullifier)?;
 		}
 
-		// Insert output commitments into the AP tree
+		// Insert output commitments into the AP VAnchor
 		for comm in &proof_data.output_commitments {
-			T::LinkableTree::insert_in_order(deposit_tree_id, *comm)?;
+			T::LinkableTree::insert_in_order(Self::ap_vanchor_tree_id(), *comm)?;
 		}
 
 		Ok(().into())
@@ -381,5 +363,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Get a unique, inaccessible account id from the `PotId`.
 	pub fn account_id() -> T::AccountId {
 		T::PotId::get().into_account_truncating()
+	}
+
+	/// Get AP Vanchor tree id
+	pub fn ap_vanchor_tree_id() -> T::TreeId {
+		T::APVanchorTreeId::get()
 	}
 }

@@ -131,8 +131,8 @@ fn test_claim_ap() {
 		};
 
 		// mock roots
-		let deposit_root = Default::default();
-		let withdraw_root = Default::default();
+		let unspent_root = Default::default();
+		let spent_root = Default::default();
 
 		let claim_ap_call = AnonymityMiningClaims::claim_ap(
 			src_resource_id,
@@ -142,8 +142,8 @@ fn test_claim_ap() {
 			root,
 			latest_leaf_index,
 			proof_data,
-			deposit_root,
-			withdraw_root,
+			unspent_root,
+			spent_root,
 		);
 
 		assert_ok!(claim_ap_call);

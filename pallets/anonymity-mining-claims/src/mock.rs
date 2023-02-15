@@ -141,8 +141,8 @@ parameter_types! {
 	pub const Two: u64 = 2;
 	pub const MaxTreeDepth: u8 = 32;
 	pub const RootHistorySize: u32 = 100;
-	pub const DepositRootHistorySize: u32 = 30;
-	pub const WithdrawRootHistorySize: u32 = 30;
+	pub const UnspentRootHistorySize: u32 = 30;
+	pub const SpentRootHistorySize: u32 = 30;
 	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
 	pub const DefaultZeroElement: Element = Element([
 		47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52,
@@ -208,6 +208,15 @@ impl pallet_mt::Config for Test {
 }
 
 parameter_types! {
+	pub const ParameterDeposit: u64 = 1;
+	pub const StringLimit: u32 = 50;
+	pub const MetadataDepositBase: u64 = 1;
+	pub const MetadataDepositPerByte: u64 = 1;
+	pub const PotId: PalletId = PalletId(*b"py/anmin");
+	pub const APVanchorTreeId: u32 = 99;
+}
+
+parameter_types! {
 	pub const NativeCurrencyId: AssetId = 0;
 	pub const AnonymityPointsAssetId: AssetId = 1;
 	pub const RewardAssetId: AssetId = 2;
@@ -229,14 +238,6 @@ impl pallet_asset_registry::Config for Test {
 	type RegistryOrigin = frame_system::EnsureRoot<AccountId>;
 	type StringLimit = RegistryStringLimit;
 	type WeightInfo = ();
-}
-
-parameter_types! {
-	pub const ParameterDeposit: u64 = 1;
-	pub const StringLimit: u32 = 50;
-	pub const MetadataDepositBase: u64 = 1;
-	pub const MetadataDepositPerByte: u64 = 1;
-	pub const PotId: PalletId = PalletId(*b"py/anmin");
 }
 
 impl pallet_vanchor_verifier::Config for Test {
@@ -384,13 +385,14 @@ impl pallet_vanchor_handler::Config for Test {
 impl pallet_anonymity_mining_claims::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type PotId = PotId;
+	type APVanchorTreeId = APVanchorTreeId;
 	type Currency = Currencies;
 	type VAnchor = VAnchor;
 	type NativeCurrencyId = NativeCurrencyId;
 	type AnonymityPointsAssetId = AnonymityPointsAssetId;
 	type RewardAssetId = RewardAssetId;
-	type DepositRootHistorySize = DepositRootHistorySize;
-	type WithdrawRootHistorySize = WithdrawRootHistorySize;
+	type UnspentRootHistorySize = UnspentRootHistorySize;
+	type SpentRootHistorySize = SpentRootHistorySize;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 }
 
