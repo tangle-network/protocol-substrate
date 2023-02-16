@@ -130,9 +130,25 @@ fn test_claim_ap() {
 			ext_data_hash: Default::default(),
 		};
 
+		let reward_proof_data = RewardProofData {
+			rate: 10,
+			fee: 1,
+			note_ak_alpha_x: Default::default(),
+			note_ak_alpha_y: Default::default(),
+			ext_data_hash: Default::default(),
+			input_root: Default::default(),
+			input_nullifier: Default::default(),
+			output_commitment: Default::default(),
+			spent_roots: vec![],
+			unspent_roots: vec![],
+		};
+
 		// mock roots
 		let unspent_root = Default::default();
 		let spent_root = Default::default();
+
+		// mock reward_nullifier_hash
+		let reward_nullifier_hash = Default::default();
 
 		let claim_ap_call = AnonymityMiningClaims::claim_ap(
 			src_resource_id,
@@ -142,8 +158,10 @@ fn test_claim_ap() {
 			root,
 			latest_leaf_index,
 			proof_data,
+			reward_proof_data,
 			unspent_root,
 			spent_root,
+			reward_nullifier_hash,
 		);
 
 		assert_ok!(claim_ap_call);

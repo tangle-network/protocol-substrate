@@ -76,6 +76,20 @@ pub mod pallet {
 
 	pub struct Pallet<T, I = ()>(_);
 
+	#[derive(Clone, Encode, Decode, Debug, Eq, PartialEq, TypeInfo)]
+	pub struct RewardProofData<E> {
+		pub rate: u8,
+		pub fee: u8,
+		pub note_ak_alpha_x: E,
+		pub note_ak_alpha_y: E,
+		pub ext_data_hash: E,
+		pub input_root: E,
+		pub input_nullifier: E,
+		pub output_commitment: E,
+		pub spent_roots: Vec<E>,
+		pub unspent_roots: Vec<E>,
+	}
+
 	#[pallet::config]
 	/// The module configuration trait.
 	pub trait Config<I: 'static = ()>:
@@ -165,31 +179,11 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	/// The map of unspent trees to their spent nullifier hashes
+	/// The map of spent reward_nullfiier_hashes
 	#[pallet::storage]
-	#[pallet::getter(fn unspent_nullifier_hashes)]
-	pub type UnspentNullifierHashes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		T::TreeId,
-		Blake2_128Concat,
-		T::Element,
-		bool,
-		ValueQuery,
-	>;
-
-	/// The map of spent trees to their spent nullifier hashes
-	#[pallet::storage]
-	#[pallet::getter(fn spent_nullifier_hashes)]
-	pub type SpentNullifierHashes<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
-		_,
-		Blake2_128Concat,
-		T::TreeId,
-		Blake2_128Concat,
-		T::Element,
-		bool,
-		ValueQuery,
-	>;
+	#[pallet::getter(fn reward_nullifier_hashes)]
+	pub type RewardNullifierHashes<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::Element, bool, ValueQuery>;
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config<I>, I: 'static = ()> {
@@ -248,32 +242,9 @@ pub mod pallet {
 }
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	// Add unspent nullifier hash
-	fn add_unspent_nullifier_hash(
-		id: T::TreeId,
-		nullifier_hash: T::Element,
-	) -> Result<(), DispatchError> {
-		UnspentNullifierHashes::<T, I>::insert(id, nullifier_hash, true);
-		Ok(())
-	}
-
-	// Add spent nullifier hash
-	fn add_spent_nullifier_hash(
-		id: T::TreeId,
-		nullifier_hash: T::Element,
-	) -> Result<(), DispatchError> {
-		SpentNullifierHashes::<T, I>::insert(id, nullifier_hash, true);
-		Ok(())
-	}
-
-	/// Store nullifier hashes in unspent and spent reward trees
-	fn store_nullifier_hashes(
-		id: T::TreeId,
-		unspent_nullifier_hash: T::Element,
-		spent_nullifier_hash: T::Element,
-	) -> Result<(), DispatchError> {
-		Self::add_unspent_nullifier_hash(id, unspent_nullifier_hash)?;
-		Self::add_spent_nullifier_hash(id, spent_nullifier_hash)?;
+	// Add rewardNullifier hash
+	fn add_reward_nullifier_hash(nullifier_hash: T::Element) -> Result<(), DispatchError> {
+		RewardNullifierHashes::<T, I>::insert(nullifier_hash, true);
 		Ok(())
 	}
 
@@ -314,8 +285,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		merkle_root: T::Element,
 		latest_leaf_index: T::LeafIndex,
 		proof_data: ProofData<T::Element>,
+		reward_proof_data: RewardProofData<T::Element>,
 		unspent_root: T::Element,
 		spent_root: T::Element,
+		reward_nullifier_hash: T::Element,
 	) -> DispatchResultWithPostInfo {
 		// Handle proof verification
 		Self::handle_proof_verification(&proof_data)?;
@@ -346,10 +319,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			*i = i.saturating_add(One::one()) % T::UnspentRootHistorySize::get()
 		});
 
-		// Flag unspent/spent nullifiers as being used, TODO: modify
+		// Add reward_nullifier_hash
+		Self::add_reward_nullifier_hash(reward_nullifier_hash);
+
+		// Add nullifier on VAnchor
 		for nullifier in &proof_data.input_nullifiers {
-			Self::add_unspent_nullifier_hash(unspent_tree_id, *nullifier)?;
-			Self::add_spent_nullifier_hash(spent_tree_id, *nullifier)?;
+			T::VAnchor::add_nullifier_hash(Self::ap_vanchor_tree_id(), *nullifier)?;
 		}
 
 		// Insert output commitments into the AP VAnchor
