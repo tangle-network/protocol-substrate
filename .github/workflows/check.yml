@@ -4,9 +4,9 @@ name: check
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -41,6 +41,7 @@ jobs:
         with:
           crate: cargo-nextest
           version: latest
+          flags: "-Z sparse-registry"
 
       - name: Cache Cargo
         uses: actions/cache@v2
