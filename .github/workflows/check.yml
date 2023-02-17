@@ -41,7 +41,7 @@ jobs:
         with:
           crate: cargo-nextest
           version: latest
-          flags: "-Z sparse-registry"
+          args: "-Z sparse-registry"
 
       - name: Cache Cargo
         uses: actions/cache@v2
