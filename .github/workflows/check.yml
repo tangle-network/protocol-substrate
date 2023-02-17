@@ -60,7 +60,7 @@ jobs:
           SKIP_WASM_BUILD=1 cargo fmt --all -- --check
       - name: Check Build
         run: |
-          SKIP_WASM_BUILD=1 cargo check --release
+          SKIP_WASM_BUILD=1 cargo check --release -Z sparse-registry
       - name: Test
         run: |
           SKIP_WASM_BUILD=1 cargo nextest run --release --workspace --exclude webb-client
