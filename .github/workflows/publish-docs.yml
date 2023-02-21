@@ -18,10 +18,9 @@ jobs:
         run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
 
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: nightly-2022-06-22
+          toolchain: nightly
 
       - name: Update apt repositories
         run: sudo apt update
