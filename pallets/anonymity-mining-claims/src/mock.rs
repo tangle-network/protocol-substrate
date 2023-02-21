@@ -1,18 +1,20 @@
 use super::*;
-use crate::{self as pallet_anonymity_mining};
+use crate::{self as pallet_anonymity_mining_claims};
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{parameter_types, traits::Nothing, PalletId};
+use frame_support::{
+	parameter_types,
+	traits::{Contains, Nothing},
+	PalletId,
+};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
-use sp_runtime::traits::ConstU32;
-//pub use pallet_balances;
 pub use pallet::*;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
 use webb_primitives::{field_ops::ArkworksIntoFieldBn254, verifying::ArkworksVerifierBn254};
@@ -30,9 +32,7 @@ pub type Balance = u128;
 pub type BlockNumber = u64;
 pub type CurrencyId = u32;
 pub type ChainId = u64;
-/// Type for storing the id of an asset.
 pub type AssetId = u32;
-/// Signed version of Balance
 pub type Amount = i128;
 
 pub const MILLISECS_PER_BLOCK: u64 = 12000;
@@ -54,10 +54,11 @@ frame_support::construct_runtime!(
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		VAnchor: pallet_vanchor::{Pallet, Call, Storage, Event<T>},
+		VAnchorHandler: pallet_vanchor_handler::{Pallet, Call, Storage, Event<T>},
+		SignatureBridge: pallet_signature_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>},
 		KeyStorage: pallet_key_storage::{Pallet, Call, Storage, Event<T>, Config<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		AnonymityMining: pallet_anonymity_mining::{Pallet, Call, Storage, Event<T>, Config<T>}
+		AnonymityMiningClaims: pallet_anonymity_mining_claims::{Pallet, Call, Storage, Event<T>, Config<T>}
 	}
 );
 
@@ -140,6 +141,8 @@ parameter_types! {
 	pub const Two: u64 = 2;
 	pub const MaxTreeDepth: u8 = 32;
 	pub const RootHistorySize: u32 = 100;
+	pub const UnspentRootHistorySize: u32 = 30;
+	pub const SpentRootHistorySize: u32 = 30;
 	// 21663839004416932945382355908790599225266501822907911457504978515578255421292
 	pub const DefaultZeroElement: Element = Element([
 		47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52,
@@ -205,6 +208,15 @@ impl pallet_mt::Config for Test {
 }
 
 parameter_types! {
+	pub const ParameterDeposit: u64 = 1;
+	pub const StringLimit: u32 = 50;
+	pub const MetadataDepositBase: u64 = 1;
+	pub const MetadataDepositPerByte: u64 = 1;
+	pub const PotId: PalletId = PalletId(*b"py/anmin");
+	pub const APVanchorTreeId: u32 = 99;
+}
+
+parameter_types! {
 	pub const NativeCurrencyId: AssetId = 0;
 	pub const AnonymityPointsAssetId: AssetId = 1;
 	pub const RewardAssetId: AssetId = 2;
@@ -228,19 +240,6 @@ impl pallet_asset_registry::Config for Test {
 	type WeightInfo = ();
 }
 
-parameter_types! {
-	pub const ParameterDeposit: u64 = 1;
-	pub const StringLimit: u32 = 50;
-	pub const MetadataDepositBase: u64 = 1;
-	pub const MetadataDepositPerByte: u64 = 1;
-	pub const PotId: PalletId = PalletId(*b"py/anmin");
-	pub const StartTimestamp: u64 = 0;
-	//pub const PoolWeight: u64 = 800;
-	pub const Duration: u64 = 31536000;
-	pub const InitialLiquidity: u64 = 10000000;
-	pub const Liquidity: u64 = 20000000;
-}
-
 impl pallet_vanchor_verifier::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
@@ -252,7 +251,7 @@ impl pallet_vanchor_verifier::Config for Test {
 impl pallet_hasher::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MaxParameterLength = ConstU32<100>;
+	type MaxParameterLength = ConstU32<10000>;
 	type Hasher = webb_primitives::hashing::ArkworksPoseidonHasherBn254;
 	type WeightInfo = ();
 }
@@ -291,6 +290,60 @@ impl pallet_linkable_tree::Config for Test {
 }
 
 parameter_types! {
+	pub const ProposalLifetime: u64 = 50;
+	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
+}
+
+pub struct SetResourceProposalFilter;
+impl Contains<RuntimeCall> for SetResourceProposalFilter {
+	fn contains(c: &RuntimeCall) -> bool {
+		match c {
+			RuntimeCall::VAnchorHandler(method) => match method {
+				pallet_vanchor_handler::Call::execute_set_resource_proposal { .. } => true,
+				_ => false,
+			},
+			_ => false,
+		}
+	}
+}
+
+pub struct ExecuteProposalFilter;
+impl Contains<RuntimeCall> for ExecuteProposalFilter {
+	fn contains(c: &RuntimeCall) -> bool {
+		match c {
+			RuntimeCall::VAnchorHandler(method) => match method {
+				pallet_vanchor_handler::Call::execute_vanchor_create_proposal { .. } => true,
+				pallet_vanchor_handler::Call::execute_vanchor_update_proposal { .. } => true,
+				_ => false,
+			},
+			_ => false,
+		}
+	}
+}
+
+pub type ProposalNonce = u32;
+pub type MaintainerNonce = u32;
+
+type BridgeInstance = pallet_signature_bridge::Instance1;
+impl pallet_signature_bridge::Config<BridgeInstance> for Test {
+	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type BridgeAccountId = BridgeAccountId;
+	type ChainId = ChainId;
+	type ChainIdentifier = ChainIdentifier;
+	type ChainType = ChainType;
+	type RuntimeEvent = RuntimeEvent;
+	type ProposalLifetime = ProposalLifetime;
+	type MaxStringLength = ConstU32<1000>;
+	type ProposalNonce = ProposalNonce;
+	type SetResourceProposalFilter = SetResourceProposalFilter;
+	type ExecuteProposalFilter = ExecuteProposalFilter;
+	type MaintainerNonce = MaintainerNonce;
+	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
+	type WeightInfo = ();
+	type Proposal = RuntimeCall;
+}
+
+parameter_types! {
 	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
 	pub const MaxFee: Balance = 5;
 	pub const MaxExtAmount: Balance = 21;
@@ -323,31 +376,23 @@ impl pallet_key_storage::Config for Test {
 	type WeightInfo = ();
 }
 
-parameter_types! {
-	pub const MinimumPeriod: u64 = MILLISECS_PER_BLOCK / 2;
+impl pallet_vanchor_handler::Config for Test {
+	type VAnchor = VAnchor;
+	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Test, BridgeInstance>;
+	type RuntimeEvent = RuntimeEvent;
 }
 
-impl pallet_timestamp::Config for Test {
-	type Moment = Moment;
-	type OnTimestampSet = ();
-	type MinimumPeriod = MinimumPeriod;
-	type WeightInfo = ();
-}
-
-impl pallet_anonymity_mining::Config for Test {
+impl pallet_anonymity_mining_claims::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type PotId = PotId;
+	type APVanchorTreeId = APVanchorTreeId;
 	type Currency = Currencies;
 	type VAnchor = VAnchor;
 	type NativeCurrencyId = NativeCurrencyId;
 	type AnonymityPointsAssetId = AnonymityPointsAssetId;
 	type RewardAssetId = RewardAssetId;
-	type Time = Timestamp;
-	type StartTimestamp = StartTimestamp;
-	//type PoolWeight = PoolWeight;
-	type Duration = Duration;
-	type InitialLiquidity = InitialLiquidity;
-	type Liquidity = Liquidity;
+	type UnspentRootHistorySize = UnspentRootHistorySize;
+	type SpentRootHistorySize = SpentRootHistorySize;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 }
 

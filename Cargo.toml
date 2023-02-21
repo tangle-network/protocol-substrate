@@ -11,7 +11,8 @@ debug = 0
 members = [
 	"client",
 	"primitives",
-	"pallets/anonymity-mining",
+	"pallets/anonymity-mining-rewards",
+	"pallets/anonymity-mining-claims",
 	"pallets/asset-registry",
 	"pallets/hasher",
 	"pallets/verifier",
