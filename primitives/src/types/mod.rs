@@ -87,6 +87,7 @@ pub trait ElementTrait:
 	}
 }
 
+#[allow(clippy::wrong_self_convention)]
 pub trait IntoAbiToken {
 	fn into_abi(&self) -> Token;
 	fn encode_abi(&self) -> Vec<u8> {

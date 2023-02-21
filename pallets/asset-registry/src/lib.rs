@@ -14,12 +14,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+#![allow(clippy::type_complexity)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-	dispatch::DispatchError, pallet_prelude::*, sp_runtime::traits::CheckedAdd, transactional,
-};
+use frame_support::{dispatch::DispatchError, pallet_prelude::*, sp_runtime::traits::CheckedAdd};
 use frame_system::pallet_prelude::*;
 use sp_arithmetic::traits::BaseArithmetic;
 use sp_std::{

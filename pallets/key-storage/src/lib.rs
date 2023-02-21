@@ -20,6 +20,7 @@
 //!
 //! `register`: Registers a public key to it's account.
 // Ensure we're `no_std` when compiling for Wasm.
+#![allow(clippy::ptr_arg, clippy::type_complexity)]
 #![cfg_attr(not(feature = "std"), no_std)]
 mod benchmarking;
 #[cfg(test)]

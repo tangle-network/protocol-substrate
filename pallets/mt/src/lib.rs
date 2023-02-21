@@ -44,6 +44,7 @@
 //! * [`Support`](../frame_support/index.html)
 
 // Ensure we're `no_std` when compiling for Wasm.
+#![allow(clippy::type_complexity)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
