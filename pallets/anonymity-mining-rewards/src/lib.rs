@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Anonymity Mining Module
+//! # Anonymity Mining Rewards Module
 //!
 //! ## Overview
 //!
@@ -30,20 +30,27 @@ pub mod mock;
 mod tests;
 
 use frame_support::{
+	dispatch::DispatchResultWithPostInfo,
+	ensure,
 	pallet_prelude::DispatchError,
 	sp_runtime::{
-		traits::{AccountIdConversion, Saturating},
+		traits::{AccountIdConversion, One, Saturating},
 		FixedI64, FixedPointNumber, SaturatedConversion,
 	},
 	traits::{Get, Time},
 	PalletId,
 };
 use orml_traits::MultiCurrency;
-use pallet_vanchor::VAnchorConfigration;
-use sp_std::{convert::TryInto, vec};
-use webb_primitives::traits::vanchor::{VAnchorInspector, VAnchorInterface};
-
 pub use pallet::*;
+use sp_std::{convert::TryInto, vec};
+use webb_primitives::{
+	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
+	traits::{linkable_tree::*, merkle_tree::*},
+	types::vanchor::{ExtData, ProofData},
+	utils::compute_chain_id_type,
+	webb_proposals::{ResourceId, TargetSystem},
+	ElementTrait,
+};
 
 /// Type alias for the orml_traits::MultiCurrency::Balance type
 pub type BalanceOf<T, I> =
@@ -66,9 +73,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	/// The module configuration trait.
-	pub trait Config<I: 'static = ()>:
-		frame_system::Config + pallet_balances::Config + pallet_vanchor::Config<I>
-	{
+	pub trait Config<I: 'static = ()>: frame_system::Config + pallet_balances::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self, I>>
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -78,10 +83,6 @@ pub mod pallet {
 
 		/// Currency type for taking deposits
 		type Currency: MultiCurrency<Self::AccountId>;
-
-		/// VAnchor Interface
-		type VAnchor: VAnchorInterface<VAnchorConfigration<Self, I>>
-			+ VAnchorInspector<VAnchorConfigration<Self, I>>;
 
 		/// AP asset id
 		#[pallet::constant]
@@ -146,12 +147,16 @@ pub mod pallet {
 	pub enum Event<T: Config<I>, I: 'static = ()> {
 		UpdatedPoolWeight { pool_weight: u64 },
 		UpdatedTokensSold { tokens_sold: u64 },
+		AnchorEdgeAdded,
+		AnchorEdgeUpdated,
 	}
 
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
 		/// Error during hashing
 		HashError,
+		/// Invalid resource ID
+		InvalidResourceId,
 	}
 
 	#[pallet::call]
