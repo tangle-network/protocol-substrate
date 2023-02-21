@@ -1,31 +1,31 @@
 [profile.release]
+lto = "thin"
 panic = "unwind"
 strip = "symbols"
-lto = "thin"
 
 [profile.dev]
-strip = "symbols"
 debug = 0
+strip = "symbols"
 
 [workspace]
 members = [
-	"client",
-	"primitives",
-	"pallets/anonymity-mining",
-	"pallets/asset-registry",
-	"pallets/hasher",
-	"pallets/verifier",
-	"pallets/mt",
-	"pallets/linkable-tree",
-	"pallets/mixer",
-	"pallets/signature-bridge",
-	"pallets/vanchor",
-	"pallets/vanchor-handler",
-	"pallets/vanchor-verifier",
-	# "pallets/xanchor",
-	"pallets/token-wrapper",
-	"pallets/token-wrapper-handler",
-	"pallets/relayer-registry",
-	"pallets/key-storage",
-	"standalone/*",
+  "client",
+  "primitives",
+  "pallets/anonymity-mining",
+  "pallets/asset-registry",
+  "pallets/hasher",
+  "pallets/verifier",
+  "pallets/mt",
+  "pallets/linkable-tree",
+  "pallets/mixer",
+  "pallets/signature-bridge",
+  "pallets/vanchor",
+  "pallets/vanchor-handler",
+  "pallets/vanchor-verifier",
+  # "pallets/xanchor",
+  "pallets/token-wrapper",
+  "pallets/token-wrapper-handler",
+  "pallets/relayer-registry",
+  "pallets/key-storage",
+  "standalone/*",
 ]

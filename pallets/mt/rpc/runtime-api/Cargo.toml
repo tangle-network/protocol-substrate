@@ -1,11 +1,11 @@
 [package]
-name = "pallet-mt-rpc-runtime-api"
-version = "1.0.0"
 authors = ["Webb"]
+description = "RPC runtime API for merkle tree pallet"
 edition = "2018"
 license = "Apache-2.0"
-description = "RPC runtime API for merkle tree pallet"
+name = "pallet-mt-rpc-runtime-api"
 readme = "README.md"
+version = "1.0.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -17,6 +17,6 @@ webb-primitives = { path = "../../../../primitives", default-features = false }
 [features]
 default = ["std"]
 std = [
-	"sp-api/std",
-	"webb-primitives/std",
+  "sp-api/std",
+  "webb-primitives/std",
 ]

@@ -1,32 +1,32 @@
 [package]
-name = "webb-primitives"
-version = "0.1.0"
 authors = ["Drew Stone <drewstone329@gmail.com>"]
 edition = "2018"
+name = "webb-primitives"
+version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serde = { version = "1.0.119", optional = true, features = ["derive"] }
 codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "3" }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+serde = { version = "1.0.119", optional = true, features = ["derive"] }
 sp-consensus-aura = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-consensus-babe = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 
 # Arkworks
-ark-ff = { version = "^0.3.0", default-features = false }
+ark-bls12-381 = { version = "^0.3.0", default-features = false, features = ["curve"], optional = true }
+ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"], optional = true }
 ark-ec = { version = "^0.3.0", default-features = false }
-ark-std = { version = "^0.3.0", default-features = false }
-ark-relations = { version = "^0.3.0", default-features = false }
-ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ] }
-ark-bls12-381 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
-ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ], optional = true }
+ark-ff = { version = "^0.3.0", default-features = false }
 ark-groth16 = { version = "^0.3.0", default-features = false }
+ark-relations = { version = "^0.3.0", default-features = false }
+ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"] }
+ark-std = { version = "^0.3.0", default-features = false }
 # ark-circom = { git = "https://github.com/gakonst/ark-circom.git", default-features = false }
 
 blake2 = { version = "0.9", default-features = false }
@@ -41,33 +41,33 @@ webb-proposals = { version = "0.5.4", default-features = false, features = ["sca
 
 [features]
 default = ["std", "hashing", "verifying", "field_ops"]
-std = [
-	"serde",
-	"codec/std",
-	"frame-support/std",
-	"sp-core/std",
-	"sp-std/std",
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-consensus-aura/std",
-	"sp-consensus-babe/std",
-	"ark-ff/std",
-	"ark-ec/std",
-	"ark-std/std",
-	"ark-relations/std",
-	"webb-proposals/std"
-]
 field_ops = [
-	"ark-bls12-381",
-	"ark-bn254",
+  "ark-bls12-381",
+  "ark-bn254",
 ]
 hashing = [
-	"arkworks-native-gadgets",
-	"ark-bls12-381",
-	"ark-bn254",
+  "arkworks-native-gadgets",
+  "ark-bls12-381",
+  "ark-bn254",
+]
+std = [
+  "serde",
+  "codec/std",
+  "frame-support/std",
+  "sp-core/std",
+  "sp-std/std",
+  "sp-io/std",
+  "sp-runtime/std",
+  "sp-consensus-aura/std",
+  "sp-consensus-babe/std",
+  "ark-ff/std",
+  "ark-ec/std",
+  "ark-std/std",
+  "ark-relations/std",
+  "webb-proposals/std",
 ]
 verifying = [
-	"arkworks-native-gadgets",
-	"ark-bls12-381",
-	"ark-bn254",
+  "arkworks-native-gadgets",
+  "ark-bls12-381",
+  "ark-bn254",
 ]

@@ -1,30 +1,30 @@
 [package]
-name = "pallet-mt-rpc"
-version = "0.1.0"
 authors = ["Webb Tools"]
 edition = "2018"
+name = "pallet-mt-rpc"
+version = "0.1.0"
 
 [dependencies]
 jsonrpsee = { version = "0.16.2", features = ["server"] }
-thiserror = "1.0"
 sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+thiserror = "1.0"
 
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 
-webb-primitives = { path = "../../../primitives", default-features = false }
 pallet-mt-rpc-runtime-api = { path = "./runtime-api", default-features = false }
+webb-primitives = { path = "../../../primitives", default-features = false }
 
 [features]
 default = ["std"]
 std = [
-    "codec/std",
-    "webb-primitives/std",
-    "pallet-mt-rpc-runtime-api/std",
-    "sp-core/std",
-    "sp-runtime/std",
-    "sp-api/std"
+  "codec/std",
+  "webb-primitives/std",
+  "pallet-mt-rpc-runtime-api/std",
+  "sp-core/std",
+  "sp-runtime/std",
+  "sp-api/std",
 ]
