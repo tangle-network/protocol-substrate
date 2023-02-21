@@ -398,7 +398,10 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 	fn create(creator: Option<T::AccountId>, depth: u8) -> Result<T::TreeId, DispatchError> {
 		// Setting the next tree id
 		let tree_id = Self::next_tree_id();
-		NextTreeId::<T, I>::mutate(|id| id.saturating_add(One::one()));
+		NextTreeId::<T, I>::mutate(|id| {
+			*id = id.saturating_add(One::one());
+			*id
+		});
 		// get unit of two
 		let two: T::LeafIndex = Self::two();
 		// get default edge nodes
@@ -466,10 +469,14 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 		// Setting the next root index
 		let root_index = Self::next_root_index();
 		NextRootIndex::<T, I>::mutate(|i| {
-			*i = i.saturating_add(One::one()) % T::RootHistorySize::get()
+			*i = i.saturating_add(One::one()) % T::RootHistorySize::get();
+			*i
 		});
 		CachedRoots::<T, I>::insert(id, root_index, hash);
-		NextLeafIndex::<T, I>::mutate(id, |i| i.saturating_add(One::one()));
+		NextLeafIndex::<T, I>::mutate(id, |i| {
+			*i = i.saturating_add(One::one());
+			*i
+		});
 
 		// return the root
 		Ok(hash)
