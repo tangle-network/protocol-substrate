@@ -20,8 +20,10 @@ pallet-asset-registry = { path = "../asset-registry", default-features = false }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 pallet-linkable-tree = { path = "../linkable-tree", default-features = false }
 pallet-mt = { path = "../mt", default-features = false }
+pallet-signature-bridge = { path = "../../pallets/signature-bridge", default-features = false }
 pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
 pallet-vanchor = { path = "../vanchor", default-features = false }
+pallet-vanchor-handler = { path = "../../pallets/vanchor-handler", default-features = false }
 
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
@@ -38,6 +40,7 @@ ark-ff = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"] }
 ark-std = { version = "^0.3.0", default-features = false }
+arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 hex = "0.4"
 orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
