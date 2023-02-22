@@ -44,6 +44,7 @@
 //! * [`Support`](../frame_support/index.html)
 
 // Ensure we're `no_std` when compiling for Wasm.
+#![allow(clippy::type_complexity)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -397,7 +398,10 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 	fn create(creator: Option<T::AccountId>, depth: u8) -> Result<T::TreeId, DispatchError> {
 		// Setting the next tree id
 		let tree_id = Self::next_tree_id();
-		NextTreeId::<T, I>::mutate(|id| *id += One::one());
+		NextTreeId::<T, I>::mutate(|id| {
+			*id = id.saturating_add(One::one());
+			*id
+		});
 		// get unit of two
 		let two: T::LeafIndex = Self::two();
 		// get default edge nodes
@@ -465,10 +469,14 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 		// Setting the next root index
 		let root_index = Self::next_root_index();
 		NextRootIndex::<T, I>::mutate(|i| {
-			*i = i.saturating_add(One::one()) % T::RootHistorySize::get()
+			*i = i.saturating_add(One::one()) % T::RootHistorySize::get();
+			*i
 		});
 		CachedRoots::<T, I>::insert(id, root_index, hash);
-		NextLeafIndex::<T, I>::mutate(id, |i| *i += One::one());
+		NextLeafIndex::<T, I>::mutate(id, |i| {
+			*i = i.saturating_add(One::one());
+			*i
+		});
 
 		// return the root
 		Ok(hash)
@@ -493,7 +501,7 @@ impl<T: Config<I>, I: 'static> TreeInspector<T::AccountId, T::TreeId, T::Element
 					return Ok(true)
 				}
 
-				temp += One::one();
+				temp = temp.saturating_add(One::one());
 			}
 
 			Ok(false)

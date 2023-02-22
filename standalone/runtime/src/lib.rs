@@ -990,8 +990,6 @@ impl pallet_assets::Config for Runtime {
 	type Extra = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 	type RemoveItemsLimit = ConstU32<1000>;
-	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = ();
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -1153,7 +1151,6 @@ impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
 	type Two = Two;
 	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
 }
-
 parameter_types! {
 	pub const MaxParameterLength : u32 = 1000;
 }
@@ -1166,7 +1163,7 @@ impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
-impl pallet_vanchor_verifier::Config for Runtime {
+impl pallet_vanchor_verifier::Config<pallet_vanchor_verifier::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
@@ -1472,7 +1469,7 @@ construct_runtime!(
 		MixerVerifierBn254: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		// VAnchor Verifier
-		VAnchorVerifier: pallet_vanchor_verifier::{Pallet, Call, Storage, Event<T>, Config<T>},
+		VAnchorVerifier: pallet_vanchor_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		// Merkle Tree
 		MerkleTreeBn254: pallet_mt::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
@@ -1769,11 +1766,9 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_mt, MerkleTreeBn254);
 			list_benchmark!(list, extra, pallet_linkable_tree, LinkableTreeBn254);
 			list_benchmark!(list, extra, pallet_vanchor, VAnchorBn254);
-			list_benchmark!(list, extra, pallet_vanchor_handler, VAnchorHandlerBn254);
 			list_benchmark!(list, extra, pallet_mixer, MixerBn254);
 			list_benchmark!(list, extra, pallet_verifier, MixerVerifierBn254);
 			list_benchmark!(list, extra, pallet_token_wrapper, TokenWrapper);
-			list_benchmark!(list, extra, pallet_token_wrapper_handler, TokenWrapperHandler);
 			list_benchmark!(list, extra, pallet_signature_bridge, SignatureBridge);
 			list_benchmark!(list, extra, pallet_relayer_registry, RelayerRegistry);
 			list_benchmark!(list, extra, pallet_key_storage, KeyStorage);
@@ -1810,11 +1805,9 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_mt, MerkleTreeBn254);
 			add_benchmark!(params, batches, pallet_linkable_tree, LinkableTreeBn254);
 			add_benchmark!(params, batches, pallet_vanchor, VAnchorBn254);
-			add_benchmark!(params, batches, pallet_vanchor_handler, VAnchorHandlerBn254);
 			add_benchmark!(params, batches, pallet_mixer, MixerBn254);
 			add_benchmark!(params, batches, pallet_verifier, MixerVerifierBn254);
 			add_benchmark!(params, batches, pallet_token_wrapper, TokenWrapper);
-			add_benchmark!(params, batches, pallet_token_wrapper_handler, TokenWrapperHandler);
 			add_benchmark!(params, batches, pallet_signature_bridge, SignatureBridge);
 			add_benchmark!(params, batches, pallet_relayer_registry, RelayerRegistry);
 			add_benchmark!(params, batches, pallet_key_storage, KeyStorage);

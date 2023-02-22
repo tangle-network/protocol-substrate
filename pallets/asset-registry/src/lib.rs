@@ -14,12 +14,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+#![allow(clippy::type_complexity)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-	dispatch::DispatchError, pallet_prelude::*, sp_runtime::traits::CheckedAdd, transactional,
-};
+use frame_support::{dispatch::DispatchError, pallet_prelude::*, sp_runtime::traits::CheckedAdd};
 use frame_system::pallet_prelude::*;
 use sp_arithmetic::traits::BaseArithmetic;
 use sp_std::{
@@ -269,7 +267,7 @@ pub mod pallet {
 		/// Emits 'Registered` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::register())]
 		#[pallet::call_index(0)]
-		#[transactional]
+
 		pub fn register(
 			origin: OriginFor<T>,
 			name: BoundedVec<u8, T::StringLimit>,
@@ -295,7 +293,7 @@ pub mod pallet {
 		// TODO: No tests
 		#[pallet::weight(<T as Config>::WeightInfo::update())]
 		#[pallet::call_index(1)]
-		#[transactional]
+
 		pub fn update(
 			origin: OriginFor<T>,
 			asset_id: T::AssetId,
@@ -340,7 +338,7 @@ pub mod pallet {
 		/// Emits `MetadataSet` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::set_metadata())]
 		#[pallet::call_index(2)]
-		#[transactional]
+
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			asset_id: T::AssetId,
@@ -373,7 +371,7 @@ pub mod pallet {
 		/// Emits `LocationSet` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::set_location())]
 		#[pallet::call_index(3)]
-		#[transactional]
+
 		pub fn set_location(
 			origin: OriginFor<T>,
 			asset_id: T::AssetId,

@@ -1,34 +1,34 @@
 [package]
+edition = "2021"
 name = "webb-client"
 version = "0.1.0"
-edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-subxt = { version = "0.25.0" }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
+subxt = { version = "0.25.0" }
 
 [dev-dependencies]
 hex = "0.4"
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 serde = { version = "1.0.119" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-keyring = { default-features = false, version = "7.0.0" }
-tokio = { version = "1.17.0", features = ["full"] }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+tokio = { version = "1.17.0", features = ["full"] }
 
 # arkworks related deps
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = ["curve"] }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
-ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false}
-ark-ec = { version = "^0.3.0", default-features = false}
-ark-ff = { version = "^0.3.0", default-features = false}
-ark-relations = { version = "^0.3.0", default-features = false}
-ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"]}
-ark-std = { version = "^0.3.0", default-features = false}
+ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
+ark-ec = { version = "^0.3.0", default-features = false }
+ark-ff = { version = "^0.3.0", default-features = false }
+ark-relations = { version = "^0.3.0", default-features = false }
+ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"] }
+ark-std = { version = "^0.3.0", default-features = false }
 
 # Webb deps
-webb-primitives = { path = "../primitives", features = ["hashing", "verifying", "field_ops"] }
-arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
 arkworks-native-gadgets = { version = "1.2.0", default-features = false }
+arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
+webb-primitives = { path = "../primitives", features = ["hashing", "verifying", "field_ops"] }
