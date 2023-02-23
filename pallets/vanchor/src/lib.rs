@@ -48,6 +48,8 @@ mod test_utils;
 mod tests;
 #[cfg(test)]
 mod tests_circom;
+#[cfg(test)]
+mod zerokit_utils;
 
 mod benchmarking;
 mod benchmarking_utils;

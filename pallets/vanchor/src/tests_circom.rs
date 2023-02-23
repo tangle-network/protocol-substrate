@@ -2,19 +2,27 @@ use crate::{
 	mock::*,
 	test_utils::{deconstruct_public_inputs_el, setup_utxos, ANCHOR_CT, DEFAULT_LEAF, NUM_UTXOS},
 	tests::*,
+	zerokit_utils::*,
 	Instance2,
 };
-use ark_bn254::Bn254;
-use ark_circom::{read_zkey, CircomBuilder, CircomConfig};
+use wasmer::{Module, Store};
+use std::convert::{TryInto, TryFrom};
+use ark_circom::{read_zkey, CircomBuilder, CircomConfig, WitnessCalculator, CircomReduction};
 use ark_ff::{BigInteger, PrimeField, ToBytes};
+use cfg_if::cfg_if;
+use ark_relations::r1cs::ConstraintMatrices;
+use once_cell::sync::OnceCell;
+use std::sync::Mutex;
 use ark_groth16::{
 	create_random_proof as prove, generate_random_parameters, prepare_verifying_key, verify_proof,
-	ProvingKey,
+	ProvingKey, Proof, VerifyingKey, create_proof_with_reduction_and_matrices
 };
+use ark_relations::r1cs::SynthesisError;
 use arkworks_native_gadgets::{
 	merkle_tree::{Path, SparseMerkleTree},
 	poseidon::Poseidon,
 };
+use thiserror::Error;
 use arkworks_setups::{
 	common::{setup_params, setup_tree_and_create_path},
 	utxo::Utxo,
@@ -22,12 +30,12 @@ use arkworks_setups::{
 };
 use frame_benchmarking::account;
 use frame_support::{assert_ok, traits::OnInitialize};
-use num_bigint::{BigInt, Sign};
+use num_bigint::{BigInt, BigUint, Sign};
+use std::str::FromStr;
 use pallet_linkable_tree::LinkableTreeConfigration;
-use rand::thread_rng;
+use ark_std::{rand::thread_rng, UniformRand};
 use sp_core::hashing::keccak_256;
 use std::{
-	convert::TryInto,
 	fs::{self, File},
 };
 use webb_primitives::{
@@ -38,8 +46,110 @@ use webb_primitives::{
 	verifying::CircomError,
 	AccountId,
 };
+use ark_bn254::{Fr, Fq, Fq2, Bn254, G1Affine, G1Projective, G2Affine, G2Projective };
 
 type Bn254Fr = ark_bn254::Fr;
+
+
+#[derive(Error, Debug)]
+pub enum ProofError {
+    #[error("Error reading circuit key: {0}")]
+    CircuitKeyError(#[from] std::io::Error),
+    #[error("Error producing witness: {0}")]
+    WitnessError(color_eyre::Report),
+    #[error("Error producing proof: {0}")]
+    SynthesisError(#[from] SynthesisError),
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+static WITNESS_CALCULATOR: OnceCell<Mutex<WitnessCalculator>> = OnceCell::new();
+
+// Utilities to convert a json verification key in a groth16::VerificationKey
+fn fq_from_str(s: &str) -> Fq {
+    Fq::try_from(BigUint::from_str(s).unwrap()).unwrap()
+}
+// Initializes the witness calculator using a bytes vector
+#[cfg(not(target_arch = "wasm32"))]
+pub fn circom_from_raw(wasm_buffer: Vec<u8>) -> &'static Mutex<WitnessCalculator> {
+    WITNESS_CALCULATOR.get_or_init(|| {
+        let store = Store::default();
+        let module = Module::new(&store, wasm_buffer).unwrap();
+        let result =
+            WitnessCalculator::from_module(module).expect("Failed to create witness calculator");
+        Mutex::new(result)
+    })
+}
+
+// Initializes the witness calculator
+#[cfg(not(target_arch = "wasm32"))]
+pub fn circom_from_folder(wasm_path: &str) -> &'static Mutex<WitnessCalculator> {
+    // We read the wasm file
+    let wasm_buffer = std::fs::read(wasm_path).unwrap();
+    circom_from_raw(wasm_buffer)
+}
+
+pub fn generate_proof(
+    #[cfg(not(target_arch = "wasm32"))] witness_calculator: &Mutex<WitnessCalculator>,
+    #[cfg(target_arch = "wasm32")] witness_calculator: &mut WitnessCalculator,
+    proving_key: &(ProvingKey<Bn254>, ConstraintMatrices<Fr>),
+    vanchor_witness: [(&str, Vec<BigInt>); 15],
+) -> Result<(Proof<Bn254>, Vec<Fr>), ProofError> {
+    let inputs = vanchor_witness
+        .into_iter()
+        .map(|(name, values)| (name.to_string(), values.clone()));
+
+	println!("inputs {:?}", inputs);
+
+    cfg_if! {
+        if #[cfg(target_arch = "wasm32")] {
+            let full_assignment = witness_calculator
+            .calculate_witness_element::<Bn254, _>(inputs, false)
+            .map_err(ProofError::WitnessError)?;
+        } else {
+            let full_assignment = witness_calculator
+            .lock()
+            .expect("witness_calculator mutex should not get poisoned")
+            .calculate_witness_element::<Bn254, _>(inputs, false)
+            .map_err(ProofError::WitnessError)?;
+        }
+    }
+
+    // Random Values
+    let mut rng = thread_rng();
+    let r = Fr::rand(&mut rng);
+    let s = Fr::rand(&mut rng);
+
+    let proof = create_proof_with_reduction_and_matrices::<_, CircomReduction>(
+        &proving_key.0,
+        r,
+        s,
+        &proving_key.1,
+        proving_key.1.num_instance_variables,
+        proving_key.1.num_constraints,
+        full_assignment.as_slice(),
+    )?;
+
+    Ok((proof, full_assignment))
+}
+
+/// Verifies a given RLN proof
+///
+/// # Errors
+///
+/// Returns a [`ProofError`] if verifying fails. Verification failure does not
+/// necessarily mean the proof is incorrect.
+pub fn circom_verify_proof(
+    verifying_key: &VerifyingKey<Bn254>,
+	proof: &Proof<Bn254>,
+    inputs: Vec<Fr>,
+) -> Result<bool, ProofError> {
+    // Check that the proof is valid
+    let pvk = prepare_verifying_key(verifying_key);
+
+    let verified = verify_proof(&pvk, proof, &inputs)?;
+
+    Ok(verified)
+}
 
 fn setup_environment_with_circom() -> (Vec<u8>, ProvingKey<Bn254>, CircomConfig<Bn254>) {
 	let curve = Curve::Bn254;
@@ -79,6 +189,7 @@ fn setup_environment_with_circom() -> (Vec<u8>, ProvingKey<Bn254>, CircomConfig<
 	let mut vk_2_2_bytes = Vec::new();
 	params_2_2.vk.write(&mut vk_2_2_bytes).unwrap();
 	println!("vk_2_2_bytes: {:?}", vk_2_2_bytes.len());
+	println!("vk: {:?}", params_2_2.vk);
 
 	assert_ok!(VAnchorVerifier2::force_set_parameters(
 		RuntimeOrigin::root(),
@@ -169,180 +280,6 @@ fn insert_utxos_to_merkle_tree(
 	(in_indices, in_root_set, tree, in_paths)
 }
 
-pub fn setup_circom_zk_circuit(
-	config: CircomConfig<Bn254>,
-	public_amount: i128,
-	chain_id: u64,
-	ext_data_hash: Vec<u8>,
-	in_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
-	out_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
-	_proving_key: ProvingKey<Bn254>,
-	neighbor_roots: [Element; ANCHOR_CT - 1],
-	custom_root: Element,
-) -> Result<(Vec<u8>, Vec<Bn254Fr>), CircomError> {
-	use ark_relations::r1cs::{ConstraintSynthesizer, ConstraintSystem};
-
-	let (in_indices, _in_root_set, _tree, in_paths) =
-		insert_utxos_to_merkle_tree(&in_utxos, neighbor_roots, custom_root);
-
-	let params4 = setup_params::<Bn254Fr>(Curve::Bn254, 5, 4);
-	let nullifier_hasher = Poseidon::<Bn254Fr> { params: params4 };
-	let input_nullifiers = in_utxos
-		.clone()
-		.map(|utxo| utxo.calculate_nullifier(&nullifier_hasher).unwrap());
-
-	let mut builder = CircomBuilder::new(config);
-	// Public inputs
-	// publicAmount, extDataHash, inputNullifier, outputCommitment, chainID, roots
-	builder.push_input(
-		"publicAmount",
-		if public_amount > 0 {
-			BigInt::from_bytes_be(Sign::Plus, &public_amount.to_be_bytes())
-		} else {
-			BigInt::from_bytes_be(Sign::Minus, &(-public_amount).to_be_bytes())
-		},
-	);
-	builder.push_input("extDataHash", BigInt::from_bytes_be(Sign::Plus, &ext_data_hash));
-	for i in 0..NUM_UTXOS {
-		builder.push_input(
-			"inputNullifier",
-			BigInt::from_bytes_be(Sign::Plus, &input_nullifiers[i].into_repr().to_bytes_be()),
-		);
-		builder.push_input(
-			"outputCommitment",
-			BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].commitment.into_repr().to_bytes_be()),
-		);
-	}
-	builder.push_input("chainID", BigInt::from_bytes_be(Sign::Plus, &chain_id.to_be_bytes()));
-	builder.push_input("roots", BigInt::from_bytes_be(Sign::Plus, &custom_root.0));
-	for i in 0..ANCHOR_CT - 1 {
-		builder.push_input("roots", BigInt::from_bytes_be(Sign::Plus, &neighbor_roots[i].0));
-	}
-	// Private inputs
-	// inAmount, inPrivateKey, inBlinding, inPathIndices, inPathElements
-	// outChainID, outAmount, outPubkey, outBlinding
-	for i in 0..NUM_UTXOS {
-		builder.push_input(
-			"inAmount",
-			BigInt::from_bytes_be(Sign::Plus, &in_utxos[i].amount.into_repr().to_bytes_be()),
-		);
-		builder.push_input(
-			"inPrivateKey",
-			BigInt::from_bytes_be(
-				Sign::Plus,
-				&in_utxos[i].keypair.secret_key.unwrap().into_repr().to_bytes_be(),
-			),
-		);
-		builder.push_input(
-			"inBlinding",
-			BigInt::from_bytes_be(Sign::Plus, &in_utxos[i].blinding.into_repr().to_bytes_be()),
-		);
-		builder.push_input("inPathIndices", BigInt::from(in_indices[i]));
-		for j in 0..TREE_DEPTH {
-			let neighbor_elt: Bn254Fr =
-				if in_indices[i] == 0 { in_paths[i].path[j].1 } else { in_paths[i].path[j].0 };
-			builder.push_input(
-				"inPathElements",
-				BigInt::from_bytes_be(Sign::Plus, &neighbor_elt.into_repr().to_bytes_be()),
-			);
-		}
-
-		builder.push_input(
-			"outChainID",
-			BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].chain_id.into_repr().to_bytes_be()),
-		);
-		builder.push_input(
-			"outAmount",
-			BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].amount.into_repr().to_bytes_be()),
-		);
-		builder.push_input(
-			"outPubkey",
-			BigInt::from_bytes_be(
-				Sign::Plus,
-				&out_utxos[i].keypair.public_key.into_repr().to_bytes_be(),
-			),
-		);
-		builder.push_input(
-			"outBlinding",
-			BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].blinding.into_repr().to_bytes_be()),
-		);
-	}
-
-	println!("\n****************\n");
-	println!("alpha_g1 x: {:#?}", _proving_key.vk.alpha_g1.x.to_string());
-	println!("alpha_g1 y: {:#?}", _proving_key.vk.alpha_g1.y.to_string());
-	println!("beta_g2 x: {:#?}", _proving_key.vk.beta_g2.x.to_string());
-	println!("beta_g2 y: {:#?}", _proving_key.vk.beta_g2.y.to_string());
-	println!("delta_g2 x: {:#?}", _proving_key.vk.delta_g2.x.to_string());
-	println!("delta_g2 y: {:#?}", _proving_key.vk.delta_g2.y.to_string());
-	println!("gamma_g2 x: {:#?}", _proving_key.vk.gamma_g2.x.to_string());
-	println!("gamma_g2 y: {:#?}", _proving_key.vk.gamma_g2.y.to_string());
-	println!("gamma_abc_g1 x|y: {:#?}", _proving_key.vk.gamma_abc_g1.iter().map(|a|
-		(a.x.to_string(), a.y.to_string())
-	).collect::<Vec<(String, String)>>());
-	println!("\n****************\n");
-
-	// println!("\n****************\n");
-	// // println!("PVK: {:#?}", _proving_key.vk);
-	// let mut alpha_g1_bytes = vec![];
-	// _proving_key.vk.alpha_g1.write(&mut alpha_g1_bytes).unwrap();
-	// println!("alpha_g1: {:#?}", hex::encode(alpha_g1_bytes));
-
-	// let mut beta_g2_bytes = vec![];
-	// _proving_key.vk.beta_g2.write(&mut beta_g2_bytes).unwrap();
-	// println!("beta_g2: {:#?}", hex::encode(beta_g2_bytes));
-	
-	// let mut delta_g2_bytes = vec![];
-	// _proving_key.vk.delta_g2.write(&mut delta_g2_bytes).unwrap();
-	// println!("delta_g2: {:#?}", hex::encode(delta_g2_bytes));
-
-	// let mut gamma_g2_bytes = vec![];
-	// _proving_key.vk.gamma_g2.write(&mut gamma_g2_bytes).unwrap();
-	// println!("gamma_g2: {:#?}", hex::encode(gamma_g2_bytes));
-	
-	// let mut gamma_abc_g1_bytes = vec![];
-	// for i in 0.._proving_key.vk.gamma_abc_g1.len() {
-	// 	let mut gamma_abc_g1_i_bytes = vec![];
-	// 	_proving_key.vk.gamma_abc_g1[i].write(&mut gamma_abc_g1_i_bytes).unwrap();
-	// 	gamma_abc_g1_bytes.push(hex::encode(gamma_abc_g1_i_bytes));
-	// }
-	// println!("gamma_abc_g1: {:#?}", gamma_abc_g1_bytes);
-	// println!("\n****************\n");
-
-	let mut rng = thread_rng();
-	// Run a trusted setup
-	let circom = builder.setup();
-	// let params = generate_random_parameters::<Bn254, _, _>(circom.clone(), &mut rng)
-	// 	.map_err(|_e| CircomError::ParameterGenerationFailure)?;
-	let circom = builder.build().map_err(|_e| CircomError::InvalidBuilderConfig)?;
-	let cs = ConstraintSystem::<Bn254Fr>::new_ref();
-	circom.clone().generate_constraints(cs.clone()).unwrap();
-	let is_satisfied = cs.is_satisfied().unwrap();
-	println!("is satisfied: {}", is_satisfied);
-	if !is_satisfied {
-		println!("Unsatisfied constraint: {:?}", cs.which_is_unsatisfied().unwrap());
-	}
-
-	let inputs = circom.get_public_inputs().unwrap();
-	// Generate the proof
-	let mut proof_bytes = vec![];
-	// let proof = prove(circom, &params, &mut rng).map_err(|_e| CircomError::ProvingFailure)?;
-	let proof = prove(circom, &_proving_key, &mut rng).map_err(|_e| CircomError::ProvingFailure)?;
-	proof.write(&mut proof_bytes).unwrap();
-	// let pvk = prepare_verifying_key(&params.vk);
-	let pvk = _proving_key.vk.into();
-	let verified =
-		verify_proof(&pvk, &proof, &inputs).map_err(|_e| CircomError::VerifyingFailure)?;
-
-	assert!(verified, "Proof is not verified");
-
-	// let mut vk_bytes = vec![];
-	// params.vk.write(&mut vk_bytes).unwrap();
-	// println!("generated vk_bytes len: {:?}", vk_bytes.len());
-
-	Ok((proof_bytes, inputs))
-}
-
 pub fn create_vanchor(asset_id: u32) -> u32 {
 	let max_edges = EDGE_CT as u32;
 	let depth = TREE_DEPTH as u8;
@@ -350,7 +287,7 @@ pub fn create_vanchor(asset_id: u32) -> u32 {
 	MerkleTree2::next_tree_id() - 1
 }
 
-#[test]
+/* #[test]
 fn circom_should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
 		let (_, params_2_2, cfg_2_2) = setup_environment_with_circom();
@@ -458,4 +395,290 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		let transactor_balance_after = Balances::free_balance(transactor);
 		assert_eq!(transactor_balance_after, transactor_balance_before - ext_amount.unsigned_abs());
 	});
+} */
+fn setup_environment_with_circom2() -> ((ProvingKey<Bn254>, ConstraintMatrices<Fr>), &'static Mutex<WitnessCalculator>) {
+	let curve = Curve::Bn254;
+	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+	// 1. Setup The Hasher Pallet.
+	println!("Setting up the hasher pallet");
+	assert_ok!(Hasher2::force_set_parameters(
+		RuntimeOrigin::root(),
+		params3.to_bytes().try_into().unwrap()
+	));
+	// 2. Initialize MerkleTree pallet.
+	println!("Initializing the merkle tree pallet");
+	<MerkleTree2 as OnInitialize<u64>>::on_initialize(1);
+	// 3. Setup the VerifierPallet
+	//    but to do so, we need to have a VerifyingKey
+
+	// Load the WASM and R1CS for witness and proof generation
+	// Get path to solidity fixtures
+	println!("Setting up the verifier pallet");
+	println!("Setting up ZKey");
+	let path_2_2 = "../../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
+	let mut file_2_2 = File::open(path_2_2).unwrap();
+	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
+
+	let mut vk_2_2_bytes = Vec::new();
+	params_2_2.0.vk.write(&mut vk_2_2_bytes).unwrap();
+	println!("vk_2_2_bytes: {:?}", vk_2_2_bytes.len());
+	println!("vk: {:?}", params_2_2.0.vk);
+
+	assert_ok!(VAnchorVerifier2::force_set_parameters(
+		RuntimeOrigin::root(),
+		(2, 2),
+		vk_2_2_bytes.clone().try_into().unwrap()
+	));
+
+	let wasm_2_2_path = "../../solidity-fixtures/solidity-fixtures/vanchor_2/2/poseidon_vanchor_2_2.wasm";
+
+	let wc_2_2 = circom_from_folder(wasm_2_2_path);
+
+	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
+	let relayer = account::<AccountId>("", RELAYER_ACCOUNT_ID, SEED);
+	let big_transactor = account::<AccountId>("", BIG_TRANSACTOR_ACCOUNT_ID, SEED);
+	let bigger_transactor = account::<AccountId>("", BIGGER_TRANSACTOR_ACCOUNT_ID, SEED);
+
+	// Set balances
+	assert_ok!(Balances::set_balance(RuntimeOrigin::root(), transactor, DEFAULT_BALANCE, 0));
+	assert_ok!(Balances::set_balance(RuntimeOrigin::root(), relayer, DEFAULT_BALANCE, 0));
+	assert_ok!(Balances::set_balance(
+		RuntimeOrigin::root(),
+		big_transactor,
+		BIG_DEFAULT_BALANCE,
+		0
+	));
+	assert_ok!(Balances::set_balance(
+		RuntimeOrigin::root(),
+		bigger_transactor,
+		BIGGER_DEFAULT_BALANCE,
+		0
+	));
+
+	// set configurable storage
+	assert_ok!(VAnchor2::set_max_deposit_amount(RuntimeOrigin::root(), 10, 1));
+	assert_ok!(VAnchor2::set_min_withdraw_amount(RuntimeOrigin::root(), 3, 2));
+
+	// finally return the provingkey bytes
+	(params_2_2, wc_2_2)
 }
+
+#[test]
+fn circom_should_complete_2x2_transaction_with_withdraw() {
+	new_test_ext().execute_with(|| {
+		let params4 = setup_params::<Bn254Fr>(Curve::Bn254, 5, 4);
+		let nullifier_hasher = Poseidon::<Bn254Fr> { params: params4 };
+		let (params_2_2, wc_2_2) = setup_environment_with_circom2();
+		let tree_id = create_vanchor(0);
+
+		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+
+		let ext_amount: Amount = 10_i128;
+		let public_amount = 10_i128;
+		let fee: Balance = 0;
+
+		let chain_type = [2, 0];
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
+		let in_chain_ids = [chain_id; 2];
+		let in_amounts = [0, 0];
+		let in_indices = [0, 1];
+		let out_chain_ids = [chain_id; 2];
+		let out_amounts = [10, 0];
+
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			0,
+			0,
+			// Mock encryption value, not meant to be used in production
+			output1.to_vec(),
+			// Mock encryption value, not meant to be used in production
+			output2.to_vec(),
+		);
+		println!("ext_data: {:?}", ext_data);
+		let ext_data_hash = keccak_256(&ext_data.encode_abi());
+
+		let custom_root = MerkleTree2::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree2 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance2>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
+		println!("neighbor_roots: {:?}", neighbor_roots);
+
+		let input_nullifiers = in_utxos
+		.clone()
+		.map(|utxo| utxo.calculate_nullifier(&nullifier_hasher).unwrap());
+
+		let (in_indices, _in_root_set, _tree, in_paths) =
+		insert_utxos_to_merkle_tree(&in_utxos, neighbor_roots, custom_root);
+
+		// Make Inputs
+		let public_amount = if public_amount > 0 {
+			vec![BigInt::from_bytes_be(Sign::Plus, &public_amount.to_be_bytes())]
+		} else {
+			vec![BigInt::from_bytes_be(Sign::Minus, &(-public_amount).to_be_bytes())]
+		};
+		// let mut ext_data_hash = public_amount.clone();
+		let mut input_nullifier = Vec::new();
+		let mut output_commitment = Vec::new();
+		for i in 0..NUM_UTXOS {
+			input_nullifier.push(
+				BigInt::from_bytes_be(Sign::Plus, &input_nullifiers[i].into_repr().to_bytes_be()),
+			);
+			output_commitment.push(
+				BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].commitment.into_repr().to_bytes_be()),
+			);
+		}
+
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			0,
+			0,
+			output_commitment[0].to_signed_bytes_be(),
+			output_commitment[1].to_signed_bytes_be()
+		);
+		println!("ext_data: {:?}", ext_data);
+		let ext_data_hash: Vec<BigInt> = vec![BigInt::from_bytes_be(Sign::Plus, &keccak_256(&ext_data.encode_abi()))];
+		println!("ext_data_hash: {:?}", ext_data_hash);
+
+		let mut chain_id = vec![BigInt::from_bytes_be(Sign::Plus, &chain_id.to_be_bytes())];
+
+		let mut roots = Vec::new();
+
+		roots.push(BigInt::from_bytes_be(Sign::Plus, &custom_root.0));
+		for i in 0..ANCHOR_CT - 1 {
+			roots.push(BigInt::from_bytes_be(Sign::Plus, &neighbor_roots[i].0));
+		}
+
+		 let mut in_amount= Vec::new();
+		 let mut in_private_key= Vec::new();
+		 let mut in_blinding= Vec::new();
+		 let mut in_path_indices= Vec::new();
+		 let mut in_path_elements = Vec::new();
+		 let mut out_chain_id= Vec::new();
+		 let mut out_amount= Vec::new();
+		 let mut out_pub_key = Vec::new();
+		 let mut out_blinding = Vec::new();
+
+		for i in 0..NUM_UTXOS {
+			in_amount.push(
+				BigInt::from_bytes_be(Sign::Plus, &in_utxos[i].amount.into_repr().to_bytes_be()),
+			);
+			in_private_key.push(
+				BigInt::from_bytes_be(
+					Sign::Plus,
+					&in_utxos[i].keypair.secret_key.unwrap().into_repr().to_bytes_be(),
+				),
+			);
+			in_blinding.push(
+				BigInt::from_bytes_be(Sign::Plus, &in_utxos[i].blinding.into_repr().to_bytes_be()),
+			);
+			in_path_indices.push(BigInt::from(in_indices[i]));
+			for j in 0..TREE_DEPTH {
+				let neighbor_elt: Bn254Fr =
+					if in_indices[i] == 0 { in_paths[i].path[j].1 } else { in_paths[i].path[j].0 };
+				in_path_elements.push(
+					BigInt::from_bytes_be(Sign::Plus, &neighbor_elt.into_repr().to_bytes_be()),
+				);
+			}
+
+			out_chain_id.push(
+				BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].chain_id.into_repr().to_bytes_be()),
+			);
+
+			out_amount.push(
+				BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].amount.into_repr().to_bytes_be()),
+			);
+
+			out_pub_key.push(
+				BigInt::from_bytes_be(
+					Sign::Plus,
+					&out_utxos[i].keypair.public_key.into_repr().to_bytes_be(),
+				),
+			);
+
+			out_blinding.push(
+				BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].blinding.into_repr().to_bytes_be()),
+			);
+		}
+
+		let inputs_for_proof = [
+			("publicAmount", public_amount.clone()),
+			("extDataHash", ext_data_hash.clone()),
+			("inputNullifier", input_nullifier.clone()),
+			("inAmount", in_amount.clone()),
+			("inPrivateKey", in_private_key.clone()),
+			("inBlinding", in_blinding.clone()),
+			("inPathIndices", in_path_indices.clone()),
+			("inPathElements", in_path_elements.clone()),
+			("outputCommitment", output_commitment.clone()),
+			("outChainID", out_chain_id.clone()),
+			("outAmount", out_amount.clone()),
+			("outPubkey", out_pub_key.clone()),
+			("outBlinding", out_blinding.clone()),
+			("chainID", chain_id.clone()),
+			("roots", roots.clone()),
+		];
+
+		let x = generate_proof(wc_2_2, &params_2_2, inputs_for_proof.clone());
+
+		let num_inputs = params_2_2.1.num_instance_variables;
+
+		let (proof, full_assignment) = x.unwrap();
+
+		let mut inputs_for_verification = &full_assignment[1..num_inputs];
+
+		println!("v {:?} {:?}", inputs_for_verification.len(), inputs_for_verification.into_iter().map(|x| to_bigint(&x)).collect::<Vec<BigInt>>());
+
+		let did_proof_work = circom_verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
+		assert!(did_proof_work);
+
+		println!("PROOF DID WORK? {did_proof_work}");
+		let wtf = deconstruct_public_inputs_el(&full_assignment[1..num_inputs].to_vec());
+		// println!("Full assignment len {}", wtf.len());
+		// let tst: Vec<BigInt> = wtf.iter().map(|el: &Fr| to_bigint(el)).collect();
+		println!("wtf: {:?}", wtf);
+		// println!("publicAmount : {:?}", inputs_for_proof[0]);
+		// println!("extDataHash : {:?}", inputs_for_proof[1]);
+		// println!("inputNullifier : {:?}", inputs_for_proof[2]);
+		// println!("outputCommitment : {:?}", inputs_for_proof[8]);
+		// println!("chainID : {:?}", inputs_for_proof[13]);
+		// println!("roots : {:?}", inputs_for_proof[14]);
+		// Constructing proof data
+		let mut proof_bytes = Vec::new();
+		proof.write(&mut proof_bytes).unwrap();
+		let publicAmount = wtf.1;
+		let roots = wtf.2;
+		let nullifiers = wtf.3;
+		let commitments = wtf.4;
+		let ext_data_hash = wtf.5;
+		let proof_data =
+			ProofData::new(proof_bytes, publicAmount, roots, nullifiers, commitments, ext_data_hash);
+			// ProofData::new(proof_bytes, public_amount, roots, nullifiers, commitments, ext_data_hash);
+		println!("Proof data: {proof_data:?}");
+		let relayer_balance_before = Balances::free_balance(relayer.clone());
+		let recipient_balance_before = Balances::free_balance(recipient.clone());
+		let transactor_balance_before = Balances::free_balance(transactor.clone());
+		assert_ok!(VAnchor2::transact(
+			RuntimeOrigin::signed(transactor.clone()),
+			tree_id,
+			proof_data,
+			ext_data
+		));
+	});
+}
+

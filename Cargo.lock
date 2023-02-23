@@ -149,7 +149,7 @@ dependencies = [
 [[package]]
 name = "ark-circom"
 version = "0.1.0"
-source = "git+https://github.com/gakonst/ark-circom.git#ab7f9ec3a1202117981eb59854fa1aae2b1e4fee"
+source = "git+https://github.com/vacp2p/ark-circom?branch=wasm#0e587145cb05e08b2d1a01509eb578670088eb2f"
 dependencies = [
  "ark-bn254",
  "ark-ec",
@@ -161,7 +161,7 @@ dependencies = [
  "ark-std",
  "byteorder",
  "cfg-if",
- "color-eyre",
+ "color-eyre 0.5.11",
  "criterion",
  "ethers-core",
  "fnv",
@@ -337,7 +337,7 @@ dependencies = [
  "ark-ff",
  "ark-std",
  "tracing",
- "tracing-subscriber",
+ "tracing-subscriber 0.2.25",
 ]
 
 [[package]]
@@ -1158,12 +1158,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f1885697ee8a177096d42f158922251a41973117f6d8a234cee94b9509157b7"
 dependencies = [
  "backtrace",
- "color-spantrace",
+ "color-spantrace 0.1.6",
  "eyre",
  "indenter",
  "once_cell",
- "owo-colors",
- "tracing-error",
+ "owo-colors 1.3.0",
+ "tracing-error 0.1.2",
+]
+
+[[package]]
+name = "color-eyre"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a667583cca8c4f8436db8de46ea8233c42a7d9ae424a82d338f2e4675229204"
+dependencies = [
+ "backtrace",
+ "color-spantrace 0.2.0",
+ "eyre",
+ "indenter",
+ "once_cell",
+ "owo-colors 3.5.0",
+ "tracing-error 0.2.0",
 ]
 
 [[package]]
@@ -1173,9 +1188,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6eee477a4a8a72f4addd4de416eb56d54bc307b284d6601bafdee1f4ea462d1"
 dependencies = [
  "once_cell",
- "owo-colors",
+ "owo-colors 1.3.0",
  "tracing-core",
- "tracing-error",
+ "tracing-error 0.1.2",
+]
+
+[[package]]
+name = "color-spantrace"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ba75b3d9449ecdccb27ecbc479fdc0b87fa2dd43d2f8298f9bf0e59aacc8dce"
+dependencies = [
+ "once_cell",
+ "owo-colors 3.5.0",
+ "tracing-core",
+ "tracing-error 0.2.0",
 ]
 
 [[package]]
@@ -4858,6 +4885,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2386b4ebe91c2f7f51082d4cefa145d030e33a1842a96b12e4885cc3c01f7a55"
 
 [[package]]
+name = "owo-colors"
+version = "3.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1b04fb49957986fdce4d6ee7a65027d55d4b6d2265e5848bbb507b58ccfdb6f"
+
+[[package]]
 name = "packed_simd_2"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5834,12 +5867,16 @@ dependencies = [
  "ark-std",
  "arkworks-native-gadgets",
  "arkworks-setups",
+ "cfg-if",
+ "color-eyre 0.6.2",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "frame-system-benchmarking",
  "hex",
  "num-bigint",
+ "num-traits",
+ "once_cell",
  "orml-currencies",
  "orml-tokens",
  "orml-traits",
@@ -5856,10 +5893,13 @@ dependencies = [
  "rand 0.8.5",
  "scale-info",
  "serde",
+ "serde_json",
  "sp-core 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "thiserror",
+ "wasmer",
  "webb-primitives",
 ]
 
@@ -8102,7 +8142,7 @@ dependencies = [
  "thiserror",
  "tracing",
  "tracing-log",
- "tracing-subscriber",
+ "tracing-subscriber 0.2.25",
 ]
 
 [[package]]
@@ -9551,7 +9591,7 @@ dependencies = [
  "sp-std 5.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
  "tracing-core",
- "tracing-subscriber",
+ "tracing-subscriber 0.2.25",
 ]
 
 [[package]]
@@ -9563,7 +9603,7 @@ dependencies = [
  "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "tracing",
  "tracing-core",
- "tracing-subscriber",
+ "tracing-subscriber 0.2.25",
 ]
 
 [[package]]
@@ -10382,7 +10422,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4d7c0b83d4a500748fa5879461652b361edf5c9d51ede2a2ac03875ca185e24"
 dependencies = [
  "tracing",
- "tracing-subscriber",
+ "tracing-subscriber 0.2.25",
+]
+
+[[package]]
+name = "tracing-error"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d686ec1c0f384b1277f097b2f279a2ecc11afe8c133c1aabf036a27cb4cd206e"
+dependencies = [
+ "tracing",
+ "tracing-subscriber 0.3.16",
 ]
 
 [[package]]
@@ -10437,6 +10487,17 @@ dependencies = [
  "tracing-core",
  "tracing-log",
  "tracing-serde",
+]
+
+[[package]]
+name = "tracing-subscriber"
+version = "0.3.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6176eae26dd70d0c919749377897b54a9276bd7061339665dd68777926b5a70"
+dependencies = [
+ "sharded-slab",
+ "thread_local",
+ "tracing-core",
 ]
 
 [[package]]
