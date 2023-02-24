@@ -648,10 +648,10 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		assert!(did_proof_work);
 
 		println!("PROOF DID WORK? {did_proof_work}");
-		let wtf = deconstruct_public_inputs_el(&full_assignment[1..num_inputs].to_vec());
-		// println!("Full assignment len {}", wtf.len());
-		// let tst: Vec<BigInt> = wtf.iter().map(|el: &Fr| to_bigint(el)).collect();
-		println!("wtf: {:?}", wtf);
+		// Deconstructing public inputs
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&inputs_for_verification.to_vec());
+		// println!("proof_data: {:?}", proof_data);
 		// println!("publicAmount : {:?}", inputs_for_proof[0]);
 		// println!("extDataHash : {:?}", inputs_for_proof[1]);
 		// println!("inputNullifier : {:?}", inputs_for_proof[2]);
@@ -659,16 +659,12 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		// println!("chainID : {:?}", inputs_for_proof[13]);
 		// println!("roots : {:?}", inputs_for_proof[14]);
 		// Constructing proof data
+		println!("full assignment {:?}", full_assignment[1..num_inputs].to_vec());
+		println!("inputs for proof {:?}", inputs_for_proof);
 		let mut proof_bytes = Vec::new();
 		proof.write(&mut proof_bytes).unwrap();
-		let publicAmount = wtf.1;
-		let roots = wtf.2;
-		let nullifiers = wtf.3;
-		let commitments = wtf.4;
-		let ext_data_hash = wtf.5;
 		let proof_data =
-			ProofData::new(proof_bytes, publicAmount, roots, nullifiers, commitments, ext_data_hash);
-			// ProofData::new(proof_bytes, public_amount, roots, nullifiers, commitments, ext_data_hash);
+			ProofData::new(proof_bytes, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 		println!("Proof data: {proof_data:?}");
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
