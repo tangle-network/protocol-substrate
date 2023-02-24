@@ -200,8 +200,9 @@ fn testnet_genesis(
 
 	log::info!("Verifier params for mixer");
 	let mixer_verifier_bn254_params = {
-		let vk_bytes =
-			include_bytes!("../../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
+		let vk_bytes = include_bytes!(
+			"../../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/verifying_key.bin"
+		);
 		vk_bytes.to_vec()
 	};
 

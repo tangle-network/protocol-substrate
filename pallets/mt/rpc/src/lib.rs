@@ -84,7 +84,7 @@ where
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 		if to - from >= 512 {
-			return Err(error::Error::TooManyLeavesRequested.into())
+			return Err(error::Error::TooManyLeavesRequested.into());
 		}
 		let leaves = (from..to)
 			.into_iter()

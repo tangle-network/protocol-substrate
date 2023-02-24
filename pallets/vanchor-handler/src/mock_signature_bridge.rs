@@ -414,7 +414,7 @@ pub fn event_exists<E: Into<RuntimeEvent>>(e: E) {
 	for evt in actual {
 		if evt == e {
 			exists = true;
-			break
+			break;
 		}
 	}
 	assert!(exists);

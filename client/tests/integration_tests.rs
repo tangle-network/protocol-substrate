@@ -28,10 +28,12 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 
-	let pk_bytes =
-		include_bytes!("../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin");
-	let vk_bytes =
-		include_bytes!("../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/verifying_key_uncompressed.bin");
+	let pk_bytes = include_bytes!(
+		"../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin"
+	);
+	let vk_bytes = include_bytes!(
+		"../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/verifying_key_uncompressed.bin"
+	);
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();
 	let recipient_bytes = truncate_and_pad(&recipient.encode());

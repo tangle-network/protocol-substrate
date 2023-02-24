@@ -303,16 +303,16 @@ impl<T: Config<I>, I: 'static> LinkableTreeInterface<LinkableTreeConfigration<T,
 			Error::<T, I>::InvalidLatestLeafIndex
 		);
 		ensure!(
-			latest_leaf_index <
-				EdgeList::<T, I>::get(id, src_chain_id)
+			latest_leaf_index
+				< EdgeList::<T, I>::get(id, src_chain_id)
 					.latest_leaf_index
 					.saturating_add(T::LeafIndex::from(1_048u32)),
 			Error::<T, I>::InvalidLatestLeafIndex
 		);
 		let e_meta = EdgeMetadata { src_chain_id, root, latest_leaf_index, src_resource_id };
-		let neighbor_root_inx = (CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id)) +
-			T::RootIndex::one()) %
-			T::HistoryLength::get();
+		let neighbor_root_inx = (CurrentNeighborRootIndex::<T, I>::get((id, src_chain_id))
+			+ T::RootIndex::one())
+			% T::HistoryLength::get();
 		CurrentNeighborRootIndex::<T, I>::insert((id, src_chain_id), neighbor_root_inx);
 		NeighborRoots::<T, I>::insert((id, src_chain_id), neighbor_root_inx, root);
 		EdgeList::<T, I>::insert(id, src_chain_id, e_meta);
@@ -364,7 +364,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 		// root. This is to allow useres to prove against partial edge lists that aren't at
 		// capacity, but prevent them from providing their own fake edges / roots.
 		if src_chain_id == T::ChainId::default() {
-			return Ok(target_root == T::Tree::get_default_root(tree_id)?)
+			return Ok(target_root == T::Tree::get_default_root(tree_id)?);
 		}
 
 		let get_next_inx = |inx: T::RootIndex| {
@@ -380,7 +380,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 			NeighborRoots::<T, I>::get((tree_id, src_chain_id), curr_root_inx)
 				.unwrap_or_else(|| T::Element::from_bytes(&[0; 32]));
 		if target_root == historical_root {
-			return Ok(true)
+			return Ok(true);
 		}
 
 		let mut i = get_next_inx(curr_root_inx);
@@ -389,7 +389,7 @@ impl<T: Config<I>, I: 'static> LinkableTreeInspector<LinkableTreeConfigration<T,
 			historical_root = NeighborRoots::<T, I>::get((tree_id, src_chain_id), i)
 				.unwrap_or_else(|| T::Element::from_bytes(&[0; 32]));
 			if target_root == historical_root {
-				return Ok(true)
+				return Ok(true);
 			}
 
 			if i == Zero::zero() {

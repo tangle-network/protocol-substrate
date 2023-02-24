@@ -279,7 +279,7 @@ pub mod pallet {
 		fn build(&self) {
 			if let Some(default_hashes) = &self.default_hashes {
 				DefaultHashes::<T, I>::put(default_hashes);
-				return
+				return;
 			}
 
 			let default_hashes = generate_default_hashes::<T, I>();
@@ -498,7 +498,7 @@ impl<T: Config<I>, I: 'static> TreeInspector<T::AccountId, T::TreeId, T::Element
 			while temp < T::RootHistorySize::get() {
 				let cached_root = CachedRoots::<T, I>::get(tree_id, temp);
 				if cached_root == target_root {
-					return Ok(true)
+					return Ok(true);
 				}
 
 				temp = temp.saturating_add(One::one());
