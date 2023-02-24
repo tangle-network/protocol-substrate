@@ -43,22 +43,6 @@ webb-proposals = { version = "0.5.4", default-features = false, features = ["sca
 
 [features]
 default = ["std", "hashing", "verifying", "field_ops"]
-std = [
-	"serde",
-	"codec/std",
-	"frame-support/std",
-	"sp-core/std",
-	"sp-std/std",
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-consensus-aura/std",
-	"sp-consensus-babe/std",
-	"ark-ff/std",
-	"ark-ec/std",
-	"ark-std/std",
-	"ark-relations/std",
-	"webb-proposals/std",
-]
 field_ops = [
   "ark-bls12-381",
   "ark-bn254",

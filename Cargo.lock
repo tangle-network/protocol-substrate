@@ -5924,7 +5924,6 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "once_cell",
- "getrandom 0.2.8",
  "orml-currencies",
  "orml-tokens",
  "orml-traits",
