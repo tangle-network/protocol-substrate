@@ -511,7 +511,7 @@ impl<T: Config> Pallet<T> {
 
 				let asset_type = match &detail.asset_type {
 					AssetType::Token => return Err(Error::<T>::AssetNotFound.into()),
-					AssetType::PoolShare(pool) => {
+					AssetType::PoolShare(pool) =>
 						if !pool.contains(&asset_id) {
 							if Self::assets(asset_id).is_some() {
 								let mut pool_clone = pool.clone();
@@ -520,12 +520,11 @@ impl<T: Config> Pallet<T> {
 									.map_err(|_| Error::<T>::MaxAssetIdInPoolReached)?;
 								AssetType::PoolShare(pool_clone)
 							} else {
-								return Err(Error::<T>::AssetNotRegistered.into());
+								return Err(Error::<T>::AssetNotRegistered.into())
 							}
 						} else {
-							return Err(Error::<T>::AssetExistsInPool.into());
-						}
-					},
+							return Err(Error::<T>::AssetExistsInPool.into())
+						},
 				};
 
 				detail.asset_type = asset_type.clone();
@@ -554,7 +553,7 @@ impl<T: Config> Pallet<T> {
 
 				let asset_type = match &detail.asset_type {
 					AssetType::Token => return Err(Error::<T>::AssetNotFound.into()),
-					AssetType::PoolShare(pool) => {
+					AssetType::PoolShare(pool) =>
 						if pool.contains(&asset_id) {
 							let filtered_pool = pool
 								.iter()
@@ -568,9 +567,8 @@ impl<T: Config> Pallet<T> {
 								.map_err(|_| Error::<T>::MaxAssetIdInPoolReached)?;
 							AssetType::PoolShare(bounded_pool)
 						} else {
-							return Err(Error::<T>::AssetNotFoundInPool.into());
-						}
-					},
+							return Err(Error::<T>::AssetNotFoundInPool.into())
+						},
 				};
 
 				detail.asset_type = asset_type.clone();

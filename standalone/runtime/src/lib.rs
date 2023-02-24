@@ -507,8 +507,8 @@ impl Get<Option<(usize, ExtendedBalance)>> for OffchainRandomBalancing {
 			max => {
 				let seed = sp_io::offchain::random_seed();
 				let random = <u32>::decode(&mut TrailingZeroInput::new(&seed))
-					.expect("input is padded with zeroes; qed")
-					% max.saturating_add(1);
+					.expect("input is padded with zeroes; qed") %
+					max.saturating_add(1);
 				random as usize
 			},
 		};
@@ -897,43 +897,42 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 	fn filter(&self, c: &RuntimeCall) -> bool {
 		match self {
 			ProxyType::Any => true,
-			ProxyType::NonTransfer => {
-				!matches!(c, RuntimeCall::Balances { .. } | RuntimeCall::Assets { .. })
-			},
+			ProxyType::NonTransfer =>
+				!matches!(c, RuntimeCall::Balances { .. } | RuntimeCall::Assets { .. }),
 			ProxyType::CancelProxy => matches!(
 				c,
-				RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. })
-					| RuntimeCall::Utility { .. }
-					| RuntimeCall::Multisig { .. }
+				RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. }) |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::Assets => {
 				matches!(
 					c,
-					RuntimeCall::Assets { .. }
-						| RuntimeCall::Utility { .. }
-						| RuntimeCall::Multisig { .. }
+					RuntimeCall::Assets { .. } |
+						RuntimeCall::Utility { .. } |
+						RuntimeCall::Multisig { .. }
 				)
 			},
 			ProxyType::AssetOwner => matches!(
 				c,
-				RuntimeCall::Assets(pallet_assets::Call::create { .. })
-					| RuntimeCall::Assets(pallet_assets::Call::transfer_ownership { .. })
-					| RuntimeCall::Assets(pallet_assets::Call::set_team { .. })
-					| RuntimeCall::Assets(pallet_assets::Call::set_metadata { .. })
-					| RuntimeCall::Assets(pallet_assets::Call::clear_metadata { .. })
-					| RuntimeCall::Utility { .. }
-					| RuntimeCall::Multisig { .. }
+				RuntimeCall::Assets(pallet_assets::Call::create { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::transfer_ownership { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::set_team { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::set_metadata { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::clear_metadata { .. }) |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 			ProxyType::AssetManager => matches!(
 				c,
-				RuntimeCall::Assets(pallet_assets::Call::mint { .. })
-					| RuntimeCall::Assets(pallet_assets::Call::burn { .. })
-					| RuntimeCall::Assets(pallet_assets::Call::freeze { .. })
-					| RuntimeCall::Assets(pallet_assets::Call::thaw { .. })
-					| RuntimeCall::Assets(pallet_assets::Call::freeze_asset { .. })
-					| RuntimeCall::Assets(pallet_assets::Call::thaw_asset { .. })
-					| RuntimeCall::Utility { .. }
-					| RuntimeCall::Multisig { .. }
+				RuntimeCall::Assets(pallet_assets::Call::mint { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::burn { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::freeze { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::thaw { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::freeze_asset { .. }) |
+					RuntimeCall::Assets(pallet_assets::Call::thaw_asset { .. }) |
+					RuntimeCall::Utility { .. } |
+					RuntimeCall::Multisig { .. }
 			),
 		}
 	}
