@@ -274,12 +274,12 @@ fn setup_environment_with_circom(
 	// 	CircomConfig::<Bn254>::new(wasm_2_2_path.unwrap(), r1cs_2_2_path.unwrap()).unwrap();
 
 	println!("Setting up ZKey");
-	let path_2_2 = "../../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
+	let path_2_2 = "../../substrate-fixtures//solidity-fixtures/vanchor_2/2/circuit_final.zkey";
 	let mut file_2_2 = File::open(path_2_2).unwrap();
 	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
 
 	let wasm_2_2_path =
-		"../../solidity-fixtures/solidity-fixtures/vanchor_2/2/poseidon_vanchor_2_2.wasm";
+		"../../substrate-fixtures/solidity-fixtures//vanchor_2/2/poseidon_vanchor_2_2.wasm";
 
 	let wc_2_2 = circom_from_folder(wasm_2_2_path);
 

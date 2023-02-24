@@ -1,12 +1,5 @@
-md5: 556aaf5231aabec2aca01802ccba23d6
-frozen: true
-deps:
-- path: substrate-fixtures
-  repo:
-    url: https://github.com/webb-tools/substrate-fixtures
-    rev_lock: 2ee2d9448af09772aedefd22972d4230f7fdc14f
 outs:
-- md5: 9c00cd97c42bef50fcfdb4b8878be0fb.dir
-  size: 240092288
-  nfiles: 35
+- md5: f521303b4c7b77ba21b2d52b3cf498b5.dir
+  size: 335757108
+  nfiles: 54
   path: substrate-fixtures
