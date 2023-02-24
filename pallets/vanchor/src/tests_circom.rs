@@ -2,28 +2,19 @@ use crate::{
 	mock::*,
 	test_utils::{deconstruct_public_inputs_el, setup_utxos, ANCHOR_CT, DEFAULT_LEAF, NUM_UTXOS},
 	tests::*,
-	Instance2,
 	zerokit_utils::*,
+	Instance2,
 };
-use cfg_if::cfg_if;
-use std::convert::{TryInto, TryFrom};
-use ark_relations::r1cs::ConstraintMatrices;
-use ark_relations::r1cs::SynthesisError;
-use ark_bn254::{Fr, Fq, Fq2, Bn254, G1Affine, G1Projective, G2Affine, G2Projective };
-use once_cell::sync::OnceCell;
-use std::sync::Mutex;
-use std::str::FromStr;
-use serde_json::Value;
-use wasmer::{Module, Store};
-use ark_circom::{read_zkey, WitnessCalculator, CircomReduction, CircomConfig};
-use ark_ff::{BigInteger, PrimeField, ToBytes, BigInteger256};
-use ark_groth16::{ Proof as ArkProof, create_proof_with_reduction_and_matrices, VerifyingKey,
-	create_random_proof as prove, generate_random_parameters, prepare_verifying_key,
-	ProvingKey, verify_proof as ark_verify_proof,
+use ark_bn254::{Bn254, Fq, Fq2, Fr, G1Affine, G1Projective, G2Affine, G2Projective};
+use ark_circom::{read_zkey, CircomConfig, CircomReduction, WitnessCalculator};
+use ark_ff::{BigInteger, BigInteger256, PrimeField, ToBytes};
+use ark_groth16::{
+	create_proof_with_reduction_and_matrices, create_random_proof as prove,
+	generate_random_parameters, prepare_verifying_key, verify_proof as ark_verify_proof,
+	Proof as ArkProof, ProvingKey, VerifyingKey,
 };
-use std::io::{Cursor, Error, ErrorKind};
-use std::result::Result;
-use thiserror::Error;
+use ark_relations::r1cs::{ConstraintMatrices, SynthesisError};
+use ark_std::{rand::thread_rng, UniformRand};
 use arkworks_native_gadgets::{
 	merkle_tree::{Path, SparseMerkleTree},
 	poseidon::Poseidon,
@@ -33,15 +24,24 @@ use arkworks_setups::{
 	utxo::Utxo,
 	Curve,
 };
+use cfg_if::cfg_if;
 use frame_benchmarking::account;
 use frame_support::{assert_ok, traits::OnInitialize};
 use num_bigint::{BigInt, BigUint, Sign};
+use once_cell::sync::OnceCell;
 use pallet_linkable_tree::LinkableTreeConfigration;
-use ark_std::{rand::thread_rng, UniformRand};
+use serde_json::Value;
 use sp_core::hashing::keccak_256;
 use std::{
+	convert::{TryFrom, TryInto},
 	fs::{self, File},
+	io::{Cursor, Error, ErrorKind},
+	result::Result,
+	str::FromStr,
+	sync::Mutex,
 };
+use thiserror::Error;
+use wasmer::{Module, Store};
 use webb_primitives::{
 	linkable_tree::LinkableTreeInspector,
 	merkle_tree::TreeInspector,
@@ -51,17 +51,16 @@ use webb_primitives::{
 	AccountId,
 };
 
-
 type Bn254Fr = ark_bn254::Fr;
 
 #[derive(Error, Debug)]
 pub enum ProofError {
-    #[error("Error reading circuit key: {0}")]
-    CircuitKeyError(#[from] std::io::Error),
-    #[error("Error producing witness: {0}")]
-    WitnessError(color_eyre::Report),
-    #[error("Error producing proof: {0}")]
-    SynthesisError(#[from] SynthesisError),
+	#[error("Error reading circuit key: {0}")]
+	CircuitKeyError(#[from] std::io::Error),
+	#[error("Error producing witness: {0}")]
+	WitnessError(color_eyre::Report),
+	#[error("Error producing proof: {0}")]
+	SynthesisError(#[from] SynthesisError),
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -69,138 +68,138 @@ static WITNESS_CALCULATOR: OnceCell<Mutex<WitnessCalculator>> = OnceCell::new();
 
 // Utilities to convert a json verification key in a groth16::VerificationKey
 fn fq_from_str(s: &str) -> Fq {
-    Fq::try_from(BigUint::from_str(s).unwrap()).unwrap()
+	Fq::try_from(BigUint::from_str(s).unwrap()).unwrap()
 }
 
 // Extracts the element in G1 corresponding to its JSON serialization
 fn json_to_g1(json: &Value, key: &str) -> G1Affine {
-    let els: Vec<String> = json
-        .get(key)
-        .unwrap()
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|i| i.as_str().unwrap().to_string())
-        .collect();
-    G1Affine::from(G1Projective::new(
-        fq_from_str(&els[0]),
-        fq_from_str(&els[1]),
-        fq_from_str(&els[2]),
-    ))
+	let els: Vec<String> = json
+		.get(key)
+		.unwrap()
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(|i| i.as_str().unwrap().to_string())
+		.collect();
+	G1Affine::from(G1Projective::new(
+		fq_from_str(&els[0]),
+		fq_from_str(&els[1]),
+		fq_from_str(&els[2]),
+	))
 }
 
 // Extracts the vector of G1 elements corresponding to its JSON serialization
 fn json_to_g1_vec(json: &Value, key: &str) -> Vec<G1Affine> {
-    let els: Vec<Vec<String>> = json
-        .get(key)
-        .unwrap()
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|i| {
-            i.as_array()
-                .unwrap()
-                .iter()
-                .map(|x| x.as_str().unwrap().to_string())
-                .collect::<Vec<String>>()
-        })
-        .collect();
+	let els: Vec<Vec<String>> = json
+		.get(key)
+		.unwrap()
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(|i| {
+			i.as_array()
+				.unwrap()
+				.iter()
+				.map(|x| x.as_str().unwrap().to_string())
+				.collect::<Vec<String>>()
+		})
+		.collect();
 
-    els.iter()
-        .map(|coords| {
-            G1Affine::from(G1Projective::new(
-                fq_from_str(&coords[0]),
-                fq_from_str(&coords[1]),
-                fq_from_str(&coords[2]),
-            ))
-        })
-        .collect()
+	els.iter()
+		.map(|coords| {
+			G1Affine::from(G1Projective::new(
+				fq_from_str(&coords[0]),
+				fq_from_str(&coords[1]),
+				fq_from_str(&coords[2]),
+			))
+		})
+		.collect()
 }
 
 // Extracts the element in G2 corresponding to its JSON serialization
 fn json_to_g2(json: &Value, key: &str) -> G2Affine {
-    let els: Vec<Vec<String>> = json
-        .get(key)
-        .unwrap()
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|i| {
-            i.as_array()
-                .unwrap()
-                .iter()
-                .map(|x| x.as_str().unwrap().to_string())
-                .collect::<Vec<String>>()
-        })
-        .collect();
+	let els: Vec<Vec<String>> = json
+		.get(key)
+		.unwrap()
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(|i| {
+			i.as_array()
+				.unwrap()
+				.iter()
+				.map(|x| x.as_str().unwrap().to_string())
+				.collect::<Vec<String>>()
+		})
+		.collect();
 
-    let x = Fq2::new(fq_from_str(&els[0][0]), fq_from_str(&els[0][1]));
-    let y = Fq2::new(fq_from_str(&els[1][0]), fq_from_str(&els[1][1]));
-    let z = Fq2::new(fq_from_str(&els[2][0]), fq_from_str(&els[2][1]));
-    G2Affine::from(G2Projective::new(x, y, z))
+	let x = Fq2::new(fq_from_str(&els[0][0]), fq_from_str(&els[0][1]));
+	let y = Fq2::new(fq_from_str(&els[1][0]), fq_from_str(&els[1][1]));
+	let z = Fq2::new(fq_from_str(&els[2][0]), fq_from_str(&els[2][1]));
+	G2Affine::from(G2Projective::new(x, y, z))
 }
 
 // Converts JSON to a VerifyingKey
 fn to_verifying_key(json: serde_json::Value) -> VerifyingKey<Bn254> {
-    VerifyingKey {
-        alpha_g1: json_to_g1(&json, "vk_alpha_1"),
-        beta_g2: json_to_g2(&json, "vk_beta_2"),
-        gamma_g2: json_to_g2(&json, "vk_gamma_2"),
-        delta_g2: json_to_g2(&json, "vk_delta_2"),
-        gamma_abc_g1: json_to_g1_vec(&json, "IC"),
-    }
+	VerifyingKey {
+		alpha_g1: json_to_g1(&json, "vk_alpha_1"),
+		beta_g2: json_to_g2(&json, "vk_beta_2"),
+		gamma_g2: json_to_g2(&json, "vk_gamma_2"),
+		delta_g2: json_to_g2(&json, "vk_delta_2"),
+		gamma_abc_g1: json_to_g1_vec(&json, "IC"),
+	}
 }
 
 // Computes the verification key from its JSON serialization
 fn vk_from_json(vk_path: &str) -> VerifyingKey<Bn254> {
-    let json = std::fs::read_to_string(vk_path).unwrap();
-    let json: Value = serde_json::from_str(&json).unwrap();
+	let json = std::fs::read_to_string(vk_path).unwrap();
+	let json: Value = serde_json::from_str(&json).unwrap();
 
-    to_verifying_key(json)
+	to_verifying_key(json)
 }
 
 pub fn generate_proof(
-    #[cfg(not(target_arch = "wasm32"))] witness_calculator: &Mutex<WitnessCalculator>,
-    #[cfg(target_arch = "wasm32")] witness_calculator: &mut WitnessCalculator,
-    proving_key: &(ProvingKey<Bn254>, ConstraintMatrices<Fr>),
-    vanchor_witness: [(&str, Vec<BigInt>); 15],
+	#[cfg(not(target_arch = "wasm32"))] witness_calculator: &Mutex<WitnessCalculator>,
+	#[cfg(target_arch = "wasm32")] witness_calculator: &mut WitnessCalculator,
+	proving_key: &(ProvingKey<Bn254>, ConstraintMatrices<Fr>),
+	vanchor_witness: [(&str, Vec<BigInt>); 15],
 ) -> Result<(ArkProof<Bn254>, Vec<Fr>), ProofError> {
-    let inputs = vanchor_witness
-        .into_iter()
-        .map(|(name, values)| (name.to_string(), values.clone()));
+	let inputs = vanchor_witness
+		.into_iter()
+		.map(|(name, values)| (name.to_string(), values.clone()));
 
 	println!("inputs {:?}", inputs);
 
-    cfg_if! {
-        if #[cfg(target_arch = "wasm32")] {
-            let full_assignment = witness_calculator
-            .calculate_witness_element::<Bn254, _>(inputs, false)
-            .map_err(ProofError::WitnessError)?;
-        } else {
-            let full_assignment = witness_calculator
-            .lock()
-            .expect("witness_calculator mutex should not get poisoned")
-            .calculate_witness_element::<Bn254, _>(inputs, false)
-            .map_err(ProofError::WitnessError)?;
-        }
-    }
+	cfg_if! {
+		if #[cfg(target_arch = "wasm32")] {
+			let full_assignment = witness_calculator
+			.calculate_witness_element::<Bn254, _>(inputs, false)
+			.map_err(ProofError::WitnessError)?;
+		} else {
+			let full_assignment = witness_calculator
+			.lock()
+			.expect("witness_calculator mutex should not get poisoned")
+			.calculate_witness_element::<Bn254, _>(inputs, false)
+			.map_err(ProofError::WitnessError)?;
+		}
+	}
 
-    // Random Values
-    let mut rng = thread_rng();
-    let r = Fr::rand(&mut rng);
-    let s = Fr::rand(&mut rng);
+	// Random Values
+	let mut rng = thread_rng();
+	let r = Fr::rand(&mut rng);
+	let s = Fr::rand(&mut rng);
 
-    let proof = create_proof_with_reduction_and_matrices::<_, CircomReduction>(
-        &proving_key.0,
-        r,
-        s,
-        &proving_key.1,
-        proving_key.1.num_instance_variables,
-        proving_key.1.num_constraints,
-        full_assignment.as_slice(),
-    )?;
+	let proof = create_proof_with_reduction_and_matrices::<_, CircomReduction>(
+		&proving_key.0,
+		r,
+		s,
+		&proving_key.1,
+		proving_key.1.num_instance_variables,
+		proving_key.1.num_constraints,
+		full_assignment.as_slice(),
+	)?;
 
-    Ok((proof, full_assignment))
+	Ok((proof, full_assignment))
 }
 
 /// Verifies a given RLN proof
@@ -210,40 +209,41 @@ pub fn generate_proof(
 /// Returns a [`ProofError`] if verifying fails. Verification failure does not
 /// necessarily mean the proof is incorrect.
 pub fn verify_proof(
-    verifying_key: &VerifyingKey<Bn254>,
+	verifying_key: &VerifyingKey<Bn254>,
 	proof: &ArkProof<Bn254>,
-    inputs: Vec<Fr>,
+	inputs: Vec<Fr>,
 ) -> Result<bool, ProofError> {
-    // Check that the proof is valid
-    let pvk = prepare_verifying_key(verifying_key);
-    //let pr: ArkProof<Curve> = (*proof).into();
+	// Check that the proof is valid
+	let pvk = prepare_verifying_key(verifying_key);
+	//let pr: ArkProof<Curve> = (*proof).into();
 
-    let verified = ark_verify_proof(&pvk, proof, &inputs)?;
+	let verified = ark_verify_proof(&pvk, proof, &inputs)?;
 
-    Ok(verified)
+	Ok(verified)
 }
 
 // Initializes the witness calculator using a bytes vector
 #[cfg(not(target_arch = "wasm32"))]
 pub fn circom_from_raw(wasm_buffer: Vec<u8>) -> &'static Mutex<WitnessCalculator> {
-    WITNESS_CALCULATOR.get_or_init(|| {
-        let store = Store::default();
-        let module = Module::new(&store, wasm_buffer).unwrap();
-        let result =
-            WitnessCalculator::from_module(module).expect("Failed to create witness calculator");
-        Mutex::new(result)
-    })
+	WITNESS_CALCULATOR.get_or_init(|| {
+		let store = Store::default();
+		let module = Module::new(&store, wasm_buffer).unwrap();
+		let result =
+			WitnessCalculator::from_module(module).expect("Failed to create witness calculator");
+		Mutex::new(result)
+	})
 }
 
 // Initializes the witness calculator
 #[cfg(not(target_arch = "wasm32"))]
 pub fn circom_from_folder(wasm_path: &str) -> &'static Mutex<WitnessCalculator> {
-    // We read the wasm file
-    let wasm_buffer = std::fs::read(wasm_path).unwrap();
-    circom_from_raw(wasm_buffer)
+	// We read the wasm file
+	let wasm_buffer = std::fs::read(wasm_path).unwrap();
+	circom_from_raw(wasm_buffer)
 }
 
-fn setup_environment_with_circom() -> ((ProvingKey<Bn254>, ConstraintMatrices<Fr>), &'static Mutex<WitnessCalculator>) {
+fn setup_environment_with_circom(
+) -> ((ProvingKey<Bn254>, ConstraintMatrices<Fr>), &'static Mutex<WitnessCalculator>) {
 	let curve = Curve::Bn254;
 	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 	// 1. Setup The Hasher Pallet.
@@ -278,7 +278,8 @@ fn setup_environment_with_circom() -> ((ProvingKey<Bn254>, ConstraintMatrices<Fr
 	let mut file_2_2 = File::open(path_2_2).unwrap();
 	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
 
-	let wasm_2_2_path = "../../solidity-fixtures/solidity-fixtures/vanchor_2/2/poseidon_vanchor_2_2.wasm";
+	let wasm_2_2_path =
+		"../../solidity-fixtures/solidity-fixtures/vanchor_2/2/poseidon_vanchor_2_2.wasm";
 
 	let wc_2_2 = circom_from_folder(wasm_2_2_path);
 
@@ -365,7 +366,6 @@ fn insert_utxos_to_merkle_tree(
 	(in_indices, in_root_set, tree, in_paths)
 }
 
-
 pub fn create_vanchor(asset_id: u32) -> u32 {
 	let max_edges = EDGE_CT as u32;
 	let depth = TREE_DEPTH as u8;
@@ -427,11 +427,11 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		println!("neighbor_roots: {:?}", neighbor_roots);
 
 		let input_nullifiers = in_utxos
-		.clone()
-		.map(|utxo| utxo.calculate_nullifier(&nullifier_hasher).unwrap());
+			.clone()
+			.map(|utxo| utxo.calculate_nullifier(&nullifier_hasher).unwrap());
 
 		let (in_indices, _in_root_set, _tree, in_paths) =
-		insert_utxos_to_merkle_tree(&in_utxos, neighbor_roots, custom_root);
+			insert_utxos_to_merkle_tree(&in_utxos, neighbor_roots, custom_root);
 
 		// Make Inputs
 		let public_amount = if public_amount > 0 {
@@ -444,12 +444,14 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		let mut input_nullifier = Vec::new();
 		let mut output_commitment = Vec::new();
 		for i in 0..NUM_UTXOS {
-			input_nullifier.push(
-				BigInt::from_bytes_be(Sign::Plus, &input_nullifiers[i].into_repr().to_bytes_be()),
-			);
-			output_commitment.push(
-				BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].commitment.into_repr().to_bytes_be()),
-			);
+			input_nullifier.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&input_nullifiers[i].into_repr().to_bytes_be(),
+			));
+			output_commitment.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&out_utxos[i].commitment.into_repr().to_bytes_be(),
+			));
 		}
 
 		let mut chain_id = vec![BigInt::from_bytes_be(Sign::Plus, &chain_id.to_be_bytes())];
@@ -461,56 +463,58 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 			roots.push(BigInt::from_bytes_be(Sign::Plus, &neighbor_roots[i].0));
 		}
 
-		 let mut in_amount= Vec::new();
-		 let mut in_private_key= Vec::new();
-		 let mut in_blinding= Vec::new();
-		 let mut in_path_indices= Vec::new();
-		 let mut in_path_elements = Vec::new();
-		 let mut out_chain_id= Vec::new();
-		 let mut out_amount= Vec::new();
-		 let mut out_pub_key = Vec::new();
-		 let mut out_blinding = Vec::new();
+		let mut in_amount = Vec::new();
+		let mut in_private_key = Vec::new();
+		let mut in_blinding = Vec::new();
+		let mut in_path_indices = Vec::new();
+		let mut in_path_elements = Vec::new();
+		let mut out_chain_id = Vec::new();
+		let mut out_amount = Vec::new();
+		let mut out_pub_key = Vec::new();
+		let mut out_blinding = Vec::new();
 
 		for i in 0..NUM_UTXOS {
-			in_amount.push(
-				BigInt::from_bytes_be(Sign::Plus, &in_utxos[i].amount.into_repr().to_bytes_be()),
-			);
-			in_private_key.push(
-				BigInt::from_bytes_be(
-					Sign::Plus,
-					&in_utxos[i].keypair.secret_key.unwrap().into_repr().to_bytes_be(),
-				),
-			);
-			in_blinding.push(
-				BigInt::from_bytes_be(Sign::Plus, &in_utxos[i].blinding.into_repr().to_bytes_be()),
-			);
+			in_amount.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&in_utxos[i].amount.into_repr().to_bytes_be(),
+			));
+			in_private_key.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&in_utxos[i].keypair.secret_key.unwrap().into_repr().to_bytes_be(),
+			));
+			in_blinding.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&in_utxos[i].blinding.into_repr().to_bytes_be(),
+			));
 			in_path_indices.push(BigInt::from(in_indices[i]));
 			for j in 0..TREE_DEPTH {
 				let neighbor_elt: Bn254Fr =
 					if in_indices[i] == 0 { in_paths[i].path[j].1 } else { in_paths[i].path[j].0 };
-				in_path_elements.push(
-					BigInt::from_bytes_be(Sign::Plus, &neighbor_elt.into_repr().to_bytes_be()),
-				);
-			}
-		
-			out_chain_id.push(
-				BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].chain_id.into_repr().to_bytes_be()),
-			);
-
-			out_amount.push(
-				BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].amount.into_repr().to_bytes_be()),
-			);
-
-			out_pub_key.push(
-				BigInt::from_bytes_be(
+				in_path_elements.push(BigInt::from_bytes_be(
 					Sign::Plus,
-					&out_utxos[i].keypair.public_key.into_repr().to_bytes_be(),
-				),
-			);
+					&neighbor_elt.into_repr().to_bytes_be(),
+				));
+			}
 
-			out_blinding.push(
-				BigInt::from_bytes_be(Sign::Plus, &out_utxos[i].blinding.into_repr().to_bytes_be()),
-			);
+			out_chain_id.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&out_utxos[i].chain_id.into_repr().to_bytes_be(),
+			));
+
+			out_amount.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&out_utxos[i].amount.into_repr().to_bytes_be(),
+			));
+
+			out_pub_key.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&out_utxos[i].keypair.public_key.into_repr().to_bytes_be(),
+			));
+
+			out_blinding.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&out_utxos[i].blinding.into_repr().to_bytes_be(),
+			));
 		}
 
 		let inputs_for_proof = [
@@ -539,9 +543,17 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 
 		let mut inputs_for_verification = &full_assignment[1..num_inputs];
 
-		println!("v {:?} {:?}", inputs_for_verification.len(), inputs_for_verification.into_iter().map(|x| to_bigint(&x)).collect::<Vec<BigInt>>());
+		println!(
+			"v {:?} {:?}",
+			inputs_for_verification.len(),
+			inputs_for_verification
+				.into_iter()
+				.map(|x| to_bigint(&x))
+				.collect::<Vec<BigInt>>()
+		);
 
-		let did_proof_work = verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
+		let did_proof_work =
+			verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
 		assert!(did_proof_work);
 
 		// // Constructing external data
@@ -579,6 +591,7 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		// // Transactor balance should be zero, since they deposited all the
 		// // money to the mixer
 		// let transactor_balance_after = Balances::free_balance(transactor);
-		// assert_eq!(transactor_balance_after, transactor_balance_before - ext_amount.unsigned_abs());
+		// assert_eq!(transactor_balance_after, transactor_balance_before -
+		// ext_amount.unsigned_abs());
 	});
 }
