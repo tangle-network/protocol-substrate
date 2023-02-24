@@ -19,6 +19,7 @@
 
 *.iml
 /substrate-fixtures
+/solidity-fixtures
 **/node_modules
 types/build
 types/ts-types
