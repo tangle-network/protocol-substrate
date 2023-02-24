@@ -283,6 +283,17 @@ fn setup_environment_with_circom(
 
 	let wc_2_2 = circom_from_folder(wasm_2_2_path);
 
+	let mut vk_2_2_bytes = Vec::new();
+	params_2_2.0.vk.write(&mut vk_2_2_bytes).unwrap();
+	// println!("vk_2_2_bytes: {:?}", vk_2_2_bytes.len());
+	// println!("vk: {:?}", params_2_2.0.vk);
+
+	assert_ok!(VAnchorVerifier2::force_set_parameters(
+		RuntimeOrigin::root(),
+		(2, 2),
+		vk_2_2_bytes.clone().try_into().unwrap()
+	));
+
 	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
 	let relayer = account::<AccountId>("", RELAYER_ACCOUNT_ID, SEED);
 	let big_transactor = account::<AccountId>("", BIG_TRANSACTOR_ACCOUNT_ID, SEED);
@@ -439,8 +450,21 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		} else {
 			vec![BigInt::from_bytes_be(Sign::Minus, &(-public_amount).to_be_bytes())]
 		};
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			0,
+			0,
+			// Mock encryption value, not meant to be used in production
+			output1.to_vec(),
+			// Mock encryption value, not meant to be used in production
+			output2.to_vec(),
+		);
+		let ext_data_hash = vec![BigInt::from_bytes_be(Sign::Plus, &keccak_256(&ext_data.encode_abi()))];
 
-		let mut ext_data_hash = public_amount.clone();
+		// let mut ext_data_hash = public_amount.clone();
 		let mut input_nullifier = Vec::new();
 		let mut output_commitment = Vec::new();
 		for i in 0..NUM_UTXOS {
@@ -555,6 +579,25 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		let did_proof_work =
 			verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
 		assert!(did_proof_work);
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&inputs_for_verification.to_vec());
+		println!("full assignment {:?}", full_assignment[1..num_inputs].to_vec());
+		println!("inputs for proof {:?}", inputs_for_proof);
+		let mut proof_bytes = Vec::new();
+		proof.write(&mut proof_bytes).unwrap();
+		let proof_data =
+			ProofData::new(proof_bytes, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+				println!("Proof data: {proof_data:?}");
+
+		let _relayer_balance_before = Balances::free_balance(relayer.clone());
+		let _recipient_balance_before = Balances::free_balance(recipient.clone());
+		let _transactor_balance_before = Balances::free_balance(transactor.clone());
+		assert_ok!(VAnchor2::transact(
+			RuntimeOrigin::signed(transactor.clone()),
+			tree_id,
+			proof_data,
+			ext_data
+		));
 
 		// // Constructing external data
 		// let output1 = commitments[0];
