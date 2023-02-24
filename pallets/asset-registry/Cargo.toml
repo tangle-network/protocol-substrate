@@ -1,20 +1,20 @@
 [package]
-name = "pallet-asset-registry"
-version = "0.1.0"
-description = "Pallet for asset registry management"
 authors = ["GalacticCouncil"]
-edition = "2021"
+description = "Pallet for asset registry management"
+edition = "2018"
 homepage = "https://github.com/galacticcouncil/basilisk-node"
 license = "Apache 2.0"
+name = "pallet-asset-registry"
 repository = "https://github.com/galacticcouncil/basilisk-node"
+version = "0.1.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 codec = { default-features = false, features = ["derive", "max-encoded-len"], package = "parity-scale-codec", version = "3" }
 primitive-types = { default-features = false, version = "0.8.0" }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 serde = { features = ["derive"], optional = true, version = "1.0.101" }
 
 # ORML dependencies
@@ -23,8 +23,8 @@ orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-li
 # Substrate dependencies
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-arithmetic = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 
@@ -40,6 +40,7 @@ webb-primitives = { path = "../../primitives", default-features = false }
 [features]
 default = ["std"]
 runtime-benchmarks = [
+  "frame-benchmarking",
   "frame-system/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
 ]

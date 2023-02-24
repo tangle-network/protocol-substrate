@@ -156,9 +156,9 @@ impl ElementTrait for Element {
 
 parameter_types! {
 	#[derive(Debug, TypeInfo)]
-	pub const MaxEdges: u32 = 1000;
+	pub const MaxEdges: u32 = 100000;
 	#[derive(Debug, TypeInfo)]
-	pub const MaxDefaultHashes: u32 = 1000;
+	pub const MaxDefaultHashes: u32 = 100000;
 }
 
 impl pallet_mt::Config for Test {

@@ -1,16 +1,31 @@
 use super::*;
 use crate::mock::*;
+use std::default::Default;
 
 use frame_benchmarking::account;
 use frame_support::assert_ok;
 
 use sp_runtime::traits::Zero;
 
+use webb_primitives::{
+	types::vanchor::ProofData,
+	webb_proposals::{
+		FunctionSignature, ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId,
+	},
+};
+
+use arkworks_setups::{common::setup_params, Curve};
+
+use pallet_vanchor_handler::AnchorList;
+
 const SEED: u32 = 0;
 const INITIAL_LIQUIDITY: u128 = 10000000;
 const LIQUIDITY: u128 = 20000000;
 const INITIAL_TOTAL_REWARDS_BALANCE: i128 = 30000000;
 const DURATION: u64 = 31536000;
+
+const TEST_MAX_EDGES: u32 = 100;
+const TEST_TREE_DEPTH: u8 = 32;
 
 #[test]
 fn should_initialize_parameters() {
@@ -29,6 +44,8 @@ fn setup_environment() {
 	}
 }
 
+/// Rewards swapping tests
+
 // Test basic set pool weight
 #[test]
 fn test_basic_set_pool_weight() {
@@ -36,12 +53,12 @@ fn test_basic_set_pool_weight() {
 		setup_environment();
 
 		// Set pool weight to 800
-		assert_ok!(AnonymityMining::set_pool_weight(800));
-		assert_eq!(AnonymityMining::get_pool_weight(), 800);
+		assert_ok!(AnonymityMiningRewards::set_pool_weight(800));
+		assert_eq!(AnonymityMiningRewards::get_pool_weight(), 800);
 
 		// Set pool weight to 500
-		assert_ok!(AnonymityMining::set_pool_weight(500));
-		assert_eq!(AnonymityMining::get_pool_weight(), 500);
+		assert_ok!(AnonymityMiningRewards::set_pool_weight(500));
+		assert_eq!(AnonymityMiningRewards::get_pool_weight(), 500);
 	})
 }
 
@@ -51,9 +68,9 @@ fn test_basic_timestamp_change() {
 	new_test_ext().execute_with(|| {
 		setup_environment();
 
-		let _start_timestamp = AnonymityMining::get_current_timestamp();
+		let _start_timestamp = AnonymityMiningRewards::get_current_timestamp();
 		Timestamp::set_timestamp(1);
-		let curr_timestamp = AnonymityMining::get_current_timestamp();
+		let curr_timestamp = AnonymityMiningRewards::get_current_timestamp();
 		assert_eq!(curr_timestamp, 1);
 	})
 }
@@ -65,12 +82,12 @@ fn test_basic_get_virtual_reward_balance() {
 		setup_environment();
 
 		// Set pool weight to 800
-		assert_ok!(AnonymityMining::set_pool_weight(800));
+		assert_ok!(AnonymityMiningRewards::set_pool_weight(800));
 
 		let reward_currency_id = 2;
 
 		let prev_virtual_balance =
-			AnonymityMining::get_virtual_balance(&AnonymityMining::account_id());
+			AnonymityMiningRewards::get_virtual_balance(&AnonymityMiningRewards::account_id());
 
 		// Starting virtual balance is at INITIAL_LIQUIDITY
 		assert_eq!(prev_virtual_balance, INITIAL_LIQUIDITY);
@@ -79,7 +96,7 @@ fn test_basic_get_virtual_reward_balance() {
 		let new_reward_balance = INITIAL_TOTAL_REWARDS_BALANCE;
 		assert_ok!(Currencies::update_balance(
 			RuntimeOrigin::root(),
-			AnonymityMining::account_id(),
+			AnonymityMiningRewards::account_id(),
 			reward_currency_id,
 			new_reward_balance,
 		));
@@ -103,7 +120,7 @@ fn test_basic_get_virtual_reward_balance() {
 
 		let expected_midway_virtual_balance = INITIAL_LIQUIDITY + LIQUIDITY / 2;
 		let midway_virtual_balance =
-			AnonymityMining::get_virtual_balance(&AnonymityMining::account_id());
+			AnonymityMiningRewards::get_virtual_balance(&AnonymityMiningRewards::account_id());
 		assert_eq!(
 			midway_virtual_balance.saturated_into::<u128>(),
 			expected_midway_virtual_balance
@@ -113,7 +130,7 @@ fn test_basic_get_virtual_reward_balance() {
 		Timestamp::set_timestamp(start_timestamp + DURATION + 1);
 
 		let new_virtual_balance =
-			AnonymityMining::get_virtual_balance(&AnonymityMining::account_id());
+			AnonymityMiningRewards::get_virtual_balance(&AnonymityMiningRewards::account_id());
 		assert_eq!(new_virtual_balance.saturated_into::<i128>(), new_reward_balance);
 	})
 }
@@ -125,7 +142,7 @@ fn test_basic_get_expected_return_varying_timestamp() {
 		setup_environment();
 
 		// Set pool weight to 10000
-		assert_ok!(AnonymityMining::set_pool_weight(10000));
+		assert_ok!(AnonymityMiningRewards::set_pool_weight(10000));
 
 		let reward_currency_id = 2;
 
@@ -133,7 +150,7 @@ fn test_basic_get_expected_return_varying_timestamp() {
 		let new_reward_balance = INITIAL_TOTAL_REWARDS_BALANCE;
 		assert_ok!(Currencies::update_balance(
 			RuntimeOrigin::root(),
-			AnonymityMining::account_id(),
+			AnonymityMiningRewards::account_id(),
 			reward_currency_id,
 			new_reward_balance,
 		));
@@ -143,8 +160,10 @@ fn test_basic_get_expected_return_varying_timestamp() {
 		// Starting timestamp
 		// Calc: 10000000(1 - e^-1)
 		let starting_expected_return = 6321206;
-		let start_expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+		let start_expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			amount,
+		);
 		assert_eq!(start_expected_return, starting_expected_return);
 
 		let start_timestamp = Timestamp::now();
@@ -154,8 +173,10 @@ fn test_basic_get_expected_return_varying_timestamp() {
 		Timestamp::set_timestamp(start_timestamp + DURATION / 2);
 		let midway_expected_return = 12642411;
 
-		let mid_expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+		let mid_expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			amount,
+		);
 		assert_eq!(mid_expected_return.saturated_into::<i128>(), midway_expected_return);
 
 		// Ending timestamp
@@ -163,8 +184,10 @@ fn test_basic_get_expected_return_varying_timestamp() {
 		Timestamp::set_timestamp(start_timestamp + DURATION + 1);
 		let ending_expected_return = 18963617;
 
-		let end_expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+		let end_expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			amount,
+		);
 		assert_eq!(end_expected_return.saturated_into::<i128>(), ending_expected_return);
 	})
 }
@@ -176,7 +199,7 @@ fn test_basic_get_expected_return_varying_pool_weights() {
 		setup_environment();
 
 		// Set pool weight to 10000
-		assert_ok!(AnonymityMining::set_pool_weight(10000));
+		assert_ok!(AnonymityMiningRewards::set_pool_weight(10000));
 
 		let reward_currency_id = 2;
 
@@ -184,7 +207,7 @@ fn test_basic_get_expected_return_varying_pool_weights() {
 		let new_reward_balance = INITIAL_TOTAL_REWARDS_BALANCE;
 		assert_ok!(Currencies::update_balance(
 			RuntimeOrigin::root(),
-			AnonymityMining::account_id(),
+			AnonymityMiningRewards::account_id(),
 			reward_currency_id,
 			new_reward_balance,
 		));
@@ -193,26 +216,32 @@ fn test_basic_get_expected_return_varying_pool_weights() {
 
 		// Calc: 10000000(1 - e^-1)
 		let initial_expected_return = 6321206;
-		let init_expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+		let init_expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			amount,
+		);
 		assert_eq!(init_expected_return, initial_expected_return);
 
 		// Double original pool weight
-		assert_ok!(AnonymityMining::set_pool_weight(20000));
+		assert_ok!(AnonymityMiningRewards::set_pool_weight(20000));
 
 		// Calc: 10000000(1 - e^-1/2)
 		let another_expected_return = 3934693;
-		let other_expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+		let other_expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			amount,
+		);
 		assert_eq!(other_expected_return, another_expected_return);
 
 		// Halve original pool weight
-		assert_ok!(AnonymityMining::set_pool_weight(5000));
+		assert_ok!(AnonymityMiningRewards::set_pool_weight(5000));
 
 		// Calc: 10000000(1 - e^-2)
 		let final_expected_return = 8646647;
-		let last_expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+		let last_expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			amount,
+		);
 		assert_eq!(last_expected_return, final_expected_return);
 	})
 }
@@ -224,7 +253,7 @@ fn test_basic_get_expected_return_varying_amounts() {
 		setup_environment();
 
 		// Set pool weight to 10000
-		assert_ok!(AnonymityMining::set_pool_weight(10000));
+		assert_ok!(AnonymityMiningRewards::set_pool_weight(10000));
 
 		let reward_currency_id = 2;
 
@@ -232,7 +261,7 @@ fn test_basic_get_expected_return_varying_amounts() {
 		let new_reward_balance = INITIAL_TOTAL_REWARDS_BALANCE;
 		assert_ok!(Currencies::update_balance(
 			RuntimeOrigin::root(),
-			AnonymityMining::account_id(),
+			AnonymityMiningRewards::account_id(),
 			reward_currency_id,
 			new_reward_balance,
 		));
@@ -241,8 +270,10 @@ fn test_basic_get_expected_return_varying_amounts() {
 
 		// Calc: 10000000(1 - e^-1)
 		let initial_expected_return = 6321206;
-		let init_expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), initial_amount);
+		let init_expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			initial_amount,
+		);
 		assert_eq!(init_expected_return, initial_expected_return);
 
 		// Half amount
@@ -250,8 +281,10 @@ fn test_basic_get_expected_return_varying_amounts() {
 
 		// Calc: 10000000(1 - e^-1/2)
 		let another_expected_return = 3934693;
-		let other_expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), other_amount);
+		let other_expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			other_amount,
+		);
 		assert_eq!(other_expected_return, another_expected_return);
 
 		// Double amount
@@ -259,8 +292,10 @@ fn test_basic_get_expected_return_varying_amounts() {
 
 		// Calc: 10000000(1 - e^-2)
 		let final_expected_return = 8646647;
-		let last_expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), final_amount);
+		let last_expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			final_amount,
+		);
 		assert_eq!(last_expected_return, final_expected_return);
 	})
 }
@@ -272,7 +307,7 @@ fn test_basic_swap() {
 		setup_environment();
 
 		// Set pool weight to 10000
-		assert_ok!(AnonymityMining::set_pool_weight(10000));
+		assert_ok!(AnonymityMiningRewards::set_pool_weight(10000));
 
 		let sender_account_id = account::<AccountId>("", 2, SEED);
 
@@ -299,7 +334,7 @@ fn test_basic_swap() {
 
 		// check pallet reward balance starts at 0
 		assert_eq!(
-			Currencies::free_balance(reward_currency_id, &AnonymityMining::account_id()),
+			Currencies::free_balance(reward_currency_id, &AnonymityMiningRewards::account_id()),
 			Zero::zero()
 		);
 
@@ -307,14 +342,14 @@ fn test_basic_swap() {
 		let new_reward_balance = INITIAL_TOTAL_REWARDS_BALANCE;
 		assert_ok!(Currencies::update_balance(
 			RuntimeOrigin::root(),
-			AnonymityMining::account_id(),
+			AnonymityMiningRewards::account_id(),
 			reward_currency_id,
 			new_reward_balance,
 		));
 
 		// check pallet reward balances updated
 		assert_eq!(
-			Currencies::free_balance(reward_currency_id, &AnonymityMining::account_id()),
+			Currencies::free_balance(reward_currency_id, &AnonymityMiningRewards::account_id()),
 			new_reward_balance as _
 		);
 
@@ -323,26 +358,28 @@ fn test_basic_swap() {
 		let sender_reward_balance_before =
 			Currencies::free_balance(reward_currency_id, &sender_account_id);
 		let pallet_ap_balance_before =
-			Currencies::free_balance(ap_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(ap_currency_id, &AnonymityMiningRewards::account_id());
 		let pallet_reward_balance_before =
-			Currencies::free_balance(reward_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(reward_currency_id, &AnonymityMiningRewards::account_id());
 
 		let amount = 10000;
 
 		// Calc: 10000000(1 - e^-1)
-		let expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+		let expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			amount,
+		);
 
 		assert_eq!(expected_return, 6321206);
 
 		// conduct swap
-		assert_ok!(AnonymityMining::swap(
+		assert_ok!(AnonymityMiningRewards::swap(
 			RuntimeOrigin::signed(sender_account_id.clone()),
 			sender_account_id.clone(),
 			amount
 		));
 
-		let tokens_sold = AnonymityMining::get_tokens_sold();
+		let tokens_sold = AnonymityMiningRewards::get_tokens_sold();
 		assert_eq!(tokens_sold, 6321206);
 
 		// sender and pallet balances after swap
@@ -350,9 +387,9 @@ fn test_basic_swap() {
 		let sender_reward_balance_after =
 			Currencies::free_balance(reward_currency_id, &sender_account_id);
 		let pallet_ap_balance_after =
-			Currencies::free_balance(ap_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(ap_currency_id, &AnonymityMiningRewards::account_id());
 		let pallet_reward_balance_after =
-			Currencies::free_balance(reward_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(reward_currency_id, &AnonymityMiningRewards::account_id());
 
 		// check balances update properly
 		assert_eq!(sender_ap_balance_after, sender_ap_balance_before - amount);
@@ -369,7 +406,7 @@ fn test_basic_two_swaps() {
 		setup_environment();
 
 		// Set pool weight to 800
-		assert_ok!(AnonymityMining::set_pool_weight(10000));
+		assert_ok!(AnonymityMiningRewards::set_pool_weight(10000));
 
 		let sender_one_account_id = account::<AccountId>("", 2, SEED);
 		let sender_two_account_id = account::<AccountId>("", 3, SEED);
@@ -399,7 +436,7 @@ fn test_basic_two_swaps() {
 		let new_reward_balance = INITIAL_TOTAL_REWARDS_BALANCE;
 		assert_ok!(Currencies::update_balance(
 			RuntimeOrigin::root(),
-			AnonymityMining::account_id(),
+			AnonymityMiningRewards::account_id(),
 			reward_currency_id,
 			new_reward_balance,
 		));
@@ -410,20 +447,22 @@ fn test_basic_two_swaps() {
 		let sender_one_reward_balance_before =
 			Currencies::free_balance(reward_currency_id, &sender_one_account_id);
 		let pallet_ap_balance_before =
-			Currencies::free_balance(ap_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(ap_currency_id, &AnonymityMiningRewards::account_id());
 		let pallet_reward_balance_before =
-			Currencies::free_balance(reward_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(reward_currency_id, &AnonymityMiningRewards::account_id());
 
 		let amount = 10000;
 
-		let expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+		let expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			amount,
+		);
 
 		// Calc: 10000000(1 - e^-1)
 		assert_eq!(expected_return, 6321206);
 
 		// conduct swap
-		assert_ok!(AnonymityMining::swap(
+		assert_ok!(AnonymityMiningRewards::swap(
 			RuntimeOrigin::signed(sender_one_account_id.clone()),
 			sender_one_account_id.clone(),
 			amount
@@ -435,9 +474,9 @@ fn test_basic_two_swaps() {
 		let sender_one_reward_balance_after =
 			Currencies::free_balance(reward_currency_id, &sender_one_account_id);
 		let pallet_ap_balance_after =
-			Currencies::free_balance(ap_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(ap_currency_id, &AnonymityMiningRewards::account_id());
 		let pallet_reward_balance_after =
-			Currencies::free_balance(reward_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(reward_currency_id, &AnonymityMiningRewards::account_id());
 
 		// check balances update properly
 		assert_eq!(sender_one_ap_balance_after, sender_one_ap_balance_before - amount);
@@ -454,21 +493,23 @@ fn test_basic_two_swaps() {
 		let sender_two_reward_balance_before =
 			Currencies::free_balance(reward_currency_id, &sender_two_account_id);
 		let pallet_ap_balance_before =
-			Currencies::free_balance(ap_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(ap_currency_id, &AnonymityMiningRewards::account_id());
 		let pallet_reward_balance_before =
-			Currencies::free_balance(reward_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(reward_currency_id, &AnonymityMiningRewards::account_id());
 
 		let amount = 10000;
 
-		let expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+		let expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			amount,
+		);
 
 		// Calc: starting = 10000000, prev swap traded for 6321206 tokens
 		// So expected return here = (10000000-6321206)(1-e^-1)
 		assert_eq!(expected_return, 2325441);
 
 		// conduct swap
-		assert_ok!(AnonymityMining::swap(
+		assert_ok!(AnonymityMiningRewards::swap(
 			RuntimeOrigin::signed(sender_two_account_id.clone()),
 			sender_two_account_id.clone(),
 			amount
@@ -480,9 +521,9 @@ fn test_basic_two_swaps() {
 		let sender_two_reward_balance_after =
 			Currencies::free_balance(reward_currency_id, &sender_two_account_id);
 		let pallet_ap_balance_after =
-			Currencies::free_balance(ap_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(ap_currency_id, &AnonymityMiningRewards::account_id());
 		let pallet_reward_balance_after =
-			Currencies::free_balance(reward_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(reward_currency_id, &AnonymityMiningRewards::account_id());
 
 		// check balances update properly
 		assert_eq!(sender_two_ap_balance_after, sender_two_ap_balance_before - amount);
@@ -506,14 +547,16 @@ fn test_basic_two_swaps() {
 		let sender_one_reward_balance_before =
 			Currencies::free_balance(reward_currency_id, &sender_one_account_id);
 		let pallet_ap_balance_before =
-			Currencies::free_balance(ap_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(ap_currency_id, &AnonymityMiningRewards::account_id());
 		let pallet_reward_balance_before =
-			Currencies::free_balance(reward_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(reward_currency_id, &AnonymityMiningRewards::account_id());
 
 		let amount = 5000;
 
-		let expected_return =
-			AnonymityMining::get_expected_return(&AnonymityMining::account_id(), amount);
+		let expected_return = AnonymityMiningRewards::get_expected_return(
+			&AnonymityMiningRewards::account_id(),
+			amount,
+		);
 
 		// Midway -> now virtual balance base is 20000000
 		// Prev tokens sold: 6321206 and 2325441
@@ -521,7 +564,7 @@ fn test_basic_two_swaps() {
 		assert_eq!(expected_return, 4467196);
 
 		// conduct swap
-		assert_ok!(AnonymityMining::swap(
+		assert_ok!(AnonymityMiningRewards::swap(
 			RuntimeOrigin::signed(sender_one_account_id.clone()),
 			sender_one_account_id.clone(),
 			amount
@@ -533,9 +576,9 @@ fn test_basic_two_swaps() {
 		let sender_one_reward_balance_after =
 			Currencies::free_balance(reward_currency_id, &sender_one_account_id);
 		let pallet_ap_balance_after =
-			Currencies::free_balance(ap_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(ap_currency_id, &AnonymityMiningRewards::account_id());
 		let pallet_reward_balance_after =
-			Currencies::free_balance(reward_currency_id, &AnonymityMining::account_id());
+			Currencies::free_balance(reward_currency_id, &AnonymityMiningRewards::account_id());
 
 		// check balances update properly
 		assert_eq!(sender_one_ap_balance_after, sender_one_ap_balance_before - amount);

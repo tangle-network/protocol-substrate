@@ -4903,7 +4903,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-anonymity-mining"
+name = "pallet-anonymity-mining-claims"
 version = "1.0.0"
 dependencies = [
  "ark-bls12-381",
@@ -4914,6 +4914,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
+ "arkworks-setups",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -4927,9 +4928,53 @@ dependencies = [
  "pallet-key-storage",
  "pallet-linkable-tree",
  "pallet-mt",
+ "pallet-signature-bridge",
  "pallet-timestamp",
  "pallet-token-wrapper",
  "pallet-vanchor",
+ "pallet-vanchor-handler",
+ "pallet-vanchor-verifier",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "webb-primitives",
+]
+
+[[package]]
+name = "pallet-anonymity-mining-rewards"
+version = "1.0.0"
+dependencies = [
+ "ark-bls12-381",
+ "ark-bn254",
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ff",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "arkworks-setups",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "orml-currencies",
+ "orml-tokens",
+ "orml-traits",
+ "pallet-asset-registry",
+ "pallet-balances",
+ "pallet-hasher",
+ "pallet-key-storage",
+ "pallet-linkable-tree",
+ "pallet-mt",
+ "pallet-signature-bridge",
+ "pallet-timestamp",
+ "pallet-token-wrapper",
+ "pallet-vanchor",
+ "pallet-vanchor-handler",
  "pallet-vanchor-verifier",
  "parity-scale-codec",
  "scale-info",
@@ -5879,6 +5924,7 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "once_cell",
+ "getrandom 0.2.8",
  "orml-currencies",
  "orml-tokens",
  "orml-traits",

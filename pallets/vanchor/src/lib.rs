@@ -58,7 +58,6 @@ use codec::{Decode, Encode};
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::DispatchError, traits::Get};
 use orml_traits::{
 	arithmetic::{Signed, Zero},
-	currency::transactional,
 	MultiCurrency, MultiCurrencyExtended,
 };
 use pallet_token_wrapper::traits::TokenWrapperInterface;
@@ -319,7 +318,7 @@ pub mod pallet {
 					T::ProposalNonce::from(ctr),
 				)
 				.map_err(|_| panic!("Failed to create vanchor"));
-				ctr += 1;
+				ctr = ctr.saturating_add(1);
 			});
 		}
 	}
@@ -346,7 +345,6 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[transactional]
 		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::transact())]
 		#[pallet::call_index(1)]
 		pub fn transact(
@@ -360,7 +358,6 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[transactional]
 		#[pallet::weight(<T as pallet::Config<I>>::WeightInfo::register_and_transact())]
 		#[pallet::call_index(2)]
 		pub fn register_and_transact(

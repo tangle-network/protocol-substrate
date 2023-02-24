@@ -4,13 +4,16 @@ name: check
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+env:
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL: git
+  
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   ci:
@@ -32,9 +35,8 @@ jobs:
         run: dvc pull
 
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
           toolchain: nightly
 
       - name: Install cargo-nextest
@@ -42,6 +44,7 @@ jobs:
         with:
           crate: cargo-nextest
           version: latest
+          args: "-Z sparse-registry"
 
       - name: Cache Cargo
         uses: actions/cache@v2
@@ -60,7 +63,7 @@ jobs:
           SKIP_WASM_BUILD=1 cargo fmt --all -- --check
       - name: Check Build
         run: |
-          SKIP_WASM_BUILD=1 cargo check --release
+          SKIP_WASM_BUILD=1 cargo check --release -Z sparse-registry
       - name: Test
         run: |
-          SKIP_WASM_BUILD=1 cargo nextest run --release --workspace --exclude webb-client
+          SKIP_WASM_BUILD=1 cargo nextest run --release -Z sparse-registry --workspace --exclude webb-client

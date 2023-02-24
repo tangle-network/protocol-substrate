@@ -1,28 +1,28 @@
 [package]
-name = "pallet-linkable-tree-rpc-runtime-api"
-version = "1.0.0"
 authors = ["Webb"]
-edition = "2021"
-license = "Apache-2.0"
 description = "Linkable tree RPC API for linkable tree pallet"
+edition = "2018"
+license = "Apache-2.0"
+name = "pallet-linkable-tree-rpc-runtime-api"
 readme = "README.md"
+version = "1.0.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-sp-api = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 pallet-linkable-tree = { default-features = false, path = "../../" }
+sp-api = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 webb-primitives = { path = "../../../../primitives", default-features = false }
 
 [features]
 default = ["std"]
 std = [
-	"codec/std",
-	"sp-api/std",
-	"sp-std/std",
-	"pallet-linkable-tree/std",
-	"webb-primitives/std",
+  "codec/std",
+  "sp-api/std",
+  "sp-std/std",
+  "pallet-linkable-tree/std",
+  "webb-primitives/std",
 ]

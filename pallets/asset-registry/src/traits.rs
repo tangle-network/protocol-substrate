@@ -1,3 +1,4 @@
+#![allow(clippy::ptr_arg, clippy::type_complexity)]
 use crate::*;
 use frame_support::dispatch::fmt::Debug;
 

@@ -1,3 +1,4 @@
+#![allow(clippy::ptr_arg, clippy::type_complexity)]
 use frame_support::dispatch;
 use sp_std::vec::Vec;
 

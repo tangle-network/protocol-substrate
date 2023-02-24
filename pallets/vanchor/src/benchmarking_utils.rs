@@ -1,6 +1,6 @@
 #![cfg(feature = "runtime-benchmarks")]
 use ark_ff::{BigInteger, PrimeField};
-use ark_std::{collections::BTreeMap, rand::thread_rng, vec::Vec};
+use ark_std::{collections::BTreeMap, vec::Vec};
 use arkworks_native_gadgets::poseidon::Poseidon;
 use arkworks_setups::{
 	common::{setup_params, setup_tree_and_create_path},
@@ -34,7 +34,7 @@ pub fn setup_utxos(
 	indices: Option<[u64; NUM_UTXOS]>,
 ) -> [Utxo<Bn254Fr>; NUM_UTXOS] {
 	let curve = Curve::Bn254;
-	let rng = &mut thread_rng();
+	let rng = &mut ark_std::test_rng();
 	// Input Utxos
 	let indices: [Option<u64>; NUM_UTXOS] = if indices.is_some() {
 		let ind_unw = indices.unwrap();
@@ -75,7 +75,7 @@ pub fn setup_zk_circuit(
 	custom_root: Element,
 ) -> (Vec<u8>, Vec<Bn254Fr>) {
 	let curve = Curve::Bn254;
-	let rng = &mut thread_rng();
+	let rng = &mut ark_std::test_rng();
 
 	let leaf0 = in_utxos[0].commitment.into_repr().to_bytes_be();
 	let leaf1 = in_utxos[1].commitment.into_repr().to_bytes_be();
