@@ -13,6 +13,7 @@
 .local
 
 #vscode files
+.vscode/
 .vscode/launch.json
 
 .idea/
