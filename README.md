@@ -83,7 +83,7 @@ Repo environment setup:
 git clone git@github.com:webb-tools/protocol-substrate.git
 
 # Fetch fixtures
-dvc pull
+Run the script in `scripts/fetch-fixtures.sh` file.
 ```
 
 Build the node in `release mode`:
