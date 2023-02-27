@@ -1,10 +1,4 @@
-use crate::{
-	mock::*,
-	test_utils::{deconstruct_public_inputs_el, setup_utxos, ANCHOR_CT, DEFAULT_LEAF, NUM_UTXOS},
-	tests::*,
-	zerokit_utils::*,
-	Instance2,
-};
+use crate::{mock::*, test_utils::*, tests::*, zerokit_utils::*, Instance2};
 use ark_bn254::{Bn254, Fq, Fq2, Fr, G1Affine, G1Projective, G2Affine, G2Projective};
 use ark_circom::{read_zkey, CircomConfig, CircomReduction, WitnessCalculator};
 use ark_ff::{BigInteger, BigInteger256, PrimeField, ToBytes};
@@ -52,16 +46,6 @@ use webb_primitives::{
 };
 
 type Bn254Fr = ark_bn254::Fr;
-
-#[derive(Error, Debug)]
-pub enum ProofError {
-	#[error("Error reading circuit key: {0}")]
-	CircuitKeyError(#[from] std::io::Error),
-	#[error("Error producing witness: {0}")]
-	WitnessError(color_eyre::Report),
-	#[error("Error producing proof: {0}")]
-	SynthesisError(#[from] SynthesisError),
-}
 
 #[cfg(not(target_arch = "wasm32"))]
 static WITNESS_CALCULATOR: OnceCell<Mutex<WitnessCalculator>> = OnceCell::new();
@@ -555,43 +539,5 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		let did_proof_work =
 			verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
 		assert!(did_proof_work);
-
-		// // Constructing external data
-		// let output1 = commitments[0];
-		// let output2 = commitments[1];
-		// let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
-		// 	recipient.clone(),
-		// 	relayer.clone(),
-		// 	ext_amount,
-		// 	fee,
-		// 	0,
-		// 	0,
-		// 	output1.to_vec(),
-		// 	output2.to_vec(),
-		// );
-
-		// let relayer_balance_before = Balances::free_balance(relayer.clone());
-		// let recipient_balance_before = Balances::free_balance(recipient.clone());
-		// let transactor_balance_before = Balances::free_balance(transactor.clone());
-		// assert_ok!(VAnchor2::transact(
-		// 	RuntimeOrigin::signed(transactor.clone()),
-		// 	tree_id,
-		// 	proof_data,
-		// 	ext_data
-		// ));
-
-		// // Recipient balance should be ext amount since the fee was zero
-		// let recipient_balance_after = Balances::free_balance(recipient);
-		// assert_eq!(recipient_balance_after, recipient_balance_before);
-
-		// // Relayer balance should be zero since the fee was zero
-		// let relayer_balance_after = Balances::free_balance(relayer);
-		// assert_eq!(relayer_balance_after, relayer_balance_before);
-
-		// // Transactor balance should be zero, since they deposited all the
-		// // money to the mixer
-		// let transactor_balance_after = Balances::free_balance(transactor);
-		// assert_eq!(transactor_balance_after, transactor_balance_before -
-		// ext_amount.unsigned_abs());
 	});
 }

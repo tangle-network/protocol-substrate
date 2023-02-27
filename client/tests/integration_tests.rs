@@ -1,4 +1,8 @@
+use ark_ff::ToBytes;
+use ark_groth16::{Proof as ArkProof, ProvingKey, VerifyingKey};
+use ark_relations::r1cs::ConstraintMatrices;
 use sp_keyring::AccountKeyring;
+use sp_runtime::traits::Verify;
 use webb_client::webb_runtime;
 use webb_primitives::ElementTrait;
 
@@ -8,7 +12,7 @@ use codec::Encode;
 use utils::*;
 use webb_primitives::{hashing::ethereum::keccak_256, utils::compute_chain_id_type, IntoAbiToken};
 
-use ark_bn254::Fr as Bn254Fr;
+use ark_bn254::{Bn254, Fr as Bn254Fr};
 use arkworks_native_gadgets::ark_std::rand::rngs::OsRng;
 use arkworks_setups::{
 	common::{verify_unchecked, verify_unchecked_raw},
@@ -21,10 +25,10 @@ use subxt::{
 };
 use utils::ExtData;
 
-use ark_circom::read_zkey;
+use ark_circom::{read_zkey, WitnessCalculator};
 use ark_ff::{BigInteger, PrimeField};
 use ark_serialize::CanonicalSerialize;
-use std::fs::File;
+use std::{fs::File, sync::Mutex};
 
 #[tokio::test]
 async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
@@ -147,8 +151,9 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn make_vanchor_tx(
-	pk_bytes: &[u8],
-	vk_bytes: &[u8],
+	circom_params: &(ProvingKey<Bn254>, ConstraintMatrices<Bn254Fr>),
+	#[cfg(not(target_arch = "wasm32"))] wc: &Mutex<WitnessCalculator>,
+	#[cfg(target_arch = "wasm32")] wc: &mut WitnessCalculator,
 	recipient: &AccountId32,
 	relayer: &AccountId32,
 	public_amount: i128,
@@ -190,11 +195,12 @@ async fn make_vanchor_tx(
 		out_utxos.clone(),
 		custom_roots,
 		leaves,
-		pk_bytes.to_vec(),
+		circom_params,
+		wc,
 	);
 
-	let res = verify_unchecked::<ark_bn254::Bn254>(&public_inputs, vk_bytes, &proof)?;
-	assert!(res, "Invalid proof");
+	let res = verify_proof(&circom_params.0.vk, &proof, &public_inputs);
+	assert!(res.unwrap(), "Invalid proof");
 
 	// Deconstructing public inputs
 	let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
@@ -207,9 +213,12 @@ async fn make_vanchor_tx(
 	println!("commitments {commitments:?}");
 	println!("ext data hash {ext_data_hash:?}");
 
+	let mut proof_vec = Vec::new();
+	&proof.write(&mut proof_vec).unwrap();
+
 	// Constructing proof data
 	let proof_data =
-		ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+		ProofData::new(proof_vec, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
 	// mixer = 0..3
 	// anchor = 3..6
@@ -237,17 +246,14 @@ async fn make_vanchor_tx(
 async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
 
-	let path_2_2 = "../../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
+	let path_2_2 = "../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
 	let mut file_2_2 = File::open(path_2_2).unwrap();
 	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
 
-	let mut pk_vec = Vec::new();
-	&params_2_2.0.serialize_uncompressed(&mut pk_vec).unwrap();
-	let mut vk_vec = Vec::new();
-	&params_2_2.0.vk.serialize_uncompressed(&mut vk_vec).unwrap();
+	let wasm_2_2_path =
+		"../../solidity-fixtures/solidity-fixtures//vanchor_2/2/poseidon_vanchor_2_2.wasm";
 
-	let pk_bytes = pk_vec.as_slice();
-	let vk_bytes = vk_vec.as_slice();
+	let wc_2_2 = circom_from_folder(wasm_2_2_path);
 
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();
@@ -272,8 +278,8 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let leaves: Vec<Vec<u8>> = vec![leaf0, leaf1];
 
 	make_vanchor_tx(
-		pk_bytes,
-		vk_bytes,
+		&params_2_2,
+		wc_2_2,
 		&(*AsRef::<[u8; 32]>::as_ref(&recipient)).into(),
 		&(*AsRef::<[u8; 32]>::as_ref(&relayer)).into(),
 		public_amount,
@@ -317,8 +323,8 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let out_utxos = setup_utxos(out_chain_ids, new_out_amounts, None);
 
 	make_vanchor_tx(
-		pk_bytes,
-		vk_bytes,
+		&params_2_2,
+		wc_2_2,
 		&(*AsRef::<[u8; 32]>::as_ref(&recipient)).into(),
 		&(*AsRef::<[u8; 32]>::as_ref(&relayer)).into(),
 		public_amount,

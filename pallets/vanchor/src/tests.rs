@@ -1,6 +1,6 @@
 use crate::{
 	mock::*,
-	test_utils::{deconstruct_public_inputs_el, setup_utxos, setup_zk_circuit},
+	test_utils::{deconstruct_public_inputs_el, setup_utxos, setup_zk_circuit, TREE_DEPTH},
 	Error, Instance1, MaxDepositAmount, MinWithdrawAmount,
 };
 use ark_ff::{BigInteger, PrimeField};
@@ -23,7 +23,6 @@ use webb_primitives::{
 type Bn254Fr = ark_bn254::Fr;
 
 pub const SEED: u32 = 0;
-pub const TREE_DEPTH: usize = 30;
 pub const EDGE_CT: usize = 1;
 pub const DEFAULT_BALANCE: u128 = 10_000;
 pub const BIG_DEFAULT_BALANCE: u128 = 20_000;

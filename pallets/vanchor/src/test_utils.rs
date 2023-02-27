@@ -1,4 +1,16 @@
+use crate::tests::{
+	BIGGER_DEFAULT_BALANCE, BIGGER_TRANSACTOR_ACCOUNT_ID, BIG_DEFAULT_BALANCE,
+	BIG_TRANSACTOR_ACCOUNT_ID, DEFAULT_BALANCE, RELAYER_ACCOUNT_ID, SEED, TRANSACTOR_ACCOUNT_ID,
+};
+use ark_bn254::Fr;
+use ark_circom::WitnessCalculator;
 use ark_ff::{BigInteger, PrimeField};
+use ark_groth16::{
+	create_proof_with_reduction_and_matrices, create_random_proof as prove,
+	generate_random_parameters, prepare_verifying_key, verify_proof as ark_verify_proof,
+	Proof as ArkProof, ProvingKey, VerifyingKey,
+};
+use ark_relations::r1cs::ConstraintMatrices;
 use ark_std::{rand::thread_rng, vec::Vec};
 use arkworks_native_gadgets::poseidon::Poseidon;
 use arkworks_setups::{
@@ -7,7 +19,8 @@ use arkworks_setups::{
 	utxo::Utxo,
 	Curve, VAnchorProver,
 };
-use std::{collections::BTreeMap, convert::TryInto};
+use num_bigint::BigInt;
+use std::{collections::BTreeMap, convert::TryInto, sync::Mutex};
 use webb_primitives::ElementTrait;
 
 use crate::mock::Element;
@@ -26,6 +39,298 @@ pub const DEFAULT_LEAF: [u8; 32] = [
 #[allow(non_camel_case_types)]
 type VAnchorProver_Bn254_30_2_2_2 =
 	VAnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, NUM_UTXOS>;
+
+use crate::{mock::*, zerokit_utils::*, Instance2};
+use ark_bn254::{Fq, Fq2, G1Affine, G1Projective, G2Affine, G2Projective};
+use ark_circom::{read_zkey, CircomConfig, CircomReduction};
+use ark_ff::{BigInteger256, ToBytes};
+use ark_relations::r1cs::SynthesisError;
+use ark_std::UniformRand;
+use arkworks_native_gadgets::merkle_tree::{Path, SparseMerkleTree};
+use cfg_if::cfg_if;
+use frame_benchmarking::account;
+use frame_support::{assert_ok, traits::OnInitialize};
+use num_bigint::{BigUint, Sign};
+use once_cell::sync::OnceCell;
+use pallet_linkable_tree::LinkableTreeConfigration;
+use serde_json::Value;
+use sp_core::hashing::keccak_256;
+use std::{
+	convert::TryFrom,
+	fs::{self, File},
+	io::{Cursor, Error, ErrorKind},
+	result::Result,
+	str::FromStr,
+};
+use thiserror::Error;
+use wasmer::{Module, Store};
+use webb_primitives::{
+	linkable_tree::LinkableTreeInspector,
+	merkle_tree::TreeInspector,
+	types::vanchor::{ExtData, ProofData},
+	utils::compute_chain_id_type,
+	verifying::CircomError,
+	AccountId,
+};
+
+#[derive(Error, Debug)]
+pub enum ProofError {
+	#[error("Error reading circuit key: {0}")]
+	CircuitKeyError(#[from] std::io::Error),
+	#[error("Error producing witness: {0}")]
+	WitnessError(color_eyre::Report),
+	#[error("Error producing proof: {0}")]
+	SynthesisError(#[from] SynthesisError),
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+static WITNESS_CALCULATOR: OnceCell<Mutex<WitnessCalculator>> = OnceCell::new();
+
+// Utilities to convert a json verification key in a groth16::VerificationKey
+fn fq_from_str(s: &str) -> Fq {
+	Fq::try_from(BigUint::from_str(s).unwrap()).unwrap()
+}
+
+// Extracts the element in G1 corresponding to its JSON serialization
+fn json_to_g1(json: &Value, key: &str) -> G1Affine {
+	let els: Vec<String> = json
+		.get(key)
+		.unwrap()
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(|i| i.as_str().unwrap().to_string())
+		.collect();
+	G1Affine::from(G1Projective::new(
+		fq_from_str(&els[0]),
+		fq_from_str(&els[1]),
+		fq_from_str(&els[2]),
+	))
+}
+
+// Extracts the vector of G1 elements corresponding to its JSON serialization
+fn json_to_g1_vec(json: &Value, key: &str) -> Vec<G1Affine> {
+	let els: Vec<Vec<String>> = json
+		.get(key)
+		.unwrap()
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(|i| {
+			i.as_array()
+				.unwrap()
+				.iter()
+				.map(|x| x.as_str().unwrap().to_string())
+				.collect::<Vec<String>>()
+		})
+		.collect();
+
+	els.iter()
+		.map(|coords| {
+			G1Affine::from(G1Projective::new(
+				fq_from_str(&coords[0]),
+				fq_from_str(&coords[1]),
+				fq_from_str(&coords[2]),
+			))
+		})
+		.collect()
+}
+
+// Extracts the element in G2 corresponding to its JSON serialization
+fn json_to_g2(json: &Value, key: &str) -> G2Affine {
+	let els: Vec<Vec<String>> = json
+		.get(key)
+		.unwrap()
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(|i| {
+			i.as_array()
+				.unwrap()
+				.iter()
+				.map(|x| x.as_str().unwrap().to_string())
+				.collect::<Vec<String>>()
+		})
+		.collect();
+
+	let x = Fq2::new(fq_from_str(&els[0][0]), fq_from_str(&els[0][1]));
+	let y = Fq2::new(fq_from_str(&els[1][0]), fq_from_str(&els[1][1]));
+	let z = Fq2::new(fq_from_str(&els[2][0]), fq_from_str(&els[2][1]));
+	G2Affine::from(G2Projective::new(x, y, z))
+}
+
+// Converts JSON to a VerifyingKey
+fn to_verifying_key(json: serde_json::Value) -> VerifyingKey<Bn254> {
+	VerifyingKey {
+		alpha_g1: json_to_g1(&json, "vk_alpha_1"),
+		beta_g2: json_to_g2(&json, "vk_beta_2"),
+		gamma_g2: json_to_g2(&json, "vk_gamma_2"),
+		delta_g2: json_to_g2(&json, "vk_delta_2"),
+		gamma_abc_g1: json_to_g1_vec(&json, "IC"),
+	}
+}
+
+// Computes the verification key from its JSON serialization
+fn vk_from_json(vk_path: &str) -> VerifyingKey<Bn254> {
+	let json = std::fs::read_to_string(vk_path).unwrap();
+	let json: Value = serde_json::from_str(&json).unwrap();
+
+	to_verifying_key(json)
+}
+
+pub fn generate_proof(
+	#[cfg(not(target_arch = "wasm32"))] witness_calculator: &Mutex<WitnessCalculator>,
+	#[cfg(target_arch = "wasm32")] witness_calculator: &mut WitnessCalculator,
+	proving_key: &(ProvingKey<Bn254>, ConstraintMatrices<Fr>),
+	vanchor_witness: [(&str, Vec<BigInt>); 15],
+) -> Result<(ArkProof<Bn254>, Vec<Fr>), ProofError> {
+	let inputs = vanchor_witness
+		.into_iter()
+		.map(|(name, values)| (name.to_string(), values.clone()));
+
+	println!("inputs {:?}", inputs);
+
+	cfg_if! {
+		if #[cfg(target_arch = "wasm32")] {
+			let full_assignment = witness_calculator
+			.calculate_witness_element::<Bn254, _>(inputs, false)
+			.map_err(ProofError::WitnessError)?;
+		} else {
+			let full_assignment = witness_calculator
+			.lock()
+			.expect("witness_calculator mutex should not get poisoned")
+			.calculate_witness_element::<Bn254, _>(inputs, false)
+			.map_err(ProofError::WitnessError)?;
+		}
+	}
+
+	// Random Values
+	let mut rng = thread_rng();
+	let r = Fr::rand(&mut rng);
+	let s = Fr::rand(&mut rng);
+
+	let proof = create_proof_with_reduction_and_matrices::<_, CircomReduction>(
+		&proving_key.0,
+		r,
+		s,
+		&proving_key.1,
+		proving_key.1.num_instance_variables,
+		proving_key.1.num_constraints,
+		full_assignment.as_slice(),
+	)?;
+
+	Ok((proof, full_assignment))
+}
+
+/// Verifies a given RLN proof
+///
+/// # Errors
+///
+/// Returns a [`ProofError`] if verifying fails. Verification failure does not
+/// necessarily mean the proof is incorrect.
+pub fn verify_proof(
+	verifying_key: &VerifyingKey<Bn254>,
+	proof: &ArkProof<Bn254>,
+	inputs: Vec<Fr>,
+) -> Result<bool, ProofError> {
+	// Check that the proof is valid
+	let pvk = prepare_verifying_key(verifying_key);
+	//let pr: ArkProof<Curve> = (*proof).into();
+
+	let verified = ark_verify_proof(&pvk, proof, &inputs)?;
+
+	Ok(verified)
+}
+
+// Initializes the witness calculator using a bytes vector
+#[cfg(not(target_arch = "wasm32"))]
+pub fn circom_from_raw(wasm_buffer: Vec<u8>) -> &'static Mutex<WitnessCalculator> {
+	WITNESS_CALCULATOR.get_or_init(|| {
+		let store = Store::default();
+		let module = Module::new(&store, wasm_buffer).unwrap();
+		let result =
+			WitnessCalculator::from_module(module).expect("Failed to create witness calculator");
+		Mutex::new(result)
+	})
+}
+
+// Initializes the witness calculator
+#[cfg(not(target_arch = "wasm32"))]
+pub fn circom_from_folder(wasm_path: &str) -> &'static Mutex<WitnessCalculator> {
+	// We read the wasm file
+	let wasm_buffer = std::fs::read(wasm_path).unwrap();
+	circom_from_raw(wasm_buffer)
+}
+
+fn setup_environment_with_circom(
+) -> ((ProvingKey<Bn254>, ConstraintMatrices<Fr>), &'static Mutex<WitnessCalculator>) {
+	let curve = Curve::Bn254;
+	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+	// 1. Setup The Hasher Pallet.
+	println!("Setting up the hasher pallet");
+	assert_ok!(Hasher2::force_set_parameters(
+		RuntimeOrigin::root(),
+		params3.to_bytes().try_into().unwrap()
+	));
+	// 2. Initialize Merkle pallet.
+	println!("Initializing the merkle tree pallet");
+	<MerkleTree2 as OnInitialize<u64>>::on_initialize(1);
+	// 3. Setup the VerifierPallet
+	//    but to do so, we need to have a VerifyingKey
+
+	// Load the WASM and R1CS for witness and proof generation
+	// Get path to solidity fixtures
+	println!("Setting up the verifier pallet");
+	// let wasm_2_2_path = fs::canonicalize(
+	// 	"../../solidity-fixtures/solidity-fixtures/vanchor_2/2/poseidon_vanchor_2_2.wasm",
+	// );
+	// let r1cs_2_2_path = fs::canonicalize(
+	// 	"../../solidity-fixtures/solidity-fixtures/vanchor_2/2/poseidon_vanchor_2_2.r1cs",
+	// );
+	// println!("Setting up CircomConfig");
+	// println!("wasm_2_2_path: {:?}", wasm_2_2_path);
+	// println!("r1cs_2_2_path: {:?}", r1cs_2_2_path);
+	// let cfg_2_2 =
+	// 	CircomConfig::<Bn254>::new(wasm_2_2_path.unwrap(), r1cs_2_2_path.unwrap()).unwrap();
+
+	println!("Setting up ZKey");
+	let path_2_2 = "../../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
+	let mut file_2_2 = File::open(path_2_2).unwrap();
+	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
+
+	let wasm_2_2_path =
+		"../../solidity-fixtures/solidity-fixtures//vanchor_2/2/poseidon_vanchor_2_2.wasm";
+
+	let wc_2_2 = circom_from_folder(wasm_2_2_path);
+
+	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
+	let relayer = account::<AccountId>("", RELAYER_ACCOUNT_ID, SEED);
+	let big_transactor = account::<AccountId>("", BIG_TRANSACTOR_ACCOUNT_ID, SEED);
+	let bigger_transactor = account::<AccountId>("", BIGGER_TRANSACTOR_ACCOUNT_ID, SEED);
+
+	// Set balances
+	assert_ok!(Balances::set_balance(RuntimeOrigin::root(), transactor, DEFAULT_BALANCE, 0));
+	assert_ok!(Balances::set_balance(RuntimeOrigin::root(), relayer, DEFAULT_BALANCE, 0));
+	assert_ok!(Balances::set_balance(
+		RuntimeOrigin::root(),
+		big_transactor,
+		BIG_DEFAULT_BALANCE,
+		0
+	));
+	assert_ok!(Balances::set_balance(
+		RuntimeOrigin::root(),
+		bigger_transactor,
+		BIGGER_DEFAULT_BALANCE,
+		0
+	));
+
+	// set configurable storage
+	assert_ok!(VAnchor2::set_max_deposit_amount(RuntimeOrigin::root(), 10, 1));
+	assert_ok!(VAnchor2::set_min_withdraw_amount(RuntimeOrigin::root(), 3, 2));
+
+	// finally return the provingkey bytes
+	(params_2_2, wc_2_2)
+}
 
 pub fn setup_utxos(
 	// Transaction inputs

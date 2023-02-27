@@ -28,11 +28,245 @@ use arkworks_setups::{
 };
 use webb_primitives::types::{ElementTrait, IntoAbiToken, Token};
 
-use ark_bn254::{Bn254, Fr as Bn254Fr};
-use ark_std::{rand::thread_rng, UniformRand};
+use ark_bn254::{Bn254, Fr};
+use ark_circom::WitnessCalculator;
+use ark_groth16::{
+	create_proof_with_reduction_and_matrices, prepare_verifying_key,
+	verify_proof as ark_verify_proof, Proof as ArkProof, ProvingKey, VerifyingKey,
+};
+use ark_relations::r1cs::ConstraintMatrices;
+use ark_std::{rand::thread_rng, vec::Vec, UniformRand};
 use codec::{Decode, Encode};
+use num_bigint::BigInt;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
+use std::{convert::TryInto, sync::Mutex};
+
+type Bn254Fr = ark_bn254::Fr;
+
+pub const DEFAULT_LEAF: [u8; 32] = [
+	47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52, 15, 118,
+	231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,
+];
+
+#[allow(non_camel_case_types)]
+type VAnchorProver_Bn254_30_2_2_2 =
+	VAnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, NUM_UTXOS>;
+
+use ark_bn254::{Fq, Fq2, G1Affine, G1Projective, G2Affine, G2Projective};
+use ark_circom::{read_zkey, CircomConfig, CircomReduction};
+use ark_ff::{BigInteger256, ToBytes};
+use ark_relations::r1cs::SynthesisError;
+use arkworks_native_gadgets::merkle_tree::{Path, SparseMerkleTree};
+use cfg_if::cfg_if;
+use frame_benchmarking::account;
+use frame_support::{assert_ok, traits::OnInitialize};
+use num_bigint::{BigUint, Sign};
+use once_cell::sync::OnceCell;
+use serde_json::Value;
+use sp_core::hashing::keccak_256;
+use std::{
+	convert::TryFrom,
+	fs::{self, File},
+	io::{Cursor, Error, ErrorKind},
+	result::Result,
+	str::FromStr,
+};
+use thiserror::Error;
+use wasmer::{Module, Store};
+use webb_primitives::{
+	linkable_tree::LinkableTreeInspector, merkle_tree::TreeInspector, utils::compute_chain_id_type,
+	verifying::CircomError, AccountId,
+};
+
+#[derive(Error, Debug)]
+pub enum ProofError {
+	#[error("Error reading circuit key: {0}")]
+	CircuitKeyError(#[from] std::io::Error),
+	#[error("Error producing witness: {0}")]
+	WitnessError(color_eyre::Report),
+	#[error("Error producing proof: {0}")]
+	SynthesisError(#[from] SynthesisError),
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+static WITNESS_CALCULATOR: OnceCell<Mutex<WitnessCalculator>> = OnceCell::new();
+
+// Utilities to convert a json verification key in a groth16::VerificationKey
+fn fq_from_str(s: &str) -> Fq {
+	Fq::try_from(BigUint::from_str(s).unwrap()).unwrap()
+}
+
+// Extracts the element in G1 corresponding to its JSON serialization
+fn json_to_g1(json: &Value, key: &str) -> G1Affine {
+	let els: Vec<String> = json
+		.get(key)
+		.unwrap()
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(|i| i.as_str().unwrap().to_string())
+		.collect();
+	G1Affine::from(G1Projective::new(
+		fq_from_str(&els[0]),
+		fq_from_str(&els[1]),
+		fq_from_str(&els[2]),
+	))
+}
+
+// Extracts the vector of G1 elements corresponding to its JSON serialization
+fn json_to_g1_vec(json: &Value, key: &str) -> Vec<G1Affine> {
+	let els: Vec<Vec<String>> = json
+		.get(key)
+		.unwrap()
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(|i| {
+			i.as_array()
+				.unwrap()
+				.iter()
+				.map(|x| x.as_str().unwrap().to_string())
+				.collect::<Vec<String>>()
+		})
+		.collect();
+
+	els.iter()
+		.map(|coords| {
+			G1Affine::from(G1Projective::new(
+				fq_from_str(&coords[0]),
+				fq_from_str(&coords[1]),
+				fq_from_str(&coords[2]),
+			))
+		})
+		.collect()
+}
+
+// Extracts the element in G2 corresponding to its JSON serialization
+fn json_to_g2(json: &Value, key: &str) -> G2Affine {
+	let els: Vec<Vec<String>> = json
+		.get(key)
+		.unwrap()
+		.as_array()
+		.unwrap()
+		.iter()
+		.map(|i| {
+			i.as_array()
+				.unwrap()
+				.iter()
+				.map(|x| x.as_str().unwrap().to_string())
+				.collect::<Vec<String>>()
+		})
+		.collect();
+
+	let x = Fq2::new(fq_from_str(&els[0][0]), fq_from_str(&els[0][1]));
+	let y = Fq2::new(fq_from_str(&els[1][0]), fq_from_str(&els[1][1]));
+	let z = Fq2::new(fq_from_str(&els[2][0]), fq_from_str(&els[2][1]));
+	G2Affine::from(G2Projective::new(x, y, z))
+}
+
+// Converts JSON to a VerifyingKey
+fn to_verifying_key(json: serde_json::Value) -> VerifyingKey<Bn254> {
+	VerifyingKey {
+		alpha_g1: json_to_g1(&json, "vk_alpha_1"),
+		beta_g2: json_to_g2(&json, "vk_beta_2"),
+		gamma_g2: json_to_g2(&json, "vk_gamma_2"),
+		delta_g2: json_to_g2(&json, "vk_delta_2"),
+		gamma_abc_g1: json_to_g1_vec(&json, "IC"),
+	}
+}
+
+// Computes the verification key from its JSON serialization
+fn vk_from_json(vk_path: &str) -> VerifyingKey<Bn254> {
+	let json = std::fs::read_to_string(vk_path).unwrap();
+	let json: Value = serde_json::from_str(&json).unwrap();
+
+	to_verifying_key(json)
+}
+
+pub fn generate_proof(
+	#[cfg(not(target_arch = "wasm32"))] witness_calculator: &Mutex<WitnessCalculator>,
+	#[cfg(target_arch = "wasm32")] witness_calculator: &mut WitnessCalculator,
+	proving_key: &(ProvingKey<Bn254>, ConstraintMatrices<Fr>),
+	vanchor_witness: [(&str, Vec<BigInt>); 15],
+) -> Result<(ArkProof<Bn254>, Vec<Fr>), ProofError> {
+	let inputs = vanchor_witness
+		.into_iter()
+		.map(|(name, values)| (name.to_string(), values.clone()));
+
+	println!("inputs {:?}", inputs);
+
+	cfg_if! {
+		if #[cfg(target_arch = "wasm32")] {
+			let full_assignment = witness_calculator
+			.calculate_witness_element::<Bn254, _>(inputs, false)
+			.map_err(ProofError::WitnessError)?;
+		} else {
+			let full_assignment = witness_calculator
+			.lock()
+			.expect("witness_calculator mutex should not get poisoned")
+			.calculate_witness_element::<Bn254, _>(inputs, false)
+			.map_err(ProofError::WitnessError)?;
+		}
+	}
+
+	// Random Values
+	let mut rng = thread_rng();
+	let r = Fr::rand(&mut rng);
+	let s = Fr::rand(&mut rng);
+
+	let proof = create_proof_with_reduction_and_matrices::<_, CircomReduction>(
+		&proving_key.0,
+		r,
+		s,
+		&proving_key.1,
+		proving_key.1.num_instance_variables,
+		proving_key.1.num_constraints,
+		full_assignment.as_slice(),
+	)?;
+
+	Ok((proof, full_assignment))
+}
+
+/// Verifies a given RLN proof
+///
+/// # Errors
+///
+/// Returns a [`ProofError`] if verifying fails. Verification failure does not
+/// necessarily mean the proof is incorrect.
+pub fn verify_proof(
+	verifying_key: &VerifyingKey<Bn254>,
+	proof: &ArkProof<Bn254>,
+	inputs: &Vec<Fr>,
+) -> Result<bool, ProofError> {
+	// Check that the proof is valid
+	let pvk = prepare_verifying_key(verifying_key);
+	//let pr: ArkProof<Curve> = (*proof).into();
+
+	let verified = ark_verify_proof(&pvk, proof, inputs)?;
+
+	Ok(verified)
+}
+
+// Initializes the witness calculator using a bytes vector
+#[cfg(not(target_arch = "wasm32"))]
+pub fn circom_from_raw(wasm_buffer: Vec<u8>) -> &'static Mutex<WitnessCalculator> {
+	WITNESS_CALCULATOR.get_or_init(|| {
+		let store = Store::default();
+		let module = Module::new(&store, wasm_buffer).unwrap();
+		let result =
+			WitnessCalculator::from_module(module).expect("Failed to create witness calculator");
+		Mutex::new(result)
+	})
+}
+
+// Initializes the witness calculator
+#[cfg(not(target_arch = "wasm32"))]
+pub fn circom_from_folder(wasm_path: &str) -> &'static Mutex<WitnessCalculator> {
+	// We read the wasm file
+	let wasm_buffer = std::fs::read(wasm_path).unwrap();
+	circom_from_raw(wasm_buffer)
+}
 
 #[derive(
 	Debug, Encode, Decode, Default, Copy, Clone, PartialEq, Eq, TypeInfo, Serialize, Deserialize,
@@ -170,16 +404,9 @@ impl From<ExtData<AccountId32, i128, u128, u32>> for WebbExtData<AccountId32, i1
 const TREE_DEPTH: usize = 30;
 const ANCHOR_CT: usize = 2;
 pub const NUM_UTXOS: usize = 2;
-pub const DEFAULT_LEAF: [u8; 32] = [
-	47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52, 15, 118,
-	231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,
-];
 
 #[allow(non_camel_case_types)]
 type MixerProver_Bn254_30 = MixerR1CSProver<Bn254, TREE_DEPTH>;
-#[allow(non_camel_case_types)]
-type VAnchorProver_Bn254_30_2_2_2 =
-	VAnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, NUM_UTXOS>;
 
 pub fn setup_mixer_leaf() -> (Element, Element, Element, Element) {
 	let rng = &mut thread_rng();
@@ -275,8 +502,10 @@ pub fn setup_vanchor_circuit(
 	out_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
 	custom_roots: Option<[Vec<u8>; ANCHOR_CT]>,
 	leaves: Vec<Vec<u8>>,
-	pk_bytes: Vec<u8>,
-) -> (Vec<u8>, Vec<Bn254Fr>) {
+	circom_params: &(ProvingKey<Bn254>, ConstraintMatrices<Bn254Fr>),
+	#[cfg(not(target_arch = "wasm32"))] wc: &Mutex<WitnessCalculator>,
+	#[cfg(target_arch = "wasm32")] wc: &mut WitnessCalculator,
+) -> (ArkProof<Bn254>, Vec<Bn254Fr>) {
 	let curve = Curve::Bn254;
 	let rng = &mut thread_rng();
 
@@ -303,29 +532,113 @@ pub fn setup_vanchor_circuit(
 		[(); ANCHOR_CT].map(|_| tree.root().into_repr().to_bytes_be())
 	};
 
-	let vanchor_proof = VAnchorProver_Bn254_30_2_2_2::create_proof(
-		curve,
-		chain_id,
-		public_amount,
-		ext_data_hash,
-		in_root_set,
-		in_indices,
-		in_leaves,
-		in_utxos,
-		out_utxos,
-		pk_bytes,
-		DEFAULT_LEAF,
-		rng,
-	)
-	.unwrap();
+	// Make Inputs
+	let mut public_amount_as_vec = if public_amount > 0 {
+		vec![BigInt::from_bytes_be(Sign::Plus, &public_amount.to_be_bytes())]
+	} else {
+		vec![BigInt::from_bytes_be(Sign::Minus, &(-public_amount).to_be_bytes())]
+	};
 
-	let pub_ins = vanchor_proof
-		.public_inputs_raw
-		.iter()
-		.map(|x| Bn254Fr::from_be_bytes_mod_order(x))
-		.collect();
+	let mut ext_data_hash_as_vec = vec![BigInt::from_bytes_be(Sign::Plus, &ext_data_hash)];
+	let mut input_nullifier_as_vec = Vec::new();
+	let mut output_commitment_as_vec = Vec::new();
+	for i in 0..NUM_UTXOS {
+		input_nullifier_as_vec.push(BigInt::from_bytes_be(
+			Sign::Plus,
+			&input_nullifiers[i].into_repr().to_bytes_be(),
+		));
+		output_commitment_as_vec.push(BigInt::from_bytes_be(
+			Sign::Plus,
+			&out_utxos[i].commitment.into_repr().to_bytes_be(),
+		));
+	}
 
-	(vanchor_proof.proof, pub_ins)
+	let mut chain_id_as_vec = vec![BigInt::from_bytes_be(Sign::Plus, &chain_id.to_be_bytes())];
+
+	let mut roots_as_vec = Vec::new();
+
+	roots_as_vec.push(BigInt::from_bytes_be(Sign::Plus, &custom_root.0));
+	for i in 0..ANCHOR_CT - 1 {
+		roots_as_vec.push(BigInt::from_bytes_be(Sign::Plus, &neighbor_roots[i].0));
+	}
+
+	let mut in_amount_as_vec = Vec::new();
+	let mut in_private_key_as_vec = Vec::new();
+	let mut in_blinding_as_vec = Vec::new();
+	let mut in_path_indices_as_vec = Vec::new();
+	let mut in_path_elements_as_vec = Vec::new();
+	let mut out_chain_id_as_vec = Vec::new();
+	let mut out_amount_as_vec = Vec::new();
+	let mut out_pub_key_as_vec = Vec::new();
+	let mut out_blinding_as_vec = Vec::new();
+
+	for i in 0..NUM_UTXOS {
+		in_amount_as_vec
+			.push(BigInt::from_bytes_be(Sign::Plus, &in_utxos[i].amount.into_repr().to_bytes_be()));
+		in_private_key_as_vec.push(BigInt::from_bytes_be(
+			Sign::Plus,
+			&in_utxos[i].keypair.secret_key.unwrap().into_repr().to_bytes_be(),
+		));
+		in_blinding_as_vec.push(BigInt::from_bytes_be(
+			Sign::Plus,
+			&in_utxos[i].blinding.into_repr().to_bytes_be(),
+		));
+		in_path_indices_as_vec.push(BigInt::from(in_indices[i]));
+		for j in 0..TREE_DEPTH {
+			let neighbor_elt: Bn254Fr =
+				if in_indices[i] == 0 { in_paths[i].path[j].1 } else { in_paths[i].path[j].0 };
+			in_path_elements_as_vec
+				.push(BigInt::from_bytes_be(Sign::Plus, &neighbor_elt.into_repr().to_bytes_be()));
+		}
+
+		out_chain_id_as_vec.push(BigInt::from_bytes_be(
+			Sign::Plus,
+			&out_utxos[i].chain_id.into_repr().to_bytes_be(),
+		));
+
+		out_amount_as_vec.push(BigInt::from_bytes_be(
+			Sign::Plus,
+			&out_utxos[i].amount.into_repr().to_bytes_be(),
+		));
+
+		out_pub_key_as_vec.push(BigInt::from_bytes_be(
+			Sign::Plus,
+			&out_utxos[i].keypair.public_key.into_repr().to_bytes_be(),
+		));
+
+		out_blinding_as_vec.push(BigInt::from_bytes_be(
+			Sign::Plus,
+			&out_utxos[i].blinding.into_repr().to_bytes_be(),
+		));
+	}
+
+	let inputs_for_proof = [
+		("publicAmount", public_amount_as_vec.clone()),
+		("extDataHash", ext_data_hash_as_vec.clone()),
+		("inputNullifier", input_nullifier_as_vec.clone()),
+		("inAmount", in_amount_as_vec.clone()),
+		("inPrivateKey", in_private_key_as_vec.clone()),
+		("inBlinding", in_blinding_as_vec.clone()),
+		("inPathIndices", in_path_indices_as_vec.clone()),
+		("inPathElements", in_path_elements_as_vec.clone()),
+		("outputCommitment", output_commitment_as_vec.clone()),
+		("outChainID", out_chain_id_as_vec.clone()),
+		("outAmount", out_amount_as_vec.clone()),
+		("outPubkey", out_pub_key_as_vec.clone()),
+		("outBlinding", out_blinding_as_vec.clone()),
+		("chainID", chain_id_as_vec.clone()),
+		("roots", roots_as_vec.clone()),
+	];
+
+	let x = generate_proof(wc, circom_params, inputs_for_proof.clone());
+
+	let num_inputs = circom_params.1.num_instance_variables;
+
+	let (proof, full_assignment) = x.unwrap();
+
+	let mut public_inputs = &full_assignment[1..num_inputs];
+
+	(proof, public_inputs.to_vec())
 }
 
 pub fn deconstruct_vanchor_pi(
