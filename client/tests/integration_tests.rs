@@ -21,7 +21,10 @@ use subxt::{
 };
 use utils::ExtData;
 
+use ark_circom::read_zkey;
 use ark_ff::{BigInteger, PrimeField};
+use ark_serialize::CanonicalSerialize;
+use std::fs::File;
 
 #[tokio::test]
 async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
@@ -234,12 +237,17 @@ async fn make_vanchor_tx(
 async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
 
-	let pk_bytes = include_bytes!(
-		"../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
-	);
-	let vk_bytes = include_bytes!(
-		"../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key_uncompressed.bin"
-	);
+	let path_2_2 = "../../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
+	let mut file_2_2 = File::open(path_2_2).unwrap();
+	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
+
+	let mut pk_vec = Vec::new();
+	&params_2_2.0.serialize_uncompressed(&mut pk_vec).unwrap();
+	let mut vk_vec = Vec::new();
+	&params_2_2.0.vk.serialize_uncompressed(&mut vk_vec).unwrap();
+
+	let pk_bytes = pk_vec.as_slice();
+	let vk_bytes = vk_vec.as_slice();
 
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();

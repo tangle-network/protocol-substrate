@@ -27,6 +27,9 @@ ark-ff = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"] }
 ark-std = { version = "^0.3.0", default-features = false }
+ark-circom = { git = "https://github.com/gakonst/ark-circom", branch = "master", default-features = false, features = ["circom-2"] }
+ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", features = ["parallel"] }
+
 
 # Webb deps
 arkworks-native-gadgets = { version = "1.2.0", default-features = false }
