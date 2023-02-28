@@ -8,10 +8,12 @@ use ark_groth16::{
 	Proof as ArkProof, ProvingKey, VerifyingKey,
 };
 use ark_relations::r1cs::{ConstraintMatrices, SynthesisError};
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::{rand::thread_rng, UniformRand};
 use arkworks_native_gadgets::{
 	merkle_tree::{Path, SparseMerkleTree},
 	poseidon::Poseidon,
+	to_field_elements,
 };
 use arkworks_setups::{
 	common::{setup_params, setup_tree_and_create_path},
@@ -399,7 +401,6 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 			output2.to_vec(),
 		);
 		println!("ext_data: {:?}", ext_data);
-		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
 		let custom_root = MerkleTree2::get_default_root(tree_id).unwrap();
 		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree2 as LinkableTreeInspector<
@@ -424,7 +425,9 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 			vec![BigInt::from_bytes_be(Sign::Minus, &(-public_amount).to_be_bytes())]
 		};
 
-		let mut ext_data_hash = public_amount.clone();
+		let mut ext_data_hash =
+			vec![BigInt::from_bytes_be(Sign::Plus, keccak_256(&ext_data.encode_abi()).as_slice())];
+
 		let mut input_nullifier = Vec::new();
 		let mut output_commitment = Vec::new();
 		for i in 0..NUM_UTXOS {
@@ -527,17 +530,41 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 
 		let mut inputs_for_verification = &full_assignment[1..num_inputs];
 
-		println!(
-			"v {:?} {:?}",
-			inputs_for_verification.len(),
-			inputs_for_verification
-				.into_iter()
-				.map(|x| to_bigint(&x))
-				.collect::<Vec<BigInt>>()
-		);
-
 		let did_proof_work =
 			verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
 		assert!(did_proof_work);
+
+		let mut vk_2_2_bytes = Vec::new();
+		params_2_2.0.vk.serialize(&mut vk_2_2_bytes).unwrap();
+
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&inputs_for_verification.to_vec());
+		let mut proof_bytes = Vec::new();
+		proof.serialize(&mut proof_bytes).unwrap();
+		let proof_data = ProofData::new(
+			proof_bytes,
+			public_amount,
+			root_set,
+			nullifiers,
+			commitments,
+			ext_data_hash,
+		);
+		println!("Proof data: {proof_data:?}");
+
+		VAnchorVerifier2::force_set_parameters(
+			RuntimeOrigin::root(),
+			(2, 2),
+			vk_2_2_bytes.try_into().unwrap(),
+		);
+
+		let _relayer_balance_before = Balances::free_balance(relayer.clone());
+		let _recipient_balance_before = Balances::free_balance(recipient.clone());
+		let _transactor_balance_before = Balances::free_balance(transactor.clone());
+		assert_ok!(VAnchor2::transact(
+			RuntimeOrigin::signed(transactor.clone()),
+			tree_id,
+			proof_data,
+			ext_data
+		));
 	});
 }
