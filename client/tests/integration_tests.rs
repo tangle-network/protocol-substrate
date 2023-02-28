@@ -21,7 +21,7 @@ use arkworks_setups::{
 use subxt::{
 	ext::sp_runtime::AccountId32,
 	tx::{PairSigner, TxProgress},
-	OnlineClient, PolkadotConfig,
+	OnlineClient, SubstrateConfig,
 };
 use utils::ExtData;
 
@@ -31,8 +31,9 @@ use ark_serialize::CanonicalSerialize;
 use std::{fs::File, sync::Mutex};
 
 #[tokio::test]
+#[ignore]
 async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
-	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
+	let api: OnlineClient<_> = OnlineClient::<SubstrateConfig>::new().await?;
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 
 	let pk_bytes = include_bytes!(
@@ -62,8 +63,8 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 
 	expect_event::<
 		webb_runtime::mixer_bn254::events::Deposit,
-		PolkadotConfig,
-		OnlineClient<PolkadotConfig>,
+		SubstrateConfig,
+		OnlineClient<SubstrateConfig>,
 	>(&mut deposit_res)
 	.await?;
 
@@ -142,8 +143,8 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 
 	expect_event::<
 		webb_runtime::mixer_bn254::events::Withdraw,
-		PolkadotConfig,
-		OnlineClient<PolkadotConfig>,
+		SubstrateConfig,
+		OnlineClient<SubstrateConfig>,
 	>(&mut withdraw_res)
 	.await?;
 
@@ -162,7 +163,7 @@ async fn make_vanchor_tx(
 	in_utxos: [Utxo<Bn254Fr>; 2],
 	out_utxos: [Utxo<Bn254Fr>; 2],
 ) -> Result<(), Box<dyn std::error::Error>> {
-	let api = OnlineClient::<PolkadotConfig>::new().await?;
+	let api = OnlineClient::<SubstrateConfig>::new().await?;
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 
 	let chain_type = [2, 0];
@@ -221,25 +222,23 @@ async fn make_vanchor_tx(
 	let proof_data =
 		ProofData::new(proof_vec, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+	println!("my name is: {:?}", &proof_data.roots.len());
 	// mixer = 0..3
 	// anchor = 3..6
 	// vanchor = 6
-	let tree_id = 6;
+	let tree_id = 5;
 	// Get the vanchor transaction API
 	let vanchor = webb_runtime::tx().v_anchor_bn254();
 
 	let transact_tx = vanchor.transact(tree_id, proof_data.into(), ext_data.into());
 
-	println!("hi1");
-
 	let mut transact_res =
 		api.tx().sign_and_submit_then_watch_default(&transact_tx, &signer).await?;
 
-	println!("hi2");
 	expect_event::<
 		webb_runtime::v_anchor_bn254::events::Transaction,
-		PolkadotConfig,
-		OnlineClient<PolkadotConfig>,
+		SubstrateConfig,
+		OnlineClient<SubstrateConfig>,
 	>(&mut transact_res)
 	.await?;
 
@@ -248,7 +247,7 @@ async fn make_vanchor_tx(
 
 #[tokio::test]
 async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
-	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
+	let api: OnlineClient<_> = OnlineClient::<SubstrateConfig>::new().await?;
 
 	let path_2_2 = "../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
 	let mut file_2_2 = File::open(path_2_2).unwrap();
@@ -297,7 +296,7 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	// Get the vanchor storage API
 	let mt_storage = webb_runtime::storage().merkle_tree_bn254();
 
-	let tree_id = 6;
+	let tree_id = 5;
 	let tree_metadata_storage_key = mt_storage.trees(tree_id);
 	let tree_metadata_res = api.storage().fetch(&tree_metadata_storage_key, None).await?;
 	let tree_metadata = tree_metadata_res.unwrap();

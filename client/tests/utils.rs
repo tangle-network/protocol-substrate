@@ -517,7 +517,7 @@ pub fn setup_vanchor_circuit(
 	let in_indices = [in_utxos[0].get_index().unwrap(), in_utxos[1].get_index().unwrap()];
 
 	// This allows us to pass zero roots for initial transaction
-	let (in_root_set, in_paths) = {
+	let (mut in_root_set, in_paths) = {
 		let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
 		let poseidon3 = Poseidon::new(params3);
 		let (tree, _) = setup_tree_and_create_path::<Bn254Fr, Poseidon<Bn254Fr>, TREE_DEPTH>(
@@ -531,6 +531,10 @@ pub fn setup_vanchor_circuit(
 			in_indices.iter().map(|i| tree.generate_membership_proof(*i)).collect();
 		([(); ANCHOR_CT].map(|_| tree.root().into_repr().to_bytes_be()), in_paths)
 	};
+
+	if custom_roots.is_some() {
+		in_root_set = custom_roots.unwrap();
+	}
 
 	let params4 = setup_params::<Bn254Fr>(Curve::Bn254, 5, 4);
 	let nullifier_hasher = Poseidon::<Bn254Fr> { params: params4 };
