@@ -315,7 +315,7 @@ fn test_basic_swap() {
 		let reward_currency_id = 2;
 
 		// check sender AP balance starts at 0
-		assert_eq!(Currencies::free_balance(ap_currency_id, &sender_account_id), Zero::zero());
+		assert_eq!(Currencies::free_balance(ap_currency_id, &sender_account_id), Balance::zero());
 
 		// adding AP balance to sender
 		let new_ap_balance = 10000;
@@ -329,15 +329,14 @@ fn test_basic_swap() {
 		// check sender AP balance updated
 		assert_eq!(
 			Currencies::free_balance(ap_currency_id, &sender_account_id),
-			new_ap_balance as _
+			new_ap_balance as Balance
 		);
 
 		// check pallet reward balance starts at 0
 		assert_eq!(
 			Currencies::free_balance(reward_currency_id, &AnonymityMiningRewards::account_id()),
-			Zero::zero()
+			Balance::zero()
 		);
-
 		// adding reward balance to pallet
 		let new_reward_balance = INITIAL_TOTAL_REWARDS_BALANCE;
 		assert_ok!(Currencies::update_balance(
@@ -350,7 +349,7 @@ fn test_basic_swap() {
 		// check pallet reward balances updated
 		assert_eq!(
 			Currencies::free_balance(reward_currency_id, &AnonymityMiningRewards::account_id()),
-			new_reward_balance as _
+			new_reward_balance as Balance
 		);
 
 		// sender and pallet balances before swap
