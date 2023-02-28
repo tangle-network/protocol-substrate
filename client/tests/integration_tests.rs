@@ -201,6 +201,7 @@ async fn make_vanchor_tx(
 
 	let res = verify_proof(&circom_params.0.vk, &proof, &public_inputs);
 	assert!(res.unwrap(), "Invalid proof");
+	println!("proof verified");
 
 	// Deconstructing public inputs
 	let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
@@ -214,7 +215,7 @@ async fn make_vanchor_tx(
 	println!("ext data hash {ext_data_hash:?}");
 
 	let mut proof_vec = Vec::new();
-	&proof.write(&mut proof_vec).unwrap();
+	let _ = &proof.write(&mut proof_vec).unwrap();
 
 	// Constructing proof data
 	let proof_data =
@@ -229,9 +230,12 @@ async fn make_vanchor_tx(
 
 	let transact_tx = vanchor.transact(tree_id, proof_data.into(), ext_data.into());
 
+	println!("hi1");
+
 	let mut transact_res =
 		api.tx().sign_and_submit_then_watch_default(&transact_tx, &signer).await?;
 
+	println!("hi2");
 	expect_event::<
 		webb_runtime::v_anchor_bn254::events::Transaction,
 		PolkadotConfig,
@@ -251,7 +255,7 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
 
 	let wasm_2_2_path =
-		"../../solidity-fixtures/solidity-fixtures//vanchor_2/2/poseidon_vanchor_2_2.wasm";
+		"../solidity-fixtures/solidity-fixtures//vanchor_2/2/poseidon_vanchor_2_2.wasm";
 
 	let wc_2_2 = circom_from_folder(wasm_2_2_path);
 

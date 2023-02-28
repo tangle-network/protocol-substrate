@@ -517,9 +517,7 @@ pub fn setup_vanchor_circuit(
 	let in_indices = [in_utxos[0].get_index().unwrap(), in_utxos[1].get_index().unwrap()];
 
 	// This allows us to pass zero roots for initial transaction
-	let in_root_set = if custom_roots.is_some() {
-		custom_roots.unwrap()
-	} else {
+	let (in_root_set, in_paths) = {
 		let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
 		let poseidon3 = Poseidon::new(params3);
 		let (tree, _) = setup_tree_and_create_path::<Bn254Fr, Poseidon<Bn254Fr>, TREE_DEPTH>(
@@ -529,8 +527,13 @@ pub fn setup_vanchor_circuit(
 			&DEFAULT_LEAF,
 		)
 		.unwrap();
-		[(); ANCHOR_CT].map(|_| tree.root().into_repr().to_bytes_be())
+		let in_paths: Vec<_> =
+			in_indices.iter().map(|i| tree.generate_membership_proof(*i)).collect();
+		([(); ANCHOR_CT].map(|_| tree.root().into_repr().to_bytes_be()), in_paths)
 	};
+
+	let params4 = setup_params::<Bn254Fr>(Curve::Bn254, 5, 4);
+	let nullifier_hasher = Poseidon::<Bn254Fr> { params: params4 };
 
 	// Make Inputs
 	let mut public_amount_as_vec = if public_amount > 0 {
@@ -545,7 +548,11 @@ pub fn setup_vanchor_circuit(
 	for i in 0..NUM_UTXOS {
 		input_nullifier_as_vec.push(BigInt::from_bytes_be(
 			Sign::Plus,
-			&input_nullifiers[i].into_repr().to_bytes_be(),
+			&in_utxos[i]
+				.calculate_nullifier(&nullifier_hasher)
+				.unwrap()
+				.into_repr()
+				.to_bytes_be(),
 		));
 		output_commitment_as_vec.push(BigInt::from_bytes_be(
 			Sign::Plus,
@@ -555,12 +562,10 @@ pub fn setup_vanchor_circuit(
 
 	let mut chain_id_as_vec = vec![BigInt::from_bytes_be(Sign::Plus, &chain_id.to_be_bytes())];
 
-	let mut roots_as_vec = Vec::new();
-
-	roots_as_vec.push(BigInt::from_bytes_be(Sign::Plus, &custom_root.0));
-	for i in 0..ANCHOR_CT - 1 {
-		roots_as_vec.push(BigInt::from_bytes_be(Sign::Plus, &neighbor_roots[i].0));
-	}
+	let mut roots_as_vec = in_root_set
+		.iter()
+		.map(|x| BigInt::from_bytes_be(Sign::Plus, x))
+		.collect::<Vec<BigInt>>();
 
 	let mut in_amount_as_vec = Vec::new();
 	let mut in_private_key_as_vec = Vec::new();
@@ -583,7 +588,7 @@ pub fn setup_vanchor_circuit(
 			Sign::Plus,
 			&in_utxos[i].blinding.into_repr().to_bytes_be(),
 		));
-		in_path_indices_as_vec.push(BigInt::from(in_indices[i]));
+		in_path_indices_as_vec.push(BigInt::from(in_utxos[i].get_index().unwrap()));
 		for j in 0..TREE_DEPTH {
 			let neighbor_elt: Bn254Fr =
 				if in_indices[i] == 0 { in_paths[i].path[j].1 } else { in_paths[i].path[j].0 };
