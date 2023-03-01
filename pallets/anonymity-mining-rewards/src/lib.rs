@@ -173,7 +173,7 @@ pub mod pallet {
 
 			let tokens_sold_u64 = tokens.saturated_into::<u64>();
 			let prev_tokens_sold_u64 = Self::get_tokens_sold();
-			Self::set_tokens_sold(prev_tokens_sold_u64 + tokens_sold_u64)?;
+			Self::set_tokens_sold(prev_tokens_sold_u64 + tokens_sold_u64);
 
 			// Deposit AP tokens to the pallet
 			<T as Config<I>>::Currency::transfer(

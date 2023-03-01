@@ -34,12 +34,12 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			//    but to do so, we need to have a VerifyingKey
 			let (pk_bytes, vk_bytes) = (
 				std::fs::read(
-					"../../substrate-fixtures/substrate-fixtures/fixed-anchor/bn254/x5/2/proving_key.bin",
+					"../../substrate-fixtures/fixed-anchor/bn254/x5/2/proving_key.bin",
 				)
 				.expect("Unable to read file")
 				.to_vec(),
 				std::fs::read(
-					"../../substrate-fixtures/substrate-fixtures/fixed-anchor/bn254/x5/2/verifying_key.bin",
+					"../../substrate-fixtures/fixed-anchor/bn254/x5/2/verifying_key.bin",
 				)
 				.expect("Unable to read file")
 				.to_vec(),

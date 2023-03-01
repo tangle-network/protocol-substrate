@@ -137,7 +137,7 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
 		/// Parameters haven't been initialized
-		VerifyingParametersNotInitialized,
+		ParametersNotInitialized,
 		/// Error during verification
 		VerifyError,
 	}
@@ -165,7 +165,7 @@ pub mod pallet {
 impl<T: Config<I>, I: 'static> VerifierModule for Pallet<T, I> {
 	fn verify(public_inp_bytes: &[u8], proof: &[u8]) -> Result<bool, DispatchError> {
 		let params = Self::parameters();
-		ensure!(!params.is_empty(), Error::<T, I>::VerifyingParametersNotInitialized);
+		ensure!(!params.is_empty(), Error::<T, I>::ParametersNotInitialized);
 		match T::Verifier::verify(public_inp_bytes, proof, &params) {
 			Ok(verified) => Ok(verified),
 			Err(e) => {

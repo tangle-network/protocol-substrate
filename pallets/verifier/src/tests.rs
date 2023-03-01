@@ -8,7 +8,7 @@ fn should_fail_to_verify_without_parameters() {
 		// Pass arbitrary
 		assert_err!(
 			<VerifierPallet as VerifierModule>::verify(&[], &[1u8; 32]),
-			Error::<Test, _>::VerifyingParametersNotInitialized
+			Error::<Test, _>::ParametersNotInitialized
 		);
 	});
 }

@@ -118,7 +118,7 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
 		/// Parameters haven't been initialized
-		HashingParametersNotInitialized,
+		ParametersNotInitialized,
 		/// Error during hashing
 		HashError,
 	}
@@ -146,7 +146,7 @@ pub mod pallet {
 impl<T: Config<I>, I: 'static> HasherModule for Pallet<T, I> {
 	fn hash(data: &[u8]) -> Result<Vec<u8>, DispatchError> {
 		let params = Self::parameters();
-		ensure!(!params.is_empty(), Error::<T, I>::HashingParametersNotInitialized);
+		ensure!(!params.is_empty(), Error::<T, I>::ParametersNotInitialized);
 		match T::Hasher::hash(data, &params) {
 			Ok(hash) => Ok(hash),
 			Err(_e) => {

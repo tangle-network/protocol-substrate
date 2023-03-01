@@ -33,7 +33,7 @@ jobs:
         uses: iterative/setup-dvc@v1
 
       - name: Fetch Fixtures
-        run: ./scripts/fetch-fixtures.sh
+        run: dvc pull
 
       - name: Install apt dependencies
         run: |

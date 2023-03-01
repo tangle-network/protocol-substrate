@@ -13,7 +13,7 @@ fn should_fail_with_params_not_initialized() {
 	new_test_ext().execute_with(|| {
 		assert_err!(
 			<DefaultPalletHasher as HasherModule>::hash(&[1u8; 32]),
-			Error::<Test>::HashingParametersNotInitialized
+			Error::<Test>::ParametersNotInitialized
 		);
 	});
 }

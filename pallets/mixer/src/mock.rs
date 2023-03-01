@@ -35,8 +35,8 @@ frame_support::construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
 		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
 		VerifierPallet: pallet_verifier::{Pallet, Call, Storage, Event<T>},
-		MerkleTree: pallet_mt::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		Mixer: pallet_mixer::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		Mixer: pallet_mixer::{Pallet, Call, Storage, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
@@ -155,8 +155,7 @@ parameter_types! {
 	pub const MaxDefaultHashes: u32 = 1000;
 }
 
-type MerkleInstance1 = pallet_mt::Instance1;
-impl pallet_mt::Config<MerkleInstance1> for Test {
+impl pallet_mt::Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
@@ -214,18 +213,6 @@ impl pallet_asset_registry::Config for Test {
 	type WeightInfo = ();
 }
 
-type MixerInstance1 = pallet_mixer::Instance1;
-impl pallet_mixer::Config<MixerInstance1> for Test {
-	type Currency = Currencies;
-	type RuntimeEvent = RuntimeEvent;
-	type NativeCurrencyId = NativeCurrencyId;
-	type PalletId = MixerPalletId;
-	type Tree = MerkleTree;
-	type Verifier = VerifierPallet;
-	type ArbitraryHasher = Keccak256HasherBn254;
-	type WeightInfo = ();
-}
-
 /// Tokens Configurations
 impl orml_tokens::Config for Test {
 	type Amount = Amount;
@@ -253,6 +240,17 @@ impl orml_currencies::Config for Test {
 parameter_types! {
 	pub const MixerPalletId: PalletId = PalletId(*b"py/mixer");
 	pub const NativeCurrencyId: AssetId = 0;
+}
+
+impl Config for Test {
+	type Currency = Currencies;
+	type RuntimeEvent = RuntimeEvent;
+	type NativeCurrencyId = NativeCurrencyId;
+	type PalletId = MixerPalletId;
+	type Tree = MerkleTree;
+	type Verifier = VerifierPallet;
+	type ArbitraryHasher = Keccak256HasherBn254;
+	type WeightInfo = ();
 }
 
 // Build genesis storage according to the mock runtime.

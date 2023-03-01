@@ -21,10 +21,7 @@ pub use webb_primitives::{
 	types::{ElementTrait, IntoAbiToken},
 	AccountId, Element,
 };
-use webb_primitives::{
-	hashing::ArkworksPoseidonHasherBn254,
-	verifying::{ArkworksVerifierBn254, CircomVerifierBn254},
-};
+use webb_primitives::{hashing::ArkworksPoseidonHasherBn254, verifying::ArkworksVerifierBn254};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -48,27 +45,17 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
+		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
+		VAnchorVerifier: pallet_vanchor_verifier::{Pallet, Call, Storage, Event<T>},
+		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
+		VAnchor: pallet_vanchor::{Pallet, Call, Storage, Event<T>},
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>},
-		KeyStorage: pallet_key_storage::{Pallet, Call, Storage, Event<T>, Config<T>},
-
-		Hasher1: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		Hasher2: pallet_hasher::<Instance2>::{Pallet, Call, Storage, Event<T>},
-
-		MerkleTree1: pallet_mt::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		MerkleTree2: pallet_mt::<Instance2>::{Pallet, Call, Storage, Event<T>},
-
-		LinkableTree1: pallet_linkable_tree::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		LinkableTree2: pallet_linkable_tree::<Instance2>::{Pallet, Call, Storage, Event<T>},
-
-		VAnchorVerifier1: pallet_vanchor_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		VAnchorVerifier2: pallet_vanchor_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>},
-
-		VAnchor1: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		VAnchor2: pallet_vanchor::<Instance2>::{Pallet, Call, Storage, Event<T>},
+		KeyStorage: pallet_key_storage::{Pallet, Call, Storage, Event<T>, Config<T>}
 	}
 );
 
@@ -127,8 +114,7 @@ parameter_types! {
 	pub const MetadataDepositPerByte: u64 = 1;
 }
 
-type VAnchorVerifierInstance1 = pallet_vanchor_verifier::Instance1;
-impl pallet_vanchor_verifier::Config<VAnchorVerifierInstance1> for Test {
+impl pallet_vanchor_verifier::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type MaxParameterLength = ConstU32<10000>;
@@ -136,26 +122,7 @@ impl pallet_vanchor_verifier::Config<VAnchorVerifierInstance1> for Test {
 	type WeightInfo = ();
 }
 
-type VAnchorVerifierInstance2 = pallet_vanchor_verifier::Instance2;
-impl pallet_vanchor_verifier::Config<VAnchorVerifierInstance2> for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MaxParameterLength = ConstU32<10000>;
-	type Verifier = CircomVerifierBn254;
-	type WeightInfo = ();
-}
-
-type HasherInstance1 = pallet_hasher::Instance1;
-impl pallet_hasher::Config<HasherInstance1> for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MaxParameterLength = ConstU32<10000>;
-	type Hasher = ArkworksPoseidonHasherBn254;
-	type WeightInfo = ();
-}
-
-type HasherInstance2 = pallet_hasher::Instance2;
-impl pallet_hasher::Config<HasherInstance2> for Test {
+impl pallet_hasher::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type MaxParameterLength = ConstU32<10000>;
@@ -184,8 +151,7 @@ parameter_types! {
 	pub const MaxDefaultHashes: u32 = 1000;
 }
 
-type MerkleInstance1 = pallet_mt::Instance1;
-impl pallet_mt::Config<MerkleInstance1> for Test {
+impl pallet_mt::Config for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
@@ -195,30 +161,7 @@ impl pallet_mt::Config<MerkleInstance1> for Test {
 	type MaxDefaultHashes = MaxDefaultHashes;
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = Hasher1;
-	type LeafIndex = u32;
-	type MaxTreeDepth = MaxTreeDepth;
-	type RootHistorySize = RootHistorySize;
-	type RootIndex = u32;
-	type StringLimit = StringLimit;
-	type TreeDeposit = TreeDeposit;
-	type TreeId = u32;
-	type Two = Two;
-	type WeightInfo = ();
-}
-
-type MerkleInstance2 = pallet_mt::Instance2;
-impl pallet_mt::Config<MerkleInstance2> for Test {
-	type Currency = Balances;
-	type DataDepositBase = LeafDepositBase;
-	type DataDepositPerByte = LeafDepositPerByte;
-	type DefaultZeroElement = DefaultZeroElement;
-	type Element = Element;
-	type MaxEdges = MaxEdges;
-	type MaxDefaultHashes = MaxDefaultHashes;
-	type RuntimeEvent = RuntimeEvent;
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Hasher = Hasher2;
+	type Hasher = HasherPallet;
 	type LeafIndex = u32;
 	type MaxTreeDepth = MaxTreeDepth;
 	type RootHistorySize = RootHistorySize;
@@ -237,25 +180,13 @@ parameter_types! {
 	pub const ChainIdentifier: ChainId = 1;
 }
 
-type LinkableTreeInstance1 = pallet_linkable_tree::Instance1;
-impl pallet_linkable_tree::Config<LinkableTreeInstance1> for Test {
+impl pallet_linkable_tree::Config for Test {
 	type ChainId = ChainId;
 	type ChainType = ChainType;
 	type ChainIdentifier = ChainIdentifier;
 	type RuntimeEvent = RuntimeEvent;
 	type HistoryLength = HistoryLength;
-	type Tree = MerkleTree1;
-	type WeightInfo = ();
-}
-
-type LinkableTreeInstance2 = pallet_linkable_tree::Instance2;
-impl pallet_linkable_tree::Config<LinkableTreeInstance2> for Test {
-	type ChainId = ChainId;
-	type ChainType = ChainType;
-	type ChainIdentifier = ChainIdentifier;
-	type RuntimeEvent = RuntimeEvent;
-	type HistoryLength = HistoryLength;
-	type Tree = MerkleTree2;
+	type Tree = MerkleTree;
 	type WeightInfo = ();
 }
 
@@ -360,13 +291,12 @@ parameter_types! {
 	pub const MaxCurrencyId: AssetId = AssetId::MAX - 1;
 }
 
-type VAnchorInstance1 = pallet_vanchor::Instance1;
-impl pallet_vanchor::Config<VAnchorInstance1> for Test {
+impl pallet_vanchor::Config for Test {
 	type Currency = Currencies;
 	type EthereumHasher = Keccak256HasherBn254;
 	type RuntimeEvent = RuntimeEvent;
 	type IntoField = ArkworksIntoFieldBn254;
-	type LinkableTree = LinkableTree1;
+	type LinkableTree = LinkableTree;
 	type NativeCurrencyId = NativeCurrencyId;
 	type PalletId = VAnchorPalletId;
 	type MaxFee = MaxFee;
@@ -375,27 +305,7 @@ impl pallet_vanchor::Config<VAnchorInstance1> for Test {
 	type ProposalNonce = u32;
 	type TokenWrapper = TokenWrapper;
 	type PostDepositHook = ();
-	type VAnchorVerifier = VAnchorVerifier1;
-	type KeyStorage = KeyStorage;
-	type WeightInfo = ();
-}
-
-type VAnchorInstance2 = pallet_vanchor::Instance2;
-impl pallet_vanchor::Config<VAnchorInstance2> for Test {
-	type Currency = Currencies;
-	type EthereumHasher = Keccak256HasherBn254;
-	type RuntimeEvent = RuntimeEvent;
-	type IntoField = ArkworksIntoFieldBn254;
-	type LinkableTree = LinkableTree2;
-	type NativeCurrencyId = NativeCurrencyId;
-	type PalletId = VAnchorPalletId;
-	type MaxFee = MaxFee;
-	type MaxExtAmount = MaxExtAmount;
-	type MaxCurrencyId = MaxCurrencyId;
-	type ProposalNonce = u32;
-	type TokenWrapper = TokenWrapper;
-	type PostDepositHook = ();
-	type VAnchorVerifier = VAnchorVerifier2;
+	type VAnchorVerifier = VAnchorVerifier;
 	type KeyStorage = KeyStorage;
 	type WeightInfo = ();
 }

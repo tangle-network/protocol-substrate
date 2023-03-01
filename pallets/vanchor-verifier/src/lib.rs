@@ -148,7 +148,7 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T, I = ()> {
 		/// Parameters haven't been initialized
-		VerifyingParametersNotInitialized,
+		ParametersNotInitialized,
 		/// Error during verification
 		VerifyError,
 	}
@@ -182,7 +182,7 @@ impl<T: Config<I>, I: 'static> VAnchorVerifierModule for Pallet<T, I> {
 		num_inputs: u8,
 	) -> Result<bool, DispatchError> {
 		let params = Self::parameters((num_anchors, num_inputs));
-		ensure!(!params.is_empty(), Error::<T, I>::VerifyingParametersNotInitialized);
+		ensure!(!params.is_empty(), Error::<T, I>::ParametersNotInitialized);
 		match T::Verifier::verify(public_inp_bytes, proof, &params) {
 			Ok(verified) => Ok(verified),
 			Err(e) => {
