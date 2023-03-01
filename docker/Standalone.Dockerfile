@@ -11,7 +11,7 @@ RUN pip3 install dvc
 COPY . .
 
 # Build Standalone Node.
-RUN dvc pull -f 
+RUN ../scripts/fetch-fixtures.sh
 RUN cargo build --release -p webb-standalone-node
 
 # This is the 2nd stage: a very small image where we copy the Node binary."
