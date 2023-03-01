@@ -14,43 +14,57 @@ on:
 env:
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: git
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  ci:
-    # The type of runner that the job will run on
+  # Format job
+  check-format:
     runs-on: ubuntu-20.04
-
-    # Define a matrix for parallelizing the Check Format, Check Build, and Test steps
     strategy:
       matrix:
-        step: ["check-format", "check-build", "test"]
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+        step: ["check-format"]
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-
       - name: Set-Up
         run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
+      - name: Check Format
+        run: |
+          SKIP_WASM_BUILD=1 cargo fmt --all -- --check
 
-      - name: Setup DVC
-        uses: iterative/setup-dvc@v1
+  # Build job
+  check-build:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        step: ["check-build"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set-Up
+        run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
+      - name: Check Build
+        run: |
+          SKIP_WASM_BUILD=1 cargo check --release -Z sparse-registry
 
+  # Test job
+  test:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        step: ["test"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set-Up
+        run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
       - name: Fetch Fixtures
         run: ./scripts/fetch-fixtures.sh
-
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: nightly
-
       - name: Install cargo-nextest
         uses: baptiste0928/cargo-install@v1
         with:
           crate: cargo-nextest
           version: latest
           args: "-Z sparse-registry"
-
       - name: Cache Cargo
         uses: actions/cache@v2
         with:
@@ -62,15 +76,25 @@ jobs:
             target/debug
             target/release
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      # Run the specified step in parallel with different parameters
-      - name: ${{ matrix.step }}
+      - name: Test
         run: |
-          SKIP_WASM_BUILD=1 cargo ${{
-            matrix.step == "check-format" && "fmt --all -- --check" ||
-            matrix.step == "check-build" && "check --release -Z sparse-registry" ||
-            matrix.step == "test" && "nextest run --release -Z sparse-registry --workspace --exclude webb-client"
-          }}
+          SKIP_WASM_BUILD=1 cargo nextest run --release -Z sparse-registry --workspace --exclude webb-client
 
-        # Use a unique directory for each matrix element to avoid conflicts
-        working-directory: ${{ matrix.step }}
+  # Main job, runs all parallel jobs
+  ci:
+    needs: [check-format, check-build, test]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set-Up
+        run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
+      - name: Fetch Fixtures
+        run: ./scripts/fetch-fixtures.sh
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+      - name: Install cargo-nextest
+        uses: baptiste0928/cargo-install@v1
+        with:
+          crate: cargo-next
