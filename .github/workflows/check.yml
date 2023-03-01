@@ -105,4 +105,4 @@ jobs:
       - name: Install cargo-nextest
         uses: baptiste0928/cargo-install@v1
         with:
-          crate: cargo-next
+          crate: cargo-nextest
