@@ -17,7 +17,6 @@ local-test
 
 # NodeJS
 **/node_modules/
-scripts/
 docker/
 .github/
 doc/

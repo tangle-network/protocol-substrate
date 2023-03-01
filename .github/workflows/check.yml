@@ -2,7 +2,7 @@ name: check
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches: [main]
   pull_request:
@@ -13,12 +13,17 @@ on:
 
 env:
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: git
-  
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   ci:
     # The type of runner that the job will run on
     runs-on: ubuntu-20.04
+
+    # Define a matrix for parallelizing the Check Format, Check Build, and Test steps
+    strategy:
+      matrix:
+        step: ["format", "build", "test"]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -58,12 +63,14 @@ jobs:
             target/release
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Check Format
+      # Run the specified step in parallel with different parameters
+      - name: ${{ matrix.step }}
         run: |
-          SKIP_WASM_BUILD=1 cargo fmt --all -- --check
-      - name: Check Build
-        run: |
-          SKIP_WASM_BUILD=1 cargo check --release -Z sparse-registry
-      - name: Test
-        run: |
-          SKIP_WASM_BUILD=1 cargo nextest run --release -Z sparse-registry --workspace --exclude webb-client
+          SKIP_WASM_BUILD=1 cargo ${{
+            matrix.step == "format" && "fmt --all -- --check" ||
+            matrix.step == "build" && "check --release -Z sparse-registry" ||
+            matrix.step == "test" && "nextest run --release -Z sparse-registry --workspace --exclude webb-client"
+          }}
+
+        # Use a unique directory for each matrix element to avoid conflicts
+        working-directory: ${{ matrix.step }}
