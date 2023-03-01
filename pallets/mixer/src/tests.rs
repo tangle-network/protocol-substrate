@@ -1,3 +1,4 @@
+use crate::Instance1;
 use arkworks_setups::{common::setup_params, Curve};
 use codec::Encode;
 use frame_benchmarking::account;
@@ -44,10 +45,11 @@ fn setup_environment(curve: Curve) -> Vec<u8> {
 			// 3. Setup the VerifierPallet
 			//    but to do so, we need to have a VerifyingKey
 			let pk_bytes = include_bytes!(
-				"../../../substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin"
+				"../../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin"
 			);
-			let vk_bytes =
-				include_bytes!("../../../substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
+			let vk_bytes = include_bytes!(
+				"../../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/verifying_key.bin"
+			);
 
 			assert_ok!(VerifierPallet::force_set_parameters(
 				RuntimeOrigin::root(),
@@ -282,7 +284,7 @@ fn mixer_should_fail_when_invalid_merkle_roots() {
 				fee_value,
 				refund_value,
 			),
-			crate::Error::<Test>::UnknownRoot
+			crate::Error::<Test, Instance1>::UnknownRoot
 		);
 	});
 }
@@ -337,7 +339,7 @@ fn mixer_should_fail_when_relayer_id_is_different_from_that_in_proof_generation(
 				fee_value,
 				refund_value,
 			),
-			crate::Error::<Test>::InvalidWithdrawProof
+			crate::Error::<Test, Instance1>::InvalidWithdrawProof
 		);
 	});
 }
@@ -392,7 +394,7 @@ fn mixer_should_fail_with_when_fee_submitted_is_changed() {
 				100u128,
 				refund_value,
 			),
-			crate::Error::<Test>::InvalidWithdrawProof
+			crate::Error::<Test, Instance1>::InvalidWithdrawProof
 		);
 	});
 }
@@ -447,7 +449,7 @@ fn mixer_should_fail_with_invalid_proof_when_account_ids_are_truncated_in_revers
 				fee_value,
 				refund_value,
 			),
-			crate::Error::<Test>::InvalidWithdrawProof
+			crate::Error::<Test, Instance1>::InvalidWithdrawProof
 		);
 	});
 }
@@ -520,7 +522,7 @@ fn double_spending_should_fail() {
 				fee_value,
 				refund_value,
 			),
-			crate::Error::<Test>::AlreadyRevealedNullifier
+			crate::Error::<Test, Instance1>::AlreadyRevealedNullifier
 		);
 	});
 }

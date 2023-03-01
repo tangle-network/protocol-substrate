@@ -1,66 +1,40 @@
-use crate::tests::{
-	BIGGER_DEFAULT_BALANCE, BIGGER_TRANSACTOR_ACCOUNT_ID, BIG_DEFAULT_BALANCE,
-	BIG_TRANSACTOR_ACCOUNT_ID, DEFAULT_BALANCE, RELAYER_ACCOUNT_ID, SEED, TRANSACTOR_ACCOUNT_ID,
-};
-use ark_bn254::Fr;
-use ark_circom::WitnessCalculator;
-use ark_ff::{BigInteger, PrimeField};
+use crate::{mock::*, test_utils::*, tests::*, zerokit_utils::*, Instance2};
+use ark_bn254::{Bn254, Fq, Fq2, Fr, G1Affine, G1Projective, G2Affine, G2Projective};
+use ark_circom::{read_zkey, CircomConfig, CircomReduction, WitnessCalculator};
+use ark_ff::{BigInteger, BigInteger256, PrimeField, ToBytes};
 use ark_groth16::{
 	create_proof_with_reduction_and_matrices, create_random_proof as prove,
 	generate_random_parameters, prepare_verifying_key, verify_proof as ark_verify_proof,
 	Proof as ArkProof, ProvingKey, VerifyingKey,
 };
-use ark_relations::r1cs::ConstraintMatrices;
-use ark_std::{rand::thread_rng, vec::Vec};
-use arkworks_native_gadgets::poseidon::Poseidon;
+use ark_relations::r1cs::{ConstraintMatrices, SynthesisError};
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use ark_std::{rand::thread_rng, UniformRand};
+use arkworks_native_gadgets::{
+	merkle_tree::{Path, SparseMerkleTree},
+	poseidon::Poseidon,
+	to_field_elements,
+};
 use arkworks_setups::{
 	common::{setup_params, setup_tree_and_create_path},
-	r1cs::vanchor::VAnchorR1CSProver,
 	utxo::Utxo,
-	Curve, VAnchorProver,
+	Curve,
 };
-use num_bigint::BigInt;
-use std::{collections::BTreeMap, convert::TryInto, sync::Mutex};
-use webb_primitives::ElementTrait;
-
-use crate::mock::Element;
-
-type Bn254Fr = ark_bn254::Fr;
-type Bn254 = ark_bn254::Bn254;
-
-pub const TREE_DEPTH: usize = 30;
-pub const ANCHOR_CT: usize = 2;
-pub const NUM_UTXOS: usize = 2;
-pub const DEFAULT_LEAF: [u8; 32] = [
-	47, 229, 76, 96, 211, 172, 171, 243, 52, 58, 53, 182, 235, 161, 93, 180, 130, 27, 52, 15, 118,
-	231, 65, 226, 36, 150, 133, 237, 72, 153, 175, 108,
-];
-
-#[allow(non_camel_case_types)]
-type VAnchorProver_Bn254_30_2_2_2 =
-	VAnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, NUM_UTXOS>;
-
-use crate::{mock::*, zerokit_utils::*, Instance2};
-use ark_bn254::{Fq, Fq2, G1Affine, G1Projective, G2Affine, G2Projective};
-use ark_circom::{read_zkey, CircomConfig, CircomReduction};
-use ark_ff::{BigInteger256, ToBytes};
-use ark_relations::r1cs::SynthesisError;
-use ark_std::UniformRand;
-use arkworks_native_gadgets::merkle_tree::{Path, SparseMerkleTree};
 use cfg_if::cfg_if;
 use frame_benchmarking::account;
 use frame_support::{assert_ok, traits::OnInitialize};
-use num_bigint::{BigUint, Sign};
+use num_bigint::{BigInt, BigUint, Sign};
 use once_cell::sync::OnceCell;
 use pallet_linkable_tree::LinkableTreeConfigration;
 use serde_json::Value;
 use sp_core::hashing::keccak_256;
 use std::{
-	convert::TryFrom,
+	convert::{TryFrom, TryInto},
 	fs::{self, File},
 	io::{Cursor, Error, ErrorKind},
 	result::Result,
 	str::FromStr,
+	sync::Mutex,
 };
 use thiserror::Error;
 use wasmer::{Module, Store};
@@ -73,15 +47,7 @@ use webb_primitives::{
 	AccountId,
 };
 
-#[derive(Error, Debug)]
-pub enum ProofError {
-	#[error("Error reading circuit key: {0}")]
-	CircuitKeyError(#[from] std::io::Error),
-	#[error("Error producing witness: {0}")]
-	WitnessError(color_eyre::Report),
-	#[error("Error producing proof: {0}")]
-	SynthesisError(#[from] SynthesisError),
-}
+type Bn254Fr = ark_bn254::Fr;
 
 #[cfg(not(target_arch = "wasm32"))]
 static WITNESS_CALCULATOR: OnceCell<Mutex<WitnessCalculator>> = OnceCell::new();
@@ -272,7 +238,7 @@ fn setup_environment_with_circom(
 		RuntimeOrigin::root(),
 		params3.to_bytes().try_into().unwrap()
 	));
-	// 2. Initialize Merkle pallet.
+	// 2. Initialize MerkleTree pallet.
 	println!("Initializing the merkle tree pallet");
 	<MerkleTree2 as OnInitialize<u64>>::on_initialize(1);
 	// 3. Setup the VerifierPallet
@@ -332,64 +298,24 @@ fn setup_environment_with_circom(
 	(params_2_2, wc_2_2)
 }
 
-pub fn setup_utxos(
-	// Transaction inputs
-	chain_ids: [u64; NUM_UTXOS],
-	amounts: [u128; NUM_UTXOS],
-	indices: Option<[u64; NUM_UTXOS]>,
-) -> [Utxo<Bn254Fr>; NUM_UTXOS] {
-	let curve = Curve::Bn254;
-	let rng = &mut thread_rng();
-	// Input Utxos
-	let indices: [Option<u64>; NUM_UTXOS] = if indices.is_some() {
-		let ind_unw = indices.unwrap();
-		ind_unw.map(Some)
-	} else {
-		[None; NUM_UTXOS]
-	};
-	let utxo1 = VAnchorProver_Bn254_30_2_2_2::create_random_utxo(
-		curve,
-		chain_ids[0],
-		amounts[0],
-		indices[0],
-		rng,
-	)
-	.unwrap();
-	let utxo2 = VAnchorProver_Bn254_30_2_2_2::create_random_utxo(
-		curve,
-		chain_ids[1],
-		amounts[1],
-		indices[1],
-		rng,
-	)
-	.unwrap();
-
-	[utxo1, utxo2]
-}
-
-pub fn setup_zk_circuit(
-	// Metadata inputs
-	public_amount: i128,
-	chain_id: u64,
-	ext_data_hash: Vec<u8>,
-	in_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
-	out_utxos: [Utxo<Bn254Fr>; NUM_UTXOS],
-	pk_bytes: Vec<u8>,
+fn insert_utxos_to_merkle_tree(
+	utxos: &[Utxo<Bn254Fr>; 2],
 	neighbor_roots: [Element; ANCHOR_CT - 1],
 	custom_root: Element,
-) -> (Vec<u8>, Vec<Bn254Fr>) {
+) -> (
+	[u64; 2],
+	[Vec<u8>; 2],
+	SparseMerkleTree<Bn254Fr, Poseidon<Bn254Fr>, TREE_DEPTH>,
+	Vec<Path<Bn254Fr, Poseidon<Bn254Fr>, TREE_DEPTH>>,
+) {
 	let curve = Curve::Bn254;
-	let rng = &mut thread_rng();
-
-	let leaf0 = in_utxos[0].commitment.into_repr().to_bytes_be();
-	let leaf1 = in_utxos[1].commitment.into_repr().to_bytes_be();
+	let leaf0 = utxos[0].commitment.into_repr().to_bytes_be();
+	let leaf1 = utxos[1].commitment.into_repr().to_bytes_be();
 
 	let leaves: Vec<Vec<u8>> = vec![leaf0, leaf1];
 	let leaves_f: Vec<Bn254Fr> =
 		leaves.iter().map(|x| Bn254Fr::from_be_bytes_mod_order(x)).collect();
 
-	let mut in_leaves: BTreeMap<u64, Vec<Vec<u8>>> = BTreeMap::new();
-	in_leaves.insert(chain_id, leaves);
 	let in_indices = [0, 1];
 
 	let params3 = setup_params::<Bn254Fr>(curve, 5, 3);
@@ -401,6 +327,8 @@ pub fn setup_zk_circuit(
 		&DEFAULT_LEAF,
 	)
 	.unwrap();
+
+	let in_paths: Vec<_> = in_indices.iter().map(|i| tree.generate_membership_proof(*i)).collect();
 
 	let roots_f: [Bn254Fr; ANCHOR_CT] = vec![if custom_root != Element::from_bytes(&[0u8; 32]) {
 		Bn254Fr::from_be_bytes_mod_order(custom_root.to_bytes())
@@ -421,76 +349,222 @@ pub fn setup_zk_circuit(
 	.unwrap();
 	let in_root_set = roots_f.map(|x| x.into_repr().to_bytes_be());
 
-	let vanchor_proof = VAnchorProver_Bn254_30_2_2_2::create_proof(
-		curve,
-		chain_id,
-		public_amount,
-		ext_data_hash,
-		in_root_set,
-		in_indices,
-		in_leaves,
-		in_utxos,
-		out_utxos,
-		pk_bytes,
-		DEFAULT_LEAF,
-		rng,
-	)
-	.unwrap();
-
-	let pub_ins = vanchor_proof
-		.public_inputs_raw
-		.iter()
-		.map(|x| Bn254Fr::from_be_bytes_mod_order(x))
-		.collect();
-
-	(vanchor_proof.proof, pub_ins)
+	(in_indices, in_root_set, tree, in_paths)
 }
 
-pub fn deconstruct_public_inputs(
-	public_inputs: &Vec<Bn254Fr>,
-) -> (
-	Bn254Fr,      // Chain Id
-	Bn254Fr,      // Public amount
-	Vec<Bn254Fr>, // Roots
-	Vec<Bn254Fr>, // Input tx Nullifiers
-	Vec<Bn254Fr>, // Output tx commitments
-	Bn254Fr,      // External data hash
-) {
-	let public_amount = public_inputs[0];
-	let ext_data_hash = public_inputs[1];
-	let nullifiers = public_inputs[2..4].to_vec();
-	let commitments = public_inputs[4..6].to_vec();
-	let chain_id = public_inputs[6];
-	let root_set = public_inputs[7..9].to_vec();
-	(chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash)
+pub fn create_vanchor(asset_id: u32) -> u32 {
+	let max_edges = EDGE_CT as u32;
+	let depth = TREE_DEPTH as u8;
+	assert_ok!(VAnchor2::create(RuntimeOrigin::root(), max_edges, depth, asset_id));
+	MerkleTree2::next_tree_id() - 1
 }
 
-pub fn deconstruct_public_inputs_el(
-	public_inputs_f: &Vec<Bn254Fr>,
-) -> (
-	Element,      // Chain Id
-	Element,      // Public amount
-	Vec<Element>, // Roots
-	Vec<Element>, // Input tx Nullifiers
-	Vec<Element>, // Output tx commitments
-	Element,      // External amount
-) {
-	let (chain_id, public_amount, roots, nullifiers, commitments, ext_data_hash) =
-		deconstruct_public_inputs(public_inputs_f);
-	let chain_id_el = Element::from_bytes(&chain_id.into_repr().to_bytes_be());
-	let public_amount_el = Element::from_bytes(&public_amount.into_repr().to_bytes_be());
-	let root_set_el = roots
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
-		.collect();
-	let nullifiers_el = nullifiers
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
-		.collect();
-	let commitments_el = commitments
-		.iter()
-		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
-		.collect();
-	let ext_data_hash_el = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_be());
-	(chain_id_el, public_amount_el, root_set_el, nullifiers_el, commitments_el, ext_data_hash_el)
+#[test]
+fn circom_should_complete_2x2_transaction_with_withdraw() {
+	new_test_ext().execute_with(|| {
+		let params4 = setup_params::<Bn254Fr>(Curve::Bn254, 5, 4);
+		let nullifier_hasher = Poseidon::<Bn254Fr> { params: params4 };
+		let (params_2_2, wc_2_2) = setup_environment_with_circom();
+		let tree_id = create_vanchor(0);
+
+		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
+		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
+		let relayer: AccountId = get_account(RELAYER_ACCOUNT_ID);
+
+		let ext_amount: Amount = 10_i128;
+		let public_amount = 10_i128;
+		let fee: Balance = 0;
+
+		let chain_type = [2, 0];
+		let chain_id = compute_chain_id_type(ChainIdentifier::get(), chain_type);
+		let in_chain_ids = [chain_id; 2];
+		let in_amounts = [0, 0];
+		let in_indices = [0, 1];
+		let out_chain_ids = [chain_id; 2];
+		let out_amounts = [10, 0];
+
+		let in_utxos = setup_utxos(in_chain_ids, in_amounts, Some(in_indices));
+		let out_utxos = setup_utxos(out_chain_ids, out_amounts, None);
+
+		let output1 = out_utxos[0].commitment.into_repr().to_bytes_be();
+		let output2 = out_utxos[1].commitment.into_repr().to_bytes_be();
+		let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
+			recipient.clone(),
+			relayer.clone(),
+			ext_amount,
+			fee,
+			0,
+			0,
+			// Mock encryption value, not meant to be used in production
+			output1.to_vec(),
+			// Mock encryption value, not meant to be used in production
+			output2.to_vec(),
+		);
+		println!("ext_data: {:?}", ext_data);
+
+		let custom_root = MerkleTree2::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree2 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance2>,
+		>>::get_neighbor_roots(tree_id)
+		.unwrap()
+		.try_into()
+		.unwrap();
+		println!("neighbor_roots: {:?}", neighbor_roots);
+
+		let input_nullifiers = in_utxos
+			.clone()
+			.map(|utxo| utxo.calculate_nullifier(&nullifier_hasher).unwrap());
+
+		let (in_indices, _in_root_set, _tree, in_paths) =
+			insert_utxos_to_merkle_tree(&in_utxos, neighbor_roots, custom_root);
+
+		// Make Inputs
+		let public_amount = if public_amount > 0 {
+			vec![BigInt::from_bytes_be(Sign::Plus, &public_amount.to_be_bytes())]
+		} else {
+			vec![BigInt::from_bytes_be(Sign::Minus, &(-public_amount).to_be_bytes())]
+		};
+
+		let mut ext_data_hash =
+			vec![BigInt::from_bytes_be(Sign::Plus, keccak_256(&ext_data.encode_abi()).as_slice())];
+
+		let mut input_nullifier = Vec::new();
+		let mut output_commitment = Vec::new();
+		for i in 0..NUM_UTXOS {
+			input_nullifier.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&input_nullifiers[i].into_repr().to_bytes_be(),
+			));
+			output_commitment.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&out_utxos[i].commitment.into_repr().to_bytes_be(),
+			));
+		}
+
+		let mut chain_id = vec![BigInt::from_bytes_be(Sign::Plus, &chain_id.to_be_bytes())];
+
+		let mut roots = Vec::new();
+
+		roots.push(BigInt::from_bytes_be(Sign::Plus, &custom_root.0));
+		for i in 0..ANCHOR_CT - 1 {
+			roots.push(BigInt::from_bytes_be(Sign::Plus, &neighbor_roots[i].0));
+		}
+
+		let mut in_amount = Vec::new();
+		let mut in_private_key = Vec::new();
+		let mut in_blinding = Vec::new();
+		let mut in_path_indices = Vec::new();
+		let mut in_path_elements = Vec::new();
+		let mut out_chain_id = Vec::new();
+		let mut out_amount = Vec::new();
+		let mut out_pub_key = Vec::new();
+		let mut out_blinding = Vec::new();
+
+		for i in 0..NUM_UTXOS {
+			in_amount.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&in_utxos[i].amount.into_repr().to_bytes_be(),
+			));
+			in_private_key.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&in_utxos[i].keypair.secret_key.unwrap().into_repr().to_bytes_be(),
+			));
+			in_blinding.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&in_utxos[i].blinding.into_repr().to_bytes_be(),
+			));
+			in_path_indices.push(BigInt::from(in_indices[i]));
+			for j in 0..TREE_DEPTH {
+				let neighbor_elt: Bn254Fr =
+					if in_indices[i] == 0 { in_paths[i].path[j].1 } else { in_paths[i].path[j].0 };
+				in_path_elements.push(BigInt::from_bytes_be(
+					Sign::Plus,
+					&neighbor_elt.into_repr().to_bytes_be(),
+				));
+			}
+
+			out_chain_id.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&out_utxos[i].chain_id.into_repr().to_bytes_be(),
+			));
+
+			out_amount.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&out_utxos[i].amount.into_repr().to_bytes_be(),
+			));
+
+			out_pub_key.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&out_utxos[i].keypair.public_key.into_repr().to_bytes_be(),
+			));
+
+			out_blinding.push(BigInt::from_bytes_be(
+				Sign::Plus,
+				&out_utxos[i].blinding.into_repr().to_bytes_be(),
+			));
+		}
+
+		let inputs_for_proof = [
+			("publicAmount", public_amount.clone()),
+			("extDataHash", ext_data_hash.clone()),
+			("inputNullifier", input_nullifier.clone()),
+			("inAmount", in_amount.clone()),
+			("inPrivateKey", in_private_key.clone()),
+			("inBlinding", in_blinding.clone()),
+			("inPathIndices", in_path_indices.clone()),
+			("inPathElements", in_path_elements.clone()),
+			("outputCommitment", output_commitment.clone()),
+			("outChainID", out_chain_id.clone()),
+			("outAmount", out_amount.clone()),
+			("outPubkey", out_pub_key.clone()),
+			("outBlinding", out_blinding.clone()),
+			("chainID", chain_id.clone()),
+			("roots", roots.clone()),
+		];
+
+		let x = generate_proof(wc_2_2, &params_2_2, inputs_for_proof.clone());
+
+		let num_inputs = params_2_2.1.num_instance_variables;
+
+		let (proof, full_assignment) = x.unwrap();
+
+		let mut inputs_for_verification = &full_assignment[1..num_inputs];
+
+		let did_proof_work =
+			verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
+		assert!(did_proof_work);
+
+		let mut vk_2_2_bytes = Vec::new();
+		params_2_2.0.vk.serialize(&mut vk_2_2_bytes).unwrap();
+
+		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
+			deconstruct_public_inputs_el(&inputs_for_verification.to_vec());
+		let mut proof_bytes = Vec::new();
+		proof.serialize(&mut proof_bytes).unwrap();
+		let proof_data = ProofData::new(
+			proof_bytes,
+			public_amount,
+			root_set,
+			nullifiers,
+			commitments,
+			ext_data_hash,
+		);
+		println!("Proof data: {proof_data:?}");
+
+		VAnchorVerifier2::force_set_parameters(
+			RuntimeOrigin::root(),
+			(2, 2),
+			vk_2_2_bytes.try_into().unwrap(),
+		);
+
+		let _relayer_balance_before = Balances::free_balance(relayer.clone());
+		let _recipient_balance_before = Balances::free_balance(recipient.clone());
+		let _transactor_balance_before = Balances::free_balance(transactor.clone());
+		assert_ok!(VAnchor2::transact(
+			RuntimeOrigin::signed(transactor.clone()),
+			tree_id,
+			proof_data,
+			ext_data
+		));
+	});
 }

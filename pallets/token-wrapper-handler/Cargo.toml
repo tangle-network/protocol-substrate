@@ -1,7 +1,7 @@
 [package]
 authors = ["Webb Technologies Inc."]
 description = "A token wrapper handler for the bridging system"
-edition = "2018"
+edition = "2021"
 homepage = "https://substrate.dev"
 license = "Unlicense"
 name = "pallet-token-wrapper-handler"

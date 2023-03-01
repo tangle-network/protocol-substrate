@@ -17,6 +17,3 @@ impl<F: PrimeField> InstanceHasher for Keccak256Hasher<F> {
 
 use ark_bn254::Fr as Bn254;
 pub type Keccak256HasherBn254 = Keccak256Hasher<Bn254>;
-
-use ark_bls12_381::Fr as Bls381;
-pub type Keccak256HasherBls381 = Keccak256Hasher<Bls381>;

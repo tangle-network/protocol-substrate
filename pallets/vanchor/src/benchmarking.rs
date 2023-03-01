@@ -68,20 +68,22 @@ where
 	//    but to do so, we need to have a VerifyingKey
 
 	let pk_2_2_bytes = include_bytes!(
-		"../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
+		"../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
-	let vk_2_2_bytes =
-		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin")
-			.to_vec();
+	let vk_2_2_bytes = include_bytes!(
+		"../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin"
+	)
+	.to_vec();
 
 	let pk_2_16_bytes = include_bytes!(
-		"../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/proving_key_uncompressed.bin"
+		"../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-16-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
-	let vk_2_16_bytes =
-		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin")
-			.to_vec();
+	let vk_2_16_bytes = include_bytes!(
+		"../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin"
+	)
+	.to_vec();
 
 	assert_ok!(<pallet_vanchor_verifier::Pallet<T, I>>::force_set_parameters(
 		RawOrigin::Root.into(),
@@ -118,24 +120,23 @@ benchmarks_instance_pallet! {
 		pallet_linkable_tree::Pallet<T, I>: webb_primitives::linkable_tree::LinkableTreeInspector<LinkableTreeConfigration<T, I>> }
 
 	create {
-	  let i in 1..MAX_EDGES;
-	  let d in 1..<T as pallet_mt::Config<I>>::MaxTreeDepth::get() as u32;
+		let i in 1..MAX_EDGES;
+		let d in 1..<T as pallet_mt::Config<I>>::MaxTreeDepth::get() as u32;
 
 	  pallet_hasher::Pallet::<T, I>::force_set_parameters(RawOrigin::Root.into(), hasher_params().try_into().unwrap()).unwrap();
 
-	  let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
+		let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
 	}: _(RawOrigin::Root, i, d as u8, asset_id)
 	verify {
 		assert_last_event::<T, I>(Event::VAnchorCreation{ tree_id : 0_u32.into() }.into())
 	}
 
 	transact {
-
 		let pk_2_2_bytes =  setup_env::<T,I>();
 
 		let deposit_size: u32 = 50_000_000;
 		let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
-		  let depth = <T as pallet_mt::Config<I>>::MaxTreeDepth::get();
+		let depth = <T as pallet_mt::Config<I>>::MaxTreeDepth::get();
 
 		let tree_id = <VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::create(None, depth, 1u32, asset_id, 1u32.into())?;
 
@@ -202,10 +203,9 @@ benchmarks_instance_pallet! {
 		// Constructing proof data
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
-
-	  }: _(RawOrigin::Signed(transactor.clone()), tree_id, proof_data.clone(), ext_data)
-	  verify {
-		  assert_last_event::<T, I>(
+	}: _(RawOrigin::Signed(transactor.clone()), tree_id, proof_data.clone(), ext_data)
+	verify {
+		assert_last_event::<T, I>(
 			Event::Transaction {
 			transactor,
 			tree_id,
@@ -217,13 +217,10 @@ benchmarks_instance_pallet! {
 	}
 
 	register_and_transact {
-
 		let pk_2_2_bytes =  setup_env::<T,I>();
-
-
 		let deposit_size: u32 = 50_000_000;
 		let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
-		  let depth = <T as pallet_mt::Config<I>>::MaxTreeDepth::get();
+		let depth = <T as pallet_mt::Config<I>>::MaxTreeDepth::get();
 
 		let tree_id = <VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::create(None, depth, 1u32, asset_id, 1u32.into())?;
 
@@ -290,33 +287,30 @@ benchmarks_instance_pallet! {
 		// Constructing proof data
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
-
-	  }: _(RawOrigin::Signed(transactor.clone()), transactor.clone(),[0u8; 32].to_vec(),tree_id, proof_data.clone(), ext_data)
-	  verify {
+	}: _(RawOrigin::Signed(transactor.clone()), transactor.clone(),[0u8; 32].to_vec(),tree_id, proof_data.clone(), ext_data)
+	verify {
 		assert_last_event::<T, I>(
-		  Event::Transaction {
-		  transactor,
-		  tree_id,
-		  leafs : proof_data.output_commitments,
-		  encrypted_output1: output1.to_vec(),
-		  encrypted_output2: output2.to_vec(),
-		  amount : ext_amount.into() }.into()
-	  )
-  }
+			Event::Transaction {
+			transactor,
+			tree_id,
+			leafs : proof_data.output_commitments,
+			encrypted_output1: output1.to_vec(),
+			encrypted_output2: output2.to_vec(),
+			amount : ext_amount.into() }.into()
+		)
+	}
 
 	set_max_deposit_amount {
-	  }: _(RawOrigin::Root, 100u32.into(), 101u32.into())
-	  verify {
-		  assert_last_event::<T, I>(Event::MaxDepositAmountChanged{ max_deposit_amount : 100_u32.into() }.into())
+	}: _(RawOrigin::Root, 100u32.into(), 101u32.into())
+	verify {
+		assert_last_event::<T, I>(Event::MaxDepositAmountChanged{ max_deposit_amount : 100_u32.into() }.into())
 	}
 
 	set_min_withdraw_amount {
 	}: _(RawOrigin::Root, 1u32.into(), 101u32.into())
 	verify {
 		assert_last_event::<T, I>(Event::MinWithdrawAmountChanged{ min_withdraw_amount : 1_u32.into() }.into())
-  }
-
-
+	}
 }
 
 impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);

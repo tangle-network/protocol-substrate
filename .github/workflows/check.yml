@@ -32,7 +32,7 @@ jobs:
         uses: iterative/setup-dvc@v1
 
       - name: Fetch Fixtures
-        run: dvc pull
+        run: ./scripts/fetch-fixtures.sh
 
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable

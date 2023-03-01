@@ -1,4 +1,3 @@
-use ark_bls12_381::Fr as Bls381;
 use ark_bn254::Fr as Bn254;
 use ark_ff::{BigInteger, PrimeField};
 use sp_std::{marker::PhantomData, vec::Vec};
@@ -20,4 +19,3 @@ impl<F: PrimeField> IntoPrimeField<i128> for ArkworksIntoField<F> {
 }
 
 pub type ArkworksIntoFieldBn254 = ArkworksIntoField<Bn254>;
-pub type ArkworksIntoFieldBls381 = ArkworksIntoField<Bls381>;

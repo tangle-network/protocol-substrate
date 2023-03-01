@@ -1,7 +1,7 @@
 use crate::{
 	mock::*,
-	test_utils::{deconstruct_public_inputs_el, setup_utxos, setup_zk_circuit},
-	Error, MaxDepositAmount, MinWithdrawAmount,
+	test_utils::{deconstruct_public_inputs_el, setup_utxos, setup_zk_circuit, TREE_DEPTH},
+	Error, Instance1, MaxDepositAmount, MinWithdrawAmount,
 };
 use ark_ff::{BigInteger, PrimeField};
 use arkworks_setups::{common::setup_params, utxo::Utxo, Curve};
@@ -22,18 +22,17 @@ use webb_primitives::{
 
 type Bn254Fr = ark_bn254::Fr;
 
-const SEED: u32 = 0;
-const TREE_DEPTH: usize = 30;
-const EDGE_CT: usize = 1;
-const DEFAULT_BALANCE: u128 = 10_000;
-const BIG_DEFAULT_BALANCE: u128 = 20_000;
-const BIGGER_DEFAULT_BALANCE: u128 = 30_000;
+pub const SEED: u32 = 0;
+pub const EDGE_CT: usize = 1;
+pub const DEFAULT_BALANCE: u128 = 10_000;
+pub const BIG_DEFAULT_BALANCE: u128 = 20_000;
+pub const BIGGER_DEFAULT_BALANCE: u128 = 30_000;
 
-const TRANSACTOR_ACCOUNT_ID: u32 = 0;
-const RECIPIENT_ACCOUNT_ID: u32 = 1;
-const BIG_TRANSACTOR_ACCOUNT_ID: u32 = 2;
-const BIGGER_TRANSACTOR_ACCOUNT_ID: u32 = 3;
-const RELAYER_ACCOUNT_ID: u32 = 4;
+pub const TRANSACTOR_ACCOUNT_ID: u32 = 0;
+pub const RECIPIENT_ACCOUNT_ID: u32 = 1;
+pub const BIG_TRANSACTOR_ACCOUNT_ID: u32 = 2;
+pub const BIGGER_TRANSACTOR_ACCOUNT_ID: u32 = 3;
+pub const RELAYER_ACCOUNT_ID: u32 = 4;
 
 pub fn get_account(id: u32) -> AccountId {
 	account::<AccountId>("", id, SEED)
@@ -43,37 +42,39 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	let curve = Curve::Bn254;
 	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 	// 1. Setup The Hasher Pallet.
-	assert_ok!(HasherPallet::force_set_parameters(
+	assert_ok!(Hasher1::force_set_parameters(
 		RuntimeOrigin::root(),
 		params3.to_bytes().try_into().unwrap()
 	));
 	// 2. Initialize MerkleTree pallet.
-	<MerkleTree as OnInitialize<u64>>::on_initialize(1);
+	<MerkleTree1 as OnInitialize<u64>>::on_initialize(1);
 	// 3. Setup the VerifierPallet
 	//    but to do so, we need to have a VerifyingKey
 
 	let pk_2_2_bytes = include_bytes!(
-		"../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
+		"../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
-	let vk_2_2_bytes =
-		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin")
-			.to_vec();
+	let vk_2_2_bytes = include_bytes!(
+		"../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin"
+	)
+	.to_vec();
 
 	let pk_2_16_bytes = include_bytes!(
-		"../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/proving_key_uncompressed.bin"
+		"../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-16-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
-	let vk_2_16_bytes =
-		include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin")
-			.to_vec();
+	let vk_2_16_bytes = include_bytes!(
+		"../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin"
+	)
+	.to_vec();
 
-	assert_ok!(VAnchorVerifier::force_set_parameters(
+	assert_ok!(VAnchorVerifier1::force_set_parameters(
 		RuntimeOrigin::root(),
 		(2, 2),
 		vk_2_2_bytes.clone().try_into().unwrap()
 	));
-	assert_ok!(VAnchorVerifier::force_set_parameters(
+	assert_ok!(VAnchorVerifier1::force_set_parameters(
 		RuntimeOrigin::root(),
 		(2, 16),
 		vk_2_16_bytes.clone().try_into().unwrap()
@@ -101,8 +102,8 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	));
 
 	// set configurable storage
-	assert_ok!(VAnchor::set_max_deposit_amount(RuntimeOrigin::root(), 10, 1));
-	assert_ok!(VAnchor::set_min_withdraw_amount(RuntimeOrigin::root(), 3, 2));
+	assert_ok!(VAnchor1::set_max_deposit_amount(RuntimeOrigin::root(), 10, 1));
+	assert_ok!(VAnchor1::set_min_withdraw_amount(RuntimeOrigin::root(), 3, 2));
 
 	// finally return the provingkey bytes
 	(pk_2_2_bytes, vk_2_2_bytes, pk_2_16_bytes, vk_2_16_bytes)
@@ -111,8 +112,8 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 fn create_vanchor(asset_id: u32) -> u32 {
 	let max_edges = EDGE_CT as u32;
 	let depth = TREE_DEPTH as u8;
-	assert_ok!(VAnchor::create(RuntimeOrigin::root(), max_edges, depth, asset_id));
-	MerkleTree::next_tree_id() - 1
+	assert_ok!(VAnchor1::create(RuntimeOrigin::root(), max_edges, depth, asset_id));
+	MerkleTree1::next_tree_id() - 1
 }
 
 fn create_vanchor_with_deposits(
@@ -150,16 +151,16 @@ fn create_vanchor_with_deposits(
 		ext_amount,
 		fee,
 		0,
-		MaxCurrencyId::get(),
+		asset_id.unwrap_or_default(),
 		output1.to_vec(), // Mock encryption value, not meant to be used in production
 		output2.to_vec(), // Mock encryption value, not meant to be used in production
 	);
 
 	let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-	let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
-	let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
-		LinkableTreeConfigration<Test, ()>,
+	let custom_root = MerkleTree1::get_default_root(tree_id).unwrap();
+	let neighbor_roots: [Element; EDGE_CT] = <LinkableTree1 as LinkableTreeInspector<
+		LinkableTreeConfigration<Test, Instance1>,
 	>>::get_neighbor_roots(tree_id)
 	.unwrap()
 	.try_into()
@@ -183,7 +184,12 @@ fn create_vanchor_with_deposits(
 	let proof_data =
 		ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
-	assert_ok!(VAnchor::transact(RuntimeOrigin::signed(transactor), tree_id, proof_data, ext_data));
+	assert_ok!(VAnchor1::transact(
+		RuntimeOrigin::signed(transactor),
+		tree_id,
+		proof_data,
+		ext_data
+	));
 
 	(tree_id, out_utxos)
 }
@@ -221,7 +227,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			// Mock encryption value, not meant to be used in production
 			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -230,13 +236,14 @@ fn should_complete_2x2_transaction_with_deposit() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
-		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let custom_root = MerkleTree1::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -261,7 +268,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -273,7 +280,7 @@ fn should_complete_2x2_transaction_with_deposit() {
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
-		assert_ok!(VAnchor::transact(
+		assert_ok!(VAnchor1::transact(
 			RuntimeOrigin::signed(transactor.clone()),
 			tree_id,
 			proof_data,
@@ -300,7 +307,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
-		let custom_root = MerkleTree::get_root(tree_id).unwrap();
+		let custom_root = MerkleTree1::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
@@ -326,19 +333,20 @@ fn should_complete_2x2_transaction_with_withdraw() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let neighbor_roots = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -363,7 +371,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -374,7 +382,7 @@ fn should_complete_2x2_transaction_with_withdraw() {
 
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
-		assert_ok!(VAnchor::transact(
+		assert_ok!(VAnchor1::transact(
 			RuntimeOrigin::signed(transactor),
 			tree_id,
 			proof_data,
@@ -444,20 +452,21 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 			ext_amount,
 			fee,
 			refund,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(), // Mock encryption value, not meant to be used in production
 			output2.to_vec(), // Mock encryption value, not meant to be used in production
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
-		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let custom_root = MerkleTree1::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -483,10 +492,10 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
-		assert_ok!(VAnchor::transact(RuntimeOrigin::signed(alice), tree_id, proof_data, ext_data));
+		assert_ok!(VAnchor1::transact(RuntimeOrigin::signed(alice), tree_id, proof_data, ext_data));
 
 		/**** Withdraw and unwrap **** */
-		let custom_root = MerkleTree::get_root(tree_id).unwrap();
+		let custom_root = MerkleTree1::get_root(tree_id).unwrap();
 		let ext_amount: Amount = -5;
 		let fee: Balance = 2;
 		let refund: Balance = 10;
@@ -515,12 +524,13 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let neighbor_roots = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -543,7 +553,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let relayer_balance_wrapped_token_before = Currencies::free_balance(asset_id, &relayer);
-		assert_ok!(VAnchor::transact(
+		assert_ok!(VAnchor1::transact(
 			RuntimeOrigin::signed(get_account(RELAYER_ACCOUNT_ID)),
 			tree_id,
 			proof_data,
@@ -594,15 +604,6 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		let pooled_asset_id = AssetRegistry::next_asset_id() - 1;
 		// Mint some wrapped asset / pool share by depositing the native asset
 		let alice = get_account(TRANSACTOR_ACCOUNT_ID);
-		assert_ok!(TokenWrapper::wrap(
-			RuntimeOrigin::signed(alice.clone()),
-			first_asset_id,
-			pooled_asset_id,
-			1_000,
-			alice.clone(),
-		));
-		assert_eq!(Currencies::free_balance(first_asset_id, &alice), 9_000);
-		assert_eq!(Currencies::free_balance(pooled_asset_id, &alice), 1_000);
 
 		/**** Create deposits with the newly wrapped token *** */
 		let tree_id = create_vanchor(pooled_asset_id);
@@ -634,7 +635,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 			ext_amount,
 			fee,
 			refund,
-			MaxCurrencyId::get(),
+			first_asset_id,
 			// Mock encryption value, not meant to be used in production
 			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -643,13 +644,14 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
-		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let custom_root = MerkleTree1::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -669,10 +671,9 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 		let proof_data =
 			ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
-		assert_ok!(VAnchor::transact(RuntimeOrigin::signed(alice), tree_id, proof_data, ext_data));
-
+		assert_ok!(VAnchor1::transact(RuntimeOrigin::signed(alice), tree_id, proof_data, ext_data));
 		/**** Withdraw and unwrap **** */
-		let custom_root = MerkleTree::get_root(tree_id).unwrap();
+		let custom_root = MerkleTree1::get_root(tree_id).unwrap();
 		let ext_amount: Amount = -5;
 		let fee: Balance = 2;
 		let refund: Balance = 10;
@@ -701,12 +702,13 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let neighbor_roots = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -749,7 +751,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_non_native_to
 			Currencies::free_balance(pooled_asset_id, &recipient);
 		let recipient_balance_unwrapped_token_before =
 			Currencies::free_balance(first_asset_id, &recipient);
-		assert_ok!(VAnchor::transact(
+		assert_ok!(VAnchor1::transact(
 			RuntimeOrigin::signed(get_account(RELAYER_ACCOUNT_ID)),
 			tree_id,
 			proof_data,
@@ -788,7 +790,7 @@ fn should_complete_register_and_transact() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
-		let custom_root = MerkleTree::get_root(tree_id).unwrap();
+		let custom_root = MerkleTree1::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
@@ -814,19 +816,20 @@ fn should_complete_register_and_transact() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let neighbor_roots = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -851,7 +854,7 @@ fn should_complete_register_and_transact() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -862,7 +865,7 @@ fn should_complete_register_and_transact() {
 
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
-		assert_ok!(VAnchor::register_and_transact(
+		assert_ok!(VAnchor1::register_and_transact(
 			RuntimeOrigin::signed(transactor.clone()),
 			transactor,
 			[0u8; 32].to_vec(),
@@ -914,7 +917,7 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			// Mock encryption value, not meant to be used in production
 			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -923,13 +926,14 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
-		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let custom_root = MerkleTree1::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -956,7 +960,7 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -969,13 +973,13 @@ fn should_not_complete_transaction_if_ext_data_is_invalid() {
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_err!(
-			VAnchor::transact(
+			VAnchor1::transact(
 				RuntimeOrigin::signed(transactor.clone()),
 				tree_id,
 				proof_data,
 				ext_data
 			),
-			Error::<Test, _>::InvalidExtData,
+			Error::<Test, Instance1>::InvalidExtData,
 		);
 
 		// Relayer balance should be zero since the fee was zero and the transaction
@@ -999,7 +1003,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
-		let custom_root = MerkleTree::get_root(tree_id).unwrap();
+		let custom_root = MerkleTree1::get_root(tree_id).unwrap();
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
@@ -1025,7 +1029,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			// Mock encryption value, not meant to be used in production
 			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -1034,12 +1038,13 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let neighbor_roots = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -1064,7 +1069,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -1078,13 +1083,13 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_big() {
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		// Should fail with invalid external data error
 		assert_err!(
-			VAnchor::transact(
+			VAnchor1::transact(
 				RuntimeOrigin::signed(transactor.clone()),
 				tree_id,
 				proof_data,
 				ext_data
 			),
-			Error::<Test, _>::InvalidTransactionProof
+			Error::<Test, Instance1>::InvalidTransactionProof
 		);
 
 		// Should be zero, since transaction failed
@@ -1108,7 +1113,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
-		let custom_root = MerkleTree::get_root(tree_id).unwrap();
+		let custom_root = MerkleTree1::get_root(tree_id).unwrap();
 
 		let transactor = get_account(TRANSACTOR_ACCOUNT_ID);
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
@@ -1135,7 +1140,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			// Mock encryption value, not meant to be used in production
 			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -1144,12 +1149,13 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let neighbor_roots = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -1174,7 +1180,7 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -1188,13 +1194,13 @@ fn should_not_complete_withdraw_if_out_amount_sum_is_too_small() {
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		// Should fail with invalid external data error
 		assert_err!(
-			VAnchor::transact(
+			VAnchor1::transact(
 				RuntimeOrigin::signed(transactor.clone()),
 				tree_id,
 				proof_data,
 				ext_data
 			),
-			Error::<Test, _>::InvalidTransactionProof
+			Error::<Test, Instance1>::InvalidTransactionProof
 		);
 
 		// Should be zero, since transaction failed
@@ -1216,7 +1222,7 @@ fn should_not_be_able_to_double_spend() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
-		let custom_root = MerkleTree::get_root(tree_id).unwrap();
+		let custom_root = MerkleTree1::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
@@ -1242,7 +1248,7 @@ fn should_not_be_able_to_double_spend() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			// Mock encryption value, not meant to be used in production
 			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -1251,12 +1257,13 @@ fn should_not_be_able_to_double_spend() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let neighbor_roots = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -1281,7 +1288,7 @@ fn should_not_be_able_to_double_spend() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -1293,20 +1300,20 @@ fn should_not_be_able_to_double_spend() {
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
-		assert_ok!(VAnchor::transact(
+		assert_ok!(VAnchor1::transact(
 			RuntimeOrigin::signed(transactor.clone()),
 			tree_id,
 			proof_data.clone(),
 			ext_data.clone()
 		));
 		assert_err!(
-			VAnchor::transact(
+			VAnchor1::transact(
 				RuntimeOrigin::signed(transactor.clone()),
 				tree_id,
 				proof_data,
 				ext_data
 			),
-			Error::<Test, _>::AlreadyRevealedNullifier
+			Error::<Test, Instance1>::AlreadyRevealedNullifier
 		);
 
 		// Fee is paid out once
@@ -1356,7 +1363,7 @@ fn should_not_be_able_to_exceed_max_fee() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			// Mock encryption value, not meant to be used in production
 			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -1365,13 +1372,14 @@ fn should_not_be_able_to_exceed_max_fee() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
-		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let custom_root = MerkleTree1::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -1396,7 +1404,7 @@ fn should_not_be_able_to_exceed_max_fee() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -1408,13 +1416,13 @@ fn should_not_be_able_to_exceed_max_fee() {
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		assert_err!(
-			VAnchor::transact(
+			VAnchor1::transact(
 				RuntimeOrigin::signed(transactor.clone()),
 				tree_id,
 				proof_data,
 				ext_data
 			),
-			Error::<Test, _>::InvalidFee
+			Error::<Test, Instance1>::InvalidFee
 		);
 
 		// Relayer balance should be zero since the fee was zero
@@ -1461,7 +1469,7 @@ fn should_not_be_able_to_exceed_max_deposit() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			// Mock encryption value, not meant to be used in production
 			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -1470,13 +1478,14 @@ fn should_not_be_able_to_exceed_max_deposit() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
-		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let custom_root = MerkleTree1::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -1501,7 +1510,7 @@ fn should_not_be_able_to_exceed_max_deposit() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -1513,13 +1522,13 @@ fn should_not_be_able_to_exceed_max_deposit() {
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		assert_err!(
-			VAnchor::transact(
+			VAnchor1::transact(
 				RuntimeOrigin::signed(transactor.clone()),
 				tree_id,
 				proof_data,
 				ext_data
 			),
-			Error::<Test, _>::InvalidDepositAmount
+			Error::<Test, Instance1>::InvalidDepositAmount
 		);
 
 		// Relayer balance should be zero since the fee was zero
@@ -1566,7 +1575,7 @@ fn should_not_be_able_to_exceed_external_amount() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			// Mock encryption value, not meant to be used in production
 			output1.to_vec(),
 			// Mock encryption value, not meant to be used in production
@@ -1575,13 +1584,14 @@ fn should_not_be_able_to_exceed_external_amount() {
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let custom_root = MerkleTree::get_default_root(tree_id).unwrap();
-		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let custom_root = MerkleTree1::get_default_root(tree_id).unwrap();
+		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -1606,7 +1616,7 @@ fn should_not_be_able_to_exceed_external_amount() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -1618,13 +1628,13 @@ fn should_not_be_able_to_exceed_external_amount() {
 		let relayer_balance_before = Balances::free_balance(relayer.clone());
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		assert_err!(
-			VAnchor::transact(
+			VAnchor1::transact(
 				RuntimeOrigin::signed(transactor.clone()),
 				tree_id,
 				proof_data,
 				ext_data
 			),
-			Error::<Test, _>::InvalidExtAmount
+			Error::<Test, Instance1>::InvalidExtAmount
 		);
 
 		// Relayer balance should be zero since the transaction failed
@@ -1642,7 +1652,7 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 	new_test_ext().execute_with(|| {
 		let (proving_key_2x2_bytes, _, _, _) = setup_environment();
 		let (tree_id, in_utxos) = create_vanchor_with_deposits(proving_key_2x2_bytes.clone(), None);
-		let custom_root = MerkleTree::get_root(tree_id).unwrap();
+		let custom_root = MerkleTree1::get_root(tree_id).unwrap();
 
 		let transactor: AccountId = get_account(TRANSACTOR_ACCOUNT_ID);
 		let recipient: AccountId = get_account(RECIPIENT_ACCOUNT_ID);
@@ -1668,19 +1678,20 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(), // Mock encryption value, not meant to be used in production
 			output2.to_vec(), // Mock encryption value, not meant to be used in production
 		);
 
 		let ext_data_hash = keccak_256(&ext_data.encode_abi());
 
-		let neighbor_roots = <LinkableTree as LinkableTreeInspector<
-			LinkableTreeConfigration<Test, ()>,
+		let neighbor_roots = <LinkableTree1 as LinkableTreeInspector<
+			LinkableTreeConfigration<Test, Instance1>,
 		>>::get_neighbor_roots(tree_id)
 		.unwrap()
 		.try_into()
 		.unwrap();
+
 		let (proof, public_inputs) = setup_zk_circuit(
 			public_amount,
 			chain_id,
@@ -1705,7 +1716,7 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 			ext_amount,
 			fee,
 			0,
-			MaxCurrencyId::get(),
+			0,
 			output1.to_vec(),
 			output2.to_vec(),
 		);
@@ -1718,13 +1729,13 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 		let transactor_balance_before = Balances::free_balance(transactor.clone());
 		let recipient_balance_before = Balances::free_balance(recipient.clone());
 		assert_err!(
-			VAnchor::transact(
+			VAnchor1::transact(
 				RuntimeOrigin::signed(transactor.clone()),
 				tree_id,
 				proof_data,
 				ext_data
 			),
-			Error::<Test, _>::InvalidWithdrawAmount
+			Error::<Test, Instance1>::InvalidWithdrawAmount
 		);
 
 		// Fee is not paid out
@@ -1743,34 +1754,34 @@ fn should_not_be_able_to_withdraw_less_than_minimum() {
 #[test]
 fn set_get_max_deposit_amount() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_max_deposit_amount(RuntimeOrigin::root(), 1, 1));
-		assert_eq!(MaxDepositAmount::<Test>::get(), 1);
+		assert_ok!(VAnchor1::set_max_deposit_amount(RuntimeOrigin::root(), 1, 1));
+		assert_eq!(MaxDepositAmount::<Test, Instance1>::get(), 1);
 
-		assert_ok!(VAnchor::set_max_deposit_amount(RuntimeOrigin::root(), 5, 2));
-		assert_eq!(MaxDepositAmount::<Test>::get(), 5);
+		assert_ok!(VAnchor1::set_max_deposit_amount(RuntimeOrigin::root(), 5, 2));
+		assert_eq!(MaxDepositAmount::<Test, Instance1>::get(), 5);
 	})
 }
 
 #[test]
 fn set_get_min_withdraw_amount() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_min_withdraw_amount(RuntimeOrigin::root(), 2, 1));
-		assert_eq!(MinWithdrawAmount::<Test>::get(), 2);
+		assert_ok!(VAnchor1::set_min_withdraw_amount(RuntimeOrigin::root(), 2, 1));
+		assert_eq!(MinWithdrawAmount::<Test, Instance1>::get(), 2);
 
-		assert_ok!(VAnchor::set_min_withdraw_amount(RuntimeOrigin::root(), 5, 2));
-		assert_eq!(MinWithdrawAmount::<Test>::get(), 5);
+		assert_ok!(VAnchor1::set_min_withdraw_amount(RuntimeOrigin::root(), 5, 2));
+		assert_eq!(MinWithdrawAmount::<Test, Instance1>::get(), 5);
 	})
 }
 
 #[test]
 fn should_fail_to_set_amounts_with_invalid_nonces() {
 	new_test_ext().execute_with(|| {
-		assert_ok!(VAnchor::set_min_withdraw_amount(RuntimeOrigin::root(), 2, 1));
-		assert_eq!(MinWithdrawAmount::<Test>::get(), 2);
+		assert_ok!(VAnchor1::set_min_withdraw_amount(RuntimeOrigin::root(), 2, 1));
+		assert_eq!(MinWithdrawAmount::<Test, Instance1>::get(), 2);
 
 		assert_err!(
-			VAnchor::set_min_withdraw_amount(RuntimeOrigin::root(), 5, 1),
-			Error::<Test, _>::InvalidNonce
+			VAnchor1::set_min_withdraw_amount(RuntimeOrigin::root(), 5, 1),
+			Error::<Test, Instance1>::InvalidNonce
 		);
 	})
 }

@@ -1,6 +1,6 @@
 [package]
 authors = ["Webb Technologies Inc."]
-edition = "2018"
+edition = "2021"
 homepage = "https://substrate.dev"
 license = "Unlicense"
 name = "pallet-linkable-tree"

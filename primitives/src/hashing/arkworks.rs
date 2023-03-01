@@ -22,6 +22,3 @@ impl<F: PrimeField> InstanceHasher for ArkworksPoseidonHasher<F> {
 
 use ark_bn254::Fr as Bn254;
 pub type ArkworksPoseidonHasherBn254 = ArkworksPoseidonHasher<Bn254>;
-
-use ark_bls12_381::Fr as Bls381;
-pub type ArkworksPoseidonHasherBls381 = ArkworksPoseidonHasher<Bls381>;

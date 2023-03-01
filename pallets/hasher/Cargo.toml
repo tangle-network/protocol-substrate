@@ -1,7 +1,7 @@
 [package]
 authors = ["Webb Technologies Inc."]
 description = "Pallet that provides a single hash function + parameters for use in other pallets."
-edition = "2018"
+edition = "2021"
 homepage = "https://substrate.dev"
 license = "Unlicense"
 name = "pallet-hasher"

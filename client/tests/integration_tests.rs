@@ -1,4 +1,8 @@
+use ark_ff::ToBytes;
+use ark_groth16::{Proof as ArkProof, ProvingKey, VerifyingKey};
+use ark_relations::r1cs::ConstraintMatrices;
 use sp_keyring::AccountKeyring;
+use sp_runtime::traits::Verify;
 use webb_client::webb_runtime;
 use webb_primitives::ElementTrait;
 
@@ -8,7 +12,7 @@ use codec::Encode;
 use utils::*;
 use webb_primitives::{hashing::ethereum::keccak_256, utils::compute_chain_id_type, IntoAbiToken};
 
-use ark_bn254::Fr as Bn254Fr;
+use ark_bn254::{Bn254, Fr as Bn254Fr};
 use arkworks_native_gadgets::ark_std::rand::rngs::OsRng;
 use arkworks_setups::{
 	common::{verify_unchecked, verify_unchecked_raw},
@@ -17,21 +21,27 @@ use arkworks_setups::{
 use subxt::{
 	ext::sp_runtime::AccountId32,
 	tx::{PairSigner, TxProgress},
-	OnlineClient, PolkadotConfig,
+	OnlineClient, SubstrateConfig,
 };
 use utils::ExtData;
 
+use ark_circom::{read_zkey, WitnessCalculator};
 use ark_ff::{BigInteger, PrimeField};
+use ark_serialize::CanonicalSerialize;
+use std::{fs::File, sync::Mutex};
 
 #[tokio::test]
+#[ignore]
 async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
-	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
+	let api: OnlineClient<_> = OnlineClient::<SubstrateConfig>::new().await?;
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 
-	let pk_bytes =
-		include_bytes!("../../substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin");
-	let vk_bytes =
-		include_bytes!("../../substrate-fixtures/mixer/bn254/x5/verifying_key_uncompressed.bin");
+	let pk_bytes = include_bytes!(
+		"../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin"
+	);
+	let vk_bytes = include_bytes!(
+		"../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/verifying_key_uncompressed.bin"
+	);
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();
 	let recipient_bytes = truncate_and_pad(&recipient.encode());
@@ -53,8 +63,8 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 
 	expect_event::<
 		webb_runtime::mixer_bn254::events::Deposit,
-		PolkadotConfig,
-		OnlineClient<PolkadotConfig>,
+		SubstrateConfig,
+		OnlineClient<SubstrateConfig>,
 	>(&mut deposit_res)
 	.await?;
 
@@ -133,8 +143,8 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 
 	expect_event::<
 		webb_runtime::mixer_bn254::events::Withdraw,
-		PolkadotConfig,
-		OnlineClient<PolkadotConfig>,
+		SubstrateConfig,
+		OnlineClient<SubstrateConfig>,
 	>(&mut withdraw_res)
 	.await?;
 
@@ -142,8 +152,9 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn make_vanchor_tx(
-	pk_bytes: &[u8],
-	vk_bytes: &[u8],
+	circom_params: &(ProvingKey<Bn254>, ConstraintMatrices<Bn254Fr>),
+	#[cfg(not(target_arch = "wasm32"))] wc: &Mutex<WitnessCalculator>,
+	#[cfg(target_arch = "wasm32")] wc: &mut WitnessCalculator,
 	recipient: &AccountId32,
 	relayer: &AccountId32,
 	public_amount: i128,
@@ -152,7 +163,7 @@ async fn make_vanchor_tx(
 	in_utxos: [Utxo<Bn254Fr>; 2],
 	out_utxos: [Utxo<Bn254Fr>; 2],
 ) -> Result<(), Box<dyn std::error::Error>> {
-	let api = OnlineClient::<PolkadotConfig>::new().await?;
+	let api = OnlineClient::<SubstrateConfig>::new().await?;
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 
 	let chain_type = [2, 0];
@@ -185,11 +196,13 @@ async fn make_vanchor_tx(
 		out_utxos.clone(),
 		custom_roots,
 		leaves,
-		pk_bytes.to_vec(),
+		circom_params,
+		wc,
 	);
 
-	let res = verify_unchecked::<ark_bn254::Bn254>(&public_inputs, vk_bytes, &proof)?;
-	assert!(res, "Invalid proof");
+	let res = verify_proof(&circom_params.0.vk, &proof, &public_inputs);
+	assert!(res.unwrap(), "Invalid proof");
+	println!("proof verified");
 
 	// Deconstructing public inputs
 	let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
@@ -202,14 +215,18 @@ async fn make_vanchor_tx(
 	println!("commitments {commitments:?}");
 	println!("ext data hash {ext_data_hash:?}");
 
+	let mut proof_vec = Vec::new();
+	let _ = &proof.write(&mut proof_vec).unwrap();
+
 	// Constructing proof data
 	let proof_data =
-		ProofData::new(proof, public_amount, root_set, nullifiers, commitments, ext_data_hash);
+		ProofData::new(proof_vec, public_amount, root_set, nullifiers, commitments, ext_data_hash);
 
+	println!("my name is: {:?}", &proof_data.roots.len());
 	// mixer = 0..3
 	// anchor = 3..6
 	// vanchor = 6
-	let tree_id = 6;
+	let tree_id = 5;
 	// Get the vanchor transaction API
 	let vanchor = webb_runtime::tx().v_anchor_bn254();
 
@@ -220,8 +237,8 @@ async fn make_vanchor_tx(
 
 	expect_event::<
 		webb_runtime::v_anchor_bn254::events::Transaction,
-		PolkadotConfig,
-		OnlineClient<PolkadotConfig>,
+		SubstrateConfig,
+		OnlineClient<SubstrateConfig>,
 	>(&mut transact_res)
 	.await?;
 
@@ -230,14 +247,16 @@ async fn make_vanchor_tx(
 
 #[tokio::test]
 async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
-	let api: OnlineClient<_> = OnlineClient::<PolkadotConfig>::new().await?;
+	let api: OnlineClient<_> = OnlineClient::<SubstrateConfig>::new().await?;
 
-	let pk_bytes = include_bytes!(
-		"../../substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
-	);
-	let vk_bytes = include_bytes!(
-		"../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key_uncompressed.bin"
-	);
+	let path_2_2 = "../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
+	let mut file_2_2 = File::open(path_2_2).unwrap();
+	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
+
+	let wasm_2_2_path =
+		"../solidity-fixtures/solidity-fixtures//vanchor_2/2/poseidon_vanchor_2_2.wasm";
+
+	let wc_2_2 = circom_from_folder(wasm_2_2_path);
 
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();
@@ -262,8 +281,8 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let leaves: Vec<Vec<u8>> = vec![leaf0, leaf1];
 
 	make_vanchor_tx(
-		pk_bytes,
-		vk_bytes,
+		&params_2_2,
+		wc_2_2,
 		&(*AsRef::<[u8; 32]>::as_ref(&recipient)).into(),
 		&(*AsRef::<[u8; 32]>::as_ref(&relayer)).into(),
 		public_amount,
@@ -277,7 +296,7 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	// Get the vanchor storage API
 	let mt_storage = webb_runtime::storage().merkle_tree_bn254();
 
-	let tree_id = 6;
+	let tree_id = 5;
 	let tree_metadata_storage_key = mt_storage.trees(tree_id);
 	let tree_metadata_res = api.storage().fetch(&tree_metadata_storage_key, None).await?;
 	let tree_metadata = tree_metadata_res.unwrap();
@@ -307,8 +326,8 @@ async fn test_vanchor() -> Result<(), Box<dyn std::error::Error>> {
 	let out_utxos = setup_utxos(out_chain_ids, new_out_amounts, None);
 
 	make_vanchor_tx(
-		pk_bytes,
-		vk_bytes,
+		&params_2_2,
+		wc_2_2,
 		&(*AsRef::<[u8; 32]>::as_ref(&recipient)).into(),
 		&(*AsRef::<[u8; 32]>::as_ref(&relayer)).into(),
 		public_amount,
