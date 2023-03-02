@@ -2,7 +2,7 @@ name: check
 
 # Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the master branch
+  # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches: [main]
   pull_request:
@@ -13,39 +13,64 @@ on:
 
 env:
   CARGO_REGISTRIES_CRATES_IO_PROTOCOL: git
-  
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+
 jobs:
-  ci:
-    # The type of runner that the job will run on
+  # Format job
+  check-format:
     runs-on: ubuntu-20.04
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    strategy:
+      matrix:
+        step: ["check-format"]
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-
       - name: Set-Up
         run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
+      - name: Check Format
+        run: |
+          SKIP_WASM_BUILD=1 cargo fmt --all -- --check
 
+  # Build job
+  check-build:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        step: ["check-build"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set-Up
+        run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
       - name: Setup DVC
         uses: iterative/setup-dvc@v1
-
       - name: Fetch Fixtures
         run: ./scripts/fetch-fixtures.sh
+      - name: Check Build
+        run: |
+          SKIP_WASM_BUILD=1 cargo check --release -Z sparse-registry
 
+  # Test job
+  test:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        step: ["test"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set-Up
+        run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
+      - name: Setup DVC
+        uses: iterative/setup-dvc@v1
+      - name: Fetch Fixtures
+        run: ./scripts/fetch-fixtures.sh
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: nightly
-
       - name: Install cargo-nextest
         uses: baptiste0928/cargo-install@v1
         with:
           crate: cargo-nextest
           version: latest
           args: "-Z sparse-registry"
-
       - name: Cache Cargo
         uses: actions/cache@v2
         with:
@@ -57,13 +82,27 @@ jobs:
             target/debug
             target/release
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Check Format
-        run: |
-          SKIP_WASM_BUILD=1 cargo fmt --all -- --check
-      - name: Check Build
-        run: |
-          SKIP_WASM_BUILD=1 cargo check --release -Z sparse-registry
       - name: Test
         run: |
           SKIP_WASM_BUILD=1 cargo nextest run --release -Z sparse-registry --workspace --exclude webb-client
+
+  # Main job, runs all parallel jobs
+  ci:
+    needs: [check-format, check-build, test]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set-Up
+        run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
+      - name: Setup DVC
+        uses: iterative/setup-dvc@v1
+      - name: Fetch Fixtures
+        run: ./scripts/fetch-fixtures.sh
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+      - name: Install cargo-nextest
+        uses: baptiste0928/cargo-install@v1
+        with:
+          crate: cargo-nextest

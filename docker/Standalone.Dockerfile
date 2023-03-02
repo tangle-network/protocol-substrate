@@ -1,35 +1,56 @@
-FROM rust:1 as builder
+# Use a specific version tag for the alpine base image
+FROM alpine:3.14.2 AS base
+
+# Install required packages
+RUN apk add --no-cache clang libssl1.1 llvm pkgconfig eudev-dev gmp libc6-compat
+
+# Create a non-root user to run
+RUN adduser -u 1000 -G users -D -h /webb webb \
+  && mkdir -p /data /webb/.local/share/webb \
+  && chown -R webb:users /data /webb/.local/share/webb \
+  && ln -s /data /webb/.local/share/webb
+
+# Set the user and working directory
+USER webb
 WORKDIR /webb
 
-# Install Required Packages
-RUN apt-get update && \
-  apt-get install -y git python3 python3-pip pkg-config clang curl libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler libc6 && \
+# Use a multi-stage build to reduce the size of the final image
+FROM rust:1 AS builder
+
+# Install required packages
+RUN apt-get update && apt-get install -y git python3 python3-pip pkg-config clang curl libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler libc6 && \
   rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install dvc
 
+# Copy the source code into the container
+WORKDIR /webb
 COPY . .
 
-# Build Standalone Node.
-RUN dvc pull -f 
-RUN cargo build --release -p webb-standalone-node
+# Use "RUN" instructions to combine multiple commands into a single layer
+RUN git submodule update --init --recursive \
+  && sh ./scripts/fetch-fixtures.sh \
+  && RUST_BACKTRACE=1 cargo build --release -p webb-standalone-node --verbose
 
-# This is the 2nd stage: a very small image where we copy the Node binary."
+# Use the final stage to reduce the size of the final image
+FROM base
 
-FROM ubuntu:20.04
+# Create the /data directory and set permissions
+USER root
+RUN mkdir -p /data \
+  && chown webb:users /data
+USER webb
 
+# Copy the binary into the final image
 COPY --from=builder /webb/target/release/webb-standalone-node /usr/local/bin
 
-RUN apt-get update && apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev libc6 && rm -rf /var/lib/apt/lists/*
-
-RUN useradd -m -u 1000 -U -s /bin/sh -d /webb webb && \
-  mkdir -p /data /webb/.local/share/webb && \
-  chown -R webb:webb /data && \
-  ln -s /data /webb/.local/share/webb && \
-  # Sanity checks
-  ldd /usr/local/bin/webb-standalone-node && \
-  /usr/local/bin/webb-standalone-node --version
-
-USER webb
+# Expose ports and volume
 EXPOSE 30333 9933 9944 9615 33334
 VOLUME ["/data"]
+
+# Set the user and working directory
+USER webb
+WORKDIR /webb
+
+# Sanity check
+CMD ["/usr/local/bin/webb-standalone-node", "--version"]
