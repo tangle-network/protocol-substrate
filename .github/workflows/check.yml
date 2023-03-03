@@ -45,7 +45,7 @@ jobs:
         run: ./scripts/fetch-fixtures.sh
       - name: Check Build
         run: |
-          SKIP_WASM_BUILD=1 cargo check --release -Z sparse-registry
+          SKIP_WASM_BUILD=1 cargo build --release -Z sparse-registry
 
   # Test job
   test:
