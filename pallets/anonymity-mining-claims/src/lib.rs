@@ -53,7 +53,7 @@ use webb_primitives::{
 	},
 	types::vanchor::{ExtData, ProofData, VAnchorMetadata},
 	utils::compute_chain_id_type,
-	webb_proposals::{ResourceId, TargetSystem},
+	webb_proposals::{ResourceId, TargetSystem, TypedChainId},
 	ElementTrait,
 };
 
@@ -68,6 +68,7 @@ pub type CurrencyIdOf<T, I> = <<T as pallet::Config<I>>::Currency as MultiCurren
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use pallet_vanchor::ProposalNonce;
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 
@@ -76,7 +77,7 @@ pub mod pallet {
 
 	pub struct Pallet<T, I = ()>(_);
 
-	#[derive(Clone, Encode, Decode, Debug, Eq, PartialEq, TypeInfo)]
+	#[derive(Clone, Encode, Decode, Debug, Default,	Eq, PartialEq, TypeInfo)]
 	pub struct RewardProofData<E> {
 		pub rate: u8,
 		pub fee: u8,
@@ -135,6 +136,12 @@ pub mod pallet {
 		type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
+	/// The map of trees to the maximum number of anchor edges they can have
+	#[pallet::storage]
+	#[pallet::getter(fn max_edges)]
+	pub type MaxEdges<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, T::TreeId, u32, ValueQuery>;
+
 	/// A helper map for denoting whether an tree is bridged to given chain
 	#[pallet::storage]
 	#[pallet::getter(fn linkable_tree_has_edge)]
@@ -159,7 +166,7 @@ pub mod pallet {
 	pub type CachedUnspentRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		T::TreeId,
+		ResourceId,
 		Blake2_128Concat,
 		T::RootIndex,
 		T::Element,
@@ -172,7 +179,7 @@ pub mod pallet {
 	pub type CachedSpentRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		T::TreeId,
+		ResourceId,
 		Blake2_128Concat,
 		T::RootIndex,
 		T::Element,
@@ -199,7 +206,9 @@ pub mod pallet {
 
 	#[pallet::genesis_build]
 	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
-		fn build(&self) {}
+		fn build(&self) {
+
+		}
 	}
 
 	#[pallet::storage]
@@ -223,8 +232,17 @@ pub mod pallet {
 	pub enum Error<T, I = ()> {
 		/// Error during hashing
 		HashError,
+		/// Reward Nullifier has been used
+		RewardNullifierAlreadySpent,
 		/// Invalid resource ID
 		InvalidResourceId,
+		InvalidUnspentRoots,
+		InvalidUnspentRootsLength,
+		InvalidUnspentChainIds,
+
+		InvalidSpentRoots,
+		InvalidSpentRootsLength,
+		InvalidSpentChainIds,
 	}
 
 	#[pallet::call]
@@ -247,10 +265,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		RewardNullifierHashes::<T, I>::insert(nullifier_hash, true);
 		Ok(())
 	}
-
 	/// Handle proof verification
 	pub fn handle_proof_verification(
-		proof_data: &ProofData<T::Element>,
+		proof_data: &RewardProofData<T::Element>,
 	) -> Result<(), DispatchError> {
 		// Stubbed out for now
 		Ok(())
@@ -258,79 +275,145 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	/// Update unspent root
 	fn update_unspent_root(
-		unspent_tree_id: T::TreeId,
-		unspent_root_index: T::RootIndex,
-		unspent_root: T::Element,
-	) {
-		// Update unspent root
-		CachedUnspentRoots::<T, I>::insert(unspent_tree_id, unspent_root_index, unspent_root);
-	}
-
-	/// Update spent root
-	fn update_spent_root(
-		spent_tree_id: T::TreeId,
-		spent_root_index: T::RootIndex,
-		spent_root: T::Element,
-	) {
-		// Update spent root
-		CachedSpentRoots::<T, I>::insert(spent_tree_id, spent_root_index, spent_root);
-	}
-
-	/// Handle claiming of AP tokens
-	pub fn claim_ap(
 		unspent_resource_id: ResourceId,
-		spent_resource_id: ResourceId,
-		recipient: T::AccountId,
-		amount: BalanceOf<T, I>,
-		merkle_root: T::Element,
-		latest_leaf_index: T::LeafIndex,
-		proof_data: ProofData<T::Element>,
-		reward_proof_data: RewardProofData<T::Element>,
 		unspent_root: T::Element,
-		spent_root: T::Element,
-		reward_nullifier_hash: T::Element,
-	) -> DispatchResultWithPostInfo {
-		// Handle proof verification
-		Self::handle_proof_verification(&proof_data)?;
-
-		let unspent_tree_id: T::TreeId = match unspent_resource_id.target_system() {
-			TargetSystem::Substrate(system) => system.tree_id.into(),
-			_ => {
-				ensure!(false, Error::<T, I>::InvalidResourceId);
-				T::TreeId::default()
-			},
-		};
-
-		let spent_tree_id: T::TreeId = match spent_resource_id.target_system() {
-			TargetSystem::Substrate(system) => system.tree_id.into(),
-			_ => {
-				ensure!(false, Error::<T, I>::InvalidResourceId);
-				T::TreeId::default()
-			},
-		};
-
-		let unspent_root_index = Self::next_unspent_root_index();
-		let spent_root_index = Self::next_spent_root_index();
+	) {
+		let root_index = Self::next_unspent_root_index();
+		// Update unspent root
+		CachedUnspentRoots::<T, I>::insert(unspent_resource_id, root_index, unspent_root);
 
 		NextUnspentRootIndex::<T, I>::mutate(|i| {
 			*i = i.saturating_add(One::one()) % T::UnspentRootHistorySize::get()
 		});
+	}
+
+	/// Update spent root
+	fn update_spent_root(
+		spent_resource_id: ResourceId,
+		spent_root: T::Element,
+	) {
+		let root_index = Self::next_spent_root_index();
+
+		// Update spent root
+		CachedSpentRoots::<T, I>::insert(spent_resource_id, root_index, spent_root);
+
 		NextSpentRootIndex::<T, I>::mutate(|i| {
 			*i = i.saturating_add(One::one()) % T::UnspentRootHistorySize::get()
 		});
+	}
+
+	/// Ensure valid unspent roots
+	fn ensure_valid_unspent_roots(
+		tree_id: T::TreeId,
+		resource_ids: &Vec<ResourceId>,
+		unspent_roots: &Vec<T::Element>,
+	) -> Result<(), DispatchError> {
+		let max_edges = MaxEdges::<T, I>::get(tree_id);
+		ensure!(
+			unspent_roots.len() as u32 == max_edges,
+			Error::<T, I>::InvalidUnspentRootsLength
+		);
+		ensure!(
+			resource_ids.len() as u32 == max_edges,
+			Error::<T, I>::InvalidUnspentChainIds
+		);
+		for (chain_id, root) in resource_ids.iter().zip(unspent_roots) {
+			let historical_roots = Self::get_unspent_roots(*chain_id);
+			let is_known = historical_roots.contains(root);
+			println!("chain_id: {chain_id:?}, root: {root:?}, is_known: {is_known:?}");
+			ensure!(
+				is_known,
+				Error::<T, I>::InvalidUnspentRoots
+			);
+		}
+		Ok(())
+	}
+
+	/// Ensure valid spent roots
+	fn ensure_valid_spent_roots(
+		tree_id: T::TreeId,
+		resource_ids: &Vec<ResourceId>,
+		spent_roots: &Vec<T::Element>,
+	) -> Result<(), DispatchError> {
+		let max_edges = MaxEdges::<T, I>::get(tree_id);
+		ensure!(
+			spent_roots.len() as u32 == max_edges,
+			Error::<T, I>::InvalidSpentRootsLength
+		);
+		ensure!(
+			resource_ids.len() as u32 == max_edges,
+			Error::<T, I>::InvalidSpentChainIds
+		);
+		for (resource_id, root) in resource_ids.iter().zip(spent_roots) {
+			let historical_roots = Self::get_spent_roots(*resource_id);
+			let is_known = historical_roots.contains(root);
+			println!("resource_id: {resource_id:?}, root: {root:?}, is_known: {is_known:?}");
+			ensure!(
+				is_known,
+				Error::<T, I>::InvalidSpentRoots
+			);
+		}
+		Ok(())
+	}
+
+	/// get unspent roots
+	pub fn get_unspent_roots(
+		resource_id: ResourceId,
+	) -> Vec<T::Element> {
+		CachedUnspentRoots::<T, I>::iter_prefix_values(resource_id)
+			.into_iter()
+			.collect::<Vec<T::Element>>()
+	}
+
+	/// get spent roots
+	pub fn get_spent_roots(
+		resource_id: ResourceId,
+	) -> Vec<T::Element> {
+		CachedSpentRoots::<T, I>::iter_prefix_values(resource_id)
+			.into_iter()
+			.collect::<Vec<T::Element>>()
+
+	}
+
+	/// Handle claiming of AP tokens
+	pub fn claim_ap(
+		id: T::TreeId,
+		// unspent_resource_id: ResourceId,
+		// spent_resource_id: ResourceId,
+		// recipient: T::AccountId,
+		// amount: BalanceOf<T, I>,
+		// proof_data: ProofData<T::Element>,
+		reward_proof_data: RewardProofData<T::Element>,
+		unspent_roots: Vec<T::Element>,
+		unspent_resource_ids: Vec<ResourceId>,
+		spent_roots: Vec<T::Element>,
+		spent_resource_ids: Vec<ResourceId>,
+		reward_nullifier_hash: T::Element,
+	) -> DispatchResultWithPostInfo {
+		// Check if nullifier has been spent
+		let is_spent = RewardNullifierHashes::<T, I>::get(&reward_nullifier_hash);
+
+		ensure!(
+			!is_spent,
+			Error::<T, I>::RewardNullifierAlreadySpent
+		);
+
+		// Handle proof verification
+		Self::handle_proof_verification(&reward_proof_data)?;
+
+		// Check if roots are valid
+		Self::ensure_valid_unspent_roots(id, &unspent_resource_ids, &unspent_roots)?;
+
+		Self::ensure_valid_spent_roots(id, &spent_resource_ids, &spent_roots)?;
 
 		// Add reward_nullifier_hash
-		Self::add_reward_nullifier_hash(reward_nullifier_hash);
+		Self::add_reward_nullifier_hash(reward_nullifier_hash)?;
 
 		// Add nullifier on VAnchor
-		for nullifier in &proof_data.input_nullifiers {
-			T::VAnchor::add_nullifier_hash(Self::ap_vanchor_tree_id(), *nullifier)?;
-		}
+		T::VAnchor::add_nullifier_hash(id, reward_proof_data.input_nullifier)?;
 
 		// Insert output commitments into the AP VAnchor
-		for comm in &proof_data.output_commitments {
-			T::LinkableTree::insert_in_order(Self::ap_vanchor_tree_id(), *comm)?;
-		}
+		T::LinkableTree::insert_in_order(id, reward_proof_data.output_commitment)?;
 
 		Ok(().into())
 	}
@@ -340,8 +423,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::PotId::get().into_account_truncating()
 	}
 
-	/// Get AP Vanchor tree id
-	pub fn ap_vanchor_tree_id() -> T::TreeId {
-		T::APVanchorTreeId::get()
-	}
+	// Get AP Vanchor tree id
+	// pub fn ap_vanchor_tree_id() -> T::TreeId {
+	// 	T::APVanchorTreeId::get()
+	// }
 }
