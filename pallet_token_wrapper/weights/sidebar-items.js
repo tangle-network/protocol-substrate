@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["WebbWeight","Weight functions for `pallet_token_wrapper`."]],"trait":[["WeightInfo",""]]};

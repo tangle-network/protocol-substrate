@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["AddAssetToPool",""],["DeleteAssetFromPool",""],["Register",""],["SetLocation",""],["SetMetadata",""],["TransactionApi",""],["Update",""]]};

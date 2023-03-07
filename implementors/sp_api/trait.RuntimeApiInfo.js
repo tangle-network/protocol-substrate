@@ -1,0 +1,4 @@
+(function() {var implementors = {
+"pallet_linkable_tree_rpc_runtime_api":[["impl&lt;Block:&nbsp;BlockT, C, E, L&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"pallet_linkable_tree_rpc_runtime_api/trait.LinkableTreeApi.html\" title=\"trait pallet_linkable_tree_rpc_runtime_api::LinkableTreeApi\">LinkableTreeApi</a>&lt;Block, C, E, L&gt;"]],
+"pallet_mt_rpc_runtime_api":[["impl&lt;Block:&nbsp;BlockT, E:&nbsp;ElementTrait&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"pallet_mt_rpc_runtime_api/trait.MerkleTreeApi.html\" title=\"trait pallet_mt_rpc_runtime_api::MerkleTreeApi\">MerkleTreeApi</a>&lt;Block, E&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

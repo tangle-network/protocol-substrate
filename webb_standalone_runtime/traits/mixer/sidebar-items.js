@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":[["MixerInspector","Mixer trait for inspecting mixer state"],["MixerInterface","Mixer trait definition to be used in other pallets"]]};

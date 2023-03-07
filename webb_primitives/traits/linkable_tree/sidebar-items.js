@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":[["LinkableTreeConfig",""],["LinkableTreeInspector","Trait for inspecting tree state"],["LinkableTreeInterface","LinkableTree trait definition to be used in other pallets"]]};

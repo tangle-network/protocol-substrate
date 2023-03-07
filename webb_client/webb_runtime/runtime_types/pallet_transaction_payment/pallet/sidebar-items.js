@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Event","The event emitted by this pallet."]]};

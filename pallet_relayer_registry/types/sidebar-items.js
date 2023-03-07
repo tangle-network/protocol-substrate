@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["ResourceInfo","Information concerning the identity of the controller of an account."],["ResourceRecord","Information concerning the identity of the controller of an account."]]};

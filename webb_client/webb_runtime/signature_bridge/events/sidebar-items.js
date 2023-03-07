@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["ChainWhitelisted","Chain now available for transfers (chain_id)"],["MaintainerSet","Maintainer is set"],["ProposalApproved","Proposal has been approved"],["ProposalFailed","Execution of call failed"],["ProposalSucceeded","Execution of call succeeded"]]};

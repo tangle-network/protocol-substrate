@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["CircomError",""]],"fn":[["verify_groth16",""]],"struct":[["CircomVerifierBn254",""]]};

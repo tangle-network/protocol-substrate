@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["NewAuthorities","New authority set has been applied."],["Paused","Current authority set has been paused."],["Resumed","Current authority set has been resumed."]]};

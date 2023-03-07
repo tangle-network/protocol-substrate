@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":[["calls","Contains one variant per dispatchable that can be called by an extrinsic."],["events",""],["storage",""]],"type":[["Event","The event emitted by this pallet."]]};

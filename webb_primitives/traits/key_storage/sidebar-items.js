@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":[["KeyStorageInterface","KeyStorage trait definition to be used in other pallets"]]};

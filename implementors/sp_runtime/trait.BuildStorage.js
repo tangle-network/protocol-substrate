@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"webb_standalone_runtime":[["impl <a class=\"trait\" href=\"webb_standalone_runtime/trait.BuildStorage.html\" title=\"trait webb_standalone_runtime::BuildStorage\">BuildStorage</a> for <a class=\"struct\" href=\"webb_standalone_runtime/struct.GenesisConfig.html\" title=\"struct webb_standalone_runtime::GenesisConfig\">GenesisConfig</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

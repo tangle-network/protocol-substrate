@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":[["AnchorConfig",""],["AnchorInspector","Anchor trait for inspecting tree state"],["AnchorInterface","Anchor trait definition to be used in other pallets"]]};

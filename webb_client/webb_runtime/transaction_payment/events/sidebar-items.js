@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["TransactionFeePaid","A transaction fee `actual_fee`, of which `tip` was added to the minimum inclusion fee, has been paid by `who`."]]};

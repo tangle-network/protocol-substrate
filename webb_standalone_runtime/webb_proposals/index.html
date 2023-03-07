@@ -1,0 +1,110 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Webb Protocol Proposals Specification"><meta name="keywords" content="rust, rustlang, rust-lang, webb_proposals"><title>webb_standalone_runtime::webb_proposals - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-1f7d512b176f0f72.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-124a1ca42af929b6.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-e9bf0babdb577010.css" id="mainThemeStyle"><link rel="stylesheet" id="themeStyle" href="../../static.files/light-76b292ff51febc48.css"><link rel="stylesheet" disabled href="../../static.files/dark-e337ab595a667ca1.css"><link rel="stylesheet" disabled href="../../static.files/ayu-40f4c2ddda9cf0e9.css"><script id="default-settings" ></script><script src="../../static.files/storage-d43fa987303ecbbb.js"></script><script defer src="../../crates.js"></script><script defer src="../../static.files/main-4a084badb5778746.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../webb_standalone_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></div></a><h2></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../webb_standalone_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></div></a><h2 class="location"><a href="#">Crate webb_proposals</a></h2><div class="sidebar-elems"><ul class="block"><li class="version">Version 0.1.0</li><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#modules">Modules</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-5ec35bf9ca753509.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1 class="fqn">Crate <a href="../index.html">webb_standalone_runtime</a>::<wbr><a class="mod" href="#">webb_proposals</a><button id="copy-path" onclick="copy_path(this)" title="Copy item path to clipboard"><img src="../../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="rustdoc-toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="webb-protocol-proposals-specification"><a href="#webb-protocol-proposals-specification">Webb Protocol Proposals Specification</a></h2>
+<p>A Reference Implementation of the Webb Protocol Proposals.</p>
+<h3 id="introduction"><a href="#introduction">Introduction</a></h3>
+<p>Proposals are encoded as a sequence of bytes that describe the proposed
+changes to the state of a system. An example of such a state is a storage
+value on a smart contract.</p>
+<p>Each proposal contains the following:</p>
+<ol>
+<li>The target system we need to apply the proposal to.</li>
+<li>The source system that is sending the proposal (<em>optionally</em>).</li>
+<li>Which function on the target system we need to call.</li>
+<li>The arguments of this function.</li>
+</ol>
+<p>The first 3 points described above are called the <a href="struct.ProposalHeader.html" title="ProposalHeader"><code>ProposalHeader</code></a> and
+they are (by definition) the first <code>40</code> bytes of the proposal. The remaining
+bytes are the body. The length of the body varies depending on what the
+proposal does. Here is a diagram of a proposal:</p>
+<div class="example-wrap"><pre class="language-text"><code>┌───────────────────┬──────────────┬───────────────────┐
+│                   │              │                   │
+│    Target 26B     │ ChainType 2B │    ChainId 4B     │
+│                   │              │                   │
+└───────────────┬───┴──────────────┴───────────────────┘
+                │
+                │
+                │
+   ┌────────────▼───────────┬─────────────┬───────────┬──────────┐
+   │                        │             │           │          │
+   │     ResourceId 32B     │ FuncSig 4B  │ Nonce 4B  │ Body nB  │
+   │                        │             │           │          │
+   └────────────────────────┴─────────────┴───────────┴──────────┘
+</code></pre></div><h3 id="proposal-header"><a href="#proposal-header">Proposal Header</a></h3>
+<p>The proposal header is the first 40 bytes of the proposal. It contains the
+following:</p>
+<ul>
+<li>The <a href="struct.ResourceId.html" title="ResourceId"><code>ResourceId</code></a> which is a 32 byte value that uniquely identifies the
+target system.</li>
+<li>The <a href="struct.FunctionSignature.html" title="FunctionSignature"><code>FunctionSignature</code></a> which is a 4 byte value that uniquely identifies
+the function to be executed on the target system.</li>
+<li>The <a href="struct.Nonce.html" title="Nonce"><code>Nonce</code></a> which is a 4 byte value that is used to prevent replay
+attacks.</li>
+</ul>
+<h3 id="the-resourceid"><a href="#the-resourceid">The <code>ResourceId</code></a></h3>
+<p>The <code>ResourceId</code> is the first 32 bytes of the proposal header, and it
+contains the following:</p>
+<ol>
+<li>The <a href="enum.TargetSystem.html" title="TargetSystem"><code>TargetSystem</code></a> which is contained within the first 26 bytes of the
+<code>ResourceId</code>. The <a href="enum.TargetSystem.html" title="TargetSystem"><code>TargetSystem</code></a> could be one of the following (depending
+on the target system):
+<ul>
+<li>A <a href="enum.TargetSystem.html#variant.ContractAddress" title="TargetSystem::ContractAddress"><code>TargetSystem::ContractAddress</code></a> which is actually 20 bytes but is
+left padded with zeroes (in this case, 6 bytes of zeroes).</li>
+<li>A [<code>TargetSystem::TreeId</code>] which is actually 4 bytes but will be left
+padded with zeroes (in this case, 22 bytes of zeroes).</li>
+</ul>
+</li>
+<li>The [<code>ChainType</code>] which is a 2 byte value that identifies the chain type
+of the target system. It can be one of the following:
+<ul>
+<li>A [<code>ChainType::Evm</code>] which is <code>0x0100</code>.</li>
+<li>A [<code>ChainType::Substrate</code>] which is <code>0x0200</code>.</li>
+<li>A [<code>ChainType::PolkadotRelayChain</code>] which is <code>0x0301</code>.</li>
+<li>A [<code>ChainType::KusamaRelayChain</code>] which is <code>0x0302</code>.</li>
+<li>A [<code>ChainType::Cosmos</code>] which is <code>0x0400</code>.</li>
+<li>A [<code>ChainType::Solana</code>] which is <code>0x0500</code>.</li>
+</ul>
+</li>
+<li>The [<code>ChainId</code>] which is a 4 byte value that identifies the chain of the
+target system.</li>
+</ol>
+<h3 id="the-functionsignature"><a href="#the-functionsignature">The <code>FunctionSignature</code></a></h3>
+<p>The <code>FunctionSignature</code> is the next 4 bytes after the <a href="struct.ResourceId.html" title="ResourceId"><code>ResourceId</code></a>, and it
+is used to identify the function to be executed on the target system.</p>
+<h3 id="the-nonce"><a href="#the-nonce">The <code>Nonce</code></a></h3>
+<p>The <code>Nonce</code> is the next 4 bytes after the <a href="struct.FunctionSignature.html" title="FunctionSignature"><code>FunctionSignature</code></a>, and it is
+used to prevent replay attacks.</p>
+<h3 id="the-body"><a href="#the-body">The <code>Body</code></a></h3>
+<p>The <code>Body</code> is the rest of the proposal bytes, and the length could vary
+depending on what the purpose of the proposal. See each proposal type for
+the body structure.</p>
+<h3 id="proposals-implementations"><a href="#proposals-implementations">Proposals Implementations</a></h3>
+<p>The following proposals are implemented for EVM-based chains:</p>
+<ul>
+<li>[<code>AnchorUpdateProposal</code>]</li>
+<li>[<code>TokenAddProposal</code>]</li>
+<li>[<code>TokenRemoveProposal</code>]</li>
+<li>[<code>WrappingFeeUpdateProposal</code>]</li>
+<li>[<code>MinWithdrawalLimitProposal</code>]</li>
+<li>[<code>MaxDepositLimitProposal</code>]</li>
+<li>[<code>ResourceIdUpdateProposal</code>]</li>
+<li>[<code>SetTreasuryHandlerProposal</code>]</li>
+<li>[<code>SetVerifierProposal</code>]</li>
+<li>[<code>FeeRecipientUpdateProposal</code>]</li>
+<li>[<code>RescueTokensProposal</code>]</li>
+</ul>
+<h3 id="feature-flags"><a href="#feature-flags">Feature Flags</a></h3>
+<p>The following feature flags are used to enable or disable certain features:</p>
+<ul>
+<li><code>scale</code>: Enables Implementation of the SCALE encoding and decoding
+(disabled by default).</li>
+<li><code>std</code>: Enables the use of the standard library (enabled by default).</li>
+<li><code>evm</code>: Enables EVM proposals (disabled by default).</li>
+<li><code>substrate</code>: Enables Substrate proposals (disabled by default).</li>
+</ul>
+</div></details><h2 id="modules" class="small-section-header"><a href="#modules">Modules</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="mod" href="evm/index.html" title="webb_standalone_runtime::webb_proposals::evm mod">evm</a></div><div class="item-right docblock-short">Proposals Implemented:</div></div><div class="item-row"><div class="item-left module-item"><a class="mod" href="substrate/index.html" title="webb_standalone_runtime::webb_proposals::substrate mod">substrate</a></div><div class="item-right docblock-short">Proposals Implemented:</div></div></div><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.FunctionSignature.html" title="webb_standalone_runtime::webb_proposals::FunctionSignature struct">FunctionSignature</a></div><div class="item-right docblock-short">Proposal Target Function Signature (4 bytes).</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.Nonce.html" title="webb_standalone_runtime::webb_proposals::Nonce struct">Nonce</a></div><div class="item-right docblock-short">Proposal Nonce (4 bytes).</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.ProposalHeader.html" title="webb_standalone_runtime::webb_proposals::ProposalHeader struct">ProposalHeader</a></div><div class="item-right docblock-short">Proposal Header (40 bytes).
+┌────────────────────┬─────────────────┬───────────────┐
+│                    │                 │               │
+│   Resource ID 32B  │ Function Sig 4B │    Nonce 4B   │
+│                    │                 │               │
+└────────────────────┴─────────────────┴───────────────┘</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.ResourceId.html" title="webb_standalone_runtime::webb_proposals::ResourceId struct">ResourceId</a></div><div class="item-right docblock-short">Proposal Target <code>ResourceId</code> (32 bytes).</div></div><div class="item-row"><div class="item-left module-item"><a class="struct" href="struct.SubstrateTargetSystem.html" title="webb_standalone_runtime::webb_proposals::SubstrateTargetSystem struct">SubstrateTargetSystem</a></div><div class="item-right docblock-short">Substrate Target System</div></div></div><h2 id="enums" class="small-section-header"><a href="#enums">Enums</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.Proposal.html" title="webb_standalone_runtime::webb_proposals::Proposal enum">Proposal</a></div><div class="item-right docblock-short">Proposal enum</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.ProposalKind.html" title="webb_standalone_runtime::webb_proposals::ProposalKind enum">ProposalKind</a></div><div class="item-right docblock-short">Proposal kind enum</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.TargetSystem.html" title="webb_standalone_runtime::webb_proposals::TargetSystem enum">TargetSystem</a></div><div class="item-right docblock-short">TargetSystem (26 Bytes)</div></div><div class="item-row"><div class="item-left module-item"><a class="enum" href="enum.TypedChainId.html" title="webb_standalone_runtime::webb_proposals::TypedChainId enum">TypedChainId</a></div><div class="item-right docblock-short">Proposal Target Chain and its type (6 bytes).</div></div></div><h2 id="traits" class="small-section-header"><a href="#traits">Traits</a></h2><div class="item-table"><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.OnSignedProposal.html" title="webb_standalone_runtime::webb_proposals::OnSignedProposal trait">OnSignedProposal</a></div><div class="item-right docblock-short">Trait to be used for handling signed proposals</div></div><div class="item-row"><div class="item-left module-item"><a class="trait" href="trait.ProposalTrait.html" title="webb_standalone_runtime::webb_proposals::ProposalTrait trait">ProposalTrait</a></div><div class="item-right docblock-short">The <code>Proposal</code> trait is used to abstract over the different proposals for
+all the different chains.</div></div></div></section></div></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="webb_standalone_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0-nightly (8dfb33954 2022-12-25)" data-search-js="search-181581080540673f.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-58836c674e2f7bd2.css" ></div></body></html>

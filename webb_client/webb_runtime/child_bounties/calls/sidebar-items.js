@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["AcceptCurator",""],["AddChildBounty",""],["AwardChildBounty",""],["ClaimChildBounty",""],["CloseChildBounty",""],["ProposeCurator",""],["TransactionApi",""],["UnassignCurator",""]]};

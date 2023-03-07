@@ -1,0 +1,4 @@
+(function() {var implementors = {
+"pallet_vanchor_verifier":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_vanchor_verifier/pallet/trait.Config.html\" title=\"trait pallet_vanchor_verifier::pallet::Config\">Config</a>&lt;I&gt;, I:&nbsp;'static&gt; VAnchorVerifierModule for <a class=\"struct\" href=\"pallet_vanchor_verifier/pallet/struct.Pallet.html\" title=\"struct pallet_vanchor_verifier::pallet::Pallet\">Pallet</a>&lt;T, I&gt;"]],
+"webb_standalone_runtime":[]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

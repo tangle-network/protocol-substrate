@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["TargetSystem",""]],"struct":[["SubstrateTargetSystem",""]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":[["calls","Identity pallet declaration."],["constants",""],["events",""],["storage",""]],"type":[["Event","The event emitted by this pallet."]]};

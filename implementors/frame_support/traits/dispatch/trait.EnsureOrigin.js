@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"pallet_signature_bridge":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_signature_bridge/pallet/trait.Config.html\" title=\"trait pallet_signature_bridge::pallet::Config\">Config</a>&lt;I&gt;, I:&nbsp;'static&gt; EnsureOrigin&lt;&lt;T as Config&gt;::RuntimeOrigin&gt; for <a class=\"struct\" href=\"pallet_signature_bridge/struct.EnsureBridge.html\" title=\"struct pallet_signature_bridge::EnsureBridge\">EnsureBridge</a>&lt;T, I&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

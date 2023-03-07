@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["Deposit",""],["MixerCreation","New tree created"],["Withdraw",""]]};

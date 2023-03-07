@@ -1,0 +1,18 @@
+(function() {var implementors = {
+"pallet_anonymity_mining_claims":[["impl&lt;T, I&gt; PalletError for <a class=\"enum\" href=\"pallet_anonymity_mining_claims/pallet/enum.Error.html\" title=\"enum pallet_anonymity_mining_claims::pallet::Error\">Error</a>&lt;T, I&gt;"]],
+"pallet_anonymity_mining_rewards":[["impl&lt;T, I&gt; PalletError for <a class=\"enum\" href=\"pallet_anonymity_mining_rewards/pallet/enum.Error.html\" title=\"enum pallet_anonymity_mining_rewards::pallet::Error\">Error</a>&lt;T, I&gt;"]],
+"pallet_asset_registry":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_asset_registry/pallet/enum.Error.html\" title=\"enum pallet_asset_registry::pallet::Error\">Error</a>&lt;T&gt;"]],
+"pallet_hasher":[["impl&lt;T, I&gt; PalletError for <a class=\"enum\" href=\"pallet_hasher/pallet/enum.Error.html\" title=\"enum pallet_hasher::pallet::Error\">Error</a>&lt;T, I&gt;"]],
+"pallet_key_storage":[["impl&lt;T, I&gt; PalletError for <a class=\"enum\" href=\"pallet_key_storage/pallet/enum.Error.html\" title=\"enum pallet_key_storage::pallet::Error\">Error</a>&lt;T, I&gt;"]],
+"pallet_linkable_tree":[["impl&lt;T, I&gt; PalletError for <a class=\"enum\" href=\"pallet_linkable_tree/pallet/enum.Error.html\" title=\"enum pallet_linkable_tree::pallet::Error\">Error</a>&lt;T, I&gt;"]],
+"pallet_mixer":[["impl&lt;T, I&gt; PalletError for <a class=\"enum\" href=\"pallet_mixer/pallet/enum.Error.html\" title=\"enum pallet_mixer::pallet::Error\">Error</a>&lt;T, I&gt;"]],
+"pallet_mt":[["impl&lt;T, I&gt; PalletError for <a class=\"enum\" href=\"pallet_mt/pallet/enum.Error.html\" title=\"enum pallet_mt::pallet::Error\">Error</a>&lt;T, I&gt;"]],
+"pallet_relayer_registry":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_relayer_registry/pallet/enum.Error.html\" title=\"enum pallet_relayer_registry::pallet::Error\">Error</a>&lt;T&gt;"]],
+"pallet_signature_bridge":[["impl&lt;T, I&gt; PalletError for <a class=\"enum\" href=\"pallet_signature_bridge/pallet/enum.Error.html\" title=\"enum pallet_signature_bridge::pallet::Error\">Error</a>&lt;T, I&gt;"]],
+"pallet_token_wrapper":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_token_wrapper/pallet/enum.Error.html\" title=\"enum pallet_token_wrapper::pallet::Error\">Error</a>&lt;T&gt;"]],
+"pallet_token_wrapper_handler":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_token_wrapper_handler/pallet/enum.Error.html\" title=\"enum pallet_token_wrapper_handler::pallet::Error\">Error</a>&lt;T&gt;"]],
+"pallet_vanchor":[["impl&lt;T, I&gt; PalletError for <a class=\"enum\" href=\"pallet_vanchor/pallet/enum.Error.html\" title=\"enum pallet_vanchor::pallet::Error\">Error</a>&lt;T, I&gt;"]],
+"pallet_vanchor_handler":[["impl&lt;T, I&gt; PalletError for <a class=\"enum\" href=\"pallet_vanchor_handler/pallet/enum.Error.html\" title=\"enum pallet_vanchor_handler::pallet::Error\">Error</a>&lt;T, I&gt;"]],
+"pallet_vanchor_verifier":[["impl&lt;T, I&gt; PalletError for <a class=\"enum\" href=\"pallet_vanchor_verifier/pallet/enum.Error.html\" title=\"enum pallet_vanchor_verifier::pallet::Error\">Error</a>&lt;T, I&gt;"]],
+"pallet_verifier":[["impl&lt;T, I&gt; PalletError for <a class=\"enum\" href=\"pallet_verifier/pallet/enum.Error.html\" title=\"enum pallet_verifier::pallet::Error\">Error</a>&lt;T, I&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

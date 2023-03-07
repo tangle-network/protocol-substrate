@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"webb_standalone_runtime":[["impl WeightToFeePolynomial for <a class=\"struct\" href=\"webb_standalone_runtime/constants/fee/struct.WeightToFee.html\" title=\"struct webb_standalone_runtime::constants::fee::WeightToFee\">WeightToFee</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

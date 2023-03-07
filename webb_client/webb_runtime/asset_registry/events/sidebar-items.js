@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["LocationSet","Native location set for an asset."],["MetadataSet","Metadata set for an asset."],["Registered","Asset was registered."],["Updated","Asset was updated."]]};

@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"webb_standalone_runtime":[["impl BenchmarkingConfig for <a class=\"struct\" href=\"webb_standalone_runtime/struct.ElectionProviderBenchmarkConfig.html\" title=\"struct webb_standalone_runtime::ElectionProviderBenchmarkConfig\">ElectionProviderBenchmarkConfig</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

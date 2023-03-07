@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":[["VAnchorConfig",""],["VAnchorInspector","Anchor trait for inspecting tree state"],["VAnchorInterface","Anchor trait definition to be used in other pallets"]]};

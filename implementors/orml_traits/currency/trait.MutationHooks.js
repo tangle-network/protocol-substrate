@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"webb_standalone_runtime":[["impl&lt;T:&nbsp;Config&gt; MutationHooks&lt;&lt;T as Config&gt;::AccountId, &lt;T as Config&gt;::CurrencyId, &lt;T as Config&gt;::Balance&gt; for <a class=\"struct\" href=\"webb_standalone_runtime/struct.CurrencyHooks.html\" title=\"struct webb_standalone_runtime::CurrencyHooks\">CurrencyHooks</a>&lt;T&gt;<span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;T::AccountId: <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/convert/trait.From.html\" title=\"trait core::convert::From\">From</a>&lt;AccountId32&gt;,</span>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["LinkableTreeClient","A struct that implements the `LinkableTreeApi`."]],"trait":[["LinkableTreeRpcApiClient","Client implementation for the `LinkableTreeRpcApi` RPC API."],["LinkableTreeRpcApiServer","Server trait implementation for the `LinkableTreeRpcApi` RPC API."]]};

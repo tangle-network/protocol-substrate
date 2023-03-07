@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["BondExtra",""],["ConfigOp",""],["PoolState",""]],"mod":[["pallet",""]],"struct":[["BondedPoolInner",""],["PoolMember",""],["PoolRoles",""],["RewardPool",""],["SubPools",""],["UnbondPool",""]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["MerkleTreeClient","A struct that implements the `MerkleTreeRpcApi`."]],"trait":[["MerkleTreeRpcApiClient","Client implementation for the `MerkleTreeRpcApi` RPC API."],["MerkleTreeRpcApiServer","Server trait implementation for the `MerkleTreeRpcApi` RPC API."]]};

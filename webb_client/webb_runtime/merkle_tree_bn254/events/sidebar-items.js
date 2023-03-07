@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["LeafInsertion","New leaf inserted"],["TreeCreation","New tree created"]]};

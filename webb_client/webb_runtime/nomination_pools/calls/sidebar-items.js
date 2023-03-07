@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["BondExtra",""],["Chill",""],["ClaimPayout",""],["Create",""],["Join",""],["Nominate",""],["PoolWithdrawUnbonded",""],["SetConfigs",""],["SetMetadata",""],["SetState",""],["TransactionApi",""],["Unbond",""],["UpdateRoles",""],["WithdrawUnbonded",""]]};

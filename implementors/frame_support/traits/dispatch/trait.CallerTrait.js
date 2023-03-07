@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"webb_standalone_runtime":[["impl CallerTrait&lt;&lt;<a class=\"struct\" href=\"webb_standalone_runtime/struct.Runtime.html\" title=\"struct webb_standalone_runtime::Runtime\">Runtime</a> as Config&gt;::AccountId&gt; for <a class=\"enum\" href=\"webb_standalone_runtime/enum.OriginCaller.html\" title=\"enum webb_standalone_runtime::OriginCaller\">OriginCaller</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

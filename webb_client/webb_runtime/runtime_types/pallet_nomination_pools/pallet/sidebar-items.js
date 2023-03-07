@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Call","Contains one variant per dispatchable that can be called by an extrinsic."],["DefensiveError",""],["Error","Custom dispatch errors of this pallet."],["Event","Events of this pallet."]]};

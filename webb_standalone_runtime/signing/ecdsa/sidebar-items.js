@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["SIGNATURE_LENGTH",""]],"enum":[["EcdsaVerifyError","Error verifying ECDSA signature"]],"fn":[["keccak_256","Conduct a 256-bit Keccak hash."],["recover_ecdsa_pub_key",""],["validate_ecdsa_signature",""]]};

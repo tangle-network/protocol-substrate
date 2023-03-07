@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"webb_standalone_runtime":[["impl HandleCredit&lt;&lt;&lt;MultiSignature as Verify&gt;::Signer as IdentifyAccount&gt;::AccountId, Pallet&lt;<a class=\"struct\" href=\"webb_standalone_runtime/struct.Runtime.html\" title=\"struct webb_standalone_runtime::Runtime\">Runtime</a>, <a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.unit.html\">()</a>&gt;&gt; for <a class=\"struct\" href=\"webb_standalone_runtime/impls/struct.CreditToBlockAuthor.html\" title=\"struct webb_standalone_runtime::impls::CreditToBlockAuthor\">CreditToBlockAuthor</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

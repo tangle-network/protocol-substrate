@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["IndexAssigned","A account index was assigned."],["IndexFreed","A account index has been freed up (unassigned)."],["IndexFrozen","A account index has been frozen to its current account ID."]]};

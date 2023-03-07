@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["Added","A child-bounty is added."],["Awarded","A child-bounty is awarded to a beneficiary."],["Canceled","A child-bounty is cancelled."],["Claimed","A child-bounty is claimed by beneficiary."]]};

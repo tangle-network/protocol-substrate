@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":[["dispatch",""],["traits",""],["weights",""]],"struct":[["PalletId",""]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":[["TreeInspector","Tree trait for inspecting tree state"],["TreeInterface","Tree trait definition to be used in other pallets"]]};

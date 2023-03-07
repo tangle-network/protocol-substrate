@@ -1,0 +1,4 @@
+(function() {var implementors = {
+"pallet_key_storage":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_key_storage/pallet/trait.Config.html\" title=\"trait pallet_key_storage::pallet::Config\">Config</a>&lt;I&gt;, I:&nbsp;'static&gt; KeyStorageInterface&lt;&lt;T as Config&gt;::AccountId&gt; for <a class=\"struct\" href=\"pallet_key_storage/pallet/struct.Pallet.html\" title=\"struct pallet_key_storage::pallet::Pallet\">Pallet</a>&lt;T, I&gt;"]],
+"webb_standalone_runtime":[]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
