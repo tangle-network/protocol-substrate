@@ -6,7 +6,7 @@ use ark_groth16::{
 	PreparedVerifyingKey,
 	Proof as ArkProof,
 	VerifyingKey as ArkVerifyingKey,
-	// create_proof_with_reduction_and_matrices,
+	create_proof_with_reduction_and_matrices,
 	prepare_verifying_key,
 	ProvingKey,
 	VerifyingKey
