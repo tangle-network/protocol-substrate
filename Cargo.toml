@@ -29,4 +29,5 @@ members = [
   "pallets/relayer-registry",
   "pallets/key-storage",
   "standalone/*",
+  "circom-proving",
 ]
