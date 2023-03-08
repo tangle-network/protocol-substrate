@@ -101,3 +101,24 @@ pub fn generate_proof<const N: usize>(
 
 	Ok((proof, full_assignment))
 }
+
+/// Verifies a given RLN proof
+///
+/// # Errors
+///
+/// Returns a [`ProofError`] if verifying fails. Verification failure does not
+/// necessarily mean the proof is incorrect.
+pub fn verify_proof(
+	verifying_key: &VerifyingKey<Bn254>,
+	proof: &ArkProof<Bn254>,
+	inputs: Vec<Fr>,
+) -> Result<bool, ProofError> {
+	// Check that the proof is valid
+	let pvk = prepare_verifying_key(verifying_key);
+	//let pr: ArkProof<Curve> = (*proof).into();
+
+	let verified = ark_verify_proof(&pvk, proof, &inputs)?;
+
+	Ok(verified)
+}
+

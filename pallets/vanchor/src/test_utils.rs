@@ -3,7 +3,6 @@ use crate::tests::{
 	BIG_TRANSACTOR_ACCOUNT_ID, DEFAULT_BALANCE, RELAYER_ACCOUNT_ID, SEED, TRANSACTOR_ACCOUNT_ID,
 };
 use ark_serialize::CanonicalSerialize;
-use webb_primitives::verifying::circom_from_folder;
 use ark_bn254::Fr;
 use ark_circom::WitnessCalculator;
 use ark_ff::{BigInteger, PrimeField};
@@ -21,9 +20,9 @@ use arkworks_setups::{
 	utxo::Utxo,
 	Curve, VAnchorProver,
 };
-use num_bigint::BigInt;
 use std::{collections::BTreeMap, convert::TryInto, sync::Mutex};
 use webb_primitives::ElementTrait;
+use circom_proving::circom_from_folder;
 
 use crate::mock::Element;
 

@@ -42,6 +42,7 @@ pallet-treasury = { git = "https://github.com/paritytech/substrate.git", branch 
 pallet-key-storage = {path = "../key-storage"}
 pallet-hasher = { path = "../hasher", default-features = false }
 pallet-vanchor-verifier = { path = "../vanchor-verifier", default-features = false }
+circom-proving = { path = "../../circom-proving", default-features = false }
 orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
 orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
 arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }

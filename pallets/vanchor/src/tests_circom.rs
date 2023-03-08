@@ -25,9 +25,9 @@ use webb_primitives::{
 	merkle_tree::TreeInspector,
 	types::vanchor::{ExtData, ProofData},
 	utils::compute_chain_id_type,
-	verifying::{verify_proof, generate_proof},
 	AccountId,
 };
+use circom_proving::{generate_proof, ProofError, verify_proof};
 
 type Bn254Fr = ark_bn254::Fr;
 
