@@ -19,3 +19,11 @@ pub trait VAnchorVerifierModule {
 		num_inputs: u8,
 	) -> Result<bool, DispatchError>;
 }
+
+pub trait ClaimsVerifierModule {
+	fn verify(
+		pub_inps: &[u8],
+		data: &[u8],
+		max_instances: u8,
+	) -> Result<bool, DispatchError>;
+}
