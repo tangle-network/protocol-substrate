@@ -345,7 +345,8 @@ impl pallet_key_storage::Config for Test {
 	type WeightInfo = ();
 }
 
-impl pallet_anonymity_mining_claims::Config for Test {
+type AnonymityMiningClaimsInstance1 = pallet_anonymity_mining_claims::Instance1;
+impl pallet_anonymity_mining_claims::Config<AnonymityMiningClaimsInstance1> for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type PotId = PotId;
 	type APVanchorTreeId = APVanchorTreeId;

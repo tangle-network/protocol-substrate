@@ -6,6 +6,7 @@ use crate::{
 
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok};
+use crate::Instance1;
 
 use sp_runtime::traits::Zero;
 
@@ -348,9 +349,9 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 
 // helper function to create anchor using Anchor pallet call
 fn mock_vanchor_creation_using_pallet_call(resource_id: &ResourceId) {
-	assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
+	assert!(!<pallet_mt::Trees<Test, Instance1>>::contains_key(0));
 	assert_ok!(VAnchor::create(RuntimeOrigin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
-	assert!(<pallet_mt::Trees<Test>>::contains_key(0));
+	assert!(<pallet_mt::Trees<Test, Instance1>>::contains_key(0));
 	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test>>::get(0));
 }
 
