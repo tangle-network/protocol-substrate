@@ -544,15 +544,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Handle claiming of AP tokens
 	pub fn claim_ap(
 		id: T::TreeId,
-		// unspent_resource_id: ResourceId,
-		// spent_resource_id: ResourceId,
-		// recipient: T::AccountId,
-		// amount: BalanceOf<T, I>,
-		// proof_data: ProofData<T::Element>,
 		reward_proof_data: RewardProofData<T::Element>,
-		unspent_resource_ids: Vec<ResourceId>,
-		spent_resource_ids: Vec<ResourceId>,
-		// reward_nullifier_hash: T::Element,
+		resource_ids: Vec<ResourceId>,
 	) -> DispatchResultWithPostInfo {
 		// Check if nullifier has been spent
 		let is_spent = RewardNullifierHashes::<T, I>::get(&reward_proof_data.reward_nullifier);
@@ -564,22 +557,22 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 		// Handle proof verification
 		Self::handle_proof_verification(&reward_proof_data)?;
-
-		// Check if roots are valid
-		Self::ensure_valid_unspent_roots(id, &unspent_resource_ids, &reward_proof_data.unspent_roots)?;
-
-		Self::ensure_valid_spent_roots(id, &spent_resource_ids, &reward_proof_data.spent_roots)?;
-
-		// Add reward_nullifier_hash
-		Self::add_reward_nullifier_hash(reward_proof_data.reward_nullifier)?;
-
-		// Add nullifier on VAnchor
-		T::VAnchor::add_nullifier_hash(id, reward_proof_data.input_nullifier)?;
-
-		// Insert output commitments into the AP VAnchor
 		//
-		// T::VAnchor::LinkableTree::insert_in_order();
-		T::LinkableTree::insert_in_order(id, reward_proof_data.output_commitment)?;
+		// // Check if roots are valid
+		// Self::ensure_valid_unspent_roots(id, &resource_ids, &reward_proof_data.unspent_roots)?;
+		//
+		// Self::ensure_valid_spent_roots(id, &resource_ids, &reward_proof_data.spent_roots)?;
+		//
+		// // Add reward_nullifier_hash
+		// Self::add_reward_nullifier_hash(reward_proof_data.reward_nullifier)?;
+		//
+		// // Add nullifier on VAnchor
+		// T::VAnchor::add_nullifier_hash(id, reward_proof_data.input_nullifier)?;
+		//
+		// // Insert output commitments into the AP VAnchor
+		// //
+		// // T::VAnchor::LinkableTree::insert_in_order();
+		// T::LinkableTree::insert_in_order(id, reward_proof_data.output_commitment)?;
 
 		Ok(().into())
 	}

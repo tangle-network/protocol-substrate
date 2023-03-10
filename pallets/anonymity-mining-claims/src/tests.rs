@@ -80,6 +80,15 @@ fn setup_environment_with_circom(
 
 	let wc_2_2 = circom_from_folder(wasm_2_2_path);
 
+	println!("Setting up the verifier pallet");
+	let mut vk_2_2_bytes = Vec::new();
+	params_2_2.0.vk.serialize(&mut vk_2_2_bytes).unwrap();
+
+	assert_ok!(ClaimsVerifier::force_set_parameters(
+		RuntimeOrigin::root(),
+		2,
+		vk_2_2_bytes.try_into().unwrap(),
+	));
 
 	(params_2_2, wc_2_2)
 }
@@ -291,6 +300,161 @@ impl RewardCircuitInputs {
 	}
 }
 
+
+// helper function to create anchor using Anchor pallet call
+fn mock_vanchor_creation_using_pallet_call(resource_id: &ResourceId) {
+	assert!(!<pallet_mt::Trees<Test, Instance1>>::contains_key(0));
+	assert_ok!(VAnchor::create(RuntimeOrigin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
+	assert!(<pallet_mt::Trees<Test, Instance1>>::contains_key(0));
+	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test, Instance1>>::get(0));
+		let max_edges = 2u32;
+		let depth = 30u8;
+		let call = AnonymityMiningClaims::create(
+			None,
+			depth,
+			max_edges,
+			0u32,
+			1u32.into()
+		);
+		assert_ok!(call);
+}
+
+/// testing update roots
+#[test]
+fn should_fail_update_without_resource_id_initialization() {
+	new_test_ext().execute_with(|| {
+		setup_environment();
+		let src_id = TypedChainId::Substrate(1);
+		let target_system =
+			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
+		let src_target_system = target_system;
+		let src_resource_id = ResourceId::new(src_target_system, src_id);
+
+		let raw = include_str!("../circuitInput.json");
+		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
+		let circuit_inputs = RewardCircuitInputs::from_raw(&inputs_raw);
+
+		let unspent_update_0 = AnonymityMiningClaims::update_unspent_root(
+			src_resource_id,
+			Element::from_bytes(&circuit_inputs.unspent_roots[0].to_bytes_be().1)
+		);
+		assert_err!(
+			unspent_update_0,
+			Error::<Test, Instance1>::InvalidUnspentChainIds,
+		);
+
+		let unspent_update_1 = AnonymityMiningClaims::update_unspent_root(
+			src_resource_id,
+			Element::from_bytes(&circuit_inputs.unspent_roots[1].to_bytes_be().1)
+		);
+		assert_err!(
+			unspent_update_1,
+			Error::<Test, Instance1>::InvalidUnspentChainIds,
+		);
+	})
+}
+
+/// testing update roots
+#[test]
+fn should_init_and_update_roots() {
+	new_test_ext().execute_with(|| {
+		setup_environment();
+		let src_id = TypedChainId::Substrate(1);
+		let target_system =
+			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
+		let src_target_system = target_system;
+		let src_resource_id = ResourceId::new(src_target_system, src_id);
+
+		let max_edges = 2u32;
+		let depth = 30u8;
+		let _tree_id = AnonymityMiningClaims::create(
+			None,
+			depth,
+			max_edges,
+			0u32,
+			1u32.into()
+		).unwrap();
+
+		let raw = include_str!("../circuitInput.json");
+		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
+		let circuit_inputs: RewardCircuitInputs = RewardCircuitInputs::from_raw(&inputs_raw);
+		let unspent_root_0 = Element::from_bytes(&circuit_inputs.unspent_roots[0].to_bytes_be().1);
+		let unspent_root_1 = Element::from_bytes(&circuit_inputs.unspent_roots[1].to_bytes_be().1);
+		let spent_root_0 = Element::from_bytes(&circuit_inputs.spent_roots[0].to_bytes_be().1);
+		let spent_root_1 = Element::from_bytes(&circuit_inputs.spent_roots[1].to_bytes_be().1);
+
+		let init_call = AnonymityMiningClaims::init_resource_id_history(
+			src_resource_id,
+			unspent_root_0,
+			spent_root_0
+		);
+		assert_ok!(init_call);
+
+		let update_unspent_call = AnonymityMiningClaims::update_unspent_root(
+			src_resource_id,
+			unspent_root_1,
+		);
+		assert_ok!(update_unspent_call);
+		let update_spent_call = AnonymityMiningClaims::update_spent_root(
+			src_resource_id,
+			spent_root_1,
+		);
+		assert_ok!(update_spent_call);
+		let zero: RootIndex = 0u32.into();
+		let cached_unspent_root_0 = AnonymityMiningClaims::cached_unspent_roots(src_resource_id, zero);
+		assert_eq!(
+			cached_unspent_root_0,
+			unspent_root_0
+		);
+		let cached_spent_root_0 = AnonymityMiningClaims::cached_spent_roots(src_resource_id, zero);
+		assert_eq!(
+			cached_spent_root_0,
+			spent_root_0
+		);
+		let one: RootIndex = 1u32.into();
+		let cached_unspent_root_1 = AnonymityMiningClaims::cached_unspent_roots(src_resource_id, one);
+		assert_eq!(
+			cached_unspent_root_1,
+			unspent_root_1
+		);
+		let cached_spent_root_1 = AnonymityMiningClaims::cached_spent_roots(src_resource_id, one);
+		assert_eq!(
+			cached_spent_root_1,
+			spent_root_1
+		);
+	})
+}
+
+// fn create_claims_pallet(asset_id: u32) -> u32 {
+// 	let max_edges = 2u32;
+// 	let depth = 30u8;
+// 	assert_ok!(AnonymityMiningClaims::create(
+// 		None,
+// 		depth,
+// 		max_edges,
+// 		asset_id,
+// 		0u32.into()
+// 	));
+// 	MerkleTree::next_tree_id() - 1
+// }
+//
+#[test]
+fn should_create_pallet() {
+	new_test_ext().execute_with(|| {
+		setup_environment_with_circom();
+		let max_edges = 2u32;
+		let depth = 30u8;
+		let call = AnonymityMiningClaims::create(
+			None,
+			depth,
+			max_edges,
+			0u32,
+			1u32.into()
+		);
+		assert_ok!(call);
+	})
+}
+
 #[test]
 // #[ignore]
 fn circom_should_complete_30x2_reward_claim_with_json_file() {
@@ -381,279 +545,36 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 			verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
 		assert!(did_proof_work);
 
-		// let claim_ap_call = AnonymityMiningClaims::claim_ap(
-		// 	tree_id,
-		// 	reward_proof_data,
-		// );
-		// assert_ok!(claim_ap_call);
+		let src_id = TypedChainId::Substrate(1);
+		let target_id = TypedChainId::Substrate(5);
+		let target_system =
+			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
+		let r_id: ResourceId = ResourceId::new(target_system, target_id);
+
+		let root = Element::from_bytes(&[1; 32]);
+		let latest_leaf_index = 5;
+		let src_target_system = target_system;
+		let src_resource_id = ResourceId::new(src_target_system, src_id);
+
+		let dest_target_system = target_system;
+		let dest_resource_id = ResourceId::new(dest_target_system, target_id);
+
+		let mut vk_2_2_bytes = Vec::new();
+		params_2_2.0.vk.serialize(&mut vk_2_2_bytes).unwrap();
+
+		let param_call = ClaimsVerifier::force_set_parameters(
+			RuntimeOrigin::root(),
+			2,
+			vk_2_2_bytes.try_into().unwrap(),
+		);
+		println!("param_call: {param_call:?}");
+
+		let resource_ids = [src_resource_id, dest_resource_id];
+		let claim_ap_call = AnonymityMiningClaims::claim_ap(
+			tree_id,
+			reward_proof_data,
+			resource_ids.to_vec()
+		);
+		assert_ok!(claim_ap_call);
 	});
-}
-
-// helper function to create anchor using Anchor pallet call
-fn mock_vanchor_creation_using_pallet_call(resource_id: &ResourceId) {
-	assert!(!<pallet_mt::Trees<Test, Instance1>>::contains_key(0));
-	assert_ok!(VAnchor::create(RuntimeOrigin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
-	assert!(<pallet_mt::Trees<Test, Instance1>>::contains_key(0));
-	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test, Instance1>>::get(0));
-		let max_edges = 2u32;
-		let depth = 30u8;
-		let call = AnonymityMiningClaims::create(
-			None,
-			depth,
-			max_edges,
-			0u32,
-			1u32.into()
-		);
-		assert_ok!(call);
-}
-
-// AP claim tests
-
-// Test claim_ap
-// #[test]
-// fn test_claim_ap() {
-// 	new_test_ext().execute_with(|| {
-// 		setup_environment();
-//
-// 		let recipient_one_account_id = account::<AccountId>("", 2, SEED);
-// 		let sender_two_account_id = account::<AccountId>("", 3, SEED);
-//
-// 		let src_id = TypedChainId::Substrate(1);
-// 		let target_id = TypedChainId::Substrate(5);
-// 		let target_system =
-// 			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
-// 		let r_id: ResourceId = ResourceId::new(target_system, target_id);
-//
-// 		let root = Element::from_bytes(&[1; 32]);
-// 		let latest_leaf_index = 5;
-// 		let src_target_system = target_system;
-// 		let src_resource_id = ResourceId::new(src_target_system, src_id);
-//
-// 		let dest_target_system = target_system;
-// 		let dest_resource_id = ResourceId::new(dest_target_system, target_id);
-//
-// 		// print out r_id
-// 		println!("r_id: {:?}", r_id);
-//
-// 		let tree_id = 5;
-//
-// 		// token setup
-// 		let ap_currency_id = 1;
-// 		let reward_currency_id = 2;
-//
-// 		// add reward balance to pallet
-// 		let new_reward_balance = INITIAL_TOTAL_REWARDS_BALANCE;
-// 		assert_ok!(Currencies::update_balance(
-// 			RuntimeOrigin::root(),
-// 			AnonymityMiningClaims::account_id(),
-// 			reward_currency_id,
-// 			new_reward_balance,
-// 		));
-//
-// 		// adding AP balance to pallet
-// 		let new_ap_balance = 50000;
-// 		assert_ok!(Currencies::update_balance(
-// 			RuntimeOrigin::root(),
-// 			AnonymityMiningClaims::account_id(),
-// 			ap_currency_id,
-// 			new_ap_balance,
-// 		));
-//
-// 		// param setup
-// 		let curve = Curve::Bn254;
-// 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-//
-// 		SignatureBridge::whitelist_chain(RuntimeOrigin::root(), src_id.chain_id());
-// 		SignatureBridge::set_resource(RuntimeOrigin::root(), r_id);
-// 		SignatureBridge::resource_exists(r_id);
-//
-// 		mock_vanchor_creation_using_pallet_call(&r_id);
-//
-// 		// mock proof data
-// 		let proof_data = ProofData {
-// 			proof: vec![],
-// 			public_amount: Default::default(),
-// 			roots: vec![],
-// 			input_nullifiers: vec![],
-// 			output_commitments: vec![],
-// 			ext_data_hash: Default::default(),
-// 		};
-//
-// 		let reward_proof_data = RewardProofData {
-// 			rate: 10,
-// 			fee: 1,
-// 			note_ak_alpha_x: Default::default(),
-// 			note_ak_alpha_y: Default::default(),
-// 			ext_data_hash: Default::default(),
-// 			input_root: Default::default(),
-// 			input_nullifier: Default::default(),
-// 			output_commitment: Default::default(),
-// 			spent_roots: vec![],
-// 			unspent_roots: vec![],
-// 		};
-//
-// 		// mock roots
-// 		let unspent_root = Default::default();
-// 		let spent_root = Default::default();
-//
-// 		// mock reward_nullifier_hash
-// 		let reward_nullifier_hash = Default::default();
-//
-// 		let claim_ap_call = AnonymityMiningClaims::claim_ap(
-// 			src_resource_id,
-// 			dest_resource_id,
-// 			recipient_one_account_id,
-// 			1000,
-// 			root,
-// 			latest_leaf_index,
-// 			proof_data,
-// 			reward_proof_data,
-// 			unspent_root,
-// 			spent_root,
-// 			reward_nullifier_hash,
-// 		);
-//
-// 		assert_ok!(claim_ap_call);
-// 	})
-// }
-//
-/// testing update roots
-#[test]
-fn should_fail_update_without_resource_id_initialization() {
-	new_test_ext().execute_with(|| {
-		setup_environment();
-		let src_id = TypedChainId::Substrate(1);
-		let target_system =
-			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
-		let src_target_system = target_system;
-		let src_resource_id = ResourceId::new(src_target_system, src_id);
-
-		let raw = include_str!("../circuitInput.json");
-		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
-		let circuit_inputs: RewardCircuitInputs = RewardCircuitInputs::from_raw(&inputs_raw);
-
-		let unspent_update_0 = AnonymityMiningClaims::update_unspent_root(
-			src_resource_id,
-			Element::from_bytes(&circuit_inputs.unspent_roots[0].to_bytes_be().1)
-		);
-		assert_err!(
-			unspent_update_0,
-			Error::<Test, Instance1>::InvalidUnspentChainIds,
-		);
-
-		let unspent_update_1 = AnonymityMiningClaims::update_unspent_root(
-			src_resource_id,
-			Element::from_bytes(&circuit_inputs.unspent_roots[1].to_bytes_be().1)
-		);
-		assert_err!(
-			unspent_update_1,
-			Error::<Test, Instance1>::InvalidUnspentChainIds,
-		);
-	})
-}
-
-/// testing update roots
-#[test]
-fn should_init_and_update_roots() {
-	new_test_ext().execute_with(|| {
-		setup_environment();
-		let src_id = TypedChainId::Substrate(1);
-		let target_system =
-			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
-		let src_target_system = target_system;
-		let src_resource_id = ResourceId::new(src_target_system, src_id);
-
-		let max_edges = 2u32;
-		let depth = 30u8;
-		let tree_id = AnonymityMiningClaims::create(
-			None,
-			depth,
-			max_edges,
-			0u32,
-			1u32.into()
-		).unwrap();
-
-		let raw = include_str!("../circuitInput.json");
-		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
-		let circuit_inputs: RewardCircuitInputs = RewardCircuitInputs::from_raw(&inputs_raw);
-		let unspent_root_0 = Element::from_bytes(&circuit_inputs.unspent_roots[0].to_bytes_be().1);
-		let unspent_root_1 = Element::from_bytes(&circuit_inputs.unspent_roots[1].to_bytes_be().1);
-		let spent_root_0 = Element::from_bytes(&circuit_inputs.spent_roots[0].to_bytes_be().1);
-		let spent_root_1 = Element::from_bytes(&circuit_inputs.spent_roots[1].to_bytes_be().1);
-
-		let init_call = AnonymityMiningClaims::init_resource_id_history(
-			src_resource_id,
-			unspent_root_0,
-			spent_root_0
-		);
-		assert_ok!(init_call);
-
-		let update_unspent_call = AnonymityMiningClaims::update_unspent_root(
-			src_resource_id,
-			unspent_root_1,
-		);
-		assert_ok!(update_unspent_call);
-		let update_spent_call = AnonymityMiningClaims::update_spent_root(
-			src_resource_id,
-			spent_root_1,
-		);
-		assert_ok!(update_spent_call);
-		let zero: RootIndex = 0u32.into();
-		let one: RootIndex = 1u32.into();
-		println!("unspent_root_0: {unspent_root_0:?}");
-		println!("unspent_root_1: {unspent_root_1:?}");
-		println!("spent_root_1: {spent_root_0:?}");
-		println!("spent_root_1: {spent_root_1:?}");
-		let cached_unspent_root_0 = AnonymityMiningClaims::cached_unspent_roots(src_resource_id, zero);
-		let cached_unspent_root_1 = AnonymityMiningClaims::cached_unspent_roots(src_resource_id, one);
-		let cached_spent_root_0 = AnonymityMiningClaims::cached_spent_roots(src_resource_id, zero);
-		let cached_spent_root_1 = AnonymityMiningClaims::cached_spent_roots(src_resource_id, one);
-		println!("cached_root_0: {cached_unspent_root_0:?}");
-		assert_eq!(
-			cached_unspent_root_0,
-			unspent_root_0
-		);
-		assert_eq!(
-			cached_unspent_root_1,
-			unspent_root_1
-		);
-		assert_eq!(
-			cached_spent_root_0,
-			spent_root_0
-		);
-		assert_eq!(
-			cached_spent_root_1,
-			spent_root_1
-		);
-	})
-}
-
-// fn create_claims_pallet(asset_id: u32) -> u32 {
-// 	let max_edges = 2u32;
-// 	let depth = 30u8;
-// 	assert_ok!(AnonymityMiningClaims::create(
-// 		None,
-// 		depth,
-// 		max_edges,
-// 		asset_id,
-// 		0u32.into()
-// 	));
-// 	MerkleTree::next_tree_id() - 1
-// }
-//
-#[test]
-fn should_create_pallet() {
-	new_test_ext().execute_with(|| {
-		setup_environment_with_circom();
-		let max_edges = 2u32;
-		let depth = 30u8;
-		let call = AnonymityMiningClaims::create(
-			None,
-			depth,
-			max_edges,
-			0u32,
-			1u32.into()
-		);
-		assert_ok!(call);
-	})
 }
