@@ -11502,9 +11502,11 @@ dependencies = [
 
 [[package]]
 name = "webb-proposals"
-version = "0.5.5"
-source = "git+https://github.com/webb-tools/webb-rs#ee6cd26cd4171af68963d5429ab3c150bb176526"
+version = "0.5.19"
+source = "git+https://github.com/webb-tools/webb-rs#734dd92eb0a8b867058d97c911b4c8bacc522962"
 dependencies = [
+ "frame-support",
+ "hex",
  "num-traits",
  "parity-scale-codec",
  "scale-info",
