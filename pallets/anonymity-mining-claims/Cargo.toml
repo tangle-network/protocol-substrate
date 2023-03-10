@@ -49,6 +49,7 @@ pallet-hasher = { path = "../hasher", default-features = false }
 pallet-key-storage = { path = "../key-storage" }
 pallet-timestamp = { default-features = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 pallet-vanchor-verifier = { path = "../vanchor-verifier", default-features = false }
+pallet-claims-verifier = { path = "../claims-verifier", default-features = false }
 serde = { version = "1.0.119" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
@@ -68,7 +69,7 @@ color-eyre = "0.6.1"
 serde_json = "1.0.48"
 
 [features]
-default = ["std"]
+default = ["std", "wasmer/sys-default"]
 runtime-benchmarks = [
   "frame-system/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
@@ -93,3 +94,4 @@ std = [
   "pallet-token-wrapper/std",
 
 ]
+wasm = ["wasmer/js", "wasmer/std"]

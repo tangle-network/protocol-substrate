@@ -51,7 +51,7 @@ frame_support::construct_runtime!(
 		// HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
 		HasherPallet: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		VAnchorVerifier: pallet_vanchor_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		// ClaimsVerifier: pallet_claims_verifier::{Pallet, Call, Storage, Event<T>},
+		ClaimsVerifier: pallet_claims_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		LinkableTree: pallet_linkable_tree::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		MerkleTree: pallet_mt::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call},
@@ -252,13 +252,14 @@ impl pallet_vanchor_verifier::Config<VAnchorVerifierInstance1> for Test {
 	type WeightInfo = ();
 }
 
-// impl pallet_claims_verifier::Config for Test {
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-// 	type MaxParameterLength = ConstU32<1000>;
-// 	type Verifier = CircomVerifierBn254;
-// 	type WeightInfo = ();
-// }
+type ClaimsVerifierInstance1 = pallet_claims_verifier::Instance1;
+impl pallet_claims_verifier::Config<ClaimsVerifierInstance1> for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxParameterLength = ConstU32<1000>;
+	type Verifier = CircomVerifierBn254;
+	type WeightInfo = ();
+}
 
 type HasherInstance1 = pallet_hasher::Instance1;
 impl pallet_hasher::Config<HasherInstance1> for Test {
@@ -358,6 +359,7 @@ impl pallet_anonymity_mining_claims::Config<AnonymityMiningClaimsInstance1> for 
 	type UnspentRootHistorySize = UnspentRootHistorySize;
 	type SpentRootHistorySize = SpentRootHistorySize;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type ClaimsVerifier = ClaimsVerifier;
 }
 
 // Build genesis storage according to the mock runtime.

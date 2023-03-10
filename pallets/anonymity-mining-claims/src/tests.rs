@@ -4,6 +4,7 @@ use crate::{
 	Error, Instance2,
 };
 
+use ark_serialize::CanonicalSerialize;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok};
 use crate::Instance1;
@@ -63,16 +64,21 @@ fn setup_environment_with_circom(
 	let curve = Curve::Bn254;
 	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
 
-	println!("Setting up ZKey");
-	let path_2_2 = "/home/semar/Projects/protocol-substrate/pallets/anonymity-mining-rewards/solidity-fixtures/solidity-fixtures/reward_2/30/circuit_final.zkey";
-	let mut file_2_2 = File::open(path_2_2).unwrap();
-	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
-
-	let wasm_2_2_path = "/home/semar/Projects/protocol-substrate/pallets/anonymity-mining-rewards/solidity-fixtures/solidity-fixtures/reward_2/30/reward_30_2.wasm";
-
-	let wc_2_2 = circom_from_folder(wasm_2_2_path);
+	// println!("Setting up ZKey");
+	// let path_2_2 = "/home/semar/Projects/protocol-substrate/pallets/anonymity-mining-rewards/solidity-fixtures/solidity-fixtures/reward_2/30/circuit_final.zkey";
+	// let mut file_2_2 = File::open(path_2_2).unwrap();
+	// let params_2_2 = read_zkey(&mut file_2_2).unwrap();
+	//
+	// let wasm_2_2_path = "/home/semar/Projects/protocol-substrate/pallets/anonymity-mining-rewards/solidity-fixtures/solidity-fixtures/reward_2/30/reward_30_2.wasm";
+	//
+	// let wc_2_2 = circom_from_folder(wasm_2_2_path);
 
 	setup_environment();
+
+	HasherPallet::force_set_parameters(
+		RuntimeOrigin::root(),
+		params3.to_bytes().try_into().unwrap(),
+	).unwrap();
 
 	(params_2_2, wc_2_2)
 }
@@ -285,6 +291,7 @@ impl RewardCircuitInputs {
 }
 
 #[test]
+// #[ignore]
 fn circom_should_complete_30x2_reward_claim_with_json_file() {
 	new_test_ext().execute_with(|| {
 		let (params_2_2, wc_2_2) = setup_environment_with_circom();
@@ -293,6 +300,17 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		let circuit_inputs: RewardCircuitInputs = RewardCircuitInputs::from_raw(&inputs_raw);
 		// println!("inputs: {inputs_raw:?}");
 		println!("circuitInputs: {circuit_inputs:?}");
+		let max_edges = 2u32;
+		let depth = 30u8;
+		let call = AnonymityMiningClaims::create(
+			None,
+			depth,
+			max_edges,
+			0u32,
+			1u32.into()
+		);
+		assert_ok!(call);
+
 
 		let inputs_for_proof = [
 			("rate", circuit_inputs.rate.clone()),
@@ -339,7 +357,25 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 
 		let (proof, full_assignment) = x.unwrap();
 
-		let mut inputs_for_verification = &full_assignment[1..num_inputs];
+		let mut proof_bytes = Vec::new();
+		proof.serialize(&mut proof_bytes).unwrap();
+
+		let reward_proof_data = RewardProofData {
+			proof: proof_bytes,
+			rate: BigInt::from(1000),
+			fee: BigInt::from(0),
+			reward_nullifier: BigInt::from(0),
+			note_ak_alpha_x: BigInt::from(0),
+			note_ak_alpha_y: BigInt::from(0),
+			ext_data_hash: BigInt::from(0),
+			input_root: BigInt::from(0),
+			input_nullifier: BigInt::from(0),
+			output_commitment: BigInt::from(0),
+			spent_roots: vec![BigInt::from(0)],
+			unspent_roots: vec![BigInt::from(0)],
+		};
+
+		let inputs_for_verification = &full_assignment[1..num_inputs];
 
 		let did_proof_work =
 			verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
@@ -352,7 +388,17 @@ fn mock_vanchor_creation_using_pallet_call(resource_id: &ResourceId) {
 	assert!(!<pallet_mt::Trees<Test, Instance1>>::contains_key(0));
 	assert_ok!(VAnchor::create(RuntimeOrigin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 	assert!(<pallet_mt::Trees<Test, Instance1>>::contains_key(0));
-	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test>>::get(0));
+	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test, Instance1>>::get(0));
+		let max_edges = 2u32;
+		let depth = 30u8;
+		let call = AnonymityMiningClaims::create(
+			None,
+			depth,
+			max_edges,
+			0u32,
+			1u32.into()
+		);
+		assert_ok!(call);
 }
 
 // AP claim tests
@@ -410,10 +456,6 @@ fn mock_vanchor_creation_using_pallet_call(resource_id: &ResourceId) {
 // 		// param setup
 // 		let curve = Curve::Bn254;
 // 		let params = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-// 		let _ = HasherPallet::force_set_parameters(
-// 			RuntimeOrigin::root(),
-// 			params.to_bytes().try_into().unwrap(),
-// 		);
 //
 // 		SignatureBridge::whitelist_chain(RuntimeOrigin::root(), src_id.chain_id());
 // 		SignatureBridge::set_resource(RuntimeOrigin::root(), r_id);
@@ -490,14 +532,46 @@ fn should_fail_update_without_resource_id_initialization() {
 		);
 		assert_err!(
 			unspent_update_0,
-			Error::<Test, Instance2>::InvalidResourceId,
+			Error::<Test, Instance1>::InvalidUnspentChainIds,
 		);
-		//
-		// let unspent_update_1 = AnonymityMiningClaims::update_unspent_root(
-		// 	src_resource_id,
-		// 	// circuit_inputs.unspent_roots[1]
-		// 	Element::from_bytes(&circuit_inputs.unspent_roots[1].to_bytes_be().1)
-		// );
-		// assert_err!(unspent_update_1);
+
+		let unspent_update_1 = AnonymityMiningClaims::update_unspent_root(
+			src_resource_id,
+			Element::from_bytes(&circuit_inputs.unspent_roots[1].to_bytes_be().1)
+		);
+		assert_err!(
+			unspent_update_1,
+			Error::<Test, Instance1>::InvalidUnspentChainIds,
+		);
+	})
+}
+
+// fn create_claims_pallet(asset_id: u32) -> u32 {
+// 	let max_edges = 2u32;
+// 	let depth = 30u8;
+// 	assert_ok!(AnonymityMiningClaims::create(
+// 		None,
+// 		depth,
+// 		max_edges,
+// 		asset_id,
+// 		0u32.into()
+// 	));
+// 	MerkleTree::next_tree_id() - 1
+// }
+//
+#[test]
+fn should_create_pallet() {
+	new_test_ext().execute_with(|| {
+		setup_environment_with_circom();
+		let max_edges = 2u32;
+		let depth = 30u8;
+		let call = AnonymityMiningClaims::create(
+			None,
+			depth,
+			max_edges,
+			0u32,
+			1u32.into()
+		);
+		assert_ok!(call);
 	})
 }

@@ -13,6 +13,7 @@ members = [
   "primitives",
   "pallets/anonymity-mining-rewards",
   "pallets/anonymity-mining-claims",
+  "pallets/claims-verifier",
   "pallets/asset-registry",
   "pallets/hasher",
   "pallets/verifier",
