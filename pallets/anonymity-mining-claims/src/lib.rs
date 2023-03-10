@@ -310,7 +310,8 @@ pub mod pallet {
 		}
 	}
 }
-type ProposalNonce = u32;
+pub type ProposalNonce = u32;
+pub type RootIndex = u32;
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	fn create(
@@ -372,20 +373,20 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 	// / Update unspent root
 	fn init_resource_id_history(
-		tree_id: T::TreeId,
 		resource_id: ResourceId,
 		unspent_root: T::Element,
 		spent_root: T::Element,
 	) -> Result<(), DispatchError> {
 		let max_edges = Self::max_edges();
-		// let max_edges = MaxEdges::<T, I>::get(tree_id);
-		let resource_ids = Self::get_registered_resource_ids();
+		let next_resource_id_index = Self::next_resource_id_index();
 		ensure!(
-			(resource_ids.len() as u32) < max_edges,
+			next_resource_id_index < max_edges - 1,
 			Error::<T, I>::ResourceIdListIsFull
 		);
+
+		let registered_resource_ids = Self::get_registered_resource_ids();
 		ensure!(
-			resource_ids.contains(&resource_id) == false,
+			registered_resource_ids.contains(&resource_id) == false,
 			Error::<T, I>::ResourceIdAlreadyInitialized
 		);
 		let resource_id_index = Self::next_resource_id_index();
@@ -399,12 +400,15 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		NextResourceIdIndex::<T, I>::mutate(|i| {
 			*i = i.saturating_add(One::one())
 		});
-
 		let root_index: T::RootIndex = Zero::zero();
 		// Add unspent root
 		CachedUnspentRoots::<T, I>::insert(resource_id, root_index, unspent_root);
 		// Add spent root
 		CachedSpentRoots::<T, I>::insert(resource_id, root_index, spent_root);
+
+		NextUnspentRootIndex::<T, I>::mutate(resource_id, |i| { *i = One::one() });
+		NextSpentRootIndex::<T, I>::mutate(resource_id, |i| { *i = One::one() });
+
 		Ok(())
 	}
 
@@ -414,6 +418,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		unspent_root: T::Element,
 	) -> Result<(), DispatchError> {
 		let root_index = Self::next_unspent_root_index(unspent_resource_id);
+		println!("SUBSTRATE: root_index: {root_index:?}");
 		ensure!(
 			Self::get_unspent_roots(unspent_resource_id).len() >= 1,
 			Error::<T, I>::InvalidUnspentChainIds

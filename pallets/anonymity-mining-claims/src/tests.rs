@@ -49,6 +49,9 @@ fn should_initialize_parameters() {
 }
 
 fn setup_environment() {
+	let curve = Curve::Bn254;
+	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
+
 	for account_id in [
 		account::<AccountId>("", 1, SEED),
 		account::<AccountId>("", 2, SEED),
@@ -57,28 +60,26 @@ fn setup_environment() {
 		account::<AccountId>("", 5, SEED),
 	] {
 		assert_ok!(Balances::set_balance(RuntimeOrigin::root(), account_id, 100_000_000, 0));
+		assert_ok!(HasherPallet::force_set_parameters(
+			RuntimeOrigin::root(),
+			params3.to_bytes().try_into().unwrap(),
+		));
+
 	}
 }
 fn setup_environment_with_circom(
 ) -> ((ProvingKey<Bn254>, ConstraintMatrices<Fr>), &'static Mutex<WitnessCalculator>) {
-	let curve = Curve::Bn254;
-	let params3 = setup_params::<ark_bn254::Fr>(curve, 5, 3);
-
-	// println!("Setting up ZKey");
-	// let path_2_2 = "/home/semar/Projects/protocol-substrate/pallets/anonymity-mining-rewards/solidity-fixtures/solidity-fixtures/reward_2/30/circuit_final.zkey";
-	// let mut file_2_2 = File::open(path_2_2).unwrap();
-	// let params_2_2 = read_zkey(&mut file_2_2).unwrap();
-	//
-	// let wasm_2_2_path = "/home/semar/Projects/protocol-substrate/pallets/anonymity-mining-rewards/solidity-fixtures/solidity-fixtures/reward_2/30/reward_30_2.wasm";
-	//
-	// let wc_2_2 = circom_from_folder(wasm_2_2_path);
-
 	setup_environment();
 
-	HasherPallet::force_set_parameters(
-		RuntimeOrigin::root(),
-		params3.to_bytes().try_into().unwrap(),
-	).unwrap();
+	println!("Setting up ZKey");
+	let path_2_2 = "/home/semar/Projects/protocol-substrate/pallets/anonymity-mining-rewards/solidity-fixtures/solidity-fixtures/reward_2/30/circuit_final.zkey";
+	let mut file_2_2 = File::open(path_2_2).unwrap();
+	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
+
+	let wasm_2_2_path = "/home/semar/Projects/protocol-substrate/pallets/anonymity-mining-rewards/solidity-fixtures/solidity-fixtures/reward_2/30/reward_30_2.wasm";
+
+	let wc_2_2 = circom_from_folder(wasm_2_2_path);
+
 
 	(params_2_2, wc_2_2)
 }
@@ -302,14 +303,13 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		println!("circuitInputs: {circuit_inputs:?}");
 		let max_edges = 2u32;
 		let depth = 30u8;
-		let call = AnonymityMiningClaims::create(
+		let tree_id = AnonymityMiningClaims::create(
 			None,
 			depth,
 			max_edges,
 			0u32,
 			1u32.into()
-		);
-		assert_ok!(call);
+		).unwrap();
 
 
 		let inputs_for_proof = [
@@ -362,17 +362,17 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 
 		let reward_proof_data = RewardProofData {
 			proof: proof_bytes,
-			rate: BigInt::from(1000),
-			fee: BigInt::from(0),
-			reward_nullifier: BigInt::from(0),
-			note_ak_alpha_x: BigInt::from(0),
-			note_ak_alpha_y: BigInt::from(0),
-			ext_data_hash: BigInt::from(0),
-			input_root: BigInt::from(0),
-			input_nullifier: BigInt::from(0),
-			output_commitment: BigInt::from(0),
-			spent_roots: vec![BigInt::from(0)],
-			unspent_roots: vec![BigInt::from(0)],
+			rate: Element::from_bytes(&1000u32.to_be_bytes()),
+			fee: Element::from_bytes(&0u32.to_be_bytes()),
+			reward_nullifier: Element::from_bytes(&0u32.to_be_bytes()),
+			note_ak_alpha_x: Element::from_bytes(&0u32.to_be_bytes()),
+			note_ak_alpha_y: Element::from_bytes(&0u32.to_be_bytes()),
+			ext_data_hash: Element::from_bytes(&0u32.to_be_bytes()),
+			input_root: Element::from_bytes(&0u32.to_be_bytes()),
+			input_nullifier: Element::from_bytes(&0u32.to_be_bytes()),
+			output_commitment: Element::from_bytes(&0u32.to_be_bytes()),
+			spent_roots: vec![Element::from_bytes(&0u32.to_be_bytes())],
+			unspent_roots: vec![Element::from_bytes(&0u32.to_be_bytes())],
 		};
 
 		let inputs_for_verification = &full_assignment[1..num_inputs];
@@ -380,6 +380,12 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		let did_proof_work =
 			verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
 		assert!(did_proof_work);
+
+		// let claim_ap_call = AnonymityMiningClaims::claim_ap(
+		// 	tree_id,
+		// 	reward_proof_data,
+		// );
+		// assert_ok!(claim_ap_call);
 	});
 }
 
@@ -542,6 +548,82 @@ fn should_fail_update_without_resource_id_initialization() {
 		assert_err!(
 			unspent_update_1,
 			Error::<Test, Instance1>::InvalidUnspentChainIds,
+		);
+	})
+}
+
+/// testing update roots
+#[test]
+fn should_init_and_update_roots() {
+	new_test_ext().execute_with(|| {
+		setup_environment();
+		let src_id = TypedChainId::Substrate(1);
+		let target_system =
+			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
+		let src_target_system = target_system;
+		let src_resource_id = ResourceId::new(src_target_system, src_id);
+
+		let max_edges = 2u32;
+		let depth = 30u8;
+		let tree_id = AnonymityMiningClaims::create(
+			None,
+			depth,
+			max_edges,
+			0u32,
+			1u32.into()
+		).unwrap();
+
+		let raw = include_str!("../circuitInput.json");
+		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
+		let circuit_inputs: RewardCircuitInputs = RewardCircuitInputs::from_raw(&inputs_raw);
+		let unspent_root_0 = Element::from_bytes(&circuit_inputs.unspent_roots[0].to_bytes_be().1);
+		let unspent_root_1 = Element::from_bytes(&circuit_inputs.unspent_roots[1].to_bytes_be().1);
+		let spent_root_0 = Element::from_bytes(&circuit_inputs.spent_roots[0].to_bytes_be().1);
+		let spent_root_1 = Element::from_bytes(&circuit_inputs.spent_roots[1].to_bytes_be().1);
+
+		let init_call = AnonymityMiningClaims::init_resource_id_history(
+			src_resource_id,
+			unspent_root_0,
+			spent_root_0
+		);
+		assert_ok!(init_call);
+
+		let update_unspent_call = AnonymityMiningClaims::update_unspent_root(
+			src_resource_id,
+			unspent_root_1,
+		);
+		assert_ok!(update_unspent_call);
+		let update_spent_call = AnonymityMiningClaims::update_spent_root(
+			src_resource_id,
+			spent_root_1,
+		);
+		assert_ok!(update_spent_call);
+		let zero: RootIndex = 0u32.into();
+		let one: RootIndex = 1u32.into();
+		println!("unspent_root_0: {unspent_root_0:?}");
+		println!("unspent_root_1: {unspent_root_1:?}");
+		println!("spent_root_1: {spent_root_0:?}");
+		println!("spent_root_1: {spent_root_1:?}");
+		let cached_unspent_root_0 = AnonymityMiningClaims::cached_unspent_roots(src_resource_id, zero);
+		let cached_unspent_root_1 = AnonymityMiningClaims::cached_unspent_roots(src_resource_id, one);
+		let cached_spent_root_0 = AnonymityMiningClaims::cached_spent_roots(src_resource_id, zero);
+		let cached_spent_root_1 = AnonymityMiningClaims::cached_spent_roots(src_resource_id, one);
+		println!("cached_root_0: {cached_unspent_root_0:?}");
+		assert_eq!(
+			cached_unspent_root_0,
+			unspent_root_0
+		);
+		assert_eq!(
+			cached_unspent_root_1,
+			unspent_root_1
+		);
+		assert_eq!(
+			cached_spent_root_0,
+			spent_root_0
+		);
+		assert_eq!(
+			cached_spent_root_1,
+			spent_root_1
 		);
 	})
 }
