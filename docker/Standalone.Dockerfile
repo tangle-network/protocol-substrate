@@ -1,14 +1,17 @@
 # Use a specific version tag for the alpine base image
-FROM alpine:3.14.2 AS base
+FROM rust:1 AS base
 
 # Install required packages
-RUN apk add --no-cache clang libssl1.1 llvm pkgconfig eudev-dev gmp libc6-compat
+RUN apt-get update && \
+    apt-get install --yes git python3 python3-pip pkg-config clang curl libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler libc6 && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user to run
-RUN adduser -u 1000 -G users -D -h /webb webb \
+RUN adduser --uid 1000 --ingroup users --disabled-password --gecos "" --home /webb webb \
   && mkdir -p /data /webb/.local/share/webb \
   && chown -R webb:users /data /webb/.local/share/webb \
   && ln -s /data /webb/.local/share/webb
+
 
 # Set the user and working directory
 USER webb
@@ -18,8 +21,9 @@ WORKDIR /webb
 FROM rust:1 AS builder
 
 # Install required packages
-RUN apt-get update && apt-get install -y git python3 python3-pip pkg-config clang curl libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler libc6 && \
-  rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y git python3 python3-pip pkg-config clang curl libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler libc6 && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install dvc
 
