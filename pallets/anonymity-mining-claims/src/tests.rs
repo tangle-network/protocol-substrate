@@ -3,6 +3,7 @@ use crate::mock::*;
 use crate::{
 	Error, Instance2,
 };
+use crate::test_utils::deconstruct_public_inputs_reward_proof_el;
 
 use ark_serialize::CanonicalSerialize;
 use frame_benchmarking::account;
@@ -12,7 +13,6 @@ use crate::Instance1;
 use sp_runtime::traits::Zero;
 
 use webb_primitives::{
-	types::vanchor::ProofData,
 	webb_proposals::{
 		FunctionSignature, ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId,
 	},
@@ -81,14 +81,14 @@ fn setup_environment_with_circom(
 	let wc_2_2 = circom_from_folder(wasm_2_2_path);
 
 	println!("Setting up the verifier pallet");
-	let mut vk_2_2_bytes = Vec::new();
-	params_2_2.0.vk.serialize(&mut vk_2_2_bytes).unwrap();
+	// let mut vk_2_2_bytes = Vec::new();
+	// params_2_2.0.vk.serialize(&mut vk_2_2_bytes).unwrap();
 
-	assert_ok!(ClaimsVerifier::force_set_parameters(
-		RuntimeOrigin::root(),
-		2,
-		vk_2_2_bytes.try_into().unwrap(),
-	));
+	// assert_ok!(ClaimsVerifier::force_set_parameters(
+	// 	RuntimeOrigin::root(),
+	// 	2,
+	// 	vk_2_2_bytes.try_into().unwrap(),
+	// ));
 
 	(params_2_2, wc_2_2)
 }
@@ -307,7 +307,7 @@ fn mock_vanchor_creation_using_pallet_call(resource_id: &ResourceId) {
 	assert_ok!(VAnchor::create(RuntimeOrigin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 	assert!(<pallet_mt::Trees<Test, Instance1>>::contains_key(0));
 	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test, Instance1>>::get(0));
-		let max_edges = 2u32;
+		let max_edges = 2u8;
 		let depth = 30u8;
 		let call = AnonymityMiningClaims::create(
 			None,
@@ -365,7 +365,7 @@ fn should_init_and_update_roots() {
 		let src_target_system = target_system;
 		let src_resource_id = ResourceId::new(src_target_system, src_id);
 
-		let max_edges = 2u32;
+		let max_edges = 2u8;
 		let depth = 30u8;
 		let _tree_id = AnonymityMiningClaims::create(
 			None,
@@ -442,7 +442,7 @@ fn should_init_and_update_roots() {
 fn should_create_pallet() {
 	new_test_ext().execute_with(|| {
 		setup_environment_with_circom();
-		let max_edges = 2u32;
+		let max_edges = 2u8;
 		let depth = 30u8;
 		let call = AnonymityMiningClaims::create(
 			None,
@@ -460,12 +460,27 @@ fn should_create_pallet() {
 fn circom_should_complete_30x2_reward_claim_with_json_file() {
 	new_test_ext().execute_with(|| {
 		let (params_2_2, wc_2_2) = setup_environment_with_circom();
+
+		let src_id = TypedChainId::Substrate(1);
+		let target_id = TypedChainId::Substrate(5);
+		let target_system =
+			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
+		let r_id: ResourceId = ResourceId::new(target_system, target_id);
+
+		let root = Element::from_bytes(&[1; 32]);
+		let latest_leaf_index = 5;
+		let src_target_system = target_system;
+		let src_resource_id = ResourceId::new(src_target_system, src_id);
+
+		let dest_target_system = target_system;
+		let dest_resource_id = ResourceId::new(dest_target_system, target_id);
+
 		let raw = include_str!("../circuitInput.json");
 		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
 		let circuit_inputs: RewardCircuitInputs = RewardCircuitInputs::from_raw(&inputs_raw);
 		// println!("inputs: {inputs_raw:?}");
 		println!("circuitInputs: {circuit_inputs:?}");
-		let max_edges = 2u32;
+		let max_edges = 2u8;
 		let depth = 30u8;
 		let tree_id = AnonymityMiningClaims::create(
 			None,
@@ -475,6 +490,18 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 			1u32.into()
 		).unwrap();
 
+		let init_call_0 = AnonymityMiningClaims::init_resource_id_history(
+			src_resource_id,
+			Element::from_bytes(&circuit_inputs.unspent_roots[0].to_bytes_be().1),
+			Element::from_bytes(&circuit_inputs.spent_roots[0].to_bytes_be().1),
+		);
+		assert_ok!(init_call_0);
+		let init_call_1 = AnonymityMiningClaims::init_resource_id_history(
+			dest_resource_id,
+			Element::from_bytes(&circuit_inputs.unspent_roots[1].to_bytes_be().1),
+			Element::from_bytes(&circuit_inputs.spent_roots[1].to_bytes_be().1),
+		);
+		assert_ok!(init_call_1);
 
 		let inputs_for_proof = [
 			("rate", circuit_inputs.rate.clone()),
@@ -524,22 +551,40 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		let mut proof_bytes = Vec::new();
 		proof.serialize(&mut proof_bytes).unwrap();
 
+		// let reward_proof_data = RewardProofData::new(proof_bytes, circuit_inputs.rate[0], circuit_inputs.fee[0], circuit_inputs.reward_nullifier[0], circuit_inputs.note_ak_alpha_x[0], circuit_inputs.note_ak_alpha_y[0], circuit_inputs.ext_data_hash[0], circuit_inputs.input_root[0], circuit_inputs.input_nullifier[0], circuit_inputs.output_commitment[0], vec![circuit_inputs.spent_roots[0], circuit_inputs.spent_roots[1]], vec![circuit_inputs.unspent_roots[0], circuit_inputs.unspent_roots[1]]);
+		let inputs_for_verification = &full_assignment[1..num_inputs];
+		let (
+			rate,
+			fee,
+			reward_nullifier,
+			note_ak_alpha_x,
+			note_ak_alpha_y,
+			ext_data_hash,
+			input_root,
+			input_nullifier,
+			output_commitment,
+			unspent_roots,
+			spent_roots,
+		) =
+			deconstruct_public_inputs_reward_proof_el(max_edges, &inputs_for_verification.to_vec());
+
+		let mut proof_bytes = Vec::new();
+		proof.serialize(&mut proof_bytes).unwrap();
 		let reward_proof_data = RewardProofData {
 			proof: proof_bytes,
-			rate: Element::from_bytes(&1000u32.to_be_bytes()),
-			fee: Element::from_bytes(&0u32.to_be_bytes()),
-			reward_nullifier: Element::from_bytes(&0u32.to_be_bytes()),
-			note_ak_alpha_x: Element::from_bytes(&0u32.to_be_bytes()),
-			note_ak_alpha_y: Element::from_bytes(&0u32.to_be_bytes()),
-			ext_data_hash: Element::from_bytes(&0u32.to_be_bytes()),
-			input_root: Element::from_bytes(&0u32.to_be_bytes()),
-			input_nullifier: Element::from_bytes(&0u32.to_be_bytes()),
-			output_commitment: Element::from_bytes(&0u32.to_be_bytes()),
-			spent_roots: vec![Element::from_bytes(&0u32.to_be_bytes())],
-			unspent_roots: vec![Element::from_bytes(&0u32.to_be_bytes())],
+			rate,
+			fee,
+			reward_nullifier,
+			note_ak_alpha_x,
+			note_ak_alpha_y,
+			ext_data_hash,
+			input_root,
+			input_nullifier,
+			output_commitment,
+			unspent_roots,
+			spent_roots,
 		};
 
-		let inputs_for_verification = &full_assignment[1..num_inputs];
 
 		let did_proof_work =
 			verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
@@ -567,9 +612,10 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 			2,
 			vk_2_2_bytes.try_into().unwrap(),
 		);
-		println!("param_call: {param_call:?}");
+		assert_ok!(param_call);
 
 		let resource_ids = [src_resource_id, dest_resource_id];
+		println!("inputs_for_verification: {inputs_for_verification:?}");
 		let claim_ap_call = AnonymityMiningClaims::claim_ap(
 			tree_id,
 			reward_proof_data,

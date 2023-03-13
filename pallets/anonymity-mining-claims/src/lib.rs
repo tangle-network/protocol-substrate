@@ -28,6 +28,8 @@
 pub mod mock;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod test_utils;
 
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
@@ -161,7 +163,7 @@ pub mod pallet {
 	/// The map of trees to the maximum number of anchor edges they can have
 	#[pallet::storage]
 	#[pallet::getter(fn max_edges)]
-	pub type MaxEdges<T: Config<I>, I: 'static = ()> = StorageValue<_, u32, ValueQuery>;
+	pub type MaxEdges<T: Config<I>, I: 'static = ()> = StorageValue<_, u8, ValueQuery>;
 
 	/// A helper map for denoting whether an tree is bridged to given chain
 	#[pallet::storage]
@@ -317,12 +319,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	fn create(
 		creator: Option<T::AccountId>,
 		depth: u8,
-		max_edges: u32,
+		max_edges: u8,
 		asset: CurrencyIdOf<T, I>,
 		nonce: u32,
 	) -> Result<T::TreeId, DispatchError> {
 		// Nonce should be greater than the proposal nonce in storage
-		let id = T::VAnchor::create(creator.clone(), depth, max_edges, asset, nonce.into())?;
+		let id = T::VAnchor::create(creator.clone(), depth, max_edges as u32, asset, nonce.into())?;
 		// T::VAnchor::validate_and_set_nonce(nonce)?;
 		// let id = T::LinkableTree::create(creator.clone(), max_edges, depth)?;
 
@@ -343,8 +345,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn handle_proof_verification(
 		proof_data: &RewardProofData<T::Element>,
 	) -> Result<(), DispatchError> {
-		// Stubbed out for now
-		// Ok(());
+		let max_edges = Self::max_edges();
 		let mut bytes = Vec::new();
 		bytes.extend_from_slice(proof_data.rate.to_bytes());
 		bytes.extend_from_slice(proof_data.fee.to_bytes());
@@ -361,12 +362,13 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		for root in &proof_data.unspent_roots {
 			bytes.extend_from_slice(root.to_bytes());
 		}
+		println!("unwrap value {max_edges:?}");
 
 		// Verify the zero-knowledge proof
 		let res = T::ClaimsVerifier::verify(
 			&bytes,
 			&proof_data.proof,
-			proof_data.spent_roots.len().try_into().unwrap_or_default(),
+			max_edges,
 		)?;
 		ensure!(res, Error::<T, I>::InvalidProof);
 		Ok(())
@@ -380,7 +382,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		let max_edges = Self::max_edges();
 		let next_resource_id_index = Self::next_resource_id_index();
 		ensure!(
-			next_resource_id_index < max_edges - 1,
+			next_resource_id_index < (max_edges as u32),
 			Error::<T, I>::ResourceIdListIsFull
 		);
 
@@ -391,7 +393,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		);
 		let resource_id_index = Self::next_resource_id_index();
 		ensure!(
-			(resource_id_index as u32) < max_edges,
+			(resource_id_index as u8) < max_edges,
 			Error::<T, I>::ResourceIdListIsFull
 		);
 
@@ -461,11 +463,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> Result<(), DispatchError> {
 		let max_edges = MaxEdges::<T, I>::get();
 		ensure!(
-			unspent_roots.len() as u32 == max_edges,
+			unspent_roots.len() as u8 == max_edges,
 			Error::<T, I>::InvalidUnspentRootsLength
 		);
 		ensure!(
-			resource_ids.len() as u32 == max_edges,
+			resource_ids.len() as u8 == max_edges,
 			Error::<T, I>::InvalidUnspentChainIdsLength
 		);
 
@@ -493,11 +495,11 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> Result<(), DispatchError> {
 		let max_edges = MaxEdges::<T, I>::get();
 		ensure!(
-			spent_roots.len() as u32 == max_edges,
+			spent_roots.len() as u8 == max_edges,
 			Error::<T, I>::InvalidSpentRootsLength
 		);
 		ensure!(
-			resource_ids.len() as u32 == max_edges,
+			resource_ids.len() as u8 == max_edges,
 			Error::<T, I>::InvalidSpentChainIds
 		);
 		for (resource_id, root) in resource_ids.iter().zip(spent_roots) {
@@ -557,22 +559,22 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 		// Handle proof verification
 		Self::handle_proof_verification(&reward_proof_data)?;
+
+		// Check if roots are valid
+		Self::ensure_valid_unspent_roots(id, &resource_ids, &reward_proof_data.unspent_roots)?;
+
+		Self::ensure_valid_spent_roots(id, &resource_ids, &reward_proof_data.spent_roots)?;
+
+		// Add reward_nullifier_hash
+		Self::add_reward_nullifier_hash(reward_proof_data.reward_nullifier)?;
+
+		// Add nullifier on VAnchor
+		T::VAnchor::add_nullifier_hash(id, reward_proof_data.input_nullifier)?;
+
+		// Insert output commitments into the AP VAnchor
 		//
-		// // Check if roots are valid
-		// Self::ensure_valid_unspent_roots(id, &resource_ids, &reward_proof_data.unspent_roots)?;
-		//
-		// Self::ensure_valid_spent_roots(id, &resource_ids, &reward_proof_data.spent_roots)?;
-		//
-		// // Add reward_nullifier_hash
-		// Self::add_reward_nullifier_hash(reward_proof_data.reward_nullifier)?;
-		//
-		// // Add nullifier on VAnchor
-		// T::VAnchor::add_nullifier_hash(id, reward_proof_data.input_nullifier)?;
-		//
-		// // Insert output commitments into the AP VAnchor
-		// //
-		// // T::VAnchor::LinkableTree::insert_in_order();
-		// T::LinkableTree::insert_in_order(id, reward_proof_data.output_commitment)?;
+		// T::VAnchor::LinkableTree::insert_in_order();
+		T::LinkableTree::insert_in_order(id, reward_proof_data.output_commitment)?;
 
 		Ok(().into())
 	}
