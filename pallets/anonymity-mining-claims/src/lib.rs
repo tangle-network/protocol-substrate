@@ -421,6 +421,10 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> Result<(), DispatchError> {
 		let root_index = Self::next_unspent_root_index(unspent_resource_id);
 		println!("SUBSTRATE: root_index: {root_index:?}");
+		let val = unspent_root.to_bytes();
+		println!("SUBSTRATE: unspent_root_bytes: {val:?}");
+
+		// println!("SUBSTRATE: unspent_root: {:#?}", unspent_root.encode());
 		ensure!(
 			Self::get_unspent_roots(unspent_resource_id).len() >= 1,
 			Error::<T, I>::InvalidUnspentChainIds

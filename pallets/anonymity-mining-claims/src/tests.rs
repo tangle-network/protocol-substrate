@@ -4,13 +4,15 @@ use crate::{
 	Error, Instance2,
 };
 use crate::test_utils::deconstruct_public_inputs_reward_proof_el;
+use ark_ff::{BigInteger, PrimeField};
+use webb_primitives::ElementTrait;
 
 use ark_serialize::CanonicalSerialize;
 use frame_benchmarking::account;
 use frame_support::{assert_err, assert_ok};
 use crate::Instance1;
 
-use sp_runtime::traits::Zero;
+// use sp_runtime::traits::Zero;
 
 use webb_primitives::{
 	webb_proposals::{
@@ -330,7 +332,7 @@ fn should_fail_update_without_resource_id_initialization() {
 		let src_target_system = target_system;
 		let src_resource_id = ResourceId::new(src_target_system, src_id);
 
-		let raw = include_str!("../circuitInput.json");
+		let raw = include_str!("../firstTransactionInputs.json");
 		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
 		let circuit_inputs = RewardCircuitInputs::from_raw(&inputs_raw);
 
@@ -375,7 +377,7 @@ fn should_init_and_update_roots() {
 			1u32.into()
 		).unwrap();
 
-		let raw = include_str!("../circuitInput.json");
+		let raw = include_str!("../firstTransactionInputs.json");
 		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
 		let circuit_inputs: RewardCircuitInputs = RewardCircuitInputs::from_raw(&inputs_raw);
 		let unspent_root_0 = Element::from_bytes(&circuit_inputs.unspent_roots[0].to_bytes_be().1);
@@ -475,7 +477,7 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		let dest_target_system = target_system;
 		let dest_resource_id = ResourceId::new(dest_target_system, target_id);
 
-		let raw = include_str!("../circuitInput.json");
+		let raw = include_str!("../firstTransactionInputs.json");
 		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
 		let circuit_inputs: RewardCircuitInputs = RewardCircuitInputs::from_raw(&inputs_raw);
 		// println!("inputs: {inputs_raw:?}");
@@ -616,6 +618,125 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 
 		let resource_ids = [src_resource_id, dest_resource_id];
 		println!("inputs_for_verification: {inputs_for_verification:?}");
+		let claim_ap_call = AnonymityMiningClaims::claim_ap(
+			tree_id,
+			reward_proof_data,
+			resource_ids.to_vec()
+		);
+		assert_ok!(claim_ap_call);
+
+		let raw = include_str!("../secondTransactionInputs.json");
+		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
+		let circuit_inputs: RewardCircuitInputs = RewardCircuitInputs::from_raw(&inputs_raw);
+
+		let inputs_for_proof = [
+			("rate", circuit_inputs.rate.clone()),
+			("fee", circuit_inputs.fee.clone()),
+			("rewardNullifier", circuit_inputs.reward_nullifier.clone()),
+			("extDataHash", circuit_inputs.ext_data_hash.clone()),
+			("noteChainID", circuit_inputs.note_chain_id.clone()),
+			("noteAmount", circuit_inputs.note_amount.clone()),
+			("noteAssetID", circuit_inputs.note_asset_id.clone()),
+			("noteTokenID", circuit_inputs.note_token_id.clone()),
+			("note_ak_X", circuit_inputs.note_ak_x.clone()),
+			("note_ak_Y", circuit_inputs.note_ak_y.clone()),
+			("noteBlinding", circuit_inputs.note_blinding.clone()),
+			("notePathElements", circuit_inputs.note_path_elements.clone()),
+			("notePathIndices", circuit_inputs.note_path_indices.clone()),
+			("note_alpha", circuit_inputs.note_alpha.clone()),
+			("note_ak_alpha_X", circuit_inputs.note_ak_alpha_x.clone()),
+			("note_ak_alpha_Y", circuit_inputs.note_ak_alpha_y.clone()),
+			("inputChainID", circuit_inputs.input_chain_id.clone()),
+			("inputAmount", circuit_inputs.input_amount.clone()),
+			("inputPrivateKey", circuit_inputs.input_private_key.clone()),
+			("inputBlinding", circuit_inputs.input_blinding.clone()),
+			("inputNullifier", circuit_inputs.input_nullifier.clone()),
+			("inputRoot", circuit_inputs.input_root.clone()),
+			("inputPathElements", circuit_inputs.input_path_elements.clone()),
+			("inputPathIndices", circuit_inputs.input_path_indices.clone()),
+			("outputChainID", circuit_inputs.output_chain_id.clone()),
+			("outputAmount", circuit_inputs.output_amount.clone()),
+			("outputPrivateKey", circuit_inputs.output_private_key.clone()),
+			("outputBlinding", circuit_inputs.output_blinding.clone()),
+			("outputCommitment", circuit_inputs.output_commitment.clone()),
+			("unspentTimestamp", circuit_inputs.unspent_timestamp.clone()),
+			("unspentRoots", circuit_inputs.unspent_roots.clone()),
+			("unspentPathIndices", circuit_inputs.unspent_path_indices.clone()),
+			("unspentPathElements", circuit_inputs.unspent_path_elements.clone()),
+			("spentTimestamp", circuit_inputs.spent_timestamp.clone()),
+			("spentRoots", circuit_inputs.spent_roots.clone()),
+			("spentPathIndices", circuit_inputs.spent_path_indices.clone()),
+			("spentPathElements", circuit_inputs.spent_path_elements.clone()),
+		];
+
+		let x = generate_proof(wc_2_2, &params_2_2, inputs_for_proof.clone());
+
+		let num_inputs = params_2_2.1.num_instance_variables;
+
+		let (proof, full_assignment) = x.unwrap();
+
+		let mut proof_bytes = Vec::new();
+		proof.serialize(&mut proof_bytes).unwrap();
+
+		let inputs_for_verification = &full_assignment[1..num_inputs];
+		let (
+			rate,
+			fee,
+			reward_nullifier,
+			note_ak_alpha_x,
+			note_ak_alpha_y,
+			ext_data_hash,
+			input_root,
+			input_nullifier,
+			output_commitment,
+			unspent_roots,
+			spent_roots,
+		) =
+			deconstruct_public_inputs_reward_proof_el(max_edges, &inputs_for_verification.to_vec());
+		let reward_proof_data = RewardProofData {
+			proof: proof_bytes,
+			rate,
+			fee,
+			reward_nullifier,
+			note_ak_alpha_x,
+			note_ak_alpha_y,
+			ext_data_hash,
+			input_root,
+			input_nullifier,
+			output_commitment,
+			unspent_roots,
+			spent_roots,
+		};
+
+		println!("unspent_root: {:#?}", circuit_inputs.unspent_roots[0].to_bytes_be());
+		let unspent_update_0 = AnonymityMiningClaims::update_unspent_root(
+			src_resource_id,
+			Element::from_bytes(&circuit_inputs.unspent_roots[0].to_biguint().unwrap().to_bytes_be())
+		);
+		assert_ok!(unspent_update_0);
+
+		let spent_update_0 = AnonymityMiningClaims::update_spent_root(
+			src_resource_id,
+			Element::from_bytes(&circuit_inputs.spent_roots[0].to_biguint().unwrap().to_bytes_be())
+		);
+		assert_ok!(spent_update_0);
+
+		let unspent_update_1 = AnonymityMiningClaims::update_unspent_root(
+			dest_resource_id,
+			Element::from_bytes(&circuit_inputs.unspent_roots[1].to_biguint().unwrap().to_bytes_be())
+		);
+		assert_ok!(unspent_update_1);
+
+		let spent_update_1 = AnonymityMiningClaims::update_spent_root(
+			dest_resource_id,
+			Element::from_bytes(&circuit_inputs.spent_roots[1].to_biguint().unwrap().to_bytes_be())
+		);
+		assert_ok!(spent_update_1);
+
+		let did_proof_work =
+			verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
+		assert!(did_proof_work);
+
 		let claim_ap_call = AnonymityMiningClaims::claim_ap(
 			tree_id,
 			reward_proof_data,
