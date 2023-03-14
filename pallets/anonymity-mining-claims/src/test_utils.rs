@@ -31,8 +31,8 @@ pub fn deconstruct_public_inputs_reward_proof(
 	let input_root = public_inputs[6];
 	let input_nullifier = public_inputs[7];
 	let output_commitment = public_inputs[8];
-	let unspent_roots = public_inputs[9..9+max_edges].to_vec();
-	let spent_roots = public_inputs[9+max_edges..9+(2*max_edges)].to_vec();
+	let unspent_roots = public_inputs[9..9 + max_edges].to_vec();
+	let spent_roots = public_inputs[9 + max_edges..9 + (2 * max_edges)].to_vec();
 	return (
 		rate,
 		fee,
@@ -45,7 +45,7 @@ pub fn deconstruct_public_inputs_reward_proof(
 		output_commitment,
 		unspent_roots,
 		spent_roots,
-	);
+	)
 }
 
 pub fn deconstruct_public_inputs_reward_proof_el(
@@ -64,14 +64,25 @@ pub fn deconstruct_public_inputs_reward_proof_el(
 	Vec<Element>,
 	Vec<Element>,
 ) {
-	let (rate, fee, reward_nullifier, note_ak_alpha_x, note_ak_alpha_y, ext_data_hash, input_root, input_nullifier, output_commitment, spent_roots, unspent_roots) =
-		deconstruct_public_inputs_reward_proof(max_edges as usize, public_inputs_f);
+	let (
+		rate,
+		fee,
+		reward_nullifier,
+		note_ak_alpha_x,
+		note_ak_alpha_y,
+		ext_data_hash,
+		input_root,
+		input_nullifier,
+		output_commitment,
+		spent_roots,
+		unspent_roots,
+	) = deconstruct_public_inputs_reward_proof(max_edges as usize, public_inputs_f);
 
 	let rate_el = Element::from_bytes(&rate.into_repr().to_bytes_be());
 	let fee_el = Element::from_bytes(&fee.into_repr().to_bytes_be());
 	let reward_nullifier_el = Element::from_bytes(&reward_nullifier.into_repr().to_bytes_be());
 	let reward_nullifier_el = Element::from_bytes(&reward_nullifier.into_repr().to_bytes_be());
-	let  note_ak_alpha_x_el = Element::from_bytes(&note_ak_alpha_x.into_repr().to_bytes_be());
+	let note_ak_alpha_x_el = Element::from_bytes(&note_ak_alpha_x.into_repr().to_bytes_be());
 	let note_ak_alpha_y_el = Element::from_bytes(&note_ak_alpha_y.into_repr().to_bytes_be());
 	let ext_data_hash_el = Element::from_bytes(&ext_data_hash.into_repr().to_bytes_be());
 	let input_root_el = Element::from_bytes(&input_root.into_repr().to_bytes_be());
@@ -100,5 +111,5 @@ pub fn deconstruct_public_inputs_reward_proof_el(
 		output_commitment_el,
 		unspent_roots_el,
 		spent_roots_el,
-	);
+	)
 }

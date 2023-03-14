@@ -15,11 +15,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Anonymity Mining Claims Module
+//! # Anonimity mining claims Module
+//!
+//! A module for anonimity mining rewards connected to the MASP.
 //!
 //! ## Overview
 //!
-//! The supported dispatchable functions are documented in the [`Call`] enum.
+//! The Anonimity mining claims module provides functionality for the following:
+//!
+//! * A user can prove that they have a (deposit, withdrawal) pair on the masp and claim anonimity
+//! points linked to both the amount that they have deposited and the amount of time they left in
+//! the pool.
+//!
+//! ## Interface
+//!
+//! ### Permissionless Functions
+//!
+//! * `claim_ap`: Allows user to prove in zero knowledge they have a pair (spentUTXO, unspentUTXO)
+//!   on the MASP
+//! 	and accumulate anonimity points following `inputAmount + rate * (spentTimestamp -
+//! unspentTimestamp) * amount`
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -27,39 +42,30 @@
 #[cfg(test)]
 pub mod mock;
 #[cfg(test)]
-mod tests;
-#[cfg(test)]
 mod test_utils;
+#[cfg(test)]
+mod tests;
 
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 	ensure,
 	pallet_prelude::DispatchError,
-	sp_runtime::{
-		traits::{AccountIdConversion, One, Saturating},
-		// SaturatedConversion,
-	},
-	traits::{Get},
+	sp_runtime::traits::{AccountIdConversion, One, Saturating},
+	traits::Get,
 	PalletId,
 };
-// use sp_runtime::traits::{AtLeast32Bit, One, Saturating, Zero};
-// use pallet_vanchor::ProposalNonce;
-use sp_runtime::traits::Zero;
 use orml_traits::MultiCurrency;
 pub use pallet::*;
 use pallet_vanchor::VAnchorConfigration;
+use sp_runtime::traits::Zero;
 use sp_std::{convert::TryInto, vec};
 use webb_primitives::{
 	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
-	traits::{
-		linkable_tree::*,
-		merkle_tree::*,
-		vanchor::{VAnchorInspector, VAnchorInterface},
-	},
+	traits::vanchor::{VAnchorInspector, VAnchorInterface},
+	// types::vanchor::{ExtData, ProofData, VAnchorMetadata},
+	// utils::compute_chain_id_type,
 	verifier::ClaimsVerifierModule,
-	types::vanchor::{ExtData, ProofData, VAnchorMetadata},
-	utils::compute_chain_id_type,
-	webb_proposals::{ResourceId, TargetSystem, TypedChainId},
+	webb_proposals::ResourceId,
 	ElementTrait,
 };
 
@@ -85,7 +91,7 @@ pub mod pallet {
 
 	pub struct Pallet<T, I = ()>(_);
 
-	#[derive(Clone, Encode, Decode, Debug, Default,	Eq, PartialEq, TypeInfo)]
+	#[derive(Clone, Encode, Decode, Debug, Default, Eq, PartialEq, TypeInfo)]
 	pub struct RewardProofData<E> {
 		pub proof: Vec<u8>,
 		pub rate: E,
@@ -109,17 +115,6 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self, I>>
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
-		// /// Proposal nonce type
-		// type ProposalNonce: Encode
-		// 	+ Decode
-		// 	+ Parameter
-		// 	+ AtLeast32Bit
-		// 	+ Default
-		// 	+ Copy
-		// 	+ MaxEncodedLen
-		// 	+ From<Self::LeafIndex>
-		// 	+ Into<Self::LeafIndex>;
 
 		/// Account Identifier from which the internal Pot is generated.
 		type PotId: Get<PalletId>;
@@ -160,34 +155,35 @@ pub mod pallet {
 		type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
-	/// The map of trees to the maximum number of anchor edges they can have
+	/// FIX: The map of trees to the maximum number of anchor edges they can have
 	#[pallet::storage]
 	#[pallet::getter(fn max_edges)]
 	pub type MaxEdges<T: Config<I>, I: 'static = ()> = StorageValue<_, u8, ValueQuery>;
 
-	/// A helper map for denoting whether an tree is bridged to given chain
+	/// FIX: A map for each resourceID that has been registered in the pallet
 	#[pallet::storage]
 	#[pallet::getter(fn registered_resource_ids)]
 	pub type RegisteredResourceIds<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, u32, ResourceId, ValueQuery>;
 
+	/// Where to register the next resource id on the `RegisteredResourceIds` map
 	#[pallet::storage]
 	#[pallet::getter(fn next_resource_id_index)]
 	pub type NextResourceIdIndex<T: Config<I>, I: 'static = ()> = StorageValue<_, u32, ValueQuery>;
 
-	/// The next unspent tree root index
+	/// The next unspent tree root index for a specific ResourceId
 	#[pallet::storage]
 	#[pallet::getter(fn next_unspent_root_index)]
 	pub(super) type NextUnspentRootIndex<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, ResourceId, T::RootIndex, ValueQuery>;
 
-	/// The next spent tree root index
+	/// The next spent tree root index for a specific ResourceId
 	#[pallet::storage]
 	#[pallet::getter(fn next_spent_root_index)]
 	pub(super) type NextSpentRootIndex<T: Config<I>, I: 'static = ()> =
 		StorageMap<_, Blake2_128Concat, ResourceId, T::RootIndex, ValueQuery>;
 
-	// Map of treeId -> root index -> root value for unspent roots
+	// Map of ResourceId -> root index -> root value for unspent roots
 	#[pallet::storage]
 	#[pallet::getter(fn cached_unspent_roots)]
 	pub type CachedUnspentRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
@@ -200,7 +196,7 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	// Map of treeId -> root index -> root value for spent roots
+	// Map of ResourceId -> root index -> root value for spent roots
 	#[pallet::storage]
 	#[pallet::getter(fn cached_spent_roots)]
 	pub type CachedSpentRoots<T: Config<I>, I: 'static = ()> = StorageDoubleMap<
@@ -213,7 +209,7 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	/// The map of spent reward_nullfiier_hashes
+	/// The map of spent reward_nullfiier_hashes to prevent double claiming
 	#[pallet::storage]
 	#[pallet::getter(fn reward_nullifier_hashes)]
 	pub type RewardNullifierHashes<T: Config<I>, I: 'static = ()> =
@@ -233,9 +229,7 @@ pub mod pallet {
 
 	#[pallet::genesis_build]
 	impl<T: Config<I>, I: 'static> GenesisBuild<T, I> for GenesisConfig<T, I> {
-		fn build(&self) {
-
-		}
+		fn build(&self) {}
 	}
 
 	#[pallet::storage]
@@ -265,42 +259,24 @@ pub mod pallet {
 		RewardNullifierAlreadySpent,
 		/// Invalid resource ID
 		InvalidResourceId,
+		/// Invalid resource ID length. Needs to be equal to max_edges
+		InvalidResourceIdLength,
 		/// Resource ID already initialized
 		ResourceIdAlreadyInitialized,
 		/// Cannot register more resource_ids. List is full.
 		ResourceIdListIsFull,
-
+		/// Invalid unspent roots. Need to update history for the resource_ids
 		InvalidUnspentRoots,
+		/// Invalid unspent roots array length. Needs to be equal to max_edges
 		InvalidUnspentRootsLength,
-		InvalidUnspentChainIdsLength,
-		InvalidUnspentChainIds,
-
+		/// Invalid spent roots. Need to update history for the resource_ids
 		InvalidSpentRoots,
+		/// Invalid spent roots array length. Needs to be equal to max_edges
 		InvalidSpentRootsLength,
-		InvalidSpentChainIds,
 	}
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
-		// #[pallet::weight(100_000)]
-		// #[pallet::call_index(0)]
-		// pub fn create(
-		// 	origin: OriginFor<T>,
-		// 	max_edges: u32,
-		// 	depth: u8,
-		// 	asset: CurrencyIdOf<T, I>,
-		// ) -> DispatchResultWithPostInfo {
-		// 	ensure_root(origin)?;
-		// 	let tree_id = <Self as ::create(
-		// 		None,
-		// 		depth,
-		// 		max_edges,
-		// 		asset,
-		// 		ProposalNonce::<T, I>::get().saturating_add(T::ProposalNonce::from(1u32)),
-		// 	)?;
-		// 	Self::deposit_event(Event::VAnchorCreation { tree_id });
-		// 	Ok(().into())
-		// }
 		#[pallet::weight(0)]
 		#[pallet::call_index(1)]
 		pub fn claim(
@@ -325,14 +301,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> Result<T::TreeId, DispatchError> {
 		// Nonce should be greater than the proposal nonce in storage
 		let id = T::VAnchor::create(creator.clone(), depth, max_edges as u32, asset, nonce.into())?;
-		// T::VAnchor::validate_and_set_nonce(nonce)?;
-		// let id = T::LinkableTree::create(creator.clone(), max_edges, depth)?;
 
-		// T::VAnchor::create(creator.clone(), depth, max_edges, asset, <T as pallet_vanchor)?;
-
-		MaxEdges::<T, I>::mutate(|i| {
-			*i = max_edges
-		});
+		// set max_edges value
+		MaxEdges::<T, I>::mutate(|i| *i = max_edges);
 
 		Ok(id)
 	}
@@ -346,6 +317,14 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		proof_data: &RewardProofData<T::Element>,
 	) -> Result<(), DispatchError> {
 		let max_edges = Self::max_edges();
+		ensure!(
+			proof_data.spent_roots.len() == max_edges as usize,
+			Error::<T, I>::InvalidSpentRootsLength
+		);
+		ensure!(
+			proof_data.unspent_roots.len() == max_edges as usize,
+			Error::<T, I>::InvalidUnspentRootsLength
+		);
 		let mut bytes = Vec::new();
 		bytes.extend_from_slice(proof_data.rate.to_bytes());
 		bytes.extend_from_slice(proof_data.fee.to_bytes());
@@ -362,14 +341,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		for root in &proof_data.unspent_roots {
 			bytes.extend_from_slice(root.to_bytes());
 		}
-		println!("unwrap value {max_edges:?}");
-
 		// Verify the zero-knowledge proof
-		let res = T::ClaimsVerifier::verify(
-			&bytes,
-			&proof_data.proof,
-			max_edges,
-		)?;
+		let res = T::ClaimsVerifier::verify(&bytes, &proof_data.proof, max_edges)?;
 		ensure!(res, Error::<T, I>::InvalidProof);
 		Ok(())
 	}
@@ -381,10 +354,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> Result<(), DispatchError> {
 		let max_edges = Self::max_edges();
 		let next_resource_id_index = Self::next_resource_id_index();
-		ensure!(
-			next_resource_id_index < (max_edges as u32),
-			Error::<T, I>::ResourceIdListIsFull
-		);
+		ensure!(next_resource_id_index < (max_edges as u32), Error::<T, I>::ResourceIdListIsFull);
 
 		let registered_resource_ids = Self::get_registered_resource_ids();
 		ensure!(
@@ -392,47 +362,35 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			Error::<T, I>::ResourceIdAlreadyInitialized
 		);
 		let resource_id_index = Self::next_resource_id_index();
-		ensure!(
-			(resource_id_index as u8) < max_edges,
-			Error::<T, I>::ResourceIdListIsFull
-		);
+		ensure!((resource_id_index as u8) < max_edges, Error::<T, I>::ResourceIdListIsFull);
 
 		RegisteredResourceIds::<T, I>::insert(resource_id_index, resource_id);
 
-		NextResourceIdIndex::<T, I>::mutate(|i| {
-			*i = i.saturating_add(One::one())
-		});
+		NextResourceIdIndex::<T, I>::mutate(|i| *i = i.saturating_add(One::one()));
 		let root_index: T::RootIndex = Zero::zero();
 		// Add unspent root
 		CachedUnspentRoots::<T, I>::insert(resource_id, root_index, unspent_root);
 		// Add spent root
 		CachedSpentRoots::<T, I>::insert(resource_id, root_index, spent_root);
 
-		NextUnspentRootIndex::<T, I>::mutate(resource_id, |i| { *i = One::one() });
-		NextSpentRootIndex::<T, I>::mutate(resource_id, |i| { *i = One::one() });
+		NextUnspentRootIndex::<T, I>::mutate(resource_id, |i| *i = One::one());
+		NextSpentRootIndex::<T, I>::mutate(resource_id, |i| *i = One::one());
 
 		Ok(())
 	}
 
 	/// Update unspent root
 	fn update_unspent_root(
-		unspent_resource_id: ResourceId,
+		resource_id: ResourceId,
 		unspent_root: T::Element,
 	) -> Result<(), DispatchError> {
-		let root_index = Self::next_unspent_root_index(unspent_resource_id);
-		println!("SUBSTRATE: root_index: {root_index:?}");
-		let val = unspent_root.to_bytes();
-		println!("SUBSTRATE: unspent_root_bytes: {val:?}");
+		ensure!(Self::get_unspent_roots(resource_id).len() >= 1, Error::<T, I>::InvalidResourceId);
 
-		// println!("SUBSTRATE: unspent_root: {:#?}", unspent_root.encode());
-		ensure!(
-			Self::get_unspent_roots(unspent_resource_id).len() >= 1,
-			Error::<T, I>::InvalidUnspentChainIds
-		);
 		// Update unspent root
-		CachedUnspentRoots::<T, I>::insert(unspent_resource_id, root_index, unspent_root);
+		let root_index = Self::next_unspent_root_index(resource_id);
+		CachedUnspentRoots::<T, I>::insert(resource_id, root_index, unspent_root);
 
-		NextUnspentRootIndex::<T, I>::mutate(unspent_resource_id, |i| {
+		NextUnspentRootIndex::<T, I>::mutate(resource_id, |i| {
 			*i = i.saturating_add(One::one()) % T::UnspentRootHistorySize::get()
 		});
 		Ok(())
@@ -440,19 +398,15 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	/// Update spent root
 	fn update_spent_root(
-		spent_resource_id: ResourceId,
+		resource_id: ResourceId,
 		spent_root: T::Element,
 	) -> Result<(), DispatchError> {
-		let root_index = Self::next_spent_root_index(spent_resource_id);
-		ensure!(
-			Self::get_spent_roots(spent_resource_id).len() >= 1,
-			Error::<T, I>::InvalidSpentChainIds
-		);
-
+		ensure!(Self::get_spent_roots(resource_id).len() >= 1, Error::<T, I>::InvalidResourceId);
 		// Update spent root
-		CachedSpentRoots::<T, I>::insert(spent_resource_id, root_index, spent_root);
+		let root_index = Self::next_spent_root_index(resource_id);
+		CachedSpentRoots::<T, I>::insert(resource_id, root_index, spent_root);
 
-		NextSpentRootIndex::<T, I>::mutate(spent_resource_id, |i| {
+		NextSpentRootIndex::<T, I>::mutate(resource_id, |i| {
 			*i = i.saturating_add(One::one()) % T::UnspentRootHistorySize::get()
 		});
 
@@ -461,90 +415,63 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 	/// Ensure valid unspent roots
 	fn ensure_valid_unspent_roots(
-		tree_id: T::TreeId,
 		resource_ids: &Vec<ResourceId>,
 		unspent_roots: &Vec<T::Element>,
 	) -> Result<(), DispatchError> {
 		let max_edges = MaxEdges::<T, I>::get();
-		ensure!(
-			unspent_roots.len() as u8 == max_edges,
-			Error::<T, I>::InvalidUnspentRootsLength
-		);
-		ensure!(
-			resource_ids.len() as u8 == max_edges,
-			Error::<T, I>::InvalidUnspentChainIdsLength
-		);
 
-		for (chain_id, root) in resource_ids.iter().zip(unspent_roots) {
-			let historical_roots = Self::get_unspent_roots(*chain_id);
-			ensure!(
-				historical_roots.len() >= 1,
-				Error::<T, I>::InvalidUnspentChainIds
-			);
+		// validate size of arrays provided
+		ensure!(unspent_roots.len() as u8 == max_edges, Error::<T, I>::InvalidUnspentRootsLength);
+		ensure!(resource_ids.len() as u8 == max_edges, Error::<T, I>::InvalidResourceIdLength);
+
+		// validate if unspent_roots are in resource_id root history
+		for (resource_id, root) in resource_ids.iter().zip(unspent_roots) {
+			let historical_roots = Self::get_unspent_roots(*resource_id);
+			ensure!(historical_roots.len() >= 1, Error::<T, I>::InvalidResourceId);
 			let is_known = historical_roots.contains(root);
-			println!("chain_id: {chain_id:?}, root: {root:?}, is_known: {is_known:?}");
-			ensure!(
-				is_known,
-				Error::<T, I>::InvalidUnspentRoots
-			);
+			ensure!(is_known, Error::<T, I>::InvalidUnspentRoots);
 		}
 		Ok(())
 	}
 
 	/// Ensure valid spent roots
 	fn ensure_valid_spent_roots(
-		tree_id: T::TreeId,
 		resource_ids: &Vec<ResourceId>,
 		spent_roots: &Vec<T::Element>,
 	) -> Result<(), DispatchError> {
 		let max_edges = MaxEdges::<T, I>::get();
-		ensure!(
-			spent_roots.len() as u8 == max_edges,
-			Error::<T, I>::InvalidSpentRootsLength
-		);
-		ensure!(
-			resource_ids.len() as u8 == max_edges,
-			Error::<T, I>::InvalidSpentChainIds
-		);
+
+		// validate size of arrays provided
+		ensure!(spent_roots.len() as u8 == max_edges, Error::<T, I>::InvalidSpentRootsLength);
+		ensure!(resource_ids.len() as u8 == max_edges, Error::<T, I>::InvalidResourceIdLength);
+
+		// validate if spent_roots are in resource_id root history
 		for (resource_id, root) in resource_ids.iter().zip(spent_roots) {
 			let historical_roots = Self::get_spent_roots(*resource_id);
-			ensure!(
-				historical_roots.len() >= 1,
-				Error::<T, I>::InvalidUnspentChainIds
-			);
+			ensure!(historical_roots.len() >= 1, Error::<T, I>::InvalidResourceId);
 			let is_known = historical_roots.contains(root);
-			println!("resource_id: {resource_id:?}, root: {root:?}, is_known: {is_known:?}");
-			ensure!(
-				is_known,
-				Error::<T, I>::InvalidSpentRoots
-			);
+			ensure!(is_known, Error::<T, I>::InvalidSpentRoots);
 		}
 		Ok(())
 	}
 
 	/// get unspent roots
-	pub fn get_unspent_roots(
-		resource_id: ResourceId,
-	) -> Vec<T::Element> {
+	pub fn get_unspent_roots(resource_id: ResourceId) -> Vec<T::Element> {
 		CachedUnspentRoots::<T, I>::iter_prefix_values(resource_id)
 			.into_iter()
 			.collect::<Vec<T::Element>>()
 	}
 
-	/// get unspent roots
-	pub fn get_registered_resource_ids() -> Vec<ResourceId> {
-		RegisteredResourceIds::<T, I>::iter_values()
-			.collect::<Vec<ResourceId>>()
-	}
-
 	/// get spent roots
-	pub fn get_spent_roots(
-		resource_id: ResourceId,
-	) -> Vec<T::Element> {
+	pub fn get_spent_roots(resource_id: ResourceId) -> Vec<T::Element> {
 		CachedSpentRoots::<T, I>::iter_prefix_values(resource_id)
 			.into_iter()
 			.collect::<Vec<T::Element>>()
+	}
 
+	/// get registered resource ids
+	pub fn get_registered_resource_ids() -> Vec<ResourceId> {
+		RegisteredResourceIds::<T, I>::iter_values().collect::<Vec<ResourceId>>()
 	}
 
 	/// Handle claiming of AP tokens
@@ -556,18 +483,16 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// Check if nullifier has been spent
 		let is_spent = RewardNullifierHashes::<T, I>::get(&reward_proof_data.reward_nullifier);
 
-		ensure!(
-			!is_spent,
-			Error::<T, I>::RewardNullifierAlreadySpent
-		);
+		ensure!(!is_spent, Error::<T, I>::RewardNullifierAlreadySpent);
 
 		// Handle proof verification
 		Self::handle_proof_verification(&reward_proof_data)?;
 
-		// Check if roots are valid
-		Self::ensure_valid_unspent_roots(id, &resource_ids, &reward_proof_data.unspent_roots)?;
+		// Check if unspent roots are valid
+		Self::ensure_valid_unspent_roots(&resource_ids, &reward_proof_data.unspent_roots)?;
 
-		Self::ensure_valid_spent_roots(id, &resource_ids, &reward_proof_data.spent_roots)?;
+		// Check if spent roots are valid
+		Self::ensure_valid_spent_roots(&resource_ids, &reward_proof_data.spent_roots)?;
 
 		// Add reward_nullifier_hash
 		Self::add_reward_nullifier_hash(reward_proof_data.reward_nullifier)?;
@@ -576,8 +501,6 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::VAnchor::add_nullifier_hash(id, reward_proof_data.input_nullifier)?;
 
 		// Insert output commitments into the AP VAnchor
-		//
-		// T::VAnchor::LinkableTree::insert_in_order();
 		T::LinkableTree::insert_in_order(id, reward_proof_data.output_commitment)?;
 
 		Ok(().into())
@@ -587,9 +510,4 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	pub fn account_id() -> T::AccountId {
 		T::PotId::get().into_account_truncating()
 	}
-
-	// Get AP Vanchor tree id
-	// pub fn ap_vanchor_tree_id() -> T::TreeId {
-	// 	T::APVanchorTreeId::get()
-	// }
 }

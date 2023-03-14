@@ -1,7 +1,7 @@
 use super::*;
 // use crate::{self as pallet_anonymity_mining_claims};
-use crate::Instance1;
 use crate as pallet_anonymity_mining_claims;
+use crate::Instance1;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	parameter_types,
