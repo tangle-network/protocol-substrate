@@ -30,11 +30,9 @@ pub mod mock;
 mod tests;
 
 use frame_support::{
-	dispatch::DispatchResultWithPostInfo,
-	ensure,
 	pallet_prelude::DispatchError,
 	sp_runtime::{
-		traits::{AccountIdConversion, One, Saturating},
+		traits::{AccountIdConversion, Saturating},
 		FixedI64, FixedPointNumber, SaturatedConversion,
 	},
 	traits::{Get, Time},
@@ -43,14 +41,7 @@ use frame_support::{
 use orml_traits::MultiCurrency;
 pub use pallet::*;
 use sp_std::{convert::TryInto, vec};
-use webb_primitives::{
-	linkable_tree::{LinkableTreeInspector, LinkableTreeInterface},
-	traits::{linkable_tree::*, merkle_tree::*},
-	types::vanchor::{ExtData, ProofData},
-	utils::compute_chain_id_type,
-	webb_proposals::{ResourceId, TargetSystem},
-	ElementTrait,
-};
+
 
 /// Type alias for the orml_traits::MultiCurrency::Balance type
 pub type BalanceOf<T, I> =

@@ -73,4 +73,3 @@ verifying = [
   "ark-bls12-381",
   "ark-bn254",
 ]
-# wasm = ["wasmer/js", "wasmer/std"]

@@ -22,12 +22,12 @@ use arkworks_setups::{
 	utxo::Utxo,
 	Curve,
 };
-use circom_proving::{generate_proof, verify_proof, ProofError};
+use circom_proving::{generate_proof, verify_proof};
 use frame_support::assert_ok;
 use num_bigint::{BigInt, Sign};
 use pallet_linkable_tree::LinkableTreeConfigration;
 use sp_core::hashing::keccak_256;
-use std::{fs::File, sync::Mutex};
+
 use webb_primitives::{
 	linkable_tree::LinkableTreeInspector,
 	merkle_tree::TreeInspector,
@@ -140,7 +140,7 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 			// Mock encryption value, not meant to be used in production
 			output2.to_vec(),
 		);
-		println!("ext_data: {:?}", ext_data);
+		println!("ext_data: {ext_data:?}");
 
 		let custom_root = MerkleTree2::get_default_root(tree_id).unwrap();
 		let neighbor_roots: [Element; EDGE_CT] = <LinkableTree2 as LinkableTreeInspector<
@@ -149,7 +149,7 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		.unwrap()
 		.try_into()
 		.unwrap();
-		println!("neighbor_roots: {:?}", neighbor_roots);
+		println!("neighbor_roots: {neighbor_roots:?}");
 
 		let input_nullifiers = in_utxos
 			.clone()
@@ -245,8 +245,8 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		}
 
 		let inputs_for_proof = [
-			("publicAmount", public_amount.clone()),
-			("extDataHash", ext_data_hash.clone()),
+			("publicAmount", public_amount),
+			("extDataHash", ext_data_hash),
 			("inputNullifier", input_nullifier.clone()),
 			("inAmount", in_amount.clone()),
 			("inPrivateKey", in_private_key.clone()),
@@ -258,7 +258,7 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 			("outAmount", out_amount.clone()),
 			("outPubkey", out_pub_key.clone()),
 			("outBlinding", out_blinding.clone()),
-			("chainID", chain_id.clone()),
+			("chainID", chain_id),
 			("roots", roots.clone()),
 		];
 
@@ -288,11 +288,11 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		);
 		println!("Proof data: {proof_data:?}");
 
-		let _relayer_balance_before = Balances::free_balance(relayer.clone());
-		let _recipient_balance_before = Balances::free_balance(recipient.clone());
+		let _relayer_balance_before = Balances::free_balance(relayer);
+		let _recipient_balance_before = Balances::free_balance(recipient);
 		let _transactor_balance_before = Balances::free_balance(transactor.clone());
 		assert_ok!(VAnchor2::transact(
-			RuntimeOrigin::signed(transactor.clone()),
+			RuntimeOrigin::signed(transactor),
 			tree_id,
 			proof_data,
 			ext_data

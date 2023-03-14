@@ -6,9 +6,7 @@ use ark_bn254::Fr;
 use ark_circom::WitnessCalculator;
 use ark_ff::{BigInteger, PrimeField};
 use ark_groth16::{
-	create_proof_with_reduction_and_matrices, create_random_proof as prove,
-	generate_random_parameters, prepare_verifying_key, verify_proof as ark_verify_proof,
-	Proof as ArkProof, ProvingKey, VerifyingKey,
+	ProvingKey,
 };
 use ark_relations::r1cs::ConstraintMatrices;
 use ark_serialize::CanonicalSerialize;
@@ -41,36 +39,27 @@ pub const DEFAULT_LEAF: [u8; 32] = [
 type VAnchorProver_Bn254_30_2_2_2 =
 	VAnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, NUM_UTXOS>;
 
-use crate::{mock::*, zerokit_utils::*, Instance2};
-use ark_bn254::{Fq, Fq2, G1Affine, G1Projective, G2Affine, G2Projective};
-use ark_circom::{read_zkey, CircomConfig, CircomReduction};
-use ark_ff::{BigInteger256, ToBytes};
-use ark_relations::r1cs::SynthesisError;
-use ark_std::UniformRand;
-use arkworks_native_gadgets::merkle_tree::{Path, SparseMerkleTree};
-use cfg_if::cfg_if;
+use crate::{mock::*};
+
+use ark_circom::{read_zkey};
+
+
+
+
+
 use frame_benchmarking::account;
 use frame_support::{assert_ok, traits::OnInitialize};
-use num_bigint::{BigUint, Sign};
-use once_cell::sync::OnceCell;
-use pallet_linkable_tree::LinkableTreeConfigration;
-use serde_json::Value;
-use sp_core::hashing::keccak_256;
+
+
+
+
+
 use std::{
-	convert::TryFrom,
-	fs::{self, File},
-	io::{Cursor, Error, ErrorKind},
-	result::Result,
-	str::FromStr,
+	fs::{File},
 };
-use thiserror::Error;
-use wasmer::{Module, Store};
+
+
 use webb_primitives::{
-	linkable_tree::LinkableTreeInspector,
-	merkle_tree::TreeInspector,
-	types::vanchor::{ExtData, ProofData},
-	utils::compute_chain_id_type,
-	verifying::CircomError,
 	AccountId,
 };
 

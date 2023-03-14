@@ -33,7 +33,7 @@ pub fn deconstruct_public_inputs_reward_proof(
 	let output_commitment = public_inputs[8];
 	let unspent_roots = public_inputs[9..9 + max_edges].to_vec();
 	let spent_roots = public_inputs[9 + max_edges..9 + (2 * max_edges)].to_vec();
-	return (
+	(
 		rate,
 		fee,
 		reward_nullifier,
@@ -80,7 +80,7 @@ pub fn deconstruct_public_inputs_reward_proof_el(
 
 	let rate_el = Element::from_bytes(&rate.into_repr().to_bytes_be());
 	let fee_el = Element::from_bytes(&fee.into_repr().to_bytes_be());
-	let reward_nullifier_el = Element::from_bytes(&reward_nullifier.into_repr().to_bytes_be());
+	let _reward_nullifier_el = Element::from_bytes(&reward_nullifier.into_repr().to_bytes_be());
 	let reward_nullifier_el = Element::from_bytes(&reward_nullifier.into_repr().to_bytes_be());
 	let note_ak_alpha_x_el = Element::from_bytes(&note_ak_alpha_x.into_repr().to_bytes_be());
 	let note_ak_alpha_y_el = Element::from_bytes(&note_ak_alpha_y.into_repr().to_bytes_be());
@@ -99,7 +99,7 @@ pub fn deconstruct_public_inputs_reward_proof_el(
 		.map(|x| Element::from_bytes(&x.into_repr().to_bytes_be()))
 		.collect();
 
-	return (
+	(
 		rate_el,
 		fee_el,
 		reward_nullifier_el,

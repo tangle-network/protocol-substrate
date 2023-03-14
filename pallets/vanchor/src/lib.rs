@@ -401,12 +401,12 @@ pub mod pallet {
 	}
 }
 
-pub struct VAnchorConfigration<T: Config<I>, I: 'static>(
+pub struct VAnchorConfiguration<T: Config<I>, I: 'static>(
 	core::marker::PhantomData<T>,
 	core::marker::PhantomData<I>,
 );
 
-impl<T: Config<I>, I: 'static> VAnchorConfig for VAnchorConfigration<T, I> {
+impl<T: Config<I>, I: 'static> VAnchorConfig for VAnchorConfiguration<T, I> {
 	type AccountId = T::AccountId;
 	type Amount = AmountOf<T, I>;
 	type Balance = BalanceOf<T, I>;
@@ -418,7 +418,7 @@ impl<T: Config<I>, I: 'static> VAnchorConfig for VAnchorConfigration<T, I> {
 	type ProposalNonce = T::ProposalNonce;
 }
 
-impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for Pallet<T, I> {
+impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfiguration<T, I>> for Pallet<T, I> {
 	fn create(
 		creator: Option<T::AccountId>,
 		depth: u8,
@@ -564,7 +564,7 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfigration<T, I>> for P
 	}
 }
 
-impl<T: Config<I>, I: 'static> VAnchorInspector<VAnchorConfigration<T, I>> for Pallet<T, I> {
+impl<T: Config<I>, I: 'static> VAnchorInspector<VAnchorConfiguration<T, I>> for Pallet<T, I> {
 	fn is_nullifier_used(tree_id: T::TreeId, nullifier_hash: T::Element) -> bool {
 		NullifierHashes::<T, I>::contains_key(tree_id, nullifier_hash)
 	}

@@ -1,11 +1,11 @@
 use super::*;
 // use crate::{self as pallet_anonymity_mining_claims};
 use crate as pallet_anonymity_mining_claims;
-use crate::Instance1;
+
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	parameter_types,
-	traits::{Contains, Nothing},
+	traits::{Nothing},
 	PalletId,
 };
 use frame_system as system;
@@ -60,7 +60,7 @@ frame_support::construct_runtime!(
 		VAnchor: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>},
 		KeyStorage: pallet_key_storage::{Pallet, Call, Storage, Event<T>, Config<T>},
-		AnonymityMiningClaims: pallet_anonymity_mining_claims::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>}
+		AnonymityMiningClaims: pallet_anonymity_mining_claims::<Instance1>::{Pallet, Call, Storage, Event<T>}
 	}
 );
 
@@ -346,11 +346,16 @@ impl pallet_key_storage::Config for Test {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const MaxAnchors: u32 = 2;
+}
+
 type AnonymityMiningClaimsInstance1 = pallet_anonymity_mining_claims::Instance1;
 impl pallet_anonymity_mining_claims::Config<AnonymityMiningClaimsInstance1> for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type PotId = PotId;
 	type APVanchorTreeId = APVanchorTreeId;
+	type MaxAnchors = MaxAnchors;
 	type Currency = Currencies;
 	type VAnchor = VAnchor;
 	type NativeCurrencyId = NativeCurrencyId;

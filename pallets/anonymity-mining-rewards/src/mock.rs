@@ -3,7 +3,7 @@ use crate::{self as pallet_anonymity_mining_rewards};
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	parameter_types,
-	traits::{Contains, Nothing},
+	traits::{Nothing},
 	PalletId,
 };
 use frame_system as system;
@@ -19,7 +19,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
-use webb_primitives::{field_ops::ArkworksIntoFieldBn254, verifying::ArkworksVerifierBn254};
+
 pub use webb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
 	hashing::ethereum::Keccak256HasherBn254,

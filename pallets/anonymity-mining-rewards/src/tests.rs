@@ -1,22 +1,17 @@
 use super::*;
 use crate::mock::*;
-use std::default::Default;
+
 
 use frame_benchmarking::account;
 use frame_support::assert_ok;
 
 use sp_runtime::traits::Zero;
 
-use webb_primitives::{
-	types::vanchor::ProofData,
-	webb_proposals::{
-		FunctionSignature, ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId,
-	},
-};
 
-use arkworks_setups::{common::setup_params, Curve};
 
-use pallet_vanchor_handler::AnchorList;
+
+
+
 
 const SEED: u32 = 0;
 const INITIAL_LIQUIDITY: u128 = 10000000;

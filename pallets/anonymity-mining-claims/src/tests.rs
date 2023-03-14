@@ -1,6 +1,6 @@
 use super::*;
-use crate::{mock::*, test_utils::deconstruct_public_inputs_reward_proof_el, Error, Instance2};
-use ark_ff::{BigInteger, PrimeField};
+use crate::{mock::*, test_utils::deconstruct_public_inputs_reward_proof_el, Error};
+use ark_ff::{BigInteger};
 use webb_primitives::ElementTrait;
 
 use crate::Instance1;
@@ -14,7 +14,7 @@ use ark_bn254::{Bn254, Fr};
 use ark_circom::{read_zkey, WitnessCalculator};
 use ark_groth16::ProvingKey;
 use ark_relations::r1cs::ConstraintMatrices;
-use circom_proving::{circom_from_folder, generate_proof, verify_proof, ProofError};
+use circom_proving::{circom_from_folder, generate_proof, verify_proof};
 use num_bigint::{BigInt, Sign};
 use std::{
 	fs::File,
@@ -23,7 +23,7 @@ use std::{
 	sync::Mutex,
 };
 use webb_primitives::webb_proposals::{
-	FunctionSignature, ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId,
+	ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId,
 };
 
 use arkworks_setups::{common::setup_params, Curve};
@@ -219,7 +219,7 @@ impl RewardCircuitInputs {
 		let note_ak_y = vec![Self::to_bigint(&inputs.note_ak_y)];
 		let note_blinding = vec![Self::to_bigint(&inputs.note_blinding)];
 		let note_path_elements =
-			inputs.note_path_elements.iter().map(|val| Self::to_bigint(&val)).collect();
+			inputs.note_path_elements.iter().map(|val| Self::to_bigint(val)).collect();
 		let note_path_indices = vec![Self::to_bigint(&inputs.note_path_indices)];
 		let note_alpha = vec![Self::to_bigint(&inputs.note_alpha)];
 		let note_ak_alpha_x = vec![Self::to_bigint(&inputs.note_ak_alpha_x)];
@@ -231,7 +231,7 @@ impl RewardCircuitInputs {
 		let input_nullifier = vec![Self::to_bigint(&inputs.input_nullifier)];
 		let input_root = vec![Self::to_bigint(&inputs.input_root)];
 		let input_path_elements =
-			inputs.input_path_elements.iter().map(|val| Self::to_bigint(&val)).collect();
+			inputs.input_path_elements.iter().map(|val| Self::to_bigint(val)).collect();
 
 		let input_path_indices = vec![Self::to_bigint(&inputs.input_path_indices)];
 		let output_chain_id = vec![Self::to_bigint(&inputs.output_chain_id)];
@@ -241,15 +241,15 @@ impl RewardCircuitInputs {
 		let output_commitment = vec![Self::to_bigint(&inputs.output_commitment)];
 		let unspent_timestamp = vec![Self::to_bigint(&inputs.unspent_timestamp)];
 		let unspent_roots =
-			inputs.unspent_roots.iter().map(|root| Self::to_bigint(&root)).collect();
+			inputs.unspent_roots.iter().map(|root| Self::to_bigint(root)).collect();
 		let unspent_path_indices = vec![Self::to_bigint(&inputs.unspent_path_indices)];
 		let unspent_path_elements =
-			inputs.unspent_path_elements.iter().map(|val| Self::to_bigint(&val)).collect();
+			inputs.unspent_path_elements.iter().map(|val| Self::to_bigint(val)).collect();
 		let spent_timestamp = vec![Self::to_bigint(&inputs.spent_timestamp)];
-		let spent_roots = inputs.spent_roots.iter().map(|val| Self::to_bigint(&val)).collect();
+		let spent_roots = inputs.spent_roots.iter().map(|val| Self::to_bigint(val)).collect();
 		let spent_path_indices = vec![Self::to_bigint(&inputs.spent_path_indices)];
 		let spent_path_elements =
-			inputs.spent_path_elements.iter().map(|val| Self::to_bigint(&val)).collect();
+			inputs.spent_path_elements.iter().map(|val| Self::to_bigint(val)).collect();
 		Self {
 			rate,
 			fee,
@@ -300,14 +300,14 @@ impl RewardCircuitInputs {
 }
 
 // helper function to create anchor using Anchor pallet call
-fn mock_vanchor_creation_using_pallet_call(resource_id: &ResourceId) {
+fn mock_vanchor_creation_using_pallet_call(_resource_id: &ResourceId) {
 	assert!(!<pallet_mt::Trees<Test, Instance1>>::contains_key(0));
 	assert_ok!(VAnchor::create(RuntimeOrigin::root(), TEST_MAX_EDGES, TEST_TREE_DEPTH, 0));
 	assert!(<pallet_mt::Trees<Test, Instance1>>::contains_key(0));
 	assert_eq!(TEST_MAX_EDGES, <pallet_linkable_tree::MaxEdges<Test, Instance1>>::get(0));
 	let max_edges = 2u8;
 	let depth = 30u8;
-	let call = AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32.into());
+	let call = AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32);
 	assert_ok!(call);
 }
 
@@ -354,7 +354,7 @@ fn should_init_and_update_roots() {
 		let max_edges = 2u8;
 		let depth = 30u8;
 		let _tree_id =
-			AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32.into()).unwrap();
+			AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32).unwrap();
 
 		let raw = include_str!("../firstTransactionInputs.json");
 		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
@@ -377,13 +377,13 @@ fn should_init_and_update_roots() {
 		let update_spent_call =
 			AnonymityMiningClaims::update_spent_root(src_resource_id, spent_root_1);
 		assert_ok!(update_spent_call);
-		let zero: RootIndex = 0u32.into();
+		let zero: RootIndex = 0u32;
 		let cached_unspent_root_0 =
 			AnonymityMiningClaims::cached_unspent_roots(src_resource_id, zero);
 		assert_eq!(cached_unspent_root_0, unspent_root_0);
 		let cached_spent_root_0 = AnonymityMiningClaims::cached_spent_roots(src_resource_id, zero);
 		assert_eq!(cached_spent_root_0, spent_root_0);
-		let one: RootIndex = 1u32.into();
+		let one: RootIndex = 1u32;
 		let cached_unspent_root_1 =
 			AnonymityMiningClaims::cached_unspent_roots(src_resource_id, one);
 		assert_eq!(cached_unspent_root_1, unspent_root_1);
@@ -411,7 +411,7 @@ fn should_create_pallet() {
 		setup_environment_with_circom();
 		let max_edges = 2u8;
 		let depth = 30u8;
-		let call = AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32.into());
+		let call = AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32);
 		assert_ok!(call);
 	})
 }
@@ -426,10 +426,10 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		let target_id = TypedChainId::Substrate(5);
 		let target_system =
 			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
-		let r_id: ResourceId = ResourceId::new(target_system, target_id);
+		let _r_id: ResourceId = ResourceId::new(target_system, target_id);
 
-		let root = Element::from_bytes(&[1; 32]);
-		let latest_leaf_index = 5;
+		let _root = Element::from_bytes(&[1; 32]);
+		let _latest_leaf_index = 5;
 		let src_target_system = target_system;
 		let src_resource_id = ResourceId::new(src_target_system, src_id);
 
@@ -444,7 +444,7 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		let max_edges = 2u8;
 		let depth = 30u8;
 		let tree_id =
-			AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32.into()).unwrap();
+			AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32).unwrap();
 
 		let init_call_0 = AnonymityMiningClaims::init_resource_id_history(
 			src_resource_id,
@@ -496,7 +496,7 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 			("spentTimestamp", circuit_inputs.spent_timestamp.clone()),
 			("spentRoots", circuit_inputs.spent_roots.clone()),
 			("spentPathIndices", circuit_inputs.spent_path_indices.clone()),
-			("spentPathElements", circuit_inputs.spent_path_elements.clone()),
+			("spentPathElements", circuit_inputs.spent_path_elements),
 		];
 		let x = generate_proof(wc_2_2, &params_2_2, inputs_for_proof.clone());
 
@@ -554,10 +554,10 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		let target_id = TypedChainId::Substrate(5);
 		let target_system =
 			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
-		let r_id: ResourceId = ResourceId::new(target_system, target_id);
+		let _r_id: ResourceId = ResourceId::new(target_system, target_id);
 
-		let root = Element::from_bytes(&[1; 32]);
-		let latest_leaf_index = 5;
+		let _root = Element::from_bytes(&[1; 32]);
+		let _latest_leaf_index = 5;
 		let src_target_system = target_system;
 		let src_resource_id = ResourceId::new(src_target_system, src_id);
 

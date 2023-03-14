@@ -1,3 +1,4 @@
+pub mod anonymity_mining;
 pub mod runtime;
 pub mod vanchor;
 

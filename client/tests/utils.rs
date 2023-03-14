@@ -40,7 +40,7 @@ use codec::{Decode, Encode};
 use num_bigint::BigInt;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use std::{convert::TryInto, sync::Mutex};
+use std::{sync::Mutex};
 
 type Bn254Fr = ark_bn254::Fr;
 
@@ -54,30 +54,25 @@ type VAnchorProver_Bn254_30_2_2_2 =
 	VAnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, NUM_UTXOS>;
 
 use ark_bn254::{Fq, Fq2, G1Affine, G1Projective, G2Affine, G2Projective};
-use ark_circom::{read_zkey, CircomConfig, CircomReduction};
-use ark_ff::{BigInteger256, ToBytes};
+use ark_circom::{CircomReduction};
+
 use ark_relations::r1cs::SynthesisError;
-use arkworks_native_gadgets::merkle_tree::{Path, SparseMerkleTree};
+
 use cfg_if::cfg_if;
-use frame_benchmarking::account;
-use frame_support::{assert_ok, traits::OnInitialize};
+
+
 use num_bigint::{BigUint, Sign};
 use once_cell::sync::OnceCell;
 use serde_json::Value;
-use sp_core::hashing::keccak_256;
+
 use std::{
 	convert::TryFrom,
-	fs::{self, File},
-	io::{Cursor, Error, ErrorKind},
 	result::Result,
 	str::FromStr,
 };
 use thiserror::Error;
 use wasmer::{Module, Store};
-use webb_primitives::{
-	linkable_tree::LinkableTreeInspector, merkle_tree::TreeInspector, utils::compute_chain_id_type,
-	verifying::CircomError, AccountId,
-};
+
 
 #[derive(Error, Debug)]
 pub enum ProofError {
@@ -192,9 +187,9 @@ pub fn generate_proof(
 ) -> Result<(ArkProof<Bn254>, Vec<Fr>), ProofError> {
 	let inputs = vanchor_witness
 		.into_iter()
-		.map(|(name, values)| (name.to_string(), values.clone()));
+		.map(|(name, values)| (name.to_string(), values));
 
-	println!("inputs {:?}", inputs);
+	println!("inputs {inputs:?}");
 
 	cfg_if! {
 		if #[cfg(target_arch = "wasm32")] {
@@ -507,7 +502,7 @@ pub fn setup_vanchor_circuit(
 	#[cfg(target_arch = "wasm32")] wc: &mut WitnessCalculator,
 ) -> (ArkProof<Bn254>, Vec<Bn254Fr>) {
 	let curve = Curve::Bn254;
-	let rng = &mut thread_rng();
+	let _rng = &mut thread_rng();
 
 	let leaves_f: Vec<Bn254Fr> =
 		leaves.iter().map(|x| Bn254Fr::from_be_bytes_mod_order(x)).collect();
@@ -540,13 +535,13 @@ pub fn setup_vanchor_circuit(
 	let nullifier_hasher = Poseidon::<Bn254Fr> { params: params4 };
 
 	// Make Inputs
-	let mut public_amount_as_vec = if public_amount > 0 {
+	let public_amount_as_vec = if public_amount > 0 {
 		vec![BigInt::from_bytes_be(Sign::Plus, &public_amount.to_be_bytes())]
 	} else {
 		vec![BigInt::from_bytes_be(Sign::Minus, &(-public_amount).to_be_bytes())]
 	};
 
-	let mut ext_data_hash_as_vec = vec![BigInt::from_bytes_be(Sign::Plus, &ext_data_hash)];
+	let ext_data_hash_as_vec = vec![BigInt::from_bytes_be(Sign::Plus, &ext_data_hash)];
 	let mut input_nullifier_as_vec = Vec::new();
 	let mut output_commitment_as_vec = Vec::new();
 	for i in 0..NUM_UTXOS {
@@ -564,9 +559,9 @@ pub fn setup_vanchor_circuit(
 		));
 	}
 
-	let mut chain_id_as_vec = vec![BigInt::from_bytes_be(Sign::Plus, &chain_id.to_be_bytes())];
+	let chain_id_as_vec = vec![BigInt::from_bytes_be(Sign::Plus, &chain_id.to_be_bytes())];
 
-	let mut roots_as_vec = in_root_set
+	let roots_as_vec = in_root_set
 		.iter()
 		.map(|x| BigInt::from_bytes_be(Sign::Plus, x))
 		.collect::<Vec<BigInt>>();
@@ -622,8 +617,8 @@ pub fn setup_vanchor_circuit(
 	}
 
 	let inputs_for_proof = [
-		("publicAmount", public_amount_as_vec.clone()),
-		("extDataHash", ext_data_hash_as_vec.clone()),
+		("publicAmount", public_amount_as_vec),
+		("extDataHash", ext_data_hash_as_vec),
 		("inputNullifier", input_nullifier_as_vec.clone()),
 		("inAmount", in_amount_as_vec.clone()),
 		("inPrivateKey", in_private_key_as_vec.clone()),
@@ -635,8 +630,8 @@ pub fn setup_vanchor_circuit(
 		("outAmount", out_amount_as_vec.clone()),
 		("outPubkey", out_pub_key_as_vec.clone()),
 		("outBlinding", out_blinding_as_vec.clone()),
-		("chainID", chain_id_as_vec.clone()),
-		("roots", roots_as_vec.clone()),
+		("chainID", chain_id_as_vec),
+		("roots", roots_as_vec),
 	];
 
 	let x = generate_proof(wc, circom_params, inputs_for_proof.clone());
@@ -645,7 +640,7 @@ pub fn setup_vanchor_circuit(
 
 	let (proof, full_assignment) = x.unwrap();
 
-	let mut public_inputs = &full_assignment[1..num_inputs];
+	let public_inputs = &full_assignment[1..num_inputs];
 
 	(proof, public_inputs.to_vec())
 }

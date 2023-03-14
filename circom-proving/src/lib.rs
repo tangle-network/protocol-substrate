@@ -1,13 +1,12 @@
 use ark_bn254::{Bn254, Fr};
 use ark_circom::{CircomReduction, WitnessCalculator};
-use ark_crypto_primitives::Error;
+
 use ark_groth16::{
 	create_proof_with_reduction_and_matrices, prepare_verifying_key,
-	verify_proof as ark_verify_proof, PreparedVerifyingKey, Proof as ArkProof, ProvingKey,
-	VerifyingKey as ArkVerifyingKey, VerifyingKey,
+	verify_proof as ark_verify_proof, Proof as ArkProof, ProvingKey, VerifyingKey,
 };
 use ark_relations::r1cs::{ConstraintMatrices, SynthesisError};
-use ark_serialize::CanonicalDeserialize;
+
 use ark_std::{rand::thread_rng, UniformRand};
 use cfg_if::cfg_if;
 use num_bigint::BigInt;
@@ -16,7 +15,7 @@ use std::sync::Mutex;
 use thiserror::Error;
 use wasmer::{Module, Store};
 // use ark_std::vec::Vec;
-use arkworks_native_gadgets::to_field_elements;
+
 
 #[derive(Error, Debug)]
 pub enum ProofError {
@@ -58,7 +57,7 @@ pub fn generate_proof<const N: usize>(
 ) -> Result<(ArkProof<Bn254>, Vec<Fr>), ProofError> {
 	let inputs = witness.iter().map(|(name, values)| (name.to_string(), values.clone()));
 
-	println!("inputs {:?}", inputs);
+	println!("inputs {inputs:?}");
 
 	cfg_if! {
 		if #[cfg(target_arch = "wasm32")] {

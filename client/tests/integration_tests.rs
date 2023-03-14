@@ -1,8 +1,8 @@
 use ark_ff::ToBytes;
-use ark_groth16::{Proof as ArkProof, ProvingKey, VerifyingKey};
+use ark_groth16::{ProvingKey};
 use ark_relations::r1cs::ConstraintMatrices;
 use sp_keyring::AccountKeyring;
-use sp_runtime::traits::Verify;
+
 use webb_client::webb_runtime;
 use webb_primitives::ElementTrait;
 
@@ -15,7 +15,7 @@ use webb_primitives::{hashing::ethereum::keccak_256, utils::compute_chain_id_typ
 use ark_bn254::{Bn254, Fr as Bn254Fr};
 use arkworks_native_gadgets::ark_std::rand::rngs::OsRng;
 use arkworks_setups::{
-	common::{verify_unchecked, verify_unchecked_raw},
+	common::{verify_unchecked_raw},
 	utxo::Utxo,
 };
 use subxt::{
@@ -27,7 +27,7 @@ use utils::ExtData;
 
 use ark_circom::{read_zkey, WitnessCalculator};
 use ark_ff::{BigInteger, PrimeField};
-use ark_serialize::CanonicalSerialize;
+
 use std::{fs::File, sync::Mutex};
 
 #[tokio::test]

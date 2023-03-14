@@ -481,7 +481,7 @@ fn should_complete_2x2_transaction_with_withdraw_unwrap_and_refund_native_token(
 		use arkworks_setups::common::verify;
 		match verify::<ark_bn254::Bn254>(&public_inputs, &verifying_key_2x2_bytes, &proof) {
 			Ok(res) => println!("Proof verification result: {res}"),
-			Err(e) => panic!("Proof verification failed: {:?}", e),
+			Err(e) => panic!("Proof verification failed: {e:?}"),
 		}
 
 		// Deconstructing public inputs
