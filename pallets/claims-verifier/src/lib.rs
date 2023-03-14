@@ -128,13 +128,8 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn parameters)]
 	/// Details of the module's parameters for different vanchor configurations
-	pub(super) type Parameters<T: Config<I>, I: 'static = ()> = StorageMap<
-		_,
-		Blake2_128Concat,
-		u8,
-		BoundedVec<u8, T::MaxParameterLength>,
-		ValueQuery,
-	>;
+	pub(super) type Parameters<T: Config<I>, I: 'static = ()> =
+		StorageMap<_, Blake2_128Concat, u8, BoundedVec<u8, T::MaxParameterLength>, ValueQuery>;
 
 	#[pallet::event]
 	pub enum Event<T: Config<I>, I: 'static = ()> {}

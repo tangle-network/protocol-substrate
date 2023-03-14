@@ -1,28 +1,20 @@
 use ark_bn254::{Bn254, Fr};
-use ark_crypto_primitives::Error;
-use thiserror::Error;
-use ark_groth16::{
-	verify_proof as ark_verify_proof,
-	PreparedVerifyingKey,
-	Proof as ArkProof,
-	VerifyingKey as ArkVerifyingKey,
-	create_proof_with_reduction_and_matrices,
-	prepare_verifying_key,
-	ProvingKey,
-	VerifyingKey
-};
 use ark_circom::{CircomReduction, WitnessCalculator};
-use std::{
-	sync::Mutex,
-	// convert::{TryFrom, TryInto},
+use ark_crypto_primitives::Error;
+use ark_groth16::{
+	create_proof_with_reduction_and_matrices, prepare_verifying_key,
+	verify_proof as ark_verify_proof, PreparedVerifyingKey, Proof as ArkProof, ProvingKey,
+	VerifyingKey as ArkVerifyingKey, VerifyingKey,
 };
-use ark_std::{rand::thread_rng, UniformRand};
-use num_bigint::{BigInt};
-use cfg_if::cfg_if;
 use ark_relations::r1cs::{ConstraintMatrices, SynthesisError};
 use ark_serialize::CanonicalDeserialize;
-use wasmer::{Module, Store};
+use ark_std::{rand::thread_rng, UniformRand};
+use cfg_if::cfg_if;
+use num_bigint::BigInt;
 use once_cell::sync::OnceCell;
+use std::sync::Mutex;
+use thiserror::Error;
+use wasmer::{Module, Store};
 // use ark_std::vec::Vec;
 use arkworks_native_gadgets::to_field_elements;
 
@@ -64,9 +56,7 @@ pub fn generate_proof<const N: usize>(
 	proving_key: &(ProvingKey<Bn254>, ConstraintMatrices<Fr>),
 	witness: [(&str, Vec<BigInt>); N],
 ) -> Result<(ArkProof<Bn254>, Vec<Fr>), ProofError> {
-	let inputs = witness
-		.iter()
-		.map(|(name, values)| (name.to_string(), values.clone()));
+	let inputs = witness.iter().map(|(name, values)| (name.to_string(), values.clone()));
 
 	println!("inputs {:?}", inputs);
 
@@ -121,4 +111,3 @@ pub fn verify_proof(
 
 	Ok(verified)
 }
-

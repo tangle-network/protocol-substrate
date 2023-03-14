@@ -21,9 +21,5 @@ pub trait VAnchorVerifierModule {
 }
 
 pub trait ClaimsVerifierModule {
-	fn verify(
-		pub_inps: &[u8],
-		data: &[u8],
-		max_instances: u8,
-	) -> Result<bool, DispatchError>;
+	fn verify(pub_inps: &[u8], data: &[u8], max_instances: u8) -> Result<bool, DispatchError>;
 }

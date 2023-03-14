@@ -1,5 +1,12 @@
-use crate::{mock::*, tests::*, Instance2};
-use crate::test_utils::{TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, DEFAULT_LEAF, setup_utxos, setup_environment_with_circom, deconstruct_public_inputs_el};
+use crate::{
+	mock::*,
+	test_utils::{
+		deconstruct_public_inputs_el, setup_environment_with_circom, setup_utxos, ANCHOR_CT,
+		DEFAULT_LEAF, NUM_UTXOS, TREE_DEPTH,
+	},
+	tests::*,
+	Instance2,
+};
 // use ark_bn254::{Bn254, Fr};
 // use ark_circom::{read_zkey, WitnessCalculator};
 use ark_ff::{BigInteger, PrimeField};
@@ -15,11 +22,12 @@ use arkworks_setups::{
 	utxo::Utxo,
 	Curve,
 };
+use circom_proving::{generate_proof, verify_proof, ProofError};
 use frame_support::assert_ok;
 use num_bigint::{BigInt, Sign};
 use pallet_linkable_tree::LinkableTreeConfigration;
 use sp_core::hashing::keccak_256;
-use std::{sync::Mutex, fs::File};
+use std::{fs::File, sync::Mutex};
 use webb_primitives::{
 	linkable_tree::LinkableTreeInspector,
 	merkle_tree::TreeInspector,
@@ -27,7 +35,6 @@ use webb_primitives::{
 	utils::compute_chain_id_type,
 	AccountId,
 };
-use circom_proving::{generate_proof, ProofError, verify_proof};
 
 type Bn254Fr = ark_bn254::Fr;
 

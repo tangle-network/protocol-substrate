@@ -2,9 +2,7 @@ use crate::*;
 use ark_bn254::{Bn254, Fr};
 use ark_crypto_primitives::Error;
 use ark_groth16::{
-	verify_proof as ark_verify_proof,
-	PreparedVerifyingKey,
-	Proof as ArkProof,
+	verify_proof as ark_verify_proof, PreparedVerifyingKey, Proof as ArkProof,
 	VerifyingKey as ArkVerifyingKey,
 };
 use ark_serialize::CanonicalDeserialize;

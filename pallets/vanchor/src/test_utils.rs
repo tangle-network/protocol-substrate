@@ -2,7 +2,6 @@ use crate::tests::{
 	BIGGER_DEFAULT_BALANCE, BIGGER_TRANSACTOR_ACCOUNT_ID, BIG_DEFAULT_BALANCE,
 	BIG_TRANSACTOR_ACCOUNT_ID, DEFAULT_BALANCE, RELAYER_ACCOUNT_ID, SEED, TRANSACTOR_ACCOUNT_ID,
 };
-use ark_serialize::CanonicalSerialize;
 use ark_bn254::Fr;
 use ark_circom::WitnessCalculator;
 use ark_ff::{BigInteger, PrimeField};
@@ -12,6 +11,7 @@ use ark_groth16::{
 	Proof as ArkProof, ProvingKey, VerifyingKey,
 };
 use ark_relations::r1cs::ConstraintMatrices;
+use ark_serialize::CanonicalSerialize;
 use ark_std::{rand::thread_rng, vec::Vec};
 use arkworks_native_gadgets::poseidon::Poseidon;
 use arkworks_setups::{
@@ -20,9 +20,9 @@ use arkworks_setups::{
 	utxo::Utxo,
 	Curve, VAnchorProver,
 };
+use circom_proving::circom_from_folder;
 use std::{collections::BTreeMap, convert::TryInto, sync::Mutex};
 use webb_primitives::ElementTrait;
-use circom_proving::circom_from_folder;
 
 use crate::mock::Element;
 
@@ -111,7 +111,6 @@ pub fn setup_environment_with_circom(
 		"../../solidity-fixtures/solidity-fixtures//vanchor_2/2/poseidon_vanchor_2_2.wasm";
 
 	let wc_2_2 = circom_from_folder(wasm_2_2_path);
-
 
 	let transactor = account::<AccountId>("", TRANSACTOR_ACCOUNT_ID, SEED);
 	let relayer = account::<AccountId>("", RELAYER_ACCOUNT_ID, SEED);
