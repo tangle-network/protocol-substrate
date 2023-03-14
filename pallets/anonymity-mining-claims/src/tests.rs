@@ -330,13 +330,13 @@ fn should_fail_update_without_resource_id_initialization() {
 			src_resource_id,
 			Element::from_bytes(&circuit_inputs.unspent_roots[0].to_bytes_be().1),
 		);
-		assert_err!(unspent_update_0, Error::<Test, Instance1>::InvalidUnspentChainIds,);
+		assert_err!(unspent_update_0, Error::<Test, Instance1>::InvalidResourceId);
 
 		let unspent_update_1 = AnonymityMiningClaims::update_unspent_root(
 			src_resource_id,
 			Element::from_bytes(&circuit_inputs.unspent_roots[1].to_bytes_be().1),
 		);
-		assert_err!(unspent_update_1, Error::<Test, Instance1>::InvalidUnspentChainIds,);
+		assert_err!(unspent_update_1, Error::<Test, Instance1>::InvalidResourceId);
 	})
 }
 
