@@ -42,7 +42,6 @@ use orml_traits::MultiCurrency;
 pub use pallet::*;
 use sp_std::{convert::TryInto, vec};
 
-
 /// Type alias for the orml_traits::MultiCurrency::Balance type
 pub type BalanceOf<T, I> =
 	<<T as Config<I>>::Currency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;

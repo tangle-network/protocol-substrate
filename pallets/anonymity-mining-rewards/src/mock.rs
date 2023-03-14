@@ -1,11 +1,7 @@
 use super::*;
 use crate::{self as pallet_anonymity_mining_rewards};
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{
-	parameter_types,
-	traits::{Nothing},
-	PalletId,
-};
+use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 use sp_runtime::traits::ConstU32;

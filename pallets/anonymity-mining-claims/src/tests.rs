@@ -1,6 +1,6 @@
 use super::*;
 use crate::{mock::*, test_utils::deconstruct_public_inputs_reward_proof_el, Error};
-use ark_ff::{BigInteger};
+use ark_ff::BigInteger;
 use webb_primitives::ElementTrait;
 
 use crate::Instance1;
@@ -240,8 +240,7 @@ impl RewardCircuitInputs {
 		let output_blinding = vec![Self::to_bigint(&inputs.output_blinding)];
 		let output_commitment = vec![Self::to_bigint(&inputs.output_commitment)];
 		let unspent_timestamp = vec![Self::to_bigint(&inputs.unspent_timestamp)];
-		let unspent_roots =
-			inputs.unspent_roots.iter().map(|root| Self::to_bigint(root)).collect();
+		let unspent_roots = inputs.unspent_roots.iter().map(|root| Self::to_bigint(root)).collect();
 		let unspent_path_indices = vec![Self::to_bigint(&inputs.unspent_path_indices)];
 		let unspent_path_elements =
 			inputs.unspent_path_elements.iter().map(|val| Self::to_bigint(val)).collect();
@@ -353,8 +352,7 @@ fn should_init_and_update_roots() {
 
 		let max_edges = 2u8;
 		let depth = 30u8;
-		let _tree_id =
-			AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32).unwrap();
+		let _tree_id = AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32).unwrap();
 
 		let raw = include_str!("../firstTransactionInputs.json");
 		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
@@ -443,8 +441,7 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		println!("circuitInputs: {circuit_inputs:?}");
 		let max_edges = 2u8;
 		let depth = 30u8;
-		let tree_id =
-			AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32).unwrap();
+		let tree_id = AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32).unwrap();
 
 		let init_call_0 = AnonymityMiningClaims::init_resource_id_history(
 			src_resource_id,

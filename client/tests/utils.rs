@@ -40,7 +40,7 @@ use codec::{Decode, Encode};
 use num_bigint::BigInt;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use std::{sync::Mutex};
+use std::sync::Mutex;
 
 type Bn254Fr = ark_bn254::Fr;
 
@@ -54,25 +54,19 @@ type VAnchorProver_Bn254_30_2_2_2 =
 	VAnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, NUM_UTXOS>;
 
 use ark_bn254::{Fq, Fq2, G1Affine, G1Projective, G2Affine, G2Projective};
-use ark_circom::{CircomReduction};
+use ark_circom::CircomReduction;
 
 use ark_relations::r1cs::SynthesisError;
 
 use cfg_if::cfg_if;
 
-
 use num_bigint::{BigUint, Sign};
 use once_cell::sync::OnceCell;
 use serde_json::Value;
 
-use std::{
-	convert::TryFrom,
-	result::Result,
-	str::FromStr,
-};
+use std::{convert::TryFrom, result::Result, str::FromStr};
 use thiserror::Error;
 use wasmer::{Module, Store};
-
 
 #[derive(Error, Debug)]
 pub enum ProofError {
@@ -185,9 +179,7 @@ pub fn generate_proof(
 	proving_key: &(ProvingKey<Bn254>, ConstraintMatrices<Fr>),
 	vanchor_witness: [(&str, Vec<BigInt>); 15],
 ) -> Result<(ArkProof<Bn254>, Vec<Fr>), ProofError> {
-	let inputs = vanchor_witness
-		.into_iter()
-		.map(|(name, values)| (name.to_string(), values));
+	let inputs = vanchor_witness.into_iter().map(|(name, values)| (name.to_string(), values));
 
 	println!("inputs {inputs:?}");
 

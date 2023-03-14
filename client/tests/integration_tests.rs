@@ -1,5 +1,5 @@
 use ark_ff::ToBytes;
-use ark_groth16::{ProvingKey};
+use ark_groth16::ProvingKey;
 use ark_relations::r1cs::ConstraintMatrices;
 use sp_keyring::AccountKeyring;
 
@@ -14,10 +14,7 @@ use webb_primitives::{hashing::ethereum::keccak_256, utils::compute_chain_id_typ
 
 use ark_bn254::{Bn254, Fr as Bn254Fr};
 use arkworks_native_gadgets::ark_std::rand::rngs::OsRng;
-use arkworks_setups::{
-	common::{verify_unchecked_raw},
-	utxo::Utxo,
-};
+use arkworks_setups::{common::verify_unchecked_raw, utxo::Utxo};
 use subxt::{
 	ext::sp_runtime::AccountId32,
 	tx::{PairSigner, TxProgress},

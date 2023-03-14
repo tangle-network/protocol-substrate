@@ -5,9 +5,7 @@ use crate::tests::{
 use ark_bn254::Fr;
 use ark_circom::WitnessCalculator;
 use ark_ff::{BigInteger, PrimeField};
-use ark_groth16::{
-	ProvingKey,
-};
+use ark_groth16::ProvingKey;
 use ark_relations::r1cs::ConstraintMatrices;
 use ark_serialize::CanonicalSerialize;
 use ark_std::{rand::thread_rng, vec::Vec};
@@ -39,29 +37,16 @@ pub const DEFAULT_LEAF: [u8; 32] = [
 type VAnchorProver_Bn254_30_2_2_2 =
 	VAnchorR1CSProver<Bn254, TREE_DEPTH, ANCHOR_CT, NUM_UTXOS, NUM_UTXOS>;
 
-use crate::{mock::*};
+use crate::mock::*;
 
-use ark_circom::{read_zkey};
-
-
-
-
+use ark_circom::read_zkey;
 
 use frame_benchmarking::account;
 use frame_support::{assert_ok, traits::OnInitialize};
 
+use std::fs::File;
 
-
-
-
-use std::{
-	fs::{File},
-};
-
-
-use webb_primitives::{
-	AccountId,
-};
+use webb_primitives::AccountId;
 
 pub fn setup_environment_with_circom(
 ) -> ((ProvingKey<Bn254>, ConstraintMatrices<Fr>), &'static Mutex<WitnessCalculator>) {
