@@ -198,7 +198,7 @@ pub mod pallet {
 		/// variable anchor system.
 		#[pallet::weight(195_000_000)]
 		#[pallet::call_index(4)]
-		pub fn execute_set_minx_withdrawal_limit_proposal(
+		pub fn execute_set_min_withdrawal_limit_proposal(
 			origin: OriginFor<T>,
 			min_withdraw_limit: VAnchorBalanceOf<T, I>,
 			nonce: T::ProposalNonce,

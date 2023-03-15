@@ -61,6 +61,7 @@ use codec::{self, Decode, Encode, EncodeLike, MaxEncodedLen};
 use frame_support::{
 	pallet_prelude::{ensure, DispatchResultWithPostInfo},
 	traits::{EnsureOrigin, Get},
+	BoundedVec,
 };
 use frame_system::{self as system, ensure_root};
 pub use pallet::*;
@@ -71,7 +72,8 @@ use sp_runtime::{
 };
 use sp_std::{convert::TryInto, prelude::*};
 use webb_primitives::{
-	signing::SigningSystem, utils::compute_chain_id_type, webb_proposals::ResourceId,
+	signature_bridge::SetMaintainer, signing::SigningSystem, utils::compute_chain_id_type,
+	webb_proposals::ResourceId,
 };
 pub use weights::WeightInfo;
 
@@ -86,6 +88,7 @@ pub mod pallet {
 	};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::traits::AtLeast32Bit;
+	use webb_primitives::signature_bridge::SetMaintainer;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -138,6 +141,7 @@ pub mod pallet {
 
 		/// Signature verification utility over public key infrastructure
 		type SignatureVerifier: SigningSystem;
+
 		/// The identifier for this chain.
 		/// This must be unique and must not collide with existing IDs within a
 		/// set of bridged chains.
@@ -252,7 +256,7 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		pub fn set_maintainer(
 			origin: OriginFor<T>,
-			// message contains the nonce as the first 4 bytes and the laste bytes of the message
+			// message contains the nonce as the first 4 bytes and the last bytes of the message
 			// is the new_maintainer
 			message: BoundedVec<u8, T::MaxStringLength>,
 			signature: BoundedVec<u8, T::MaxStringLength>,
@@ -295,9 +299,12 @@ pub mod pallet {
 		#[pallet::call_index(1)]
 		pub fn force_set_maintainer(
 			origin: OriginFor<T>,
+			nonce: T::MaintainerNonce,
 			new_maintainer: BoundedVec<u8, T::MaxStringLength>,
 		) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
+			// set the new maintainer nonce
+			MaintainerNonce::<T, I>::put(nonce);
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				let old_maintainer = maintainer.clone();
@@ -586,6 +593,29 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		// Increment the nonce once the proposal succeeds
 		ProposalNonce::<T, I>::put(nonce);
 		Ok(().into())
+	}
+}
+
+/// Implements the SetMaintainer post-processing hook for the pallet
+impl<T: Config<I>, I: 'static> SetMaintainer<T::MaintainerNonce, T::MaxStringLength>
+	for Pallet<T, I>
+{
+	fn set_maintainer(
+		nonce: T::MaintainerNonce,
+		new_maintainer: BoundedVec<u8, T::MaxStringLength>,
+	) -> Result<(), DispatchError> {
+		let next_maintainer_nonce = MaintainerNonce::<T, I>::get() + 1u32.into();
+		// Nonce should increment by 1
+		ensure!(next_maintainer_nonce == nonce, Error::<T, I>::InvalidNonce);
+		// set the new maintainer nonce
+		MaintainerNonce::<T, I>::put(nonce);
+		// set the new maintainer
+		Maintainer::<T, I>::try_mutate(|maintainer| {
+			let old_maintainer = maintainer.clone();
+			*maintainer = new_maintainer.clone();
+			Self::deposit_event(Event::MaintainerSet { old_maintainer, new_maintainer });
+			Ok(().into())
+		})
 	}
 }
 
