@@ -80,6 +80,7 @@ fn create_proposal_tests() {
 		// set the new maintainer
 		assert_ok!(Bridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		// Create proposal (& vote)
@@ -255,6 +256,7 @@ fn should_fail_on_invalid_proposal_call() {
 		// set the new maintainer
 		assert_ok!(Bridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 

@@ -135,6 +135,7 @@ fn should_update_fee_with_sig_succeed() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 
@@ -190,6 +191,7 @@ fn should_add_token_with_sig_succeed() {
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		// Create proposal (& vote)
@@ -250,6 +252,7 @@ fn should_remove_token_with_sig_succeed() {
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 
@@ -315,6 +318,7 @@ fn should_fail_to_remove_token_not_in_pool_with_sig() {
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		let nonce = webb_proposals::Nonce::from(0x0001);
@@ -384,6 +388,7 @@ fn should_add_many_tokens_with_sig_succeed() {
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		let nonce = webb_proposals::Nonce::from(0x0001);
@@ -484,6 +489,7 @@ fn should_fail_to_add_same_token_with_sig() {
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		// Create proposal
@@ -559,6 +565,7 @@ fn should_fail_to_add_non_existent_token_with_sig() {
 		// set the new maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		// Create proposal (& vote)

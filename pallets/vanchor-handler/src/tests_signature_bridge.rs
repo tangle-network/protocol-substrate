@@ -158,6 +158,7 @@ fn should_create_vanchor_with_sig_succeed() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
@@ -221,6 +222,7 @@ fn should_add_vanchor_edge_with_sig_succeed() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 
@@ -303,6 +305,7 @@ fn should_update_vanchor_edge_with_sig_succeed() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 
@@ -431,6 +434,7 @@ fn should_fail_to_execute_proposal_from_non_whitelisted_chain() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
@@ -485,6 +489,7 @@ fn should_fail_to_execute_proposal_with_non_existent_resource_id() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
@@ -533,6 +538,7 @@ fn should_fail_to_verify_proposal_with_tampered_signature() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap()
 		));
 		assert!(!<pallet_mt::Trees<Test>>::contains_key(0));
@@ -589,6 +595,7 @@ fn should_add_resource_sig_succeed_using_webb_proposals() {
 		// set the maintainer
 		assert_ok!(SignatureBridge::force_set_maintainer(
 			RuntimeOrigin::root(),
+			1u32,
 			public_uncompressed.to_vec().try_into().unwrap(),
 		));
 
