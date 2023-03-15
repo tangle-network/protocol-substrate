@@ -299,9 +299,12 @@ pub mod pallet {
 		#[pallet::call_index(1)]
 		pub fn force_set_maintainer(
 			origin: OriginFor<T>,
+			nonce: T::MaintainerNonce,
 			new_maintainer: BoundedVec<u8, T::MaxStringLength>,
 		) -> DispatchResultWithPostInfo {
 			Self::ensure_admin(origin)?;
+			// set the new maintainer nonce
+			MaintainerNonce::<T, I>::put(nonce);
 			// set the new maintainer
 			Maintainer::<T, I>::try_mutate(|maintainer| {
 				let old_maintainer = maintainer.clone();
