@@ -9,7 +9,7 @@ import type { ApiTypes, AugmentedConst } from '@polkadot/api-base/types';
 import type { Option, U8aFixed, Vec, bool, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
 import type { Codec } from '@polkadot/types-codec/types';
 import type { Perbill, Permill } from '@polkadot/types/interfaces/runtime';
-import type { FrameSupportPalletId, FrameSupportWeightsRuntimeDbWeight, FrameSystemLimitsBlockLength, FrameSystemLimitsBlockWeights, SpVersionRuntimeVersion } from '@polkadot/types/lookup';
+import type { FrameSupportPalletId, FrameSystemLimitsBlockLength, FrameSystemLimitsBlockWeights, SpVersionRuntimeVersion, SpWeightsRuntimeDbWeight, SpWeightsWeightV2Weight } from '@polkadot/types/lookup';
 
 export type __AugmentedConst<ApiType extends ApiTypes> = AugmentedConst<ApiType>;
 
@@ -48,6 +48,12 @@ declare module '@polkadot/api-base/types/consts' {
        * metadata.
        **/
       metadataDepositPerByte: u128 & AugmentedConst<ApiType>;
+      /**
+       * Max number of items to destroy per `destroy_accounts` and `destroy_approvals` call.
+       * 
+       * Must be configured to result in a weight that makes each call fit in a block.
+       **/
+      removeItemsLimit: u32 & AugmentedConst<ApiType>;
       /**
        * The maximum length of a name or symbol stored on-chain.
        **/
@@ -260,6 +266,14 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       launchPeriod: u64 & AugmentedConst<ApiType>;
       /**
+       * The maximum number of items which can be blacklisted.
+       **/
+      maxBlacklisted: u32 & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of deposits a public proposal may have at any time.
+       **/
+      maxDeposits: u32 & AugmentedConst<ApiType>;
+      /**
        * The maximum number of public proposals that can exist at any time.
        **/
       maxProposals: u32 & AugmentedConst<ApiType>;
@@ -274,10 +288,6 @@ declare module '@polkadot/api-base/types/consts' {
        * The minimum amount to be used as a deposit for a public referendum proposal.
        **/
       minimumDeposit: u128 & AugmentedConst<ApiType>;
-      /**
-       * The amount of balance that must be deposited per byte of preimage stored.
-       **/
-      preimageByteDeposit: u128 & AugmentedConst<ApiType>;
       /**
        * The minimum period of vote locking.
        * 
@@ -315,6 +325,16 @@ declare module '@polkadot/api-base/types/consts' {
        * take place over multiple blocks.
        **/
       maxElectingVoters: u32 & AugmentedConst<ApiType>;
+      /**
+       * The maximum number of winners that can be elected by this `ElectionProvider`
+       * implementation.
+       * 
+       * Note: This must always be greater or equal to `T::DataProvider::desired_targets()`.
+       **/
+      maxWinners: u32 & AugmentedConst<ApiType>;
+      minerMaxLength: u32 & AugmentedConst<ApiType>;
+      minerMaxVotesPerVoter: u32 & AugmentedConst<ApiType>;
+      minerMaxWeight: SpWeightsWeightV2Weight & AugmentedConst<ApiType>;
       /**
        * The priority of the unsigned transaction submitted in the unsigned-phase
        **/
@@ -359,7 +379,7 @@ declare module '@polkadot/api-base/types/consts' {
        * this pallet), then [`MinerConfig::solution_weight`] is used to compare against
        * this value.
        **/
-      signedMaxWeight: u64 & AugmentedConst<ApiType>;
+      signedMaxWeight: SpWeightsWeightV2Weight & AugmentedConst<ApiType>;
       /**
        * Duration of the signed phase.
        **/
@@ -509,7 +529,7 @@ declare module '@polkadot/api-base/types/consts' {
       /**
        * The maximum amount of signatories allowed in the multisig.
        **/
-      maxSignatories: u16 & AugmentedConst<ApiType>;
+      maxSignatories: u32 & AugmentedConst<ApiType>;
       /**
        * Generic const
        **/
@@ -604,13 +624,11 @@ declare module '@polkadot/api-base/types/consts' {
     };
     scheduler: {
       /**
-       * The maximum weight that may be scheduled per block for any dispatchables of less
-       * priority than `schedule::HARD_DEADLINE`.
+       * The maximum weight that may be scheduled per block for any dispatchables.
        **/
-      maximumWeight: u64 & AugmentedConst<ApiType>;
+      maximumWeight: SpWeightsWeightV2Weight & AugmentedConst<ApiType>;
       /**
        * The maximum number of scheduled calls in the queue for a single block.
-       * Not strictly enforced, but used for weight estimation.
        **/
       maxScheduledPerBlock: u32 & AugmentedConst<ApiType>;
       /**
@@ -643,6 +661,29 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       bondingDuration: u32 & AugmentedConst<ApiType>;
       /**
+       * Number of eras to keep in history.
+       * 
+       * Following information is kept for eras in `[current_era -
+       * HistoryDepth, current_era]`: `ErasStakers`, `ErasStakersClipped`,
+       * `ErasValidatorPrefs`, `ErasValidatorReward`, `ErasRewardPoints`,
+       * `ErasTotalStake`, `ErasStartSessionIndex`,
+       * `StakingLedger.claimed_rewards`.
+       * 
+       * Must be more than the number of eras delayed by session.
+       * I.e. active era must always be in history. I.e. `active_era >
+       * current_era - history_depth` must be guaranteed.
+       * 
+       * If migrating an existing pallet from storage value to config value,
+       * this should be set to same value or greater as in storage.
+       * 
+       * Note: `HistoryDepth` is used as the upper bound for the `BoundedVec`
+       * item `StakingLedger.claimed_rewards`. Setting this value lower than
+       * the existing value can lead to inconsistencies in the
+       * `StakingLedger` and will need to be handled properly in a migration.
+       * The test `reducing_history_depth_abrupt` shows this effect.
+       **/
+      historyDepth: u32 & AugmentedConst<ApiType>;
+      /**
        * Maximum number of nominations per nominator.
        **/
       maxNominations: u32 & AugmentedConst<ApiType>;
@@ -654,8 +695,16 @@ declare module '@polkadot/api-base/types/consts' {
        **/
       maxNominatorRewardedPerValidator: u32 & AugmentedConst<ApiType>;
       /**
-       * The maximum number of `unlocking` chunks a [`StakingLedger`] can have. Effectively
-       * determines how many unique eras a staker may be unbonding in.
+       * The maximum number of `unlocking` chunks a [`StakingLedger`] can
+       * have. Effectively determines how many unique eras a staker may be
+       * unbonding in.
+       * 
+       * Note: `MaxUnlockingChunks` is used as the upper bound for the
+       * `BoundedVec` item `StakingLedger.unlocking`. Setting this value
+       * lower than the existing value can lead to inconsistencies in the
+       * `StakingLedger` and will need to be handled properly in a runtime
+       * migration. The test `reducing_max_unlocking_chunks_abrupt` shows
+       * this effect.
        **/
       maxUnlockingChunks: u32 & AugmentedConst<ApiType>;
       /**
@@ -690,9 +739,9 @@ declare module '@polkadot/api-base/types/consts' {
       /**
        * The weight of runtime database operations the runtime can invoke.
        **/
-      dbWeight: FrameSupportWeightsRuntimeDbWeight & AugmentedConst<ApiType>;
+      dbWeight: SpWeightsRuntimeDbWeight & AugmentedConst<ApiType>;
       /**
-       * The designated SS85 prefix of this chain.
+       * The designated SS58 prefix of this chain.
        * 
        * This replaces the "ss58Format" property declared in the chain spec. Reason is
        * that the runtime should know about the prefix in order to make use of it as
