@@ -256,7 +256,7 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		pub fn set_maintainer(
 			origin: OriginFor<T>,
-			// message contains the nonce as the first 4 bytes and the laste bytes of the message
+			// message contains the nonce as the first 4 bytes and the last bytes of the message
 			// is the new_maintainer
 			message: BoundedVec<u8, T::MaxStringLength>,
 			signature: BoundedVec<u8, T::MaxStringLength>,
