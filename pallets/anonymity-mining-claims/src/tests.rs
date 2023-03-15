@@ -66,11 +66,11 @@ fn setup_environment_with_circom(
 	setup_environment();
 
 	println!("Setting up ZKey");
-	let path_2_2 = "/home/semar/Projects/protocol-substrate/pallets/anonymity-mining-rewards/solidity-fixtures/solidity-fixtures/reward_2/30/circuit_final.zkey";
+	let path_2_2 = "../../solidity-fixtures/solidity-fixtures/reward_2/30/circuit_final.zkey";
 	let mut file_2_2 = File::open(path_2_2).unwrap();
 	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
 
-	let wasm_2_2_path = "/home/semar/Projects/protocol-substrate/pallets/anonymity-mining-rewards/solidity-fixtures/solidity-fixtures/reward_2/30/reward_30_2.wasm";
+	let wasm_2_2_path = "../../solidity-fixtures/solidity-fixtures/reward_2/30/reward_30_2.wasm";
 
 	let wc_2_2 = circom_from_folder(wasm_2_2_path);
 
