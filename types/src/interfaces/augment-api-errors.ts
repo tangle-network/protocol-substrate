@@ -37,6 +37,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       InvalidSharedAssetLen: AugmentedError<ApiType>;
       /**
+       * Max number of assets in pool is reached
+       **/
+      MaxAssetIdInPoolReached: AugmentedError<ApiType>;
+      /**
        * Asset Id is not available. This only happens when it reaches the MAX
        * value of given id type.
        **/
@@ -56,6 +60,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       AlreadyExists: AugmentedError<ApiType>;
       /**
+       * The asset is not live, and likely being destroyed.
+       **/
+      AssetNotLive: AugmentedError<ApiType>;
+      /**
        * Invalid metadata given.
        **/
       BadMetadata: AugmentedError<ApiType>;
@@ -72,9 +80,18 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       Frozen: AugmentedError<ApiType>;
       /**
+       * The asset status is not the expected status.
+       **/
+      IncorrectStatus: AugmentedError<ApiType>;
+      /**
        * The asset ID is already taken.
        **/
       InUse: AugmentedError<ApiType>;
+      /**
+       * The asset is a live asset and is actively being used. Usually emit for operations such
+       * as `start_destroy` which require the asset to be in a destroying state.
+       **/
+      LiveAsset: AugmentedError<ApiType>;
       /**
        * Minimum balance should be non-zero.
        **/
@@ -97,6 +114,10 @@ declare module '@polkadot/api-base/types/errors' {
        * maximum number of consumers has been reached.
        **/
       NoProvider: AugmentedError<ApiType>;
+      /**
+       * The asset should be frozen before the given operation.
+       **/
+      NotFrozen: AugmentedError<ApiType>;
       /**
        * No approval exists that would allow the transfer.
        **/
@@ -198,7 +219,7 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ExistingVestingSchedule: AugmentedError<ApiType>;
       /**
-       * Balance too low to send value
+       * Balance too low to send value.
        **/
       InsufficientBalance: AugmentedError<ApiType>;
       /**
@@ -369,17 +390,9 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       AlreadyVetoed: AugmentedError<ApiType>;
       /**
-       * Preimage already noted
-       **/
-      DuplicatePreimage: AugmentedError<ApiType>;
-      /**
        * Proposal already made
        **/
       DuplicateProposal: AugmentedError<ApiType>;
-      /**
-       * Imminent
-       **/
-      Imminent: AugmentedError<ApiType>;
       /**
        * The instant referendum origin is currently disallowed.
        **/
@@ -417,10 +430,6 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       NotDelegating: AugmentedError<ApiType>;
       /**
-       * Not imminent
-       **/
-      NotImminent: AugmentedError<ApiType>;
-      /**
        * Next external proposal not simple majority
        **/
       NotSimpleMajority: AugmentedError<ApiType>;
@@ -428,14 +437,6 @@ declare module '@polkadot/api-base/types/errors' {
        * The given account did not vote on the referendum.
        **/
       NotVoter: AugmentedError<ApiType>;
-      /**
-       * Invalid preimage
-       **/
-      PreimageInvalid: AugmentedError<ApiType>;
-      /**
-       * Preimage not found
-       **/
-      PreimageMissing: AugmentedError<ApiType>;
       /**
        * Proposal still blacklisted
        **/
@@ -449,13 +450,9 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       ReferendumInvalid: AugmentedError<ApiType>;
       /**
-       * Too early
+       * Maximum number of items reached.
        **/
-      TooEarly: AugmentedError<ApiType>;
-      /**
-       * Maximum number of proposals reached.
-       **/
-      TooManyProposals: AugmentedError<ApiType>;
+      TooMany: AugmentedError<ApiType>;
       /**
        * Value too low
        **/
@@ -479,6 +476,10 @@ declare module '@polkadot/api-base/types/errors' {
       [key: string]: AugmentedError<ApiType>;
     };
     electionProviderMultiPhase: {
+      /**
+       * Some bound not met
+       **/
+      BoundNotMet: AugmentedError<ApiType>;
       /**
        * The call is not allowed at this point.
        **/
@@ -527,6 +528,10 @@ declare module '@polkadot/api-base/types/errors' {
        * The signed submission consumes too much weight
        **/
       SignedTooMuchWeight: AugmentedError<ApiType>;
+      /**
+       * Submitted solution has too many winners
+       **/
+      TooManyWinners: AugmentedError<ApiType>;
       /**
        * Generic error
        **/
@@ -650,7 +655,7 @@ declare module '@polkadot/api-base/types/errors' {
       /**
        * Parameters haven't been initialized
        **/
-      ParametersNotInitialized: AugmentedError<ApiType>;
+      HashingParametersNotInitialized: AugmentedError<ApiType>;
       /**
        * Generic error
        **/
@@ -697,6 +702,8 @@ declare module '@polkadot/api-base/types/errors' {
       [key: string]: AugmentedError<ApiType>;
     };
     keyStorage: {
+      MaxPubkeyOwnersExceeded: AugmentedError<ApiType>;
+      PubKeyOutOfBounds: AugmentedError<ApiType>;
       /**
        * Generic error
        **/
@@ -739,6 +746,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Invalid length for default hashes
        **/
       ExceedsMaxDefaultHashes: AugmentedError<ApiType>;
+      /**
+       * Invalid length for edges
+       **/
+      ExceedsMaxEdges: AugmentedError<ApiType>;
       /**
        * Tree is full
        **/
@@ -794,13 +805,13 @@ declare module '@polkadot/api-base/types/errors' {
     };
     mixerVerifierBn254: {
       /**
-       * Parameters haven't been initialized
-       **/
-      ParametersNotInitialized: AugmentedError<ApiType>;
-      /**
        * Error during verification
        **/
       VerifyError: AugmentedError<ApiType>;
+      /**
+       * Parameters haven't been initialized
+       **/
+      VerifyingParametersNotInitialized: AugmentedError<ApiType>;
       /**
        * Generic error
        **/
@@ -897,6 +908,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       FullyUnbonding: AugmentedError<ApiType>;
       /**
+       * Pool id provided is not correct/usable.
+       **/
+      InvalidPoolId: AugmentedError<ApiType>;
+      /**
        * Too many members in the pool or system.
        **/
       MaxPoolMembers: AugmentedError<ApiType>;
@@ -946,6 +961,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       PartialUnbondNotAllowedPermissionlessly: AugmentedError<ApiType>;
       /**
+       * Pool id currently in use.
+       **/
+      PoolIdInUse: AugmentedError<ApiType>;
+      /**
        * An account is not a member.
        **/
       PoolMemberNotFound: AugmentedError<ApiType>;
@@ -990,7 +1009,7 @@ declare module '@polkadot/api-base/types/errors' {
       /**
        * Preimage is too large to store on-chain.
        **/
-      TooLarge: AugmentedError<ApiType>;
+      TooBig: AugmentedError<ApiType>;
       /**
        * Generic error
        **/
@@ -1057,6 +1076,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Failed to schedule a call
        **/
       FailedToSchedule: AugmentedError<ApiType>;
+      /**
+       * Attempt to use a non-named function on a named task.
+       **/
+      Named: AugmentedError<ApiType>;
       /**
        * Cannot find the scheduled call.
        **/
@@ -1162,6 +1185,10 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       SignatureInvalid: AugmentedError<ApiType>;
       /**
+       * The max limit for string is exceeded
+       **/
+      StringLimitExceeded: AugmentedError<ApiType>;
+      /**
        * Generic error
        **/
       [key: string]: AugmentedError<ApiType>;
@@ -1187,6 +1214,10 @@ declare module '@polkadot/api-base/types/errors' {
        * A nomination target was supplied that was blocked or otherwise not a validator.
        **/
       BadTarget: AugmentedError<ApiType>;
+      /**
+       * Some bound is not met.
+       **/
+      BoundNotMet: AugmentedError<ApiType>;
       /**
        * The user has enough bond and thus cannot be chilled forcefully by an external person.
        **/
@@ -1263,8 +1294,8 @@ declare module '@polkadot/api-base/types/errors' {
        **/
       TooManyTargets: AugmentedError<ApiType>;
       /**
-       * There are too many validators in the system. Governance needs to adjust the staking
-       * settings to keep things safe for the runtime.
+       * There are too many validator candidates in the system. Governance needs to adjust the
+       * staking settings to keep things safe for the runtime.
        **/
       TooManyValidators: AugmentedError<ApiType>;
       /**
@@ -1364,6 +1395,10 @@ declare module '@polkadot/api-base/types/errors' {
        * Invalid nonce
        **/
       InvalidNonce: AugmentedError<ApiType>;
+      /**
+       * Name exceeds maximum limit
+       **/
+      NameExceedsMaximumLimit: AugmentedError<ApiType>;
       /**
        * Assets not found in selected pool
        **/
@@ -1488,13 +1523,13 @@ declare module '@polkadot/api-base/types/errors' {
     };
     vAnchorVerifier: {
       /**
-       * Parameters haven't been initialized
-       **/
-      ParametersNotInitialized: AugmentedError<ApiType>;
-      /**
        * Error during verification
        **/
       VerifyError: AugmentedError<ApiType>;
+      /**
+       * Parameters haven't been initialized
+       **/
+      VerifyingParametersNotInitialized: AugmentedError<ApiType>;
       /**
        * Generic error
        **/
