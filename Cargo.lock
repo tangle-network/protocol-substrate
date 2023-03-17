@@ -4929,7 +4929,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-anonimity-mining-claims"
+name = "pallet-anonymity-mining-claims"
 version = "1.0.0"
 dependencies = [
  "ark-bls12-381",
@@ -11661,7 +11661,7 @@ dependencies = [
  "orml-currencies",
  "orml-tokens",
  "orml-traits",
- "pallet-anonimity-mining-claims",
+ "pallet-anonymity-mining-claims",
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
