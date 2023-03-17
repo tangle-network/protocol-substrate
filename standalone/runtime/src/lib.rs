@@ -93,7 +93,7 @@ use webb_primitives::{
 	hashing::{ethereum::Keccak256HasherBn254, ArkworksPoseidonHasherBn254},
 	linkable_tree::LinkableTreeInspector,
 	signing::SignatureVerifier,
-	verifying::ArkworksVerifierBn254,
+	verifying::{ArkworksVerifierBn254, CircomVerifierBn254},
 	Amount, ChainId, LeafIndex,
 };
 
@@ -1171,6 +1171,59 @@ impl pallet_vanchor_verifier::Config<pallet_vanchor_verifier::Instance1> for Run
 	type WeightInfo = pallet_vanchor_verifier::weights::WebbWeight<Runtime>;
 }
 
+impl pallet_claims_verifier::Config<pallet_claims_verifier::Instance1> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Verifier = CircomVerifierBn254;
+	type MaxParameterLength = MaxParameterLength;
+	type WeightInfo = pallet_claims_verifier::weights::WebbWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const PotId: PalletId = PalletId(*b"py/claim");
+	pub const APVanchorTreeId: u32 = 99;
+	pub const UnspentRootHistorySize: u32 = 30;
+	pub const SpentRootHistorySize: u32 = 30;
+	pub const RewardAssetId: AssetId = 2;
+	pub const AnonymityPointsAssetId: AssetId = 1;
+	pub const NativeCurrencyId: AssetId = 0;
+	pub const MaxAnchors: u32 = 2;
+}
+
+impl pallet_anonymity_mining_claims::Config<pallet_anonymity_mining_claims::Instance1> for Runtime {
+	// type RuntimeEvent = RuntimeEvent;
+	// // type PalletId = VAnchorPalletId;
+	// type APVanchorTreeId = VAnchorPalletId;
+	// type LinkableTree = LinkableTreeBn254;
+	// type VAnchorVerifier = VAnchorVerifier;
+	// type KeyStorage = KeyStorage;
+	// type EthereumHasher = Keccak256HasherBn254;
+	// type IntoField = ArkworksIntoFieldBn254;
+	// type Currency = Currencies;
+	// type MaxFee = MaxFee;
+	// type MaxExtAmount = MaxExtAmount;
+	// type MaxCurrencyId = MaxCurrencyId;
+	// type PostDepositHook = ();
+	// type ProposalNonce = u32;
+	// type NativeCurrencyId = GetNativeCurrencyId;
+	// type TokenWrapper = TokenWrapper;
+	// type WeightInfo = ();
+
+	type RuntimeEvent = RuntimeEvent;
+	type PotId = PotId;
+	type APVanchorTreeId = APVanchorTreeId;
+	type MaxAnchors = MaxAnchors;
+	type Currency = Currencies;
+	type VAnchor = VAnchorBn254;
+	type NativeCurrencyId = NativeCurrencyId;
+	type AnonymityPointsAssetId = AnonymityPointsAssetId;
+	type RewardAssetId = RewardAssetId;
+	type UnspentRootHistorySize = UnspentRootHistorySize;
+	type SpentRootHistorySize = SpentRootHistorySize;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type ClaimsVerifier = ClaimsVerifier;
+}
+
 parameter_types! {
 	#[derive(Copy, Clone, Debug, PartialEq, Eq, scale_info::TypeInfo)]
 	pub const MaxAssetIdInPool: u32 = 100;
@@ -1487,7 +1540,7 @@ construct_runtime!(
 		VAnchorBn254: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		// VAnchor
-		ClaimsBn254: pallet_anonimity_mining_claims::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		ClaimsBn254: pallet_anonymity_mining_claims::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		// VAnchor Handler
 		VAnchorHandlerBn254: pallet_vanchor_handler::<Instance1>::{Pallet, Call, Storage, Event<T>},
@@ -1778,7 +1831,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_signature_bridge, SignatureBridge);
 			list_benchmark!(list, extra, pallet_relayer_registry, RelayerRegistry);
 			list_benchmark!(list, extra, pallet_key_storage, KeyStorage);
-			list_benchmark!(list, extra, pallet_anonimity_mining_claims, ClaimsBn254);
+			list_benchmark!(list, extra, pallet_anonymity_mining_claims, ClaimsBn254);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1818,7 +1871,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_signature_bridge, SignatureBridge);
 			add_benchmark!(params, batches, pallet_relayer_registry, RelayerRegistry);
 			add_benchmark!(params, batches, pallet_key_storage, KeyStorage);
-			add_benchmark!(params, batches, pallet_anonimity_mining_claims, ClaimsBn254);
+			add_benchmark!(params, batches, pallet_anonymity_mining_claims, ClaimsBn254);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
