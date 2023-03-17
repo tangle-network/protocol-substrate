@@ -1,8 +1,8 @@
 #![cfg(feature = "runtime-benchmarks")]
 #![allow(unused_imports)]
 
-use ark_std::vec::Vec;
-use ark_ff::{BigInteger, PrimeField};
+// use ark_std::vec::Vec;
+// use ark_ff::{BigInteger, PrimeField};
 // use ark_ff::PrimeField;
 // use arkworks_native_gadgets::poseidon::Poseidon;
 // use arkworks_setups::{
@@ -14,10 +14,10 @@ use ark_ff::{BigInteger, PrimeField};
 // };
 // use frame_benchmarking::vec;
 // use sp_std::convert::TryInto;
-use webb_primitives::{Element, ElementTrait};
-
-#[allow(dead_code)]
-pub type Bn254Fr = ark_bn254::Fr;
+// use webb_primitives::{Element, ElementTrait};
+//
+// #[allow(dead_code)]
+// pub type Bn254Fr = ark_bn254::Fr;
 // type Bn254 = ark_bn254::Bn254;
 
 // const TREE_DEPTH: usize = 30;

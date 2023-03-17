@@ -1,6 +1,6 @@
 [package]
 authors = ["Webb Technologies Inc."]
-description = "A pallet that stores zero-knowledge verifier parameters and provides verification of zero-knowledge proofs for anonimity mining claims."
+description = "A pallet that stores zero-knowledge verifier parameters and provides verification of zero-knowledge proofs for anonymity mining claims."
 edition = "2021"
 homepage = "https://substrate.dev"
 license = "Unlicense"
