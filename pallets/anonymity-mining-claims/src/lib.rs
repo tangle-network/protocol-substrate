@@ -46,6 +46,9 @@ mod test_utils;
 #[cfg(test)]
 mod tests;
 
+mod benchmarking;
+mod benchmarking_utils;
+
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 	ensure,
@@ -102,6 +105,17 @@ pub mod pallet {
 		/// AP Vanchor Tree Id
 		type APVanchorTreeId: Get<Self::TreeId>;
 
+		// /// Proposal nonce type
+		// type ProposalNonce: Encode
+		// 	+ Decode
+		// 	+ Parameter
+		// 	+ AtLeast32Bit
+		// 	+ Default
+		// 	+ Copy
+		// 	+ MaxEncodedLen
+		// 	+ From<Self::LeafIndex>
+		// 	+ Into<Self::LeafIndex>;
+
 		/// History size of roots for each unspent tree
 		type UnspentRootHistorySize: Get<Self::RootIndex>;
 
@@ -138,6 +152,12 @@ pub mod pallet {
 		type ForceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
+	/// The proposal nonce used to prevent replay attacks on execute_proposal
+	#[pallet::storage]
+	#[pallet::getter(fn proposal_nonce)]
+	pub type ProposalNonce<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::ProposalNonce, ValueQuery>;
+
 	/// The number of anchors (size) of the bridge where rewards are being issued from.
 	#[pallet::storage]
 	#[pallet::getter(fn number_of_anchors)]
@@ -147,7 +167,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn registered_resource_ids)]
 	pub type RegisteredResourceIds<T: Config<I>, I: 'static = ()> =
-		StorageValue<_, BoundedVec<ResourceId, T::MaxEdges>, ValueQuery>;
+		StorageValue<_, BoundedVec<ResourceId, T::MaxAnchors>, ValueQuery>;
 
 	/// The next unspent tree root index for a specific ResourceId
 	#[pallet::storage]
@@ -244,12 +264,29 @@ pub mod pallet {
 		InvalidSpentRoots,
 		/// Invalid spent roots array length. Needs to be equal to number_of_anchors
 		InvalidSpentRootsLength,
+		InvalidNumberOfAnchors
 	}
 
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
 		#[pallet::call_index(1)]
+		pub fn create(
+			origin: OriginFor<T>,
+			number_of_anchors: u8,
+			asset: CurrencyIdOf<T, I>,
+		) -> DispatchResultWithPostInfo {
+			let _ = ensure_signed(origin)?;
+			ensure!((number_of_anchors == 2) || (number_of_anchors == 8), Error::<T, I>::InvalidNumberOfAnchors);
+			let depth = 30;
+			let nonce = ProposalNonce::<T, I>::get().saturating_add(T::ProposalNonce::from(1u32));
+			// Get the resource IDs and populate the full array of resources including the default
+			// ones
+			Self::_create(None, depth, number_of_anchors, asset, nonce)?;
+			Ok(().into())
+		}
+		#[pallet::weight(1)]
+		#[pallet::call_index(2)]
 		pub fn claim(
 			origin: OriginFor<T>,
 			reward_proof_data: RewardProofData<T::Element>,
@@ -269,19 +306,18 @@ pub mod pallet {
 		}
 	}
 }
-pub type ProposalNonce = u32;
 pub type RootIndex = u32;
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	fn create(
+	fn _create(
 		creator: Option<T::AccountId>,
 		depth: u8,
 		number_of_anchors: u8,
 		asset: CurrencyIdOf<T, I>,
-		nonce: u32,
+		nonce: T::ProposalNonce,
 	) -> Result<T::TreeId, DispatchError> {
 		// Nonce should be greater than the proposal nonce in storage
-		let id = T::VAnchor::create(creator, depth, number_of_anchors as u32, asset, nonce.into())?;
+		let id = T::VAnchor::create(creator, depth, number_of_anchors as u32, asset, nonce)?;
 
 		// set number_of_anchors value
 		NumberOfAnchors::<T, I>::mutate(|i| *i = number_of_anchors);
@@ -328,7 +364,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 	// / Update unspent root
-	fn init_resource_id_history(
+	// #[allow(dead_code)]
+	fn _init_resource_id_history(
 		resource_id: ResourceId,
 		unspent_root: T::Element,
 		spent_root: T::Element,
@@ -363,7 +400,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Update unspent root
-	fn update_unspent_root(
+	// #[allow(dead_code)]
+	fn _update_unspent_root(
 		resource_id: ResourceId,
 		unspent_root: T::Element,
 	) -> Result<(), DispatchError> {
@@ -380,7 +418,8 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Update spent root
-	fn update_spent_root(
+	// #[allow(dead_code)]
+	fn _update_spent_root(
 		resource_id: ResourceId,
 		spent_root: T::Element,
 	) -> Result<(), DispatchError> {
