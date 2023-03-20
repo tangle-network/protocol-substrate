@@ -39,12 +39,11 @@ ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
 ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"] }
 ark-ff = { version = "^0.3.0", optional=true, default-features = false }
-ark-relations = { version = "^0.3.0", optional=true, default-features = false }
-arkworks-setups = { version = "1.2.1", optional=true, features = ["r1cs"], default-features = false }
-ark-circom = { git = "https://github.com/vacp2p/ark-circom", optional=true, branch = "wasm", default-features = false, features = ["circom-2"] }
+# ark-circom = { git = "https://github.com/vacp2p/ark-circom", optional=true, branch = "wasm", default-features = false, features = ["circom-2"] }
+# arkworks-setups = { version = "1.2.1", optional=true, features = ["r1cs"], default-features = false }
 # wasmer = { version = "2.3.0", optional=true, default-features = false }
 # circom-proving = { path = "../../circom-proving", optional = true, default-features = false }
-ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", optional=true, rev = "765817f", default-features = false, features = ["parallel"] }
+# ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", default-features = false, features = ["parallel"] }
 
 [dev-dependencies]
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = ["curve"] }
@@ -83,12 +82,8 @@ runtime-benchmarks = [
   "frame-system/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
   "ark-ff",
-  "arkworks-setups/r1cs",
-  "ark-relations",
-  # "std",
-  # "ark-circom",
-  # "ark-groth16",
-  # "circom-proving",
+  # "ark-circom/circom-2",
+  # "arkworks-setups/r1cs",
   # "wasmer/sys-default"
 ]
 std = [
@@ -111,4 +106,4 @@ std = [
   "pallet-token-wrapper/std",
 
 ]
-# wasm = ["wasmer/js", "wasmer/std"]
+wasm = ["wasmer/js", "wasmer/std"]

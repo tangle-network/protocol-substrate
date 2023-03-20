@@ -44,16 +44,14 @@ pub fn setup_environment() {
 		));
 	}
 }
-use bytes::Buf;
-
 pub fn setup_environment_with_circom(
 ) -> ((ProvingKey<Bn254>, ConstraintMatrices<Fr>), &'static Mutex<WitnessCalculator>) {
 	setup_environment();
 
 	println!("Setting up ZKey");
-	// let path_2_2 = "../../solidity-fixtures/solidity-fixtures/reward_2/30/circuit_final.zkey";
-	let mut file_2_2 = include_bytes!( "../../../solidity-fixtures/solidity-fixtures/reward_2/30/circuit_final.zkey");
-	let params_2_2 = read_zkey(&mut file_2_2.into()).unwrap();
+	let path_2_2 = "../../solidity-fixtures/solidity-fixtures/reward_2/30/circuit_final.zkey";
+	let mut file_2_2 = File::open(path_2_2).unwrap();
+	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
 
 	let wasm_2_2_path = "../../solidity-fixtures/solidity-fixtures/reward_2/30/reward_30_2.wasm";
 

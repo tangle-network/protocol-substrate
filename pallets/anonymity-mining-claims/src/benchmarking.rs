@@ -39,7 +39,7 @@ use webb_primitives::{
 
 use crate::{benchmarking_utils::*, Pallet as AnonimityMiningClaims};
 use ark_circom::{read_zkey, WitnessCalculator};
-// use circom_proving::circom_from_folder;
+use circom_proving::circom_from_folder;
 use arkworks_setups::{common::setup_params, Curve};
 use frame_support::{
 	assert_ok,
@@ -49,18 +49,15 @@ use std::{
 	fs::File,
 	sync::Mutex,
 };
+// use ark_groth16::ProvingKey;
 
-// use sp_runtime
-use ark_groth16::ProvingKey;
-
-use sp_std::alloc;
-// use sp_std::fs::File;
+// use sp_std::convert::TryInto;
 use ark_serialize::CanonicalSerialize;
 // use sp_io::hashing::keccak_256;
 use ark_std::vec::Vec;
 // use frame_benchmarking::vec;
 use ark_bn254::{Bn254, Fr};
-use ark_relations::r1cs::ConstraintMatrices;
+// use ark_relations::r1cs::ConstraintMatrices;
 // use ark_ff::{BigInteger, PrimeField};
 // use ark_ff::fields::PrimeField;
 
@@ -70,10 +67,9 @@ fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::
 }
 
 // const CHAIN_IDENTIFIER: u32 = 1080;
-// use ark_ff::bytes::Buf;
 
 #[allow(dead_code)]
-fn setup_env<T: Config<I>, I: 'static>() -> (ProvingKey<Bn254>, ConstraintMatrices<Fr>)
+fn setup_env<T: Config<I>, I: 'static>() -> ((ProvingKey<Bn254>, ConstraintMatrices<Fr>), &'static Mutex<WitnessCalculator>)
 where
 	T: pallet_claims_verifier::Config<I>,
 	T: pallet_hasher::Config<I>,
@@ -92,15 +88,13 @@ where
 
 	let path_2_2 = "../../solidity-fixtures/solidity-fixtures/reward_2/30/circuit_final.zkey";
 	let mut file_2_2 = File::open(path_2_2).unwrap();
-	let mut bytes_2_2 = include_bytes!( "../../../solidity-fixtures/solidity-fixtures/reward_2/30/circuit_final.zkey");
-
 	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
 
-	// let wasm_2_2_path = "../../solidity-fixtures/solidity-fixtures/reward_2/30/reward_30_2.wasm";
+	let wasm_2_2_path = "../../solidity-fixtures/solidity-fixtures/reward_2/30/reward_30_2.wasm";
 
-	// let wc_2_2 = circom_fromg_folder(wasm_2_2_path);
+	let wc_2_2 = circom_from_folder(wasm_2_2_path);
 
-	// println!("Setting up the verifier pallet");
+	println!("Setting up the verifier pallet");
 	let mut vk_2_2_bytes = Vec::new();
 	params_2_2.0.vk.serialize(&mut vk_2_2_bytes).unwrap();
 
@@ -117,7 +111,7 @@ where
 		vk_2_2_bytes.clone().try_into().unwrap()
 	));
 
-	params_2_2
+	(params_2_2, wc_2_2)
 	// pk_2_2_bytes
 }
 
