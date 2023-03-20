@@ -23,8 +23,8 @@ ark-bls12-381 = { version = "^0.3.0", default-features = false, features = ["cur
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"], optional = true }
 ark-ec = { version = "^0.3.0", default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false }
-ark-groth16 = { optional=true, git = "https://github.com/arkworks-rs/groth16", rev = "765817f", default-features = false, features = ["parallel"] }
-# ark-groth16 = { version = "^0.3.0", default-features = false }
+# ark-groth16 = { optional=true, git = "https://github.com/arkworks-rs/groth16", rev = "765817f", default-features = false, features = ["parallel"] }
+ark-groth16 = { optional=true, version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"] }
 ark-std = { version = "^0.3.0", default-features = false }
@@ -71,5 +71,5 @@ verifying = [
   "arkworks-native-gadgets",
   "ark-bls12-381",
   "ark-bn254",
-  "ark-groth16/parallel"
+  "ark-groth16"
 ]
