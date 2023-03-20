@@ -11534,7 +11534,7 @@ dependencies = [
  "ark-crypto-primitives",
  "ark-ec",
  "ark-ff",
- "ark-groth16 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ark-groth16 0.3.0 (git+https://github.com/arkworks-rs/groth16?rev=765817f)",
  "ark-relations",
  "ark-serialize",
  "ark-std",
