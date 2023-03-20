@@ -33,7 +33,7 @@ frame-system = { default-features = false, git = "https://github.com/paritytech/
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-webb-primitives = { path = "../../primitives", features=["hashing", "verifying", "field_ops"], default-features = false }
+webb-primitives = { path = "../../primitives", default-features = false }
 
 ark-std = { version = "^0.3.0", default-features = false }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
@@ -42,7 +42,7 @@ ark-ff = { version = "^0.3.0", optional=true, default-features = false }
 ark-relations = { version = "^0.3.0", optional=true, default-features = false }
 arkworks-setups = { version = "1.2.1", optional=true, features = ["r1cs"], default-features = false }
 ark-circom = { git = "https://github.com/vacp2p/ark-circom", optional=true, branch = "wasm", default-features = false, features = ["circom-2"] }
-wasmer = { version = "2.3.0", optional=true, default-features = false }
+# wasmer = { version = "2.3.0", optional=true, default-features = false }
 # circom-proving = { path = "../../circom-proving", optional = true, default-features = false }
 ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", optional=true, rev = "765817f", default-features = false, features = ["parallel"] }
 
@@ -85,10 +85,11 @@ runtime-benchmarks = [
   "ark-ff",
   "arkworks-setups/r1cs",
   "ark-relations",
-  "ark-circom/circom-2",
-  "ark-groth16/parallel",
+  # "std",
+  # "ark-circom",
+  # "ark-groth16",
   # "circom-proving",
-  "wasmer/sys-default"
+  # "wasmer/sys-default"
 ]
 std = [
   "codec/std",
@@ -110,4 +111,4 @@ std = [
   "pallet-token-wrapper/std",
 
 ]
-wasm = ["wasmer/js", "wasmer/std"]
+# wasm = ["wasmer/js", "wasmer/std"]
