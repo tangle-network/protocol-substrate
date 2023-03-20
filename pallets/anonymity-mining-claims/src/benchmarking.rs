@@ -49,7 +49,7 @@ use std::{
 	fs::File,
 	sync::Mutex,
 };
-// use ark_groth16::ProvingKey;
+use ark_groth16::ProvingKey;
 
 // use sp_std::convert::TryInto;
 use ark_serialize::CanonicalSerialize;
@@ -57,7 +57,7 @@ use ark_serialize::CanonicalSerialize;
 use ark_std::vec::Vec;
 // use frame_benchmarking::vec;
 use ark_bn254::{Bn254, Fr};
-// use ark_relations::r1cs::ConstraintMatrices;
+use ark_relations::r1cs::ConstraintMatrices;
 // use ark_ff::{BigInteger, PrimeField};
 // use ark_ff::fields::PrimeField;
 

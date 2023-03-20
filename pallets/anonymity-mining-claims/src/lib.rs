@@ -15,15 +15,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! # Anonymity mining claims Module
+//! # Anonimity mining claims Module
 //!
-//! A module for anonymity mining rewards connected to the MASP.
+//! A module for anonimity mining rewards connected to the MASP.
 //!
 //! ## Overview
 //!
-//! The Anonymity mining claims module provides functionality for the following:
+//! The Anonimity mining claims module provides functionality for the following:
 //!
-//! * A user can prove that they have a (deposit, withdrawal) pair on the masp and claim anonymity
+//! * A user can prove that they have a (deposit, withdrawal) pair on the masp and claim anonimity
 //! points linked to both the amount that they have deposited and the amount of time they left in
 //! the pool.
 //!
@@ -33,7 +33,7 @@
 //!
 //! * `claim_ap`: Allows user to prove in zero knowledge they have a pair (spentUTXO, unspentUTXO)
 //!   on the MASP
-//! 	and accumulate anonymity points following `inputAmount + rate * (spentTimestamp -
+//! 	and accumulate anonimity points following `inputAmount + rate * (spentTimestamp -
 //! unspentTimestamp) * amount`
 
 // Ensure we're `no_std` when compiling for Wasm.
@@ -62,7 +62,6 @@ pub use pallet::*;
 use pallet_vanchor::VAnchorConfiguration;
 use sp_runtime::traits::Zero;
 use sp_std::{convert::TryInto, vec};
-use ark_std::vec::Vec;
 use webb_primitives::{
 	anonymity_mining::RewardProofData,
 	linkable_tree::LinkableTreeInterface,
