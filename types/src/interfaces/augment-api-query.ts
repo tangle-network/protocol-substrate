@@ -9,7 +9,6 @@ import type { ApiTypes, AugmentedQuery, QueryableStorageEntry } from '@polkadot/
 import type { Bytes, Null, Option, U8aFixed, Vec, WrapperOpaque, bool, u128, u32, u64, u8 } from '@polkadot/types-codec';
 import type { AnyNumber, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, Call, H256, Perbill, Percent } from '@polkadot/types/interfaces/runtime';
-import type { FrameSupportDispatchPerDispatchClassWeight, FrameSupportPreimagesBounded, FrameSystemAccountInfo, FrameSystemEventRecord, FrameSystemLastRuntimeUpgradeInfo, FrameSystemPhase, OrmlTokensAccountData, OrmlTokensBalanceLock, OrmlTokensReserveData, PalletAssetRegistryAssetDetails, PalletAssetRegistryAssetMetadata, PalletAssetsApproval, PalletAssetsAssetAccount, PalletAssetsAssetDetails, PalletAssetsAssetMetadata, PalletAuthorshipUncleEntryItem, PalletBagsListListBag, PalletBagsListListNode, PalletBalancesAccountData, PalletBalancesBalanceLock, PalletBalancesReserveData, PalletBountiesBounty, PalletChildBountiesChildBounty, PalletCollectiveVotes, PalletDemocracyReferendumInfo, PalletDemocracyVoteThreshold, PalletDemocracyVoteVoting, PalletElectionProviderMultiPhasePhase, PalletElectionProviderMultiPhaseReadySolution, PalletElectionProviderMultiPhaseRoundSnapshot, PalletElectionProviderMultiPhaseSignedSignedSubmission, PalletElectionProviderMultiPhaseSolutionOrSnapshotSize, PalletElectionsPhragmenSeatHolder, PalletElectionsPhragmenVoter, PalletGrandpaStoredPendingChange, PalletGrandpaStoredState, PalletImOnlineBoundedOpaqueNetworkState, PalletImOnlineSr25519AppSr25519Public, PalletLinkableTreeEdgeMetadata, PalletMixerMixerMetadata, PalletMtTreeMetadata, PalletMultisigMultisig, PalletNominationPoolsBondedPoolInner, PalletNominationPoolsPoolMember, PalletNominationPoolsRewardPool, PalletNominationPoolsSubPools, PalletPreimageRequestStatus, PalletProxyAnnouncement, PalletProxyProxyDefinition, PalletRelayerRegistryResourceRecord, PalletSchedulerScheduled, PalletStakingActiveEraInfo, PalletStakingEraRewardPoints, PalletStakingExposure, PalletStakingForcing, PalletStakingNominations, PalletStakingReleases, PalletStakingRewardDestination, PalletStakingSlashingSlashingSpans, PalletStakingSlashingSpanRecord, PalletStakingStakingLedger, PalletStakingUnappliedSlash, PalletStakingValidatorPrefs, PalletTransactionPaymentReleases, PalletTreasuryProposal, SpConsensusBabeAppPublic, SpConsensusBabeBabeEpochConfiguration, SpConsensusBabeDigestsNextConfigDescriptor, SpConsensusBabeDigestsPreDigest, SpCoreCryptoKeyTypeId, SpNposElectionsElectionScore, SpRuntimeDigest, SpStakingOffenceOffenceDetails, WebbPrimitivesDepositDetails, WebbPrimitivesRuntimeElement, WebbPrimitivesVanchorVAnchorMetadata, WebbProposalsHeaderResourceId, WebbStandaloneRuntimeSessionKeys } from '@polkadot/types/lookup';
 import type { Observable } from '@polkadot/types/types';
 
 export type __AugmentedQuery<ApiType extends ApiTypes> = AugmentedQuery<ApiType, () => unknown>;
@@ -647,7 +646,7 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * The map of (tree, chain id) pairs to their latest recorded merkle root
        **/
-      neighborRoots: AugmentedQuery<ApiType, (arg1: ITuple<[u32, u64]> | [u32 | AnyNumber | Uint8Array, u64 | AnyNumber | Uint8Array], arg2: u32 | AnyNumber | Uint8Array) => Observable<Option<U8aFixed>>, [ITuple<[u32, u64]>, u32]> & QueryableStorageEntry<ApiType, [ITuple<[u32, u64]>, u32]>;
+      neighborRoots: AugmentedQuery<ApiType, (arg1: ITuple<[u32, u64]> | [u32 | AnyNumber | Uint8Array, u64 | AnyNumber | Uint8Array], arg2: u32 | AnyNumber | Uint8Array) => Observable<Option<WebbPrimitivesRuntimeElement>>, [ITuple<[u32, u64]>, u32]> & QueryableStorageEntry<ApiType, [ITuple<[u32, u64]>, u32]>;
       /**
        * Generic query
        **/
@@ -657,7 +656,7 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * Map of root history from tree id to root index to root values
        **/
-      cachedRoots: AugmentedQuery<ApiType, (arg1: u32 | AnyNumber | Uint8Array, arg2: u32 | AnyNumber | Uint8Array) => Observable<U8aFixed>, [u32, u32]> & QueryableStorageEntry<ApiType, [u32, u32]>;
+      cachedRoots: AugmentedQuery<ApiType, (arg1: u32 | AnyNumber | Uint8Array, arg2: u32 | AnyNumber | Uint8Array) => Observable<WebbPrimitivesRuntimeElement>, [u32, u32]> & QueryableStorageEntry<ApiType, [u32, u32]>;
       /**
        * The default hashes for this tree pallet
        **/
@@ -669,7 +668,7 @@ declare module '@polkadot/api-base/types/storage' {
       /**
        * The map of (tree_id, index) to the leaf commitment
        **/
-      leaves: AugmentedQuery<ApiType, (arg1: u32 | AnyNumber | Uint8Array, arg2: u32 | AnyNumber | Uint8Array) => Observable<U8aFixed>, [u32, u32]> & QueryableStorageEntry<ApiType, [u32, u32]>;
+      leaves: AugmentedQuery<ApiType, (arg1: u32 | AnyNumber | Uint8Array, arg2: u32 | AnyNumber | Uint8Array) => Observable<WebbPrimitivesRuntimeElement>, [u32, u32]> & QueryableStorageEntry<ApiType, [u32, u32]>;
       /**
        * The next tree identifier up for grabs
        **/

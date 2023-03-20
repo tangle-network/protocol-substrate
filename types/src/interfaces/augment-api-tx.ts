@@ -9,7 +9,6 @@ import type { ApiTypes, AugmentedSubmittable, SubmittableExtrinsic, SubmittableE
 import type { Bytes, Compact, Option, U8aFixed, Vec, bool, i128, u128, u16, u32, u64, u8 } from '@polkadot/types-codec';
 import type { AnyNumber, IMethod, ITuple } from '@polkadot/types-codec/types';
 import type { AccountId32, Call, H256, MultiAddress, Percent } from '@polkadot/types/interfaces/runtime';
-import type { FrameSupportPreimagesBounded, PalletAssetRegistryAssetType, PalletDemocracyConviction, PalletDemocracyVoteAccountVote, PalletElectionProviderMultiPhaseRawSolution, PalletElectionProviderMultiPhaseSolutionOrSnapshotSize, PalletElectionsPhragmenRenouncing, PalletImOnlineHeartbeat, PalletImOnlineSr25519AppSr25519Signature, PalletMultisigTimepoint, PalletNominationPoolsBondExtra, PalletNominationPoolsConfigOpAccountId32, PalletNominationPoolsConfigOpU128, PalletNominationPoolsConfigOpU32, PalletNominationPoolsPoolState, PalletRelayerRegistryResourceInfo, PalletStakingPalletConfigOpPerbill, PalletStakingPalletConfigOpPercent, PalletStakingPalletConfigOpU128, PalletStakingPalletConfigOpU32, PalletStakingRewardDestination, PalletStakingValidatorPrefs, SpConsensusBabeDigestsNextConfigDescriptor, SpConsensusSlotsEquivocationProof, SpFinalityGrandpaEquivocationProof, SpNposElectionsElectionScore, SpNposElectionsSupport, SpRuntimeHeader, SpSessionMembershipProof, SpWeightsWeightV2Weight, WebbPrimitivesRuntimeElement, WebbPrimitivesVanchorExtData, WebbPrimitivesVanchorProofData, WebbProposalsHeaderResourceId, WebbStandaloneRuntimeOriginCaller, WebbStandaloneRuntimeProxyType, WebbStandaloneRuntimeSessionKeys } from '@polkadot/types/lookup';
 
 export type __AugmentedSubmittable = AugmentedSubmittable<() => unknown>;
 export type __SubmittableExtrinsic<ApiType extends ApiTypes> = SubmittableExtrinsic<ApiType>;
@@ -3425,7 +3424,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * The `MinWithdrawalLimitProposal` updates the minimum withdrawal amount allowed on the
        * variable anchor system.
        **/
-      executeSetMinxWithdrawalLimitProposal: AugmentedSubmittable<(minWithdrawLimit: u128 | AnyNumber | Uint8Array, nonce: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [u128, u32]>;
+      executeSetMinWithdrawalLimitProposal: AugmentedSubmittable<(minWithdrawLimit: u128 | AnyNumber | Uint8Array, nonce: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [u128, u32]>;
       /**
        * This will by called by bridge when proposal to set new resource for
        * handler has been successfully voted on.

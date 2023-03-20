@@ -266,9 +266,9 @@ pub mod pallet {
 			let maintainer_nonce = MaintainerNonce::<T, I>::get();
 			let nonce = maintainer_nonce + 1u32.into();
 			// nonce should be the first 4 bytes of this message
-			let nonce_from_maintainer = T::MaintainerNonce::decode(&mut &message[..4])
-				.map_err(|_| Error::<T, I>::InvalidNonce)?;
-
+			let mut nonce_bytes = [0u8; 4];
+			nonce_bytes[0..4].copy_from_slice(&message[..4]);
+			let nonce_from_maintainer: T::MaintainerNonce = u32::from_be_bytes(nonce_bytes).into();
 			// Nonce should increment by 1
 			ensure!(nonce_from_maintainer == nonce, Error::<T, I>::InvalidNonce);
 

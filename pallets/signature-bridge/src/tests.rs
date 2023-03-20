@@ -218,7 +218,7 @@ fn set_maintainer_should_work() {
 			old_maintainer.try_into().unwrap();
 		Maintainer::<Test, _>::put(bounded_old_maintainer);
 		let mut message = vec![];
-		let nonce = 1u32.encode();
+		let nonce = 1u32.to_be_bytes();
 		message.extend_from_slice(&nonce);
 		message.extend_from_slice(&new_maintainer);
 		let msg = keccak_256(&message);
