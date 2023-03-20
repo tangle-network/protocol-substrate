@@ -42,6 +42,7 @@ frame-benchmarking = { default-features = false, git = "https://github.com/parit
 # For ark-circom
 once_cell = "1.14.0"
 cfg-if = "1.0"
+wasmer = { version = "2.3.0", default-features = false }
 num-traits = "0.2.11"
 thiserror = "1.0.0"
 color-eyre = "0.6.1"
@@ -53,7 +54,7 @@ arkworks-native-gadgets = { version = "1.2.0", default-features = false }
 webb-primitives = { path = "../primitives", features = ["hashing", "verifying", "field_ops"] }
 
 [features]
-default = ["std"]
+default = ["std", "wasmer/sys-default"]
 std = [
     "frame-support/std",
     "frame-system/std",
@@ -63,3 +64,4 @@ runtime-benchmarks = [
     "frame-system/runtime-benchmarks",
     "frame-support/runtime-benchmarks",
 ]
+wasm = ["wasmer/js", "wasmer/std"]

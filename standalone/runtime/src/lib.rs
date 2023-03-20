@@ -1471,9 +1471,6 @@ construct_runtime!(
 		// VAnchor Verifier
 		VAnchorVerifier: pallet_vanchor_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
-		// Claims Verifier
-		ClaimsVerifier: pallet_claims_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
-
 		// Merkle Tree
 		MerkleTreeBn254: pallet_mt::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
@@ -1485,9 +1482,6 @@ construct_runtime!(
 
 		// VAnchor
 		VAnchorBn254: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
-
-		// VAnchor
-		ClaimsBn254: pallet_anonimity_mining_claims::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		// VAnchor Handler
 		VAnchorHandlerBn254: pallet_vanchor_handler::<Instance1>::{Pallet, Call, Storage, Event<T>},
@@ -1778,7 +1772,6 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_signature_bridge, SignatureBridge);
 			list_benchmark!(list, extra, pallet_relayer_registry, RelayerRegistry);
 			list_benchmark!(list, extra, pallet_key_storage, KeyStorage);
-			list_benchmark!(list, extra, pallet_anonimity_mining_claims, ClaimsBn254);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1818,7 +1811,6 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_signature_bridge, SignatureBridge);
 			add_benchmark!(params, batches, pallet_relayer_registry, RelayerRegistry);
 			add_benchmark!(params, batches, pallet_key_storage, KeyStorage);
-			add_benchmark!(params, batches, pallet_anonimity_mining_claims, ClaimsBn254);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

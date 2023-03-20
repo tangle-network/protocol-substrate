@@ -4929,7 +4929,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-anonimity-mining-claims"
+name = "pallet-anonymity-mining-claims"
 version = "1.0.0"
 dependencies = [
  "ark-bls12-381",
@@ -11522,6 +11522,7 @@ dependencies = [
  "subxt",
  "thiserror",
  "tokio",
+ "wasmer",
  "webb-primitives",
 ]
 
@@ -11661,7 +11662,6 @@ dependencies = [
  "orml-currencies",
  "orml-tokens",
  "orml-traits",
- "pallet-anonimity-mining-claims",
  "pallet-asset-registry",
  "pallet-asset-tx-payment",
  "pallet-assets",
@@ -11672,7 +11672,6 @@ dependencies = [
  "pallet-balances",
  "pallet-bounties",
  "pallet-child-bounties",
- "pallet-claims-verifier",
  "pallet-collective",
  "pallet-democracy",
  "pallet-election-provider-multi-phase",
