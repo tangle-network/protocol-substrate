@@ -201,7 +201,7 @@ fn testnet_genesis(
 	log::info!("Verifier params for mixer");
 	let mixer_verifier_bn254_params = {
 		let vk_bytes = include_bytes!(
-			"../../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/verifying_key.bin"
+			"../../../substrate-fixtures/mixer/bn254/x5/verifying_key.bin"
 		);
 		vk_bytes.to_vec()
 	};
@@ -209,12 +209,12 @@ fn testnet_genesis(
 	log::info!("Verifier params for vanchor");
 	let vanchor_verifier_2_2_bn254_params = {
 		let vk_bytes =
-			include_bytes!("../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin");
+			include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin");
 		vk_bytes.to_vec()
 	};
 	let vanchor_verifier_2_16_bn254_params = {
 		let vk_bytes =
-			include_bytes!("../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin");
+			include_bytes!("../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin");
 		vk_bytes.to_vec()
 	};
 

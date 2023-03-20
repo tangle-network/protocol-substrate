@@ -3425,7 +3425,7 @@ declare module '@polkadot/api-base/types/submittable' {
        * The `MinWithdrawalLimitProposal` updates the minimum withdrawal amount allowed on the
        * variable anchor system.
        **/
-      executeSetMinxWithdrawalLimitProposal: AugmentedSubmittable<(minWithdrawLimit: u128 | AnyNumber | Uint8Array, nonce: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [u128, u32]>;
+      executeSetMinWithdrawalLimitProposal: AugmentedSubmittable<(minWithdrawLimit: u128 | AnyNumber | Uint8Array, nonce: u32 | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [u128, u32]>;
       /**
        * This will by called by bridge when proposal to set new resource for
        * handler has been successfully voted on.
