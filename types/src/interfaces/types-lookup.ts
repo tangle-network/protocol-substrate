@@ -3545,12 +3545,12 @@ declare module '@polkadot/types/lookup' {
       readonly maxDepositLimit: u128;
       readonly nonce: u32;
     } & Struct;
-    readonly isExecuteSetMinxWithdrawalLimitProposal: boolean;
-    readonly asExecuteSetMinxWithdrawalLimitProposal: {
+    readonly isExecuteSetMinWithdrawalLimitProposal: boolean;
+    readonly asExecuteSetMinWithdrawalLimitProposal: {
       readonly minWithdrawLimit: u128;
       readonly nonce: u32;
     } & Struct;
-    readonly type: 'ExecuteVanchorCreateProposal' | 'ExecuteVanchorUpdateProposal' | 'ExecuteSetResourceProposal' | 'ExecuteSetMaxDepositLimitProposal' | 'ExecuteSetMinxWithdrawalLimitProposal';
+    readonly type: 'ExecuteVanchorCreateProposal' | 'ExecuteVanchorUpdateProposal' | 'ExecuteSetResourceProposal' | 'ExecuteSetMaxDepositLimitProposal' | 'ExecuteSetMinWithdrawalLimitProposal';
   }
 
   /** @name WebbProposalsHeaderResourceId (371) */
