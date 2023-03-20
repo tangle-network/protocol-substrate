@@ -1,25 +1,20 @@
 use crate::mock::*;
-use ark_ff::{BigInteger, PrimeField};
-use webb_primitives::ElementTrait;
-use ark_serialize::CanonicalSerialize;
-use num_bigint::{BigInt, Sign};
-use frame_benchmarking::account;
 use ark_bn254::{Bn254, Fr};
-use frame_support::{assert_err, assert_ok};
 use ark_circom::{read_zkey, WitnessCalculator};
-use circom_proving::circom_from_folder;
+use ark_ff::{BigInteger, PrimeField};
 use ark_groth16::ProvingKey;
 use ark_relations::r1cs::ConstraintMatrices;
-use webb_primitives::webb_proposals::{
-	ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId,
+use ark_serialize::CanonicalSerialize;
+use circom_proving::circom_from_folder;
+use frame_benchmarking::account;
+use frame_support::{assert_err, assert_ok};
+use num_bigint::{BigInt, Sign};
+use webb_primitives::{
+	webb_proposals::{ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId},
+	ElementTrait,
 };
 
-use std::{
-	fs::File,
-	str::FromStr,
-	convert::TryInto,
-	sync::Mutex,
-};
+use std::{convert::TryInto, fs::File, str::FromStr, sync::Mutex};
 
 use arkworks_setups::{common::setup_params, Curve};
 
@@ -28,7 +23,6 @@ use crate::mock::Element;
 type Bn254Fr = ark_bn254::Fr;
 
 const SEED: u32 = 0;
-
 
 pub fn setup_environment() {
 	let curve = Curve::Bn254;
@@ -71,7 +65,6 @@ pub fn setup_environment_with_circom(
 		vk_2_2_bytes.try_into().unwrap(),
 	);
 	assert_ok!(param_call);
-
 
 	(params_2_2, wc_2_2)
 }
@@ -286,7 +279,6 @@ impl RewardCircuitInputs {
 		}
 	}
 }
-
 
 pub fn deconstruct_public_inputs_reward_proof(
 	max_edges: usize,
