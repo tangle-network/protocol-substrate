@@ -64,7 +64,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResultWithPostInfo, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use pallet_vanchor::VAnchorConfigration;
+	use pallet_vanchor::VAnchorConfiguration;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -81,8 +81,8 @@ pub mod pallet {
 		type BridgeOrigin: EnsureOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
 
 		/// VAnchor Interface
-		type VAnchor: VAnchorInterface<VAnchorConfigration<Self, I>>
-			+ VAnchorInspector<VAnchorConfigration<Self, I>>;
+		type VAnchor: VAnchorInterface<VAnchorConfiguration<Self, I>>
+			+ VAnchorInspector<VAnchorConfiguration<Self, I>>;
 	}
 
 	/// The map of trees to their anchor metadata

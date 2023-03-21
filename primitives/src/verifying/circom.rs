@@ -2,12 +2,11 @@ use crate::*;
 use ark_bn254::{Bn254, Fr};
 use ark_crypto_primitives::Error;
 use ark_groth16::{
-	verify_proof, PreparedVerifyingKey, Proof as ArkProof, VerifyingKey as ArkVerifyingKey,
+	verify_proof as ark_verify_proof, PreparedVerifyingKey, Proof as ArkProof,
+	VerifyingKey as ArkVerifyingKey,
 };
 use ark_serialize::CanonicalDeserialize;
-use ark_std::vec::Vec;
 use arkworks_native_gadgets::to_field_elements;
-use sp_core::U256;
 
 pub struct CircomVerifierBn254;
 
@@ -41,7 +40,7 @@ pub fn verify_groth16(
 	public_inputs: &[Fr],
 	proof: &ArkProof<Bn254>,
 ) -> Result<bool, Error> {
-	let res = verify_proof(vk, proof, public_inputs)?;
+	let res = ark_verify_proof(vk, proof, public_inputs)?;
 	Ok(res)
 }
 

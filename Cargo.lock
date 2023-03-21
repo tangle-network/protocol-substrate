@@ -1098,6 +1098,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "circom-proving"
+version = "0.1.0"
+dependencies = [
+ "ark-bn254",
+ "ark-circom 0.1.0 (git+https://github.com/vacp2p/ark-circom?branch=wasm)",
+ "ark-crypto-primitives",
+ "ark-ec",
+ "ark-ff",
+ "ark-groth16 0.3.0 (git+https://github.com/arkworks-rs/groth16?rev=765817f)",
+ "ark-relations",
+ "ark-serialize",
+ "ark-std",
+ "arkworks-native-gadgets",
+ "cfg-if",
+ "color-eyre 0.6.2",
+ "num-bigint",
+ "num-traits",
+ "once_cell",
+ "serde_json",
+ "thiserror",
+ "wasmer",
+]
+
+[[package]]
 name = "clang-sys"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4910,22 +4934,31 @@ version = "1.0.0"
 dependencies = [
  "ark-bls12-381",
  "ark-bn254",
+ "ark-circom 0.1.0 (git+https://github.com/vacp2p/ark-circom?branch=wasm)",
  "ark-crypto-primitives",
  "ark-ec",
  "ark-ff",
+ "ark-groth16 0.3.0 (git+https://github.com/arkworks-rs/groth16?rev=765817f)",
  "ark-relations",
  "ark-serialize",
  "ark-std",
  "arkworks-setups",
+ "cfg-if",
+ "circom-proving",
+ "color-eyre 0.6.2",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",
+ "num-bigint",
+ "num-traits",
+ "once_cell",
  "orml-currencies",
  "orml-tokens",
  "orml-traits",
  "pallet-asset-registry",
  "pallet-balances",
+ "pallet-claims-verifier",
  "pallet-hasher",
  "pallet-key-storage",
  "pallet-linkable-tree",
@@ -4939,10 +4972,13 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "serde_json",
  "sp-core 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "thiserror",
+ "wasmer",
  "webb-primitives",
 ]
 
@@ -5169,6 +5205,27 @@ dependencies = [
  "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+]
+
+[[package]]
+name = "pallet-claims-verifier"
+version = "1.0.0"
+dependencies = [
+ "ark-crypto-primitives",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "log",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "webb-primitives",
 ]
 
 [[package]]
@@ -5917,6 +5974,7 @@ dependencies = [
  "arkworks-native-gadgets",
  "arkworks-setups",
  "cfg-if",
+ "circom-proving",
  "color-eyre 0.6.2",
  "frame-benchmarking",
  "frame-support",
@@ -11487,7 +11545,6 @@ dependencies = [
  "digest 0.9.0",
  "ethabi 15.0.0",
  "frame-support",
- "num-traits",
  "parity-scale-codec",
  "scale-info",
  "serde",

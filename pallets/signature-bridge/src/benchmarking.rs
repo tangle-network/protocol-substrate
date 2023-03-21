@@ -93,8 +93,10 @@ benchmarks_instance_pallet! {
 
 	force_set_maintainer {
 		let caller: T::AccountId = whitelisted_caller();
+		let nonce: T::MaintainerNonce = T::MaintainerNonce::from(0u32);
 		let new_maintainer = ecdsa_generate(DUMMY, None);
-	}: _(RawOrigin::Root, new_maintainer.encode().try_into().unwrap())
+		let new_maintainer: BoundedVec<u8, T::MaxStringLength> = new_maintainer.encode().try_into().unwrap();
+	}: _(RawOrigin::Root, nonce, new_maintainer.clone())
 	verify {
 		assert_last_event::<T, I>(Event::MaintainerSet{old_maintainer: Default::default(), new_maintainer: new_maintainer.encode().try_into().unwrap()}.into());
 	}

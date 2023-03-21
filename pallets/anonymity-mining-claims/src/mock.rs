@@ -1,11 +1,9 @@
 use super::*;
-use crate::{self as pallet_anonymity_mining_claims};
+// use crate::{self as pallet_anonymity_mining_claims};
+use crate as pallet_anonymity_mining_claims;
+
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{
-	parameter_types,
-	traits::{Contains, Nothing},
-	PalletId,
-};
+use frame_support::{parameter_types, traits::Nothing, PalletId};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 pub use pallet::*;
@@ -17,7 +15,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
-use webb_primitives::{field_ops::ArkworksIntoFieldBn254, verifying::ArkworksVerifierBn254};
+use webb_primitives::{field_ops::ArkworksIntoFieldBn254, verifying::CircomVerifierBn254};
 pub use webb_primitives::{
 	hasher::{HasherModule, InstanceHasher},
 	hashing::ethereum::Keccak256HasherBn254,
@@ -46,19 +44,19 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Event<T>},
-		HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
-		VAnchorVerifier: pallet_vanchor_verifier::{Pallet, Call, Storage, Event<T>},
-		LinkableTree: pallet_linkable_tree::{Pallet, Call, Storage, Event<T>},
-		MerkleTree: pallet_mt::{Pallet, Call, Storage, Event<T>},
+		// HasherPallet: pallet_hasher::{Pallet, Call, Storage, Event<T>},
+		HasherPallet: pallet_hasher::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		VAnchorVerifier: pallet_vanchor_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		ClaimsVerifier: pallet_claims_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		LinkableTree: pallet_linkable_tree::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		MerkleTree: pallet_mt::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		Currencies: orml_currencies::{Pallet, Call},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 		AssetRegistry: pallet_asset_registry::{Pallet, Call, Storage, Event<T>},
-		VAnchor: pallet_vanchor::{Pallet, Call, Storage, Event<T>},
-		VAnchorHandler: pallet_vanchor_handler::{Pallet, Call, Storage, Event<T>},
-		SignatureBridge: pallet_signature_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		VAnchor: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		TokenWrapper: pallet_token_wrapper::{Pallet, Call, Storage, Event<T>},
 		KeyStorage: pallet_key_storage::{Pallet, Call, Storage, Event<T>, Config<T>},
-		AnonymityMiningClaims: pallet_anonymity_mining_claims::{Pallet, Call, Storage, Event<T>, Config<T>}
+		AnonymityMiningClaims: pallet_anonymity_mining_claims::<Instance1>::{Pallet, Call, Storage, Event<T>}
 	}
 );
 
@@ -185,7 +183,8 @@ parameter_types! {
 	pub const MaxDefaultHashes: u32 = 1000;
 }
 
-impl pallet_mt::Config for Test {
+type MerkleInstance1 = pallet_mt::Instance1;
+impl pallet_mt::Config<MerkleInstance1> for Test {
 	type Currency = Balances;
 	type DataDepositBase = LeafDepositBase;
 	type DataDepositPerByte = LeafDepositPerByte;
@@ -240,15 +239,26 @@ impl pallet_asset_registry::Config for Test {
 	type WeightInfo = ();
 }
 
-impl pallet_vanchor_verifier::Config for Test {
+type VAnchorVerifierInstance1 = pallet_vanchor_verifier::Instance1;
+impl pallet_vanchor_verifier::Config<VAnchorVerifierInstance1> for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type MaxParameterLength = ConstU32<1000>;
-	type Verifier = ArkworksVerifierBn254;
+	type Verifier = CircomVerifierBn254;
 	type WeightInfo = ();
 }
 
-impl pallet_hasher::Config for Test {
+type ClaimsVerifierInstance1 = pallet_claims_verifier::Instance1;
+impl pallet_claims_verifier::Config<ClaimsVerifierInstance1> for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxParameterLength = ConstU32<1000>;
+	type Verifier = CircomVerifierBn254;
+	type WeightInfo = ();
+}
+
+type HasherInstance1 = pallet_hasher::Instance1;
+impl pallet_hasher::Config<HasherInstance1> for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type MaxParameterLength = ConstU32<10000>;
@@ -279,7 +289,8 @@ parameter_types! {
 	pub const ChainIdentifier: u32 = 5;
 }
 
-impl pallet_linkable_tree::Config for Test {
+type LinkableTreeInstance1 = pallet_linkable_tree::Instance1;
+impl pallet_linkable_tree::Config<LinkableTreeInstance1> for Test {
 	type ChainId = ChainId;
 	type ChainType = ChainType;
 	type ChainIdentifier = ChainIdentifier;
@@ -294,54 +305,8 @@ parameter_types! {
 	pub const BridgeAccountId: PalletId = PalletId(*b"dw/bridg");
 }
 
-pub struct SetResourceProposalFilter;
-impl Contains<RuntimeCall> for SetResourceProposalFilter {
-	fn contains(c: &RuntimeCall) -> bool {
-		match c {
-			RuntimeCall::VAnchorHandler(method) => match method {
-				pallet_vanchor_handler::Call::execute_set_resource_proposal { .. } => true,
-				_ => false,
-			},
-			_ => false,
-		}
-	}
-}
-
-pub struct ExecuteProposalFilter;
-impl Contains<RuntimeCall> for ExecuteProposalFilter {
-	fn contains(c: &RuntimeCall) -> bool {
-		match c {
-			RuntimeCall::VAnchorHandler(method) => match method {
-				pallet_vanchor_handler::Call::execute_vanchor_create_proposal { .. } => true,
-				pallet_vanchor_handler::Call::execute_vanchor_update_proposal { .. } => true,
-				_ => false,
-			},
-			_ => false,
-		}
-	}
-}
-
 pub type ProposalNonce = u32;
 pub type MaintainerNonce = u32;
-
-type BridgeInstance = pallet_signature_bridge::Instance1;
-impl pallet_signature_bridge::Config<BridgeInstance> for Test {
-	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
-	type BridgeAccountId = BridgeAccountId;
-	type ChainId = ChainId;
-	type ChainIdentifier = ChainIdentifier;
-	type ChainType = ChainType;
-	type RuntimeEvent = RuntimeEvent;
-	type ProposalLifetime = ProposalLifetime;
-	type MaxStringLength = ConstU32<1000>;
-	type ProposalNonce = ProposalNonce;
-	type SetResourceProposalFilter = SetResourceProposalFilter;
-	type ExecuteProposalFilter = ExecuteProposalFilter;
-	type MaintainerNonce = MaintainerNonce;
-	type SignatureVerifier = webb_primitives::signing::SignatureVerifier;
-	type WeightInfo = ();
-	type Proposal = RuntimeCall;
-}
 
 parameter_types! {
 	pub const VAnchorPalletId: PalletId = PalletId(*b"py/vanch");
@@ -350,7 +315,8 @@ parameter_types! {
 	pub const MaxCurrencyId: AssetId = AssetId::MAX - 1;
 }
 
-impl pallet_vanchor::Config for Test {
+type VAnchorInstance1 = pallet_vanchor::Instance1;
+impl pallet_vanchor::Config<VAnchorInstance1> for Test {
 	type Currency = Currencies;
 	type EthereumHasher = Keccak256HasherBn254;
 	type RuntimeEvent = RuntimeEvent;
@@ -376,16 +342,16 @@ impl pallet_key_storage::Config for Test {
 	type WeightInfo = ();
 }
 
-impl pallet_vanchor_handler::Config for Test {
-	type VAnchor = VAnchor;
-	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Test, BridgeInstance>;
-	type RuntimeEvent = RuntimeEvent;
+parameter_types! {
+	pub const MaxAnchors: u32 = 2;
 }
 
-impl pallet_anonymity_mining_claims::Config for Test {
+type AnonymityMiningClaimsInstance1 = pallet_anonymity_mining_claims::Instance1;
+impl pallet_anonymity_mining_claims::Config<AnonymityMiningClaimsInstance1> for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type PotId = PotId;
 	type APVanchorTreeId = APVanchorTreeId;
+	type MaxAnchors = MaxAnchors;
 	type Currency = Currencies;
 	type VAnchor = VAnchor;
 	type NativeCurrencyId = NativeCurrencyId;
@@ -394,6 +360,7 @@ impl pallet_anonymity_mining_claims::Config for Test {
 	type UnspentRootHistorySize = UnspentRootHistorySize;
 	type SpentRootHistorySize = SpentRootHistorySize;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type ClaimsVerifier = ClaimsVerifier;
 }
 
 // Build genesis storage according to the mock runtime.
