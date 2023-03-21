@@ -3302,7 +3302,7 @@ export default {
         maxDepositLimit: 'u128',
         nonce: 'u32',
       },
-      execute_set_minx_withdrawal_limit_proposal: {
+      execute_set_min_withdrawal_limit_proposal: {
         minWithdrawLimit: 'u128',
         nonce: 'u32'
       }
