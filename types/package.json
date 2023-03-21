@@ -23,7 +23,11 @@
     "@polkadot/api-derive": "10.1.4",
     "@polkadot/dev": "^0.72.16",
     "@polkadot/typegen": "10.1.4",
-    "@polkadot/types": "10.1.4"
+    "@polkadot/types": "10.1.4",
+    "fs-extra": "^11.1.1",
+    "glob2base": "^0.0.12",
+    "minimatch": "^7.4.2",
+    "mkdirp": "^2.1.5"
   },
   "devDependencies": {
     "@types/websocket": "^1.0.0",
