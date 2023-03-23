@@ -1,0 +1,60 @@
+[package]
+authors = ["Webb Technologies Inc."]
+description = "A asset registry handler for the MASP system"
+edition = "2021"
+homepage = "https://substrate.dev"
+license = "Unlicense"
+name = "pallet-masp-asset-registry-handler"
+repository = "https://github.com/webb-tools/protocol-substrate"
+version = "1.0.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+asset-registry = { package = "pallet-asset-registry", path = "../asset-registry", default-features = false }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
+frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
+pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+sp-arithmetic = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+
+#Optional dependencies
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36", optional = true }
+
+[dev-dependencies]
+hex-literal = "0.3.4"
+orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.36", default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+pallet-signature-bridge = { path = "../signature-bridge", default-features = false }
+pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+webb-primitives = { path = "../../primitives", default-features = false }
+webb-proposals = { path = "../../../webb-rs/proposals", default-features = false, features = ["scale", "substrate"]}
+# webb-proposals = { git = "https://github.com/webb-tools/webb-rs", default-features = false, features = ["scale", "substrate"] }
+
+[features]
+default = ["std"]
+runtime-benchmarks = [
+  "frame-system/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+]
+std = [
+  "codec/std",
+  "scale-info/std",
+  "frame-support/std",
+  "frame-system/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "orml-traits/std",
+  "asset-registry/std",
+  "webb-primitives/std",
+  "sp-arithmetic/std",
+  "pallet-token-wrapper/std",
+]

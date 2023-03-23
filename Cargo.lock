@@ -5502,6 +5502,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-masp-asset-registry-handler"
+version = "1.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex-literal 0.3.4",
+ "orml-currencies",
+ "orml-tokens",
+ "orml-traits",
+ "pallet-asset-registry",
+ "pallet-balances",
+ "pallet-signature-bridge",
+ "pallet-token-wrapper",
+ "pallet-treasury",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-arithmetic 6.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-core 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
+ "webb-primitives",
+ "webb-proposals 0.5.20",
+]
+
+[[package]]
 name = "pallet-mixer"
 version = "1.0.0"
 dependencies = [
@@ -5878,7 +5905,7 @@ dependencies = [
  "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "webb-primitives",
- "webb-proposals",
+ "webb-proposals 0.5.19",
 ]
 
 [[package]]
@@ -6044,7 +6071,7 @@ dependencies = [
  "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "webb-primitives",
- "webb-proposals",
+ "webb-proposals 0.5.19",
 ]
 
 [[package]]
@@ -11554,7 +11581,7 @@ dependencies = [
  "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
  "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.36)",
- "webb-proposals",
+ "webb-proposals 0.5.19",
 ]
 
 [[package]]
@@ -11569,6 +11596,20 @@ dependencies = [
  "scale-info",
  "schemars",
  "serde",
+ "tiny-keccak",
+ "typed-builder",
+]
+
+[[package]]
+name = "webb-proposals"
+version = "0.5.20"
+dependencies = [
+ "frame-support",
+ "hex",
+ "num-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "schemars",
  "tiny-keccak",
  "typed-builder",
 ]
