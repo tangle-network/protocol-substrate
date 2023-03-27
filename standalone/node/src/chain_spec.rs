@@ -85,6 +85,10 @@ fn webb_session_keys(
 }
 
 pub fn webb_development_config() -> Result<ChainSpec, String> {
+	let mut properties = sc_chain_spec::Properties::new();
+	properties.insert("tokenSymbol".into(), "Unit".into());
+	properties.insert("tokenDecimals".into(), 18u32.into());
+	properties.insert("ss58Format".into(), 42.into());
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -126,7 +130,7 @@ pub fn webb_development_config() -> Result<ChainSpec, String> {
 		// Fork ID
 		None,
 		// Properties
-		None,
+		Some(properties),
 		Default::default(),
 	))
 }
