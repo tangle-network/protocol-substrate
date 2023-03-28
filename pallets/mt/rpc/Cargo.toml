@@ -6,14 +6,14 @@ version = "0.1.0"
 
 [dependencies]
 jsonrpsee = { version = "0.16.2", features = ["server"] }
-sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 thiserror = "1.0"
 
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.36" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+sp-core = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 
 pallet-mt-rpc-runtime-api = { path = "./runtime-api", default-features = false }
 webb-primitives = { path = "../../../primitives", default-features = false }
