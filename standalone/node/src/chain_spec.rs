@@ -2,7 +2,7 @@ use arkworks_setups::{common::setup_params, Curve};
 use webb_primitives::{types::runtime::BabeId, AccountId, Balance, Signature};
 
 use itertools::Itertools;
-use sc_chain_spec::ChainSpecExtension;
+use sc_chain_spec::{ChainSpecExtension, Properties};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
@@ -84,11 +84,15 @@ fn webb_session_keys(
 	webb_runtime::SessionKeys { grandpa, babe, im_online, authority_discovery }
 }
 
-pub fn webb_development_config() -> Result<ChainSpec, String> {
-	let mut properties = sc_chain_spec::Properties::new();
+fn properties() -> Properties {
+	let mut properties = Properties::new();
 	properties.insert("tokenSymbol".into(), "Unit".into());
 	properties.insert("tokenDecimals".into(), 18u32.into());
 	properties.insert("ss58Format".into(), 42.into());
+	properties
+}
+
+pub fn webb_development_config() -> Result<ChainSpec, String> {
 	Ok(ChainSpec::from_genesis(
 		// Name
 		"Development",
@@ -130,7 +134,7 @@ pub fn webb_development_config() -> Result<ChainSpec, String> {
 		// Fork ID
 		None,
 		// Properties
-		Some(properties),
+		Some(properties()),
 		Default::default(),
 	))
 }
@@ -177,7 +181,7 @@ pub fn webb_local_testnet_config() -> Result<ChainSpec, String> {
 		// Fork ID
 		None,
 		// Properties
-		None,
+		Some(properties()),
 		// Extensions
 		Default::default(),
 	))
