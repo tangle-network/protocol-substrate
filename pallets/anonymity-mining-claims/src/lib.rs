@@ -46,6 +46,8 @@ mod test_utils;
 #[cfg(test)]
 mod tests;
 
+mod benchmarking;
+
 use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 	ensure,
@@ -99,9 +101,6 @@ pub mod pallet {
 		/// Account Identifier from which the internal Pot is generated.
 		type PotId: Get<PalletId>;
 
-		/// AP Vanchor Tree Id
-		type APVanchorTreeId: Get<Self::TreeId>;
-
 		/// History size of roots for each unspent tree
 		type UnspentRootHistorySize: Get<Self::RootIndex>;
 
@@ -142,6 +141,11 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn number_of_anchors)]
 	pub type NumberOfAnchors<T: Config<I>, I: 'static = ()> = StorageValue<_, u8, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn ap_vanchor_tree_id)]
+	pub type APVAnchorTreeId<T: Config<I>, I: 'static = ()> =
+		StorageValue<_, T::TreeId, ValueQuery>;
 
 	/// FIX: A map for each resourceID that has been registered in the pallet
 	#[pallet::storage]
@@ -216,6 +220,26 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub fn deposit_event)]
 	pub enum Event<T: Config<I>, I: 'static = ()> {
+		APVanchorCreated {
+			tree_id: T::TreeId,
+		},
+		RewardClaimed {
+			reward_proof_data: RewardProofData<T::Element>,
+			resource_ids: Vec<ResourceId>,
+		},
+		ResourceIdInit {
+			resource_id: ResourceId,
+			unspent_root: T::Element,
+			spent_root: T::Element,
+		},
+		UnspentRootUpdated {
+			resource_id: ResourceId,
+			new_root: T::Element,
+		},
+		SpentRootUpdated {
+			resource_id: ResourceId,
+			new_root: T::Element,
+		},
 		AnchorAdded,
 		AnchorUpdated,
 	}
@@ -249,6 +273,20 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		#[pallet::weight(0)]
+		#[pallet::call_index(0)]
+		pub fn create(
+			origin: OriginFor<T>,
+			depth: u8,
+			number_of_anchors: u8,
+			asset: CurrencyIdOf<T, I>,
+		) -> DispatchResultWithPostInfo {
+			ensure_root(origin)?;
+			// Creates AP Vanchor
+			let tree_id = Self::_create(None, depth, number_of_anchors, asset, 2u32)?;
+			Self::deposit_event(Event::APVanchorCreated { tree_id });
+			Ok(().into())
+		}
+		#[pallet::weight(0)]
 		#[pallet::call_index(1)]
 		pub fn claim(
 			origin: OriginFor<T>,
@@ -264,7 +302,49 @@ pub mod pallet {
 				resource_id_vec.resize(number_of_anchors.into(), ResourceId::default());
 			}
 			// Claim anonymity points
-			Self::claim_ap(T::APVanchorTreeId::get(), reward_proof_data, resource_id_vec)?;
+			Self::claim_ap(APVAnchorTreeId::<T, I>::get(), &reward_proof_data, resource_id_vec)?;
+			Self::deposit_event(Event::RewardClaimed {
+				reward_proof_data,
+				resource_ids: resource_ids.to_vec(),
+			});
+			Ok(().into())
+		}
+		// TODO: RESTRICT WHO CAN CALL THIS THING
+		#[pallet::weight(0)]
+		#[pallet::call_index(2)]
+		pub fn init_resource_id_history(
+			origin: OriginFor<T>,
+			resource_id: ResourceId,
+			unspent_root: T::Element,
+			spent_root: T::Element,
+		) -> DispatchResultWithPostInfo {
+			let _ = ensure_signed(origin)?;
+			Self::_init_resource_id_history(resource_id, unspent_root, spent_root)?;
+			Self::deposit_event(Event::ResourceIdInit { resource_id, unspent_root, spent_root });
+			Ok(().into())
+		}
+		#[pallet::weight(0)]
+		#[pallet::call_index(3)]
+		pub fn update_unspent_root(
+			origin: OriginFor<T>,
+			resource_id: ResourceId,
+			unspent_root: T::Element,
+		) -> DispatchResultWithPostInfo {
+			let _ = ensure_signed(origin)?;
+			Self::_update_unspent_root(resource_id, unspent_root)?;
+			Self::deposit_event(Event::UnspentRootUpdated { resource_id, new_root: unspent_root });
+			Ok(().into())
+		}
+		#[pallet::weight(0)]
+		#[pallet::call_index(4)]
+		pub fn update_spent_root(
+			origin: OriginFor<T>,
+			resource_id: ResourceId,
+			spent_root: T::Element,
+		) -> DispatchResultWithPostInfo {
+			let _ = ensure_signed(origin)?;
+			Self::_update_spent_root(resource_id, spent_root)?;
+			Self::deposit_event(Event::SpentRootUpdated { resource_id, new_root: spent_root });
 			Ok(().into())
 		}
 	}
@@ -273,7 +353,7 @@ pub type ProposalNonce = u32;
 pub type RootIndex = u32;
 
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
-	fn create(
+	fn _create(
 		creator: Option<T::AccountId>,
 		depth: u8,
 		number_of_anchors: u8,
@@ -282,7 +362,9 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	) -> Result<T::TreeId, DispatchError> {
 		// Nonce should be greater than the proposal nonce in storage
 		let id = T::VAnchor::create(creator, depth, number_of_anchors as u32, asset, nonce.into())?;
-
+		// let id = T::LinkableTree::create(creator.clone(), max_edges, depth)?;???
+		// APVAnchorTreeId::<T, I>::mutate(|i| *i = id);
+		APVAnchorTreeId::<T, I>::set(id);
 		// set number_of_anchors value
 		NumberOfAnchors::<T, I>::mutate(|i| *i = number_of_anchors);
 
@@ -328,7 +410,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		Ok(())
 	}
 	// / Update unspent root
-	fn init_resource_id_history(
+	fn _init_resource_id_history(
 		resource_id: ResourceId,
 		unspent_root: T::Element,
 		spent_root: T::Element,
@@ -363,7 +445,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Update unspent root
-	fn update_unspent_root(
+	fn _update_unspent_root(
 		resource_id: ResourceId,
 		unspent_root: T::Element,
 	) -> Result<(), DispatchError> {
@@ -380,7 +462,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	}
 
 	/// Update spent root
-	fn update_spent_root(
+	fn _update_spent_root(
 		resource_id: ResourceId,
 		spent_root: T::Element,
 	) -> Result<(), DispatchError> {
@@ -459,6 +541,12 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 			.into_iter()
 			.collect::<Vec<T::Element>>()
 	}
+	/// get latest unspent root
+	pub fn get_unspent_roots(resource_id: ResourceId) -> Vec<T::Element> {
+		CachedUnspentRoots::<T, I>::iter_prefix_values(resource_id)
+			.into_iter()
+			.collect::<Vec<T::Element>>()
+	}
 
 	/// get spent roots
 	pub fn get_spent_roots(resource_id: ResourceId) -> Vec<T::Element> {
@@ -470,7 +558,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	/// Handle claiming of AP tokens
 	pub fn claim_ap(
 		id: T::TreeId,
-		reward_proof_data: RewardProofData<T::Element>,
+		reward_proof_data: &RewardProofData<T::Element>,
 		resource_ids: Vec<ResourceId>,
 	) -> DispatchResultWithPostInfo {
 		// Check if nullifier has been spent
@@ -494,6 +582,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 		T::VAnchor::add_nullifier_hash(id, reward_proof_data.input_nullifier)?;
 
 		// Insert output commitments into the AP VAnchor
+		println!("HERERERERERERERER");
 		T::LinkableTree::insert_in_order(id, reward_proof_data.output_commitment)?;
 
 		Ok(().into())

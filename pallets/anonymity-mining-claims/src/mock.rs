@@ -212,7 +212,6 @@ parameter_types! {
 	pub const MetadataDepositBase: u64 = 1;
 	pub const MetadataDepositPerByte: u64 = 1;
 	pub const PotId: PalletId = PalletId(*b"py/anmin");
-	pub const APVanchorTreeId: u32 = 99;
 }
 
 parameter_types! {
@@ -350,7 +349,6 @@ type AnonymityMiningClaimsInstance1 = pallet_anonymity_mining_claims::Instance1;
 impl pallet_anonymity_mining_claims::Config<AnonymityMiningClaimsInstance1> for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type PotId = PotId;
-	type APVanchorTreeId = APVanchorTreeId;
 	type MaxAnchors = MaxAnchors;
 	type Currency = Currencies;
 	type VAnchor = VAnchor;
@@ -365,5 +363,10 @@ impl pallet_anonymity_mining_claims::Config<AnonymityMiningClaimsInstance1> for 
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+	// system::GenesisConfig::default().build_storage::<Test>().unwrap().into()Vp
+	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.execute_with(|| System::set_block_number(1));
+	ext
 }

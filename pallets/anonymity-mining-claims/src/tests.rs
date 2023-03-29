@@ -1,5 +1,6 @@
 use super::*;
 use crate::{mock::*, test_utils::*, Error};
+use codec::Encode;
 use webb_primitives::ElementTrait;
 
 use crate::Instance1;
@@ -7,8 +8,8 @@ use ark_serialize::CanonicalSerialize;
 use frame_support::{assert_err, assert_ok};
 // use sp_runtime::traits::Zero;
 
-use ark_bn254::{Bn254, Fr};
 use circom_proving::{generate_proof, verify_proof};
+use std::{fs::File, io::Write};
 // use num_bigint::{BigInt, Sign};
 use webb_primitives::webb_proposals::{
 	ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId,
@@ -34,13 +35,13 @@ fn should_fail_update_without_resource_id_initialization() {
 		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
 		let circuit_inputs = RewardCircuitInputs::from_raw(&inputs_raw);
 
-		let unspent_update_0 = AnonymityMiningClaims::update_unspent_root(
+		let unspent_update_0 = AnonymityMiningClaims::_update_unspent_root(
 			src_resource_id,
 			Element::from_bytes(&circuit_inputs.unspent_roots[0].to_bytes_be().1),
 		);
 		assert_err!(unspent_update_0, Error::<Test, Instance1>::InvalidResourceId);
 
-		let unspent_update_1 = AnonymityMiningClaims::update_unspent_root(
+		let unspent_update_1 = AnonymityMiningClaims::_update_unspent_root(
 			src_resource_id,
 			Element::from_bytes(&circuit_inputs.unspent_roots[1].to_bytes_be().1),
 		);
@@ -61,7 +62,7 @@ fn should_init_and_update_roots() {
 
 		let max_edges = 2u8;
 		let depth = 30u8;
-		let _tree_id = AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32).unwrap();
+		let _ = AnonymityMiningClaims::_create(None, depth, max_edges, 0u32, 1u32).unwrap();
 
 		let raw = include_str!("../firstTransactionInputs.json");
 		let inputs_raw: InputsRaw = serde_json::from_str(raw).unwrap();
@@ -71,7 +72,7 @@ fn should_init_and_update_roots() {
 		let spent_root_0 = Element::from_bytes(&circuit_inputs.spent_roots[0].to_bytes_be().1);
 		let spent_root_1 = Element::from_bytes(&circuit_inputs.spent_roots[1].to_bytes_be().1);
 
-		let init_call = AnonymityMiningClaims::init_resource_id_history(
+		let init_call = AnonymityMiningClaims::_init_resource_id_history(
 			src_resource_id,
 			unspent_root_0,
 			spent_root_0,
@@ -79,10 +80,10 @@ fn should_init_and_update_roots() {
 		assert_ok!(init_call);
 
 		let update_unspent_call =
-			AnonymityMiningClaims::update_unspent_root(src_resource_id, unspent_root_1);
+			AnonymityMiningClaims::_update_unspent_root(src_resource_id, unspent_root_1);
 		assert_ok!(update_unspent_call);
 		let update_spent_call =
-			AnonymityMiningClaims::update_spent_root(src_resource_id, spent_root_1);
+			AnonymityMiningClaims::_update_spent_root(src_resource_id, spent_root_1);
 		assert_ok!(update_spent_call);
 		let zero: RootIndex = 0u32;
 		let cached_unspent_root_0 =
@@ -118,7 +119,8 @@ fn should_create_pallet() {
 		setup_environment_with_circom();
 		let max_edges = 2u8;
 		let depth = 30u8;
-		let call = AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32);
+		// let transactor = get_account(1);
+		let call = AnonymityMiningClaims::create(RuntimeOrigin::root(), depth, max_edges, 0u32);
 		assert_ok!(call);
 	})
 }
@@ -133,10 +135,6 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		let target_id = TypedChainId::Substrate(5);
 		let target_system =
 			TargetSystem::Substrate(SubstrateTargetSystem { pallet_index: 11, tree_id: 0 });
-		let _r_id: ResourceId = ResourceId::new(target_system, target_id);
-
-		let _root = Element::from_bytes(&[1; 32]);
-		let _latest_leaf_index = 5;
 		let src_target_system = target_system;
 		let src_resource_id = ResourceId::new(src_target_system, src_id);
 
@@ -150,15 +148,15 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		println!("circuitInputs: {circuit_inputs:?}");
 		let max_edges = 2u8;
 		let depth = 30u8;
-		let tree_id = AnonymityMiningClaims::create(None, depth, max_edges, 0u32, 1u32).unwrap();
+		let _ = AnonymityMiningClaims::_create(None, depth, max_edges, 0u32, 1u32).unwrap();
 
-		let init_call_0 = AnonymityMiningClaims::init_resource_id_history(
+		let init_call_0 = AnonymityMiningClaims::_init_resource_id_history(
 			src_resource_id,
 			Element::from_bytes(&circuit_inputs.unspent_roots[0].to_bytes_be().1),
 			Element::from_bytes(&circuit_inputs.spent_roots[0].to_bytes_be().1),
 		);
 		assert_ok!(init_call_0);
-		let init_call_1 = AnonymityMiningClaims::init_resource_id_history(
+		let init_call_1 = AnonymityMiningClaims::_init_resource_id_history(
 			dest_resource_id,
 			Element::from_bytes(&circuit_inputs.unspent_roots[1].to_bytes_be().1),
 			Element::from_bytes(&circuit_inputs.spent_roots[1].to_bytes_be().1),
@@ -270,10 +268,14 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		let dest_target_system = target_system;
 		let dest_resource_id = ResourceId::new(dest_target_system, target_id);
 
-		let resource_ids = [src_resource_id, dest_resource_id];
 		println!("inputs_for_verification: {inputs_for_verification:?}");
+		let _transactor = get_account(1);
+
+		File::create("proof_data").unwrap().write(&reward_proof_data.encode()).unwrap();
+
 		let claim_ap_call =
-			AnonymityMiningClaims::claim_ap(tree_id, reward_proof_data, resource_ids.to_vec());
+			// AnonymityMiningClaims::claim_ap(tree_id, &reward_proof_data, resource_ids.to_vec());
+			AnonymityMiningClaims::claim(RuntimeOrigin::signed(_transactor), reward_proof_data);
 		assert_ok!(claim_ap_call);
 
 		let raw = include_str!("../secondTransactionInputs.json");
@@ -359,7 +361,7 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		};
 
 		println!("unspent_root: {:#?}", circuit_inputs.unspent_roots[0].to_bytes_be());
-		let unspent_update_0 = AnonymityMiningClaims::update_unspent_root(
+		let unspent_update_0 = AnonymityMiningClaims::_update_unspent_root(
 			src_resource_id,
 			Element::from_bytes(
 				&circuit_inputs.unspent_roots[0].to_biguint().unwrap().to_bytes_be(),
@@ -367,13 +369,13 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		);
 		assert_ok!(unspent_update_0);
 
-		let spent_update_0 = AnonymityMiningClaims::update_spent_root(
+		let spent_update_0 = AnonymityMiningClaims::_update_spent_root(
 			src_resource_id,
 			Element::from_bytes(&circuit_inputs.spent_roots[0].to_biguint().unwrap().to_bytes_be()),
 		);
 		assert_ok!(spent_update_0);
 
-		let unspent_update_1 = AnonymityMiningClaims::update_unspent_root(
+		let unspent_update_1 = AnonymityMiningClaims::_update_unspent_root(
 			dest_resource_id,
 			Element::from_bytes(
 				&circuit_inputs.unspent_roots[1].to_biguint().unwrap().to_bytes_be(),
@@ -381,7 +383,7 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 		);
 		assert_ok!(unspent_update_1);
 
-		let spent_update_1 = AnonymityMiningClaims::update_spent_root(
+		let spent_update_1 = AnonymityMiningClaims::_update_spent_root(
 			dest_resource_id,
 			Element::from_bytes(&circuit_inputs.spent_roots[1].to_biguint().unwrap().to_bytes_be()),
 		);
@@ -391,8 +393,10 @@ fn circom_should_complete_30x2_reward_claim_with_json_file() {
 			verify_proof(&params_2_2.0.vk, &proof, inputs_for_verification.to_vec()).unwrap();
 		assert!(did_proof_work);
 
+		let _transactor = get_account(1);
 		let claim_ap_call =
-			AnonymityMiningClaims::claim_ap(tree_id, reward_proof_data, resource_ids.to_vec());
+			// AnonymityMiningClaims::claim_ap(tree_id, &reward_proof_data, resource_ids.to_vec());
+			AnonymityMiningClaims::claim(RuntimeOrigin::signed(_transactor), reward_proof_data);
 		assert_ok!(claim_ap_call);
 	});
 }

@@ -7,14 +7,11 @@ use ark_relations::r1cs::ConstraintMatrices;
 use ark_serialize::CanonicalSerialize;
 use circom_proving::circom_from_folder;
 use frame_benchmarking::account;
-use frame_support::{assert_err, assert_ok};
+use frame_support::{assert_ok, traits::OnInitialize};
 use num_bigint::{BigInt, Sign};
-use webb_primitives::{
-	webb_proposals::{ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId},
-	ElementTrait,
-};
+use webb_primitives::ElementTrait;
 
-use std::{convert::TryInto, fs::File, str::FromStr, sync::Mutex};
+use std::{convert::TryInto, fs::File, io::Write, str::FromStr, sync::Mutex};
 
 use arkworks_setups::{common::setup_params, Curve};
 
@@ -23,6 +20,10 @@ use crate::mock::Element;
 type Bn254Fr = ark_bn254::Fr;
 
 const SEED: u32 = 0;
+
+pub fn get_account(id: u32) -> AccountId {
+	account::<AccountId>("", id, SEED)
+}
 
 pub fn setup_environment() {
 	let curve = Curve::Bn254;
@@ -41,6 +42,7 @@ pub fn setup_environment() {
 			params3.to_bytes().try_into().unwrap(),
 		));
 	}
+	<MerkleTree as OnInitialize<u64>>::on_initialize(1);
 }
 pub fn setup_environment_with_circom(
 ) -> ((ProvingKey<Bn254>, ConstraintMatrices<Fr>), &'static Mutex<WitnessCalculator>) {
@@ -58,6 +60,7 @@ pub fn setup_environment_with_circom(
 	println!("Setting up the verifier pallet");
 	let mut vk_2_2_bytes = Vec::new();
 	params_2_2.0.vk.serialize(&mut vk_2_2_bytes).unwrap();
+	File::create("circom_vk_2_2_bytes").unwrap().write_all(&vk_2_2_bytes).unwrap();
 
 	let param_call = ClaimsVerifier::force_set_parameters(
 		RuntimeOrigin::root(),
