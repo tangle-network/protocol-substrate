@@ -60,6 +60,7 @@ sp-staking = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 sp-version = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
+pallet-randomness-collective-flip = { package = "pallet-insecure-randomness-collective-flip", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
 
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.39", default-features = false }
 frame-election-provider-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39", default-features = false }
@@ -150,8 +151,12 @@ std = [
   "sp-session/std",
   "sp-block-builder/std",
   "sp-transaction-pool/std",
+  "pallet-randomness-collective-flip/std",
   "sp-inherents/std",
+  "pallet-key-storage/std",
+  "pallet-vanchor-handler/std",
   "sp-authority-discovery/std",
+  "frame-election-provider-support/std",
   "sp-consensus-babe/std",
   "sp-npos-elections/std",
   "frame-support/std",

@@ -219,9 +219,7 @@ parameter_types! {
 
 impl pallet_authorship::Config for Runtime {
 	type EventHandler = (Staking, ImOnline);
-	type FilterUncle = ();
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
-	type UncleGenerations = UncleGenerations;
 }
 
 parameter_types! {
@@ -411,12 +409,8 @@ impl pallet_staking::Config for Runtime {
 	type SessionsPerEra = SessionsPerEra;
 	type BondingDuration = BondingDuration;
 	type SlashDeferDuration = SlashDeferDuration;
-	/// A super-majority of the council can cancel the slash.
-	type SlashCancelOrigin = EitherOfDiverse<
-		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>,
-	>;
 	type SessionInterface = Self;
+	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type EraPayout = pallet_staking::ConvertCurve<RewardCurve>;
 	type NextNewSession = Session;
 	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
@@ -636,6 +630,7 @@ parameter_types! {
 
 impl pallet_democracy::Config for Runtime {
 	type BlacklistOrigin = EnsureRoot<AccountId>;
+	type SubmitOrigin = frame_system::EnsureSigned<AccountId>;
 	// To cancel a proposal before it has been passed, the technical committee must
 	// be unanimous or Root must agree.
 	type CancelProposalOrigin = EitherOfDiverse<
@@ -703,6 +698,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MotionDuration = CouncilMotionDuration;
 	type MaxProposals = CouncilMaxProposals;
 	type MaxMembers = CouncilMaxMembers;
+	type SetMembersOrigin = EnsureRoot<AccountId>;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
@@ -744,6 +740,7 @@ impl pallet_elections_phragmen::Config for Runtime {
 	type MaxVoters = MaxVoters;
 	type VotingBondBase = VotingBondBase;
 	type VotingBondFactor = VotingBondFactor;
+	type MaxVotesPerVoter = ConstU32<100>;
 	type WeightInfo = pallet_elections_phragmen::weights::SubstrateWeight<Runtime>;
 }
 
@@ -988,6 +985,7 @@ impl pallet_assets::Config for Runtime {
 	type StringLimit = StringLimit;
 	type Freezer = ();
 	type Extra = ();
+	type CallbackHandle = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 	type RemoveItemsLimit = ConstU32<1000>;
 }
@@ -1091,6 +1089,7 @@ impl pallet_grandpa::Config for Runtime {
 		Offences,
 		ReportLongevity,
 	>;
+	type MaxSetIdSessionEntries = frame_support::traits::ConstU64<0>;
 	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
 		KeyTypeId,
 		GrandpaId,
@@ -1423,7 +1422,7 @@ construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Babe: pallet_babe::{Pallet, Call, Storage, Config, ValidateUnsigned},
 
-		Authorship: pallet_authorship::{Pallet, Call, Storage},
+		Authorship: pallet_authorship::{Pallet, Storage},
 		Indices: pallet_indices::{Pallet, Call, Storage, Config<T>, Event<T>},
 
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
@@ -1715,6 +1714,12 @@ impl_runtime_apis! {
 		}
 		fn query_fee_details(uxt: <Block as BlockT>::Extrinsic, len: u32) -> FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
+		}
+		fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		fn query_length_to_fee(length: u32) -> Balance {
+			TransactionPayment::length_to_fee(length)
 		}
 	}
 
