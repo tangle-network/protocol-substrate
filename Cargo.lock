@@ -6748,7 +6748,7 @@ dependencies = [
  "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
  "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
  "webb-primitives",
- "webb-proposals 0.5.21 (git+https://github.com/webb-tools/webb-rs)",
+ "webb-proposals",
 ]
 
 [[package]]
@@ -6914,7 +6914,7 @@ dependencies = [
  "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
  "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
  "webb-primitives",
- "webb-proposals 0.5.21 (git+https://github.com/webb-tools/webb-rs)",
+ "webb-proposals",
 ]
 
 [[package]]
@@ -12790,23 +12790,7 @@ dependencies = [
  "sp-io 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
  "sp-runtime 7.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
  "sp-std 5.0.0 (git+https://github.com/paritytech/substrate.git?branch=polkadot-v0.9.39)",
- "webb-proposals 0.5.21 (git+https://github.com/webb-tools/webb-rs?branch=polkadot-v0.9.39)",
-]
-
-[[package]]
-name = "webb-proposals"
-version = "0.5.21"
-source = "git+https://github.com/webb-tools/webb-rs?branch=polkadot-v0.9.39#46f15e781fc9a175d874dcc846277c0fe42cbf82"
-dependencies = [
- "frame-support",
- "hex",
- "num-traits",
- "parity-scale-codec",
- "scale-info",
- "schemars",
- "serde",
- "tiny-keccak",
- "typed-builder",
+ "webb-proposals",
 ]
 
 [[package]]
@@ -12820,6 +12804,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "schemars",
+ "serde",
  "tiny-keccak",
  "typed-builder",
 ]
