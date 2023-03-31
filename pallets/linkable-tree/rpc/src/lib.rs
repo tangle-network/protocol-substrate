@@ -84,8 +84,8 @@ where
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		api.get_neighbor_roots(&at, tree_id)
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
+		api.get_neighbor_roots(at, tree_id)
 			.map_err(|_| error::Error::RootsRequestFailure)
 			.map_err(Into::into)
 	}
@@ -98,8 +98,8 @@ where
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-		api.get_neighbor_edges(&at, tree_id)
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
+		api.get_neighbor_edges(at, tree_id)
 			.map_err(|_| error::Error::EdgesRequestFailure)
 			.map_err(Into::into)
 	}

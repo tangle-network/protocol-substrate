@@ -25,3 +25,4 @@
 types/build
 types/ts-types
 .dvc/
+solidity-fixtures

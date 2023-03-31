@@ -82,13 +82,13 @@ where
 		self.deny_unsafe.check_if_safe()?;
 
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 		if to - from >= 512 {
 			return Err(error::Error::TooManyLeavesRequested.into())
 		}
 		let leaves = (from..to)
 			.into_iter()
-			.flat_map(|i| api.get_leaf(&at, tree_id, i as u32)) // Result<Option<Element>>
+			.flat_map(|i| api.get_leaf(at, tree_id, i as u32)) // Result<Option<Element>>
 			.flatten() // Element
 			.collect();
 		Ok(leaves)

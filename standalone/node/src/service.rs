@@ -163,10 +163,7 @@ pub fn new_partial(
 					slot_duration,
 				);
 
-			let uncles =
-				sp_authorship::InherentDataProvider::<<Block as BlockT>::Header>::check_inherents();
-
-			Ok((slot, timestamp, uncles))
+			Ok((slot, timestamp))
 		},
 		&task_manager.spawn_essential_handle(),
 		config.prometheus_registry(),
@@ -305,7 +302,7 @@ pub fn new_full_base(
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: None,
-			warp_sync: Some(warp_sync),
+			warp_sync_params: Some(sc_service::WarpSyncParams::WithProvider(warp_sync)),
 		})?;
 
 	if config.offchain_worker.enabled {
@@ -378,11 +375,6 @@ pub fn new_full_base(
 			create_inherent_data_providers: move |parent, ()| {
 				let client_clone = client_clone.clone();
 				async move {
-					let uncles = sc_consensus_uncles::create_uncles_inherent_data_provider(
-						&*client_clone,
-						parent,
-					)?;
-
 					let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
 					let slot =
@@ -397,7 +389,7 @@ pub fn new_full_base(
 							&parent,
 						)?;
 
-					Ok((slot, timestamp, uncles, storage_proof))
+					Ok((slot, timestamp, storage_proof))
 				}
 			},
 			force_authoring,
@@ -510,7 +502,7 @@ pub fn fetch_nonce(client: &FullClient, account: sp_core::sr25519::Pair) -> u32 
 	let best_hash = client.chain_info().best_hash;
 	client
 		.runtime_api()
-		.account_nonce(&sp_runtime::generic::BlockId::Hash(best_hash), account.public().into())
+		.account_nonce(best_hash, account.public().into())
 		.expect("Fetching account nonce works; qed")
 }
 

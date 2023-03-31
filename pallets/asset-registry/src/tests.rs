@@ -23,7 +23,7 @@ use crate::{
 };
 
 use frame_support::{assert_noop, assert_ok, BoundedVec};
-use polkadot_xcm::{opaque::latest::Junctions, v1::MultiLocation};
+use polkadot_xcm::{opaque::latest::Junctions, v3::MultiLocation};
 use sp_runtime::DispatchError;
 use sp_std::convert::TryInto;
 use webb_primitives::{AssetId, Balance};

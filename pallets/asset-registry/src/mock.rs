@@ -21,7 +21,7 @@ use frame_support::{
 	traits::{Everything, GenesisBuild},
 };
 use frame_system as system;
-use polkadot_xcm::v1::MultiLocation;
+use polkadot_xcm::v3::MultiLocation;
 use scale_info::TypeInfo;
 use sp_core::H256;
 use sp_runtime::{
