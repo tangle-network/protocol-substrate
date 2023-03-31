@@ -36,7 +36,7 @@ pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "p
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 webb-primitives = { path = "../../primitives", default-features = false }
-webb-proposals = { git = "https://github.com/webb-tools/webb-rs", default-features = false, features = ["scale", "substrate"], branch = "polkadot-v0.9.39" }
+webb-proposals = { git = "https://github.com/webb-tools/webb-rs", default-features = false, features = ["scale", "substrate"] }
 
 [features]
 default = ["std"]
