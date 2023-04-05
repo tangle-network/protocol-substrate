@@ -1,6 +1,6 @@
 {
   "name": "@webb-tools/protocol-substrate-types",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Polkadot.js type definitions required for interacting with Webb's substrate protocol",
   "main": "./build/index.js",
   "author": "Webb Developers <drew@webb.tools>",
@@ -21,7 +21,7 @@
     "@babel/runtime": "^7.19.0",
     "@open-web3/orml-types": "^1.1.3",
     "@polkadot/api-derive": "10.1.4",
-    "@polkadot/dev": "^0.72.16",
+    "@polkadot/dev": "^0.72.34",
     "@polkadot/typegen": "10.1.4",
     "@polkadot/types": "10.1.4",
     "fs-extra": "^11.1.1",
@@ -40,8 +40,8 @@
   "scripts": {
     "build": "node ./scripts/build.js",
     "build:interfaces": "yarn build:interfaces:defs && yarn build:interfaces:chain && rm ./src/interfaces/index.ts && rm ./src/interfaces/types.ts",
-    "build:interfaces:defs": "npx ts-node node_modules/.bin/polkadot-types-from-defs --input ./src/interfaces --package @webb-tools/protocol-substrate-types --endpoint ./src/metadata/metadata.json",
-    "build:interfaces:chain": "npx ts-node node_modules/.bin/polkadot-types-from-chain --endpoint ws://localhost:9944 --output ./src/interfaces",
+    "build:interfaces:defs": "npx ts-node node_modules/.bin/polkadot-types-from-defs --input ./src/interfaces --endpoint ./src/metadata/metadata.json --package @webb-tools/protocol-substrate-types",
+    "build:interfaces:chain": "npx ts-node node_modules/.bin/polkadot-types-from-chain --output ./src/interfaces --endpoint ./src/metadata/metadata.json",
     "clean": "rm -rf build && rm -rf ts-types",
     "publish-types": "node ./scripts/publish-types.js",
     "update:metadata": "npx ts-node ./scripts/updateMetadata.ts"
