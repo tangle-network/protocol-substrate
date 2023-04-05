@@ -83,6 +83,8 @@ async function buildJs(dir) {
     console.log(`*** ${name} ${version}`);
 
     mkdirp.sync('build');
+    
+    copyMiscFiles();
   }
 }
 
@@ -90,7 +92,6 @@ async function buildMonorepo() {
   executeSync('yarn clean');
   executeSync('tsc --emitDeclarationOnly --outdir ./ts-types');
   await buildJs('types');
-  copyMiscFiles();
 }
 
 async function main() {
