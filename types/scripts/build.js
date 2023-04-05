@@ -76,33 +76,6 @@ function copyMiscFiles(dir) {
   fs.writeFileSync('./build/package.json', newPkgString);
 }
 
-// @param module - the module system to use cjs or esm.
-async function buildBabel(dir, module = 'esm') {
-  console.log('build babel for: ', module);
-
-  // babel configuratiom
-  const configFileName = `babel-config-cjs.cjs`;
-
-  // Prefer to use local config over the root one.
-  const conf = path.join(process.cwd(), configFileName);
-
-  // Commonjs builds will exist in a '/cjs' directory for the package.
-  await babel({
-    babelOptions: {
-      configFile: conf
-    },
-    cliOptions: {
-      extensions: ['.ts'],
-      filenames: ['src'],
-      ignore: '**/*.d.ts',
-      outDir: path.join(process.cwd(), 'build'),
-      outFileExtension: '.js'
-    }
-  });
-
-  copyMiscFiles(dir, module);
-}
-
 async function buildJs(dir) {
   if (!fs.existsSync(path.join(process.cwd(), '.skip-build'))) {
     const { name, version } = require(path.join(process.cwd(), './package.json'));
@@ -110,8 +83,6 @@ async function buildJs(dir) {
     console.log(`*** ${name} ${version}`);
 
     mkdirp.sync('build');
-
-    await buildBabel(dir, 'cjs');
   }
 }
 
@@ -119,6 +90,7 @@ async function buildMonorepo() {
   executeSync('yarn clean');
   executeSync('tsc --emitDeclarationOnly --outdir ./ts-types');
   await buildJs('types');
+  copyMiscFiles();
 }
 
 async function main() {
