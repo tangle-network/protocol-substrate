@@ -29,6 +29,7 @@
     "scripts",
     "node_modules/**/*",
     "**/node_modules/**/*",
+    "polkadot-dev-configs"
   ],
   "ts-node": {
     "files": true

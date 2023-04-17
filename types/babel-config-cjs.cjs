@@ -1,4 +1,4 @@
-const polkadotBabelConfig = require('@polkadot/dev/config/babel-config-cjs.cjs');
+const polkadotBabelConfig = require('./polkadot-dev-configs/babel-config-cjs.cjs');
 
 module.exports = {
   plugins: [
