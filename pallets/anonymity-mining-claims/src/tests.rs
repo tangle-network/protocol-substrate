@@ -7,7 +7,6 @@ use ark_serialize::CanonicalSerialize;
 use frame_support::{assert_err, assert_ok};
 // use sp_runtime::traits::Zero;
 
-use ark_bn254::{Bn254, Fr};
 use circom_proving::{generate_proof, verify_proof};
 // use num_bigint::{BigInt, Sign};
 use webb_primitives::webb_proposals::{

@@ -27,7 +27,7 @@ fn assert_last_event<T: Config<I>, I: 'static>(generic_event: <T as Config<I>>::
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
-const MAX_PARAMETER_LENGTH: u32 = 20000;
+const MAX_PARAMETER_LENGTH: u32 = 10000;
 
 benchmarks_instance_pallet! {
 	register {
