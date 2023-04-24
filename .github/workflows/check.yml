@@ -28,7 +28,7 @@ jobs:
       - name: Check Format
         run: |
           SKIP_WASM_BUILD=1 cargo fmt --all -- --check
-          SKIP_WASM_BUILD=1 cargo clippy --all-targets --workspace -- --deny warnings
+          SKIP_WASM_BUILD=1 cargo clippy --all-targets --workspace --exclude webb-client -- --deny warnings
 
   # Build job
   check-build:

@@ -205,6 +205,7 @@ impl Contains<RuntimeCall> for SetResourceProposalFilter {
 }
 
 pub struct ExecuteProposalFilter;
+#[allow(clippy::collapsible_match, clippy::match_like_matches_macro)]
 impl Contains<RuntimeCall> for ExecuteProposalFilter {
 	fn contains(c: &RuntimeCall) -> bool {
 		match c {

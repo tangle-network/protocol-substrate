@@ -12815,8 +12815,6 @@ version = "1.0.0"
 dependencies = [
  "ark-bn254 0.3.0",
  "arkworks-setups",
- "array-bytes",
- "clap 4.2.1",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-system",

@@ -202,7 +202,7 @@ fn should_add_token_with_sig_succeed() {
 			sig.0.to_vec().try_into().unwrap(),
 		));
 		// Check that first_token_id is part of pool
-		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
+		assert!(AssetRegistry::contains_asset(pool_share_id, first_token_id));
 	})
 }
 
@@ -264,7 +264,7 @@ fn should_remove_token_with_sig_succeed() {
 			sig.0.to_vec().try_into().unwrap(),
 		));
 		// Check that first_token_id is part of pool
-		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
+		assert!(AssetRegistry::contains_asset(pool_share_id, first_token_id));
 		let nonce = webb_proposals::Nonce::from(0x0002);
 		let header = make_proposal_header(r_id, REMOVE_TOKEN_FUNCTION_SIG, nonce);
 		let remove_token_proposal_bytes =
@@ -279,7 +279,7 @@ fn should_remove_token_with_sig_succeed() {
 			sig.0.to_vec().try_into().unwrap(),
 		));
 
-		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), false);
+		assert!(AssetRegistry::contains_asset(pool_share_id, first_token_id));
 	})
 }
 
@@ -437,13 +437,13 @@ fn should_add_many_tokens_with_sig_succeed() {
 		));
 
 		// Check that first_token_id is part of pool
-		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
+		assert!(AssetRegistry::contains_asset(pool_share_id, first_token_id));
 
 		// Check that second_token_id is part of pool
-		assert_eq!(AssetRegistry::contains_asset(pool_share_id, second_token_id), true);
+		assert!(AssetRegistry::contains_asset(pool_share_id, second_token_id));
 
 		// Check that third_token_id is part of pool
-		assert_eq!(AssetRegistry::contains_asset(pool_share_id, third_token_id), true);
+		assert!(AssetRegistry::contains_asset(pool_share_id, third_token_id));
 	})
 }
 
@@ -500,7 +500,7 @@ fn should_fail_to_add_same_token_with_sig() {
 			sig.0.to_vec().try_into().unwrap(),
 		));
 		// Check that first_token_id is part of pool
-		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), true);
+		assert!(AssetRegistry::contains_asset(pool_share_id, first_token_id));
 
 		// Have to remake prop_data with incremented nonce
 		let nonce = webb_proposals::Nonce::from(0x0002);

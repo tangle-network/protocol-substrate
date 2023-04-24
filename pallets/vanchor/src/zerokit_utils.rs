@@ -1,6 +1,6 @@
 // This crate provides cross-module useful utilities (mainly type conversions) not necessarily
 // specific to RLN
-
+#![allow(clippy::all, dead_code)]
 use ark_bn254::Fr;
 use ark_ff::{BigInteger256, PrimeField};
 use num_bigint::{BigInt, BigUint};

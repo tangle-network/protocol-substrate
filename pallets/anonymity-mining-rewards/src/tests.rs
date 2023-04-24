@@ -12,9 +12,6 @@ const LIQUIDITY: u128 = 20000000;
 const INITIAL_TOTAL_REWARDS_BALANCE: i128 = 30000000;
 const DURATION: u64 = 31536000;
 
-const TEST_MAX_EDGES: u32 = 100;
-const TEST_TREE_DEPTH: u8 = 32;
-
 #[test]
 fn should_initialize_parameters() {
 	new_test_ext().execute_with(|| {});

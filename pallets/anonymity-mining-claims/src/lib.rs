@@ -33,7 +33,7 @@
 //!
 //! * `claim_ap`: Allows user to prove in zero knowledge they have a pair (spentUTXO, unspentUTXO)
 //!   on the MASP
-//! 	and accumulate anonimity points following `inputAmount + rate * (spentTimestamp -
+//! and accumulate anonimity points following `inputAmount + rate * (spentTimestamp -
 //! unspentTimestamp) * amount`
 
 // Ensure we're `no_std` when compiling for Wasm.
@@ -272,6 +272,7 @@ pub mod pallet {
 pub type ProposalNonce = u32;
 pub type RootIndex = u32;
 
+#[allow(dead_code)]
 impl<T: Config<I>, I: 'static> Pallet<T, I> {
 	fn create(
 		creator: Option<T::AccountId>,

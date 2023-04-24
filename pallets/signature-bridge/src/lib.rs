@@ -88,7 +88,6 @@ pub mod pallet {
 	};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::traits::AtLeast32Bit;
-	use webb_primitives::signature_bridge::SetMaintainer;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]

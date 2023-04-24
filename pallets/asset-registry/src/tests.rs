@@ -132,7 +132,7 @@ fn create_asset() {
 #[test]
 fn location_mapping_works() {
 	new_test_ext().execute_with(|| {
-		let bn = AssetRegistryPallet::to_bounded_name(b"HDX".to_vec().try_into().unwrap()).unwrap();
+		let bn = AssetRegistryPallet::to_bounded_name(b"HDX".to_vec()).unwrap();
 
 		let ed = 1_000_000u128;
 
@@ -174,7 +174,7 @@ fn location_mapping_works() {
 #[test]
 fn genesis_config_works() {
 	ExtBuilder::default()
-		.with_native_asset_name(b"NATIVE".to_vec().try_into().unwrap())
+		.with_native_asset_name(b"NATIVE".to_vec())
 		.build()
 		.execute_with(|| {
 			let native: BoundedVec<u8, <Test as crate::Config>::StringLimit> =
@@ -182,7 +182,7 @@ fn genesis_config_works() {
 			assert_eq!(AssetRegistryPallet::asset_ids(native).unwrap(), 0u32);
 		});
 	ExtBuilder::default()
-		.with_assets(vec![(b"ONE".to_vec().try_into().unwrap(), 1_000u128)])
+		.with_assets(vec![(b"ONE".to_vec(), 1_000u128)])
 		.build()
 		.execute_with(|| {
 			let native: BoundedVec<u8, <Test as crate::Config>::StringLimit> =
