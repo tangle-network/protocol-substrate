@@ -45,7 +45,7 @@ pub fn generate_maintainer_signatures<T: Config<I>, I: 'static>() -> (Vec<u8>, V
 	let old_maintainer = ecdsa_generate(DUMMY, None);
 	let old_maintainer_key = set_maintainer_on_chain::<T, I>(old_maintainer);
 	let mut message = vec![];
-	let nonce = 1u32.to_be_bytes;
+	let nonce = 1u32.to_be_bytes();
 	message.extend_from_slice(&nonce);
 	message.extend_from_slice(&new_maintainer.encode());
 	let hash = keccak_256(&message);
