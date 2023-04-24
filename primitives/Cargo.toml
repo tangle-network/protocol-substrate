@@ -30,8 +30,8 @@ ark-serialize = { version = "^0.3.0", default-features = false, features = ["der
 ark-std = { version = "^0.3.0", default-features = false }
 # ark-circom = { git = "https://github.com/gakonst/ark-circom.git", default-features = false }
 
-byteorder = { version = "1", default-features = false }
 blake2 = { version = "0.9", default-features = false }
+byteorder = { version = "1", default-features = false }
 digest = { version = "0.9", default-features = false }
 
 ark-crypto-primitives = { version = "^0.3.0", default-features = false }

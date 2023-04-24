@@ -614,7 +614,7 @@ impl<T: Config<I>, I: 'static> SetMaintainer<T::MaintainerNonce, T::MaxStringLen
 			let old_maintainer = maintainer.clone();
 			*maintainer = new_maintainer.clone();
 			Self::deposit_event(Event::MaintainerSet { old_maintainer, new_maintainer });
-			Ok(().into())
+			Ok(())
 		})
 	}
 }

@@ -7,9 +7,9 @@ version = "0.1.0"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "full", "bit-vec"] }
-subxt = { version = "0.25.0" }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+subxt = { version = "0.25.0" }
 
 [dev-dependencies]
 hex = "0.4"
@@ -23,30 +23,30 @@ tokio = { version = "1.17.0", features = ["full"] }
 # arkworks related deps
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = ["curve"] }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
+ark-circom = { git = "https://github.com/gakonst/ark-circom", branch = "master", default-features = false, features = ["circom-2"] }
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
 ark-ec = { version = "^0.3.0", default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false }
+ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", features = ["parallel"] }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"] }
 ark-std = { version = "^0.3.0", default-features = false }
-ark-circom = { git = "https://github.com/gakonst/ark-circom", branch = "master", default-features = false, features = ["circom-2"] }
-ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", features = ["parallel"] }
+arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+num-bigint = { version = "0.4", default-features = false, features = ["rand"] }
+orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 rand = "0.8.4"
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
-orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
-arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
-num-bigint = { version = "0.4", default-features = false, features = ["rand"] }
-frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 # For ark-circom
-once_cell = "1.14.0"
 cfg-if = "1.0"
-wasmer = { version = "2.3.0", default-features = false }
-num-traits = "0.2.11"
-thiserror = "1.0.0"
 color-eyre = "0.6.1"
+num-traits = "0.2.11"
+once_cell = "1.14.0"
 serde_json = "1.0.48"
+thiserror = "1.0.0"
+wasmer = { version = "2.3.0", default-features = false }
 
 
 # Webb deps
@@ -55,13 +55,13 @@ webb-primitives = { path = "../primitives", features = ["hashing", "verifying", 
 
 [features]
 default = ["std", "wasmer/sys-default"]
-std = [
-    "frame-support/std",
-    "frame-system/std",
-    "frame-benchmarking/std",
-]
 runtime-benchmarks = [
-    "frame-system/runtime-benchmarks",
-    "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+]
+std = [
+  "frame-support/std",
+  "frame-system/std",
+  "frame-benchmarking/std",
 ]
 wasm = ["wasmer/js", "wasmer/std"]
