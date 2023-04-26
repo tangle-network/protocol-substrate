@@ -4,6 +4,9 @@ use webb_primitives::ElementTrait;
 
 use crate::Instance1;
 use ark_serialize::CanonicalSerialize;
+use frame_support::{assert_err, assert_ok};
+// use sp_runtime::traits::Zero;
+
 use circom_proving::{generate_proof, verify_proof};
 use frame_support::{assert_err, assert_ok};
 // use num_bigint::{BigInt, Sign};

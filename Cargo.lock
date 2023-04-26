@@ -12736,7 +12736,6 @@ dependencies = [
  "arkworks-setups",
  "cfg-if",
  "color-eyre 0.6.2",
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",

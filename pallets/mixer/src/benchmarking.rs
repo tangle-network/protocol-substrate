@@ -22,8 +22,7 @@
 use super::*;
 
 use frame_benchmarking::{
-	account, benchmarks_instance_pallet, impl_benchmark_test_suite, whitelist_account,
-	whitelisted_caller,
+	account, benchmarks_instance_pallet, whitelist_account, whitelisted_caller,
 };
 use frame_system::RawOrigin;
 use orml_traits::MultiCurrency;
@@ -63,8 +62,7 @@ benchmarks_instance_pallet! {
 
 	  let tree_id = <Mixer<T, I> as MixerInterface<_,_,_,_,_>>::create(None, deposit_size.into(), depth, asset_id)?;
 	  let leaf = <T as pallet_mt::Config<I>>::Element::from_bytes(&[1u8; 32]);
-	  <<T as pallet_mt::Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 200_000_000u32.into());
-
+	  <<T as pallet_mt::Config<I>>::Currency as Currency<T::AccountId>>::make_free_balance_be(&caller.clone(), 900_000_000u32.into());
 	}: _(RawOrigin::Signed(caller.clone()), tree_id, leaf)
 	verify {
 	  assert_eq!(<<T as Config<I>>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &Pallet::<T, I>::account_id()), deposit_size.into())
@@ -136,6 +134,6 @@ benchmarks_instance_pallet! {
 		assert_eq!(<<T as Config<I>>::Currency as MultiCurrency<T::AccountId>>::total_balance(asset_id, &recipient_account_id), (100_000_000u32 + deposit_size).into())
 	}
 
-}
+	impl_benchmark_test_suite!(Mixer, crate::mock::new_bench_ext(), crate::mock::Test);
 
-impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
+}

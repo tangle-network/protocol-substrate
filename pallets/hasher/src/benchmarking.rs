@@ -43,7 +43,7 @@ const SEED: u32 = 0;
 // poseidon_bls381_x3_5
 // poseidon_circom_bn254_x5_5
 // poseidon_circom_bn254_x5_3
-const MAX_PARAMETER_LENGTH: u32 = 20000;
+const MAX_PARAMETER_LENGTH: u32 = 10000;
 
 benchmarks_instance_pallet! {
 	force_set_parameters {

@@ -39,6 +39,11 @@ orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-li
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 rand = "0.8.4"
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
+orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
+arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
+num-bigint = { version = "0.4", default-features = false, features = ["rand"] }
 # For ark-circom
 cfg-if = "1.0"
 color-eyre = "0.6.1"
@@ -55,9 +60,9 @@ webb-primitives = { path = "../primitives", features = ["hashing", "verifying", 
 
 [features]
 default = ["std", "wasmer/sys-default"]
-runtime-benchmarks = [
-  "frame-system/runtime-benchmarks",
-  "frame-support/runtime-benchmarks",
+std = [
+    "frame-support/std",
+    "frame-system/std",
 ]
 std = [
   "frame-support/std",
