@@ -12736,6 +12736,7 @@ dependencies = [
  "arkworks-setups",
  "cfg-if",
  "color-eyre 0.6.2",
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "hex",
@@ -12814,6 +12815,7 @@ version = "1.0.0"
 dependencies = [
  "ark-bn254 0.3.0",
  "arkworks-setups",
+ "clap 4.2.1",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-system",

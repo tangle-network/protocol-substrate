@@ -39,11 +39,7 @@ orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-li
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 rand = "0.8.4"
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
-orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
-arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
-num-bigint = { version = "0.4", default-features = false, features = ["rand"] }
+
 # For ark-circom
 cfg-if = "1.0"
 color-eyre = "0.6.1"
@@ -53,17 +49,12 @@ serde_json = "1.0.48"
 thiserror = "1.0.0"
 wasmer = { version = "2.3.0", default-features = false }
 
-
 # Webb deps
 arkworks-native-gadgets = { version = "1.2.0", default-features = false }
 webb-primitives = { path = "../primitives", features = ["hashing", "verifying", "field_ops"] }
 
 [features]
 default = ["std", "wasmer/sys-default"]
-std = [
-    "frame-support/std",
-    "frame-system/std",
-]
 std = [
   "frame-support/std",
   "frame-system/std",
