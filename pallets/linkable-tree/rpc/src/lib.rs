@@ -26,7 +26,7 @@ use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 use sc_rpc::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 
 use pallet_linkable_tree::types::EdgeMetadata;
 use pallet_linkable_tree_rpc_runtime_api::LinkableTreeApi;
