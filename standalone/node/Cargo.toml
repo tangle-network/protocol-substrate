@@ -24,7 +24,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 substrate-build-script-utils = "3.0.0"
 
 [dependencies]
-array-bytes = "4.1"
 clap = { version = "4.0.9", features = ["derive"], optional = true }
 futures = "0.3.21"
 itertools = "0.10.0"

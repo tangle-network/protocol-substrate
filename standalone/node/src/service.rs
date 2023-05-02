@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #![warn(unused_extern_crates)]
-#![allow(clippy::type_complexity)]
+#![allow(clippy::all)]
 
 //! Service implementation. Specialized wrapper over substrate service.
 

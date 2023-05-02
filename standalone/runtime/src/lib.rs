@@ -1,4 +1,9 @@
-#![allow(clippy::from_over_into, non_snake_case)]
+#![allow(
+	clippy::from_over_into,
+	non_snake_case,
+	clippy::collapsible_match,
+	clippy::match_like_matches_macro
+)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
 
@@ -8,7 +13,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
 
-use constants::{constants::*, currency::*, time::*};
+use constants::{block_constants::*, currency::*, time::*};
 pub use webb_primitives::{types::runtime::Moment, *};
 pub mod impls;
 mod voter_bags;

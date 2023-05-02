@@ -33,7 +33,7 @@ pub mod currency {
 }
 
 /// Other constants
-pub mod constants {
+pub mod block_constants {
 	use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight};
 	use sp_runtime::Perbill;
 	/// We assume that ~5% of the block weight is consumed by `on_initialize`

@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity, clippy::ptr_arg)]
 use crate::tests::{
 	BIGGER_DEFAULT_BALANCE, BIGGER_TRANSACTOR_ACCOUNT_ID, BIG_DEFAULT_BALANCE,
 	BIG_TRANSACTOR_ACCOUNT_ID, DEFAULT_BALANCE, RELAYER_ACCOUNT_ID, SEED, TRANSACTOR_ACCOUNT_ID,
@@ -124,6 +125,7 @@ pub fn setup_utxos(
 	let curve = Curve::Bn254;
 	let rng = &mut thread_rng();
 	// Input Utxos
+	#[allow(clippy::unnecessary_unwrap)]
 	let indices: [Option<u64>; NUM_UTXOS] = if indices.is_some() {
 		let ind_unw = indices.unwrap();
 		ind_unw.map(Some)

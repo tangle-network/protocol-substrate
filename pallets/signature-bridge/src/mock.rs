@@ -101,6 +101,7 @@ impl Contains<RuntimeOrigin> for SetResourceProposalFilter {
 }
 
 pub struct ExecuteAllProposalsFilter;
+#[allow(clippy::collapsible_match, clippy::match_like_matches_macro)]
 impl Contains<RuntimeCall> for ExecuteAllProposalsFilter {
 	fn contains(c: &RuntimeCall) -> bool {
 		match c {

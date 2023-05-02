@@ -4,11 +4,8 @@ use webb_primitives::ElementTrait;
 
 use crate::Instance1;
 use ark_serialize::CanonicalSerialize;
-use frame_support::{assert_err, assert_ok};
-// use sp_runtime::traits::Zero;
-
 use circom_proving::{generate_proof, verify_proof};
-// use num_bigint::{BigInt, Sign};
+use frame_support::{assert_err, assert_ok};
 use webb_primitives::webb_proposals::{
 	ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId,
 };

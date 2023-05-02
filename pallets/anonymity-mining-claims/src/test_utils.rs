@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity, clippy::ptr_arg)]
 use crate::mock::*;
 use ark_bn254::{Bn254, Fr};
 use ark_circom::{read_zkey, WitnessCalculator};
