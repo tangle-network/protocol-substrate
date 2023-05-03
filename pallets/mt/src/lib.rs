@@ -326,8 +326,6 @@ pub mod pallet {
 			// insert the leaf
 			<Self as TreeInterface<_, _, _>>::insert_in_order(tree_id, leaf)?;
 
-			Self::deposit_event(Event::LeafInsertion { tree_id, leaf_index: next_index, leaf });
-
 			Ok(().into())
 		}
 
@@ -468,6 +466,7 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 
 		// Setting the next root index
 		let root_index = Self::next_root_index();
+		let next_leaf_index = Self::next_leaf_index(id);
 		NextRootIndex::<T, I>::mutate(|i| {
 			*i = i.saturating_add(One::one()) % T::RootHistorySize::get();
 			*i
@@ -477,7 +476,11 @@ impl<T: Config<I>, I: 'static> TreeInterface<T::AccountId, T::TreeId, T::Element
 			*i = i.saturating_add(One::one());
 			*i
 		});
-
+		Self::deposit_event(Event::LeafInsertion {
+			tree_id: id,
+			leaf_index: next_leaf_index,
+			leaf,
+		});
 		// return the root
 		Ok(hash)
 	}
