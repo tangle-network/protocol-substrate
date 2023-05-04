@@ -97,6 +97,7 @@ use webb_primitives::{
 	field_ops::arkworks::ArkworksIntoFieldBn254,
 	hashing::{ethereum::Keccak256HasherBn254, ArkworksPoseidonHasherBn254},
 	linkable_tree::LinkableTreeInspector,
+	merkle_tree::TreeInspector,
 	signing::SignatureVerifier,
 	verifying::ArkworksVerifierBn254,
 	Amount, ChainId, LeafIndex,
@@ -1748,6 +1749,10 @@ impl_runtime_apis! {
 			} else {
 				Some(v)
 			}
+		}
+
+		fn is_known_root(tree_id: u32, target_root: Element) -> bool {
+			MerkleTreeBn254::is_known_root(tree_id, target_root).ok().unwrap_or_default()
 		}
 	}
 

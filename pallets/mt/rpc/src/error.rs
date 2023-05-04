@@ -29,6 +29,9 @@ pub enum Error {
 	/// Too many leaves requested
 	#[error("Merkle Tree leaves request is too large")]
 	TooManyLeavesRequested,
+	/// Invalid TreeId
+	#[error("Invalid Treeid")]
+	InvalidTreeId,
 }
 
 /// The error codes returned by jsonrpc.
@@ -37,6 +40,8 @@ pub enum ErrorCode {
 	NotReady = 1,
 	/// Too many leaves are requested
 	TooManyLeaves,
+	/// Invalid TreeId
+	InvalidTreeId,
 }
 
 impl From<Error> for ErrorCode {
@@ -44,6 +49,7 @@ impl From<Error> for ErrorCode {
 		match error {
 			Error::EndpointNotReady => ErrorCode::NotReady,
 			Error::TooManyLeavesRequested => ErrorCode::TooManyLeaves,
+			Error::InvalidTreeId => ErrorCode::InvalidTreeId,
 		}
 	}
 }
