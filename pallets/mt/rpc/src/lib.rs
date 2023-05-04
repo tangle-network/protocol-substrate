@@ -113,7 +113,7 @@ where
 		let api = self.client.runtime_api();
 		let at = at.unwrap_or_else(|| self.client.info().best_hash);
 		api.is_known_root(at, tree_id, target_root)
-			.map_err(|_| error::Error::InvalidTreeId)
+			.map_err(|_| error::Error::RootValidationRequestFailed)
 			.map_err(Into::into)
 	}
 }

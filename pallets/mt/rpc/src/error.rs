@@ -29,9 +29,9 @@ pub enum Error {
 	/// Too many leaves requested
 	#[error("Merkle Tree leaves request is too large")]
 	TooManyLeavesRequested,
-	/// Invalid TreeId
-	#[error("Invalid Treeid")]
-	InvalidTreeId,
+	/// Request to validate if given root is known to merkle tree failed.
+	#[error("Request to validate root failed")]
+	RootValidationRequestFailed,
 }
 
 /// The error codes returned by jsonrpc.
@@ -40,8 +40,8 @@ pub enum ErrorCode {
 	NotReady = 1,
 	/// Too many leaves are requested
 	TooManyLeaves,
-	/// Invalid TreeId
-	InvalidTreeId,
+	/// Request to validate root failed
+	RootValidationRequestFailed,
 }
 
 impl From<Error> for ErrorCode {
@@ -49,7 +49,7 @@ impl From<Error> for ErrorCode {
 		match error {
 			Error::EndpointNotReady => ErrorCode::NotReady,
 			Error::TooManyLeavesRequested => ErrorCode::TooManyLeaves,
-			Error::InvalidTreeId => ErrorCode::InvalidTreeId,
+			Error::RootValidationRequestFailed => ErrorCode::RootValidationRequestFailed,
 		}
 	}
 }
