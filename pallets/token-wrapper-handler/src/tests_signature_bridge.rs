@@ -280,7 +280,7 @@ fn should_remove_token_with_sig_succeed() {
 		));
 		// Since we removed first_token_id from pool_share_id
 		// Asset registry should return false
-		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), false);
+		assert!(!AssetRegistry::contains_asset(pool_share_id, first_token_id));
 	})
 }
 
