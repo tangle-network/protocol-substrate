@@ -278,8 +278,9 @@ fn should_remove_token_with_sig_succeed() {
 			remove_token_proposal_bytes.try_into().unwrap(),
 			sig.0.to_vec().try_into().unwrap(),
 		));
-
-		assert!(AssetRegistry::contains_asset(pool_share_id, first_token_id));
+		// Since we removed first_token_id from pool_share_id
+		// Asset registry should return false
+		assert_eq!(AssetRegistry::contains_asset(pool_share_id, first_token_id), false);
 	})
 }
 
