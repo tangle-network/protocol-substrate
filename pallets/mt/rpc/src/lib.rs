@@ -48,6 +48,14 @@ pub trait MerkleTreeRpcApi<BlockHash, Element> {
 		to: usize,
 		at: Option<BlockHash>,
 	) -> RpcResult<Vec<Element>>;
+
+	#[method(name = "mt_isKnownRoot")]
+	fn is_known_root(
+		&self,
+		tree_id: u32,
+		target_root: Element,
+		at: Option<BlockHash>,
+	) -> RpcResult<bool>;
 }
 
 /// A struct that implements the `MerkleTreeRpcApi`.
@@ -92,5 +100,20 @@ where
 			.flatten() // Element
 			.collect();
 		Ok(leaves)
+	}
+
+	fn is_known_root(
+		&self,
+		tree_id: u32,
+		target_root: Element,
+		at: Option<<Block as BlockT>::Hash>,
+	) -> RpcResult<bool> {
+		self.deny_unsafe.check_if_safe()?;
+
+		let api = self.client.runtime_api();
+		let at = at.unwrap_or_else(|| self.client.info().best_hash);
+		api.is_known_root(at, tree_id, target_root)
+			.map_err(|_| error::Error::RootCheckRequestFailed)
+			.map_err(Into::into)
 	}
 }
