@@ -86,7 +86,7 @@ fn webb_session_keys(
 
 fn properties() -> Properties {
 	let mut properties = Properties::new();
-	properties.insert("tokenSymbol".into(), "Unit".into());
+	properties.insert("tokenSymbol".into(), "tTNT".into());
 	properties.insert("tokenDecimals".into(), 18u32.into());
 	properties.insert("ss58Format".into(), 42.into());
 	properties
@@ -256,12 +256,12 @@ fn testnet_genesis(
 	GenesisConfig {
 		system: webb_runtime::SystemConfig { code: wasm_binary_unwrap().to_vec() },
 		asset_registry: AssetRegistryConfig {
-			asset_names: vec![(b"TEST".to_vec().try_into().unwrap(), 1)],
-			native_asset_name: b"WEBB".to_vec().try_into().unwrap(),
+			asset_names: vec![],
+			native_asset_name: b"tTNT".to_vec().try_into().unwrap(),
 			native_existential_deposit: webb_runtime::constants::currency::EXISTENTIAL_DEPOSIT,
 		},
 		tokens: webb_runtime::TokensConfig {
-			balances: unique.iter().cloned().map(|k| (k, 1, ENDOWMENT)).collect(),
+			balances: unique.iter().cloned().map(|k| (k, 0, ENDOWMENT)).collect(),
 		},
 		balances: webb_runtime::BalancesConfig {
 			balances: unique.iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
