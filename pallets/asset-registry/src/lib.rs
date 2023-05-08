@@ -1,19 +1,80 @@
-// This file is part of Basilisk-node.
+// This file is part of Webb.
 
-// Copyright (C) 2020-2021  Intergalactic, Limited (GIB).
+// Copyright (C) 2021-2023 Webb Technologies Inc.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+// 	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+//! # Asset Registry Pallet
+//!
+//! The Asset Registry pallet provides functionality to register and manage assets on-chain.
+//!
+//! ## Overview
+//!
+//! The Asset Registry pallet allows users to register and update assets with unique names and asset
+//! types. It also provides the ability to set metadata, such as symbols and decimals, for
+//! registered assets. Additionally, the pallet supports setting the native location of assets and
+//! managing asset pools by adding or removing assets from existing pools.
+//!
+//! To use the Asset Registry pallet in your runtime, you need to implement the `Config` trait. This
+//! trait defines the types and constants required by the pallet.
+//!
+//! ## Extrinsics
+//!
+//! The Asset Registry pallet provides the following extrinsics:
+//!
+//! - `register`: Register a new asset with a unique name and asset type.
+//! - `update`: Update the details of an existing asset.
+//! - `set_metadata`: Set metadata for an asset, such as symbol and decimals.
+//! - `set_location`: Set the native location of an asset.
+//! - `add_asset_to_pool`: Add an asset to an existing asset pool.
+//! - `delete_asset_from_pool`: Remove an asset from an existing asset pool.
+//!
+//! ## Functions
+//!
+//! The Asset Registry pallet also exposes the following functions to be used internall:
+//!
+//! - `asset_to_location`: Retrieve the native location of an asset.
+//! - `location_to_asset`: Retrieve the asset ID for a given native location.
+//! - `contains_asset`: Check if an asset is present in a pool share.
+//! - `add_asset_to_existing_pool`: Add an asset to an existing pool share.
+//! - `delete_asset_from_existing_pool`: Remove an asset from an existing pool share.
+//! - `get`: Retrieve the existential deposit of an asset.
+//!
+//! ## Events
+//!
+//! The Asset Registry pallet emits the following events:
+//!
+//! - `Registered`: Indicates that an asset was successfully registered.
+//! - `Updated`: Indicates that an asset was successfully updated.
+//! - `MetadataSet`: Indicates that metadata was set for an asset.
+//! - `LocationSet`: Indicates that the native location was set for an asset.
+//!
+//! For more details on the usage and configuration of the Asset Registry pallet, refer to the
+//! documentation of the provided types and functions.
+//!
+//! [`register`]: Call::register
+//! [`update`]: Call::update
+//! [`set_metadata`]: Call::set_metadata
+//! [`set_location`]: Call::set_location
+//! [`add_asset_to_pool`]: Call::add_asset_to_pool
+//! [`delete_asset_from_pool`]: Call::delete_asset_from_pool
+//! [`asset_to_location`]: Pallet::asset_to_location
+//! [`location_to_asset`]: Pallet::location_to_asset
+//! [`contains_asset`]: Pallet::contains_asset
+//! [`add_asset_to_existing_pool`]: Pallet::add_asset_to_existing_pool
+//! [`delete_asset_from_existing_pool`]: Pallet::delete
+
 #![allow(clippy::type_complexity)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -261,13 +322,11 @@ pub mod pallet {
 		/// New asset is given `NextAssetId` - sequential asset id
 		///
 		/// Adds mapping between `name` and assigned `asset_id` so asset id can
-		/// be retrieved by name too (Note: this approach is used in AMM
-		/// implementation (xyk))
+		/// be retrieved by name too.
 		///
 		/// Emits 'Registered` event when successful.
 		#[pallet::weight(<T as Config>::WeightInfo::register())]
 		#[pallet::call_index(0)]
-
 		pub fn register(
 			origin: OriginFor<T>,
 			name: BoundedVec<u8, T::StringLimit>,
