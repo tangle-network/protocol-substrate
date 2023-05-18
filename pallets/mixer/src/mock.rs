@@ -3,22 +3,25 @@
 use super::*;
 use crate as pallet_mixer;
 use codec::Decode;
-use frame_support::traits::GenesisBuild;
-use sp_core::H256;
-use webb_primitives::verifying::ArkworksVerifierBn254;
-
-use frame_support::{parameter_types, traits::Nothing};
+use frame_support::{
+	parameter_types,
+	traits::{GenesisBuild, Nothing},
+};
 use frame_system as system;
 use orml_currencies::{BasicCurrencyAdapter, NativeCurrencyOf};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
+use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, ConstU32, IdentityLookup},
 };
 use sp_std::convert::{TryFrom, TryInto};
 pub use webb_primitives::hasher::{HasherModule, InstanceHasher};
-use webb_primitives::{hashing::ethereum::Keccak256HasherBn254, types::ElementTrait, AccountId};
+use webb_primitives::{
+	hashing::ethereum::Keccak256HasherBn254, types::ElementTrait, verifying::ArkworksVerifierBn254,
+	AccountId,
+};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -253,6 +256,11 @@ impl orml_currencies::Config for Test {
 parameter_types! {
 	pub const MixerPalletId: PalletId = PalletId(*b"py/mixer");
 	pub const NativeCurrencyId: AssetId = 0;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub fn new_bench_ext() -> sp_io::TestExternalities {
+	GenesisConfig::default().build_storage().unwrap().into()
 }
 
 // Build genesis storage according to the mock runtime.

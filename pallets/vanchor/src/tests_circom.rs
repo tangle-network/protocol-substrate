@@ -187,6 +187,7 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		let mut roots = Vec::new();
 
 		roots.push(BigInt::from_bytes_be(Sign::Plus, &custom_root.0));
+		#[allow(clippy::needless_range_loop)]
 		for i in 0..ANCHOR_CT - 1 {
 			roots.push(BigInt::from_bytes_be(Sign::Plus, &neighbor_roots[i].0));
 		}

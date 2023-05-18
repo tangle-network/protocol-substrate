@@ -13,58 +13,63 @@ targets = ["x86_64-unknown-linux-gnu"]
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 
+ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
+ark-ff = { version = "^0.3.0", default-features = false }
+ark-std = { version = "^0.3.0", default-features = false }
+arkworks-native-gadgets = { version = "1.2.0", default-features = false }
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-pallet-linkable-tree = { path = "../linkable-tree", default-features = false }
-pallet-mt = { path = "../mt", default-features = false }
-webb-primitives = { path = "../../primitives", default-features = false, features = ["hashing", "verifying", "field_ops"] }
+frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39", optional = true }
 orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
 pallet-asset-registry = { path = "../asset-registry", default-features = false }
+pallet-linkable-tree = { path = "../linkable-tree", default-features = false }
+pallet-mt = { path = "../mt", default-features = false }
 pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
-frame-system-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39", optional = true }
-arkworks-native-gadgets = { version = "1.2.0", default-features = false }
-ark-std = { version = "^0.3.0", default-features = false }
-ark-bn254 = { version = "^0.3.0", default-features = false, features = [ "curve" ] }
-ark-ff = { version = "^0.3.0", default-features = false}
-
-[dev-dependencies]
-hex = "0.4"
-rand = "0.8.4"
-serde = { version = "1.0.119" }
+arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
+frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39", optional = true }
+pallet-vanchor-verifier = { path = "../vanchor-verifier", default-features = false }
+pallet-hasher = { path = "../hasher", default-features = false }
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
+sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-pallet-treasury = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-pallet-key-storage = {path = "../key-storage"}
-pallet-hasher = { path = "../hasher", default-features = false }
-pallet-vanchor-verifier = { path = "../vanchor-verifier", default-features = false }
-circom-proving = { path = "../../circom-proving", default-features = false }
-orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
-orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
-arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
-ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
-ark-ff = { version = "0.3.0", default-features = false, features = [ "asm"] }
-ark-ec = { version = "^0.3.0", default-features = false }
-ark-relations = { version = "^0.3.0", default-features = false }
-ark-serialize = { version = "^0.3.0", default-features = false, features = [ "derive" ] }
-ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", default-features = false, features = ["parallel"] }
-ark-std = { version = "^0.3.0", default-features = false }
+serde = { version = "1.0.119" }
+webb-primitives = { path = "../../primitives", default-features = false, features = ["verifying", "hashing", "field_ops"] }
+
+[dev-dependencies]
 ark-bn254 = { version = "0.3.0" }
 ark-circom = { git = "https://github.com/vacp2p/ark-circom", branch = "wasm", default-features = false, features = ["circom-2"] }
-num-bigint = { version = "0.4", default-features = false, features = ["rand"] }
+ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
+ark-ec = { version = "^0.3.0", default-features = false }
+ark-ff = { version = "0.3.0", default-features = false, features = ["asm"] }
+ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", default-features = false, features = ["parallel"] }
+ark-relations = { version = "^0.3.0", default-features = false }
+ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"] }
+ark-std = { version = "^0.3.0", default-features = false }
+arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
+circom-proving = { path = "../../circom-proving", default-features = false }
 frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+hex = "0.4"
+num-bigint = { version = "0.4", default-features = false, features = ["rand"] }
+orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
+orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
+pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+pallet-hasher = { path = "../hasher", default-features = false }
+pallet-key-storage = { path = "../key-storage" }
+pallet-treasury = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
+pallet-vanchor-verifier = { path = "../vanchor-verifier", default-features = false }
+webb-primitives = { path = "../../primitives", default-features = false, features = ["verifying", "hashing"] }
+rand = "0.8.4"
+
 # For ark-circom
-once_cell = "1.14.0"
 cfg-if = "1.0"
-wasmer = { version = "2.3.0", default-features = false }
-num-traits = "0.2.11"
-thiserror = "1.0.0"
 color-eyre = "0.6.1"
+num-traits = "0.2.11"
+once_cell = "1.14.0"
 serde_json = "1.0.48"
+thiserror = "1.0.0"
+wasmer = { version = "2.3.0", default-features = false }
 
 [features]
 default = ["std", "wasmer/sys-default"]
@@ -81,10 +86,14 @@ std = [
     "webb-primitives/std",
     "frame-benchmarking/std",
     "pallet-token-wrapper/std",
-    "ark-std/std"
+    "ark-std/std",
+    "arkworks-setups/std",
+    "pallet-vanchor-verifier/std",
+    "pallet-hasher/std"
 ]
 runtime-benchmarks = [
-    "frame-system/runtime-benchmarks",
-    "frame-support/runtime-benchmarks",
+  "frame-benchmarking",
+  "frame-system/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
 ]
 wasm = ["wasmer/js", "wasmer/std"]

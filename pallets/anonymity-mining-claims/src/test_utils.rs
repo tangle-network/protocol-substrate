@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity, clippy::ptr_arg)]
 use crate::mock::*;
 use ark_bn254::{Bn254, Fr};
 use ark_circom::{read_zkey, WitnessCalculator};
@@ -7,12 +8,9 @@ use ark_relations::r1cs::ConstraintMatrices;
 use ark_serialize::CanonicalSerialize;
 use circom_proving::circom_from_folder;
 use frame_benchmarking::account;
-use frame_support::{assert_err, assert_ok};
+use frame_support::assert_ok;
 use num_bigint::{BigInt, Sign};
-use webb_primitives::{
-	webb_proposals::{ResourceId, SubstrateTargetSystem, TargetSystem, TypedChainId},
-	ElementTrait,
-};
+use webb_primitives::ElementTrait;
 
 use std::{convert::TryInto, fs::File, str::FromStr, sync::Mutex};
 

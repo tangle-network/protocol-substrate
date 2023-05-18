@@ -138,9 +138,9 @@ benchmarks_instance_pallet! {
 		let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
 		let depth = <T as pallet_mt::Config<I>>::MaxTreeDepth::get();
 
-		let tree_id = <VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::create(None, depth, 1u32, asset_id, 1u32.into())?;
+		let tree_id = <VAnchor<T, I> as VAnchorInterface<VAnchorConfiguration<T, I>>>::create(None, depth, 1u32, asset_id, 1u32.into())?;
 
-		<VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::set_max_deposit_amount(100u32.into(), 2u32.into())?;
+		<VAnchor<T, I> as VAnchorInterface<VAnchorConfiguration<T, I>>>::set_max_deposit_amount(100u32.into(), 2u32.into())?;
 
 		let transactor : T::AccountId = account("", 0, SEED);
 		let recipient : T::AccountId = account("", 1, SEED);
@@ -222,9 +222,9 @@ benchmarks_instance_pallet! {
 		let asset_id = <<T as crate::Config<I>>::NativeCurrencyId as Get<crate::CurrencyIdOf<T, I>>>::get();
 		let depth = <T as pallet_mt::Config<I>>::MaxTreeDepth::get();
 
-		let tree_id = <VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::create(None, depth, 1u32, asset_id, 1u32.into())?;
+		let tree_id = <VAnchor<T, I> as VAnchorInterface<VAnchorConfiguration<T, I>>>::create(None, depth, 1u32, asset_id, 1u32.into())?;
 
-		<VAnchor<T, I> as VAnchorInterface<VAnchorConfigration<T, I>>>::set_max_deposit_amount(100u32.into(), 2u32.into())?;
+		<VAnchor<T, I> as VAnchorInterface<VAnchorConfiguration<T, I>>>::set_max_deposit_amount(100u32.into(), 2u32.into())?;
 
 		let transactor : T::AccountId = account("", 0, SEED);
 		let recipient : T::AccountId = account("", 1, SEED);
@@ -311,6 +311,6 @@ benchmarks_instance_pallet! {
 	verify {
 		assert_last_event::<T, I>(Event::MinWithdrawAmountChanged{ min_withdraw_amount : 1_u32.into() }.into())
 	}
-}
 
-impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
+	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
+}

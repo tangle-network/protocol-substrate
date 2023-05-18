@@ -12867,7 +12867,6 @@ dependencies = [
  "ark-bn254 0.3.0",
  "ark-circom 0.1.0 (git+https://github.com/vacp2p/ark-circom?branch=wasm)",
  "arkworks-setups",
- "array-bytes",
  "clap 4.2.7",
  "frame-benchmarking",
  "frame-benchmarking-cli",

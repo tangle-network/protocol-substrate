@@ -1,4 +1,9 @@
-#![allow(clippy::from_over_into, non_snake_case)]
+#![allow(
+	clippy::from_over_into,
+	non_snake_case,
+	clippy::collapsible_match,
+	clippy::match_like_matches_macro
+)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![recursion_limit = "256"]
 
@@ -8,7 +13,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod constants;
 
-use constants::{constants::*, currency::*, time::*};
+use constants::{block_constants::*, currency::*, time::*};
 pub use webb_primitives::{types::runtime::Moment, *};
 pub mod impls;
 mod voter_bags;
@@ -92,6 +97,7 @@ use webb_primitives::{
 	field_ops::arkworks::ArkworksIntoFieldBn254,
 	hashing::{ethereum::Keccak256HasherBn254, ArkworksPoseidonHasherBn254},
 	linkable_tree::LinkableTreeInspector,
+	merkle_tree::TreeInspector,
 	signing::SignatureVerifier,
 	verifying::{ArkworksVerifierBn254, CircomVerifierBn254},
 	Amount, ChainId, LeafIndex,
@@ -1743,6 +1749,10 @@ impl_runtime_apis! {
 			} else {
 				Some(v)
 			}
+		}
+
+		fn is_known_root(tree_id: u32, target_root: Element) -> bool {
+			MerkleTreeBn254::is_known_root(tree_id, target_root).ok().unwrap_or_default()
 		}
 	}
 

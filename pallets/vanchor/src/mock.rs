@@ -64,8 +64,8 @@ frame_support::construct_runtime!(
 		LinkableTree1: pallet_linkable_tree::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		LinkableTree2: pallet_linkable_tree::<Instance2>::{Pallet, Call, Storage, Event<T>},
 
-		VAnchorVerifier1: pallet_vanchor_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>},
-		VAnchorVerifier2: pallet_vanchor_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>},
+		VAnchorVerifier1: pallet_vanchor_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		VAnchorVerifier2: pallet_vanchor_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		VAnchor1: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>},
 		VAnchor2: pallet_vanchor::<Instance2>::{Pallet, Call, Storage, Event<T>},

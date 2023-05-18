@@ -192,7 +192,7 @@ fn should_add_vanchor_edge_with_sig_succeed() {
 	new_test_ext_initialized(
 		src_id.chain_id(),
 		r_id,
-		b"VAnchorHandler.execute_vanchor_update_proposal".to_vec().try_into().unwrap(),
+		b"VAnchorHandler.execute_vanchor_update_proposal".to_vec(),
 	)
 	.execute_with(|| {
 		let curve = Curve::Bn254;
