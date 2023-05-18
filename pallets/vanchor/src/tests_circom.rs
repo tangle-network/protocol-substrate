@@ -149,7 +149,6 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		.unwrap()
 		.try_into()
 		.unwrap();
-		println!("neighbor_roots: {neighbor_roots:?}");
 
 		let input_nullifiers = in_utxos
 			.clone()
@@ -167,6 +166,8 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 
 		let ext_data_hash =
 			vec![BigInt::from_bytes_be(Sign::Plus, keccak_256(&ext_data.encode_abi()).as_slice())];
+
+		println!("ext_data_hash: {:?}", ext_data_hash);
 
 		let mut input_nullifier = Vec::new();
 		let mut output_commitment = Vec::new();
@@ -286,7 +287,6 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 			commitments,
 			ext_data_hash,
 		);
-		println!("Proof data: {proof_data:?}");
 
 		let _relayer_balance_before = Balances::free_balance(relayer);
 		let _recipient_balance_before = Balances::free_balance(recipient);

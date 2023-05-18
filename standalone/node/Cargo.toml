@@ -99,6 +99,7 @@ substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/subs
 
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
 arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
+ark-circom = { git = "https://github.com/vacp2p/ark-circom", branch = "wasm", default-features = false, features = ["circom-2"] }
 
 [features]
 cli = [

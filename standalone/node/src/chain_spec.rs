@@ -1,3 +1,4 @@
+use ark_circom::read_zkey;
 use arkworks_setups::{common::setup_params, Curve};
 use webb_primitives::{types::runtime::BabeId, AccountId, Balance, Signature};
 
@@ -12,6 +13,7 @@ use sp_runtime::{
 	Perbill,
 };
 use sp_std::convert::TryInto;
+use std::fs::File;
 use webb_runtime::{
 	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
 	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
@@ -216,14 +218,35 @@ fn testnet_genesis(
 
 	log::info!("Verifier params for vanchor");
 	let vanchor_verifier_2_2_bn254_params = {
-		let vk_bytes =
-			include_bytes!("../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin");
-		vk_bytes.to_vec()
+		// let vk_bytes =
+		// 	// include_bytes!("../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/
+		// verifying_key.bin"); 	include_bytes!("../../../solidity-fixtures/solidity-fixtures/
+		// vanchor_2/2/circuit_final.zkey");
+
+		let path_2_2 =
+			"../../../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
+		let mut file_2_2 = File::open(path_2_2).unwrap();
+		let params_2_2 = read_zkey(&mut file_2_2).unwrap();
+
+		println!("Setting up the verifier pallet");
+		let mut vk_2_2_bytes = Vec::new();
+		params_2_2.0.vk.serialize(&mut vk_2_2_bytes).unwrap();
+		vk_2_2_bytes.try_into().unwrap()
 	};
 	let vanchor_verifier_2_16_bn254_params = {
-		let vk_bytes =
-			include_bytes!("../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin");
-		vk_bytes.to_vec()
+		// let vk_bytes =
+		// 	include_bytes!("../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-16-2/
+		// verifying_key.bin"); vk_bytes.to_vec()
+
+		let path_2_16 =
+			"../../../solidity-fixtures/solidity-fixtures/vanchor_16/2/circuit_final.zkey";
+		let mut file_2_16 = File::open(path_2_16).unwrap();
+		let params_2_16 = read_zkey(&mut file_2_16).unwrap();
+
+		println!("Setting up the verifier pallet");
+		let mut vk_2_16_bytes = Vec::new();
+		params_2_16.0.vk.serialize(&mut vk_2_16_bytes).unwrap();
+		vk_2_16_bytes.try_into().unwrap()
 	};
 
 	let mut endowed_accounts: Vec<AccountId> = endowed_accounts;

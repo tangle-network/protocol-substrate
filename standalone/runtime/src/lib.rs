@@ -93,7 +93,7 @@ use webb_primitives::{
 	hashing::{ethereum::Keccak256HasherBn254, ArkworksPoseidonHasherBn254},
 	linkable_tree::LinkableTreeInspector,
 	signing::SignatureVerifier,
-	verifying::ArkworksVerifierBn254,
+	verifying::{ArkworksVerifierBn254, CircomVerifierBn254},
 	Amount, ChainId, LeafIndex,
 };
 
@@ -1165,7 +1165,7 @@ impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 impl pallet_vanchor_verifier::Config<pallet_vanchor_verifier::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Verifier = ArkworksVerifierBn254;
+	type Verifier = CircomVerifierBn254;
 	type MaxParameterLength = MaxParameterLength;
 	type WeightInfo = pallet_vanchor_verifier::weights::WebbWeight<Runtime>;
 }
