@@ -12866,6 +12866,7 @@ version = "1.0.0"
 dependencies = [
  "ark-bn254 0.3.0",
  "ark-circom 0.1.0 (git+https://github.com/vacp2p/ark-circom?branch=wasm)",
+ "ark-serialize 0.3.0",
  "arkworks-setups",
  "clap 4.2.7",
  "frame-benchmarking",

@@ -2,6 +2,7 @@ use ark_circom::read_zkey;
 use arkworks_setups::{common::setup_params, Curve};
 use webb_primitives::{types::runtime::BabeId, AccountId, Balance, Signature};
 
+use ark_serialize::CanonicalSerialize;
 use itertools::Itertools;
 use sc_chain_spec::{ChainSpecExtension, Properties};
 use sc_service::ChainType;
@@ -217,7 +218,7 @@ fn testnet_genesis(
 	};
 
 	log::info!("Verifier params for vanchor");
-	let vanchor_verifier_2_2_bn254_params = {
+	let vanchor_verifier_2_2_bn254_params: Vec<u8> = {
 		// let vk_bytes =
 		// 	// include_bytes!("../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/
 		// verifying_key.bin"); 	include_bytes!("../../../solidity-fixtures/solidity-fixtures/
@@ -233,7 +234,7 @@ fn testnet_genesis(
 		params_2_2.0.vk.serialize(&mut vk_2_2_bytes).unwrap();
 		vk_2_2_bytes.try_into().unwrap()
 	};
-	let vanchor_verifier_2_16_bn254_params = {
+	let vanchor_verifier_2_16_bn254_params: Vec<u8> = {
 		// let vk_bytes =
 		// 	include_bytes!("../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-16-2/
 		// verifying_key.bin"); vk_bytes.to_vec()
