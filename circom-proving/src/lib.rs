@@ -90,7 +90,7 @@ pub fn generate_proof<const N: usize>(
 	Ok((proof, full_assignment))
 }
 
-/// Verifies a given RLN proof
+/// Verifies a Groth16 proof
 ///
 /// # Errors
 ///

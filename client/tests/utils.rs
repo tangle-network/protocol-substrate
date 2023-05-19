@@ -215,26 +215,6 @@ pub fn generate_proof(
 	Ok((proof, full_assignment))
 }
 
-/// Verifies a given RLN proof
-///
-/// # Errors
-///
-/// Returns a [`ProofError`] if verifying fails. Verification failure does not
-/// necessarily mean the proof is incorrect.
-pub fn verify_proof(
-	verifying_key: &VerifyingKey<Bn254>,
-	proof: &ArkProof<Bn254>,
-	inputs: &Vec<Fr>,
-) -> Result<bool, ProofError> {
-	// Check that the proof is valid
-	let pvk = prepare_verifying_key(verifying_key);
-	//let pr: ArkProof<Curve> = (*proof).into();
-
-	let verified = ark_verify_proof(&pvk, proof, inputs)?;
-
-	Ok(verified)
-}
-
 // Initializes the witness calculator using a bytes vector
 #[cfg(not(target_arch = "wasm32"))]
 pub fn circom_from_raw(wasm_buffer: Vec<u8>) -> &'static Mutex<WitnessCalculator> {

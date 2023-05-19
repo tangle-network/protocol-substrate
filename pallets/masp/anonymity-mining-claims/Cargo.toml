@@ -1,10 +1,10 @@
 [package]
 authors = ["Webb Technologies Inc."]
-description = "Pallet that handles rewards from anonymity mining."
-edition = "2021"
+description = "Pallet that handles anonymity mining claims."
+edition = "2018"
 homepage = "https://substrate.dev"
 license = "Unlicense"
-name = "pallet-anonymity-mining-rewards"
+name = "pallet-anonymity-mining-claims"
 repository = "https://github.com/webb-tools/protocol-substrate"
 version = "1.0.0"
 
@@ -16,20 +16,20 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 
 orml-traits = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
-pallet-asset-registry = { path = "../asset-registry", default-features = false }
+pallet-asset-registry = { path = "../../asset-registry", default-features = false }
 pallet-balances = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-pallet-linkable-tree = { path = "../linkable-tree", default-features = false }
-pallet-mt = { path = "../mt", default-features = false }
-pallet-signature-bridge = { path = "../../pallets/signature-bridge", default-features = false }
-pallet-token-wrapper = { path = "../token-wrapper", default-features = false }
-pallet-vanchor = { path = "../vanchor", default-features = false }
-pallet-vanchor-handler = { path = "../../pallets/vanchor-handler", default-features = false }
+pallet-linkable-tree = { path = "../../linkable-tree", default-features = false }
+pallet-mt = { path = "../../mt", default-features = false }
+pallet-signature-bridge = { path = "../../../pallets/signature-bridge", default-features = false }
+pallet-token-wrapper = { path = "../../token-wrapper", default-features = false }
+pallet-vanchor = { path = "../../vanchor", default-features = false }
+pallet-vanchor-handler = { path = "../../../pallets/vanchor-handler", default-features = false }
 
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
-webb-primitives = { path = "../../primitives", default-features = false }
+webb-primitives = { path = "../../../primitives", default-features = false }
 
 [dev-dependencies]
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = ["curve"] }
@@ -45,17 +45,31 @@ frame-benchmarking = { default-features = false, git = "https://github.com/parit
 hex = "0.4"
 orml-currencies = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
 orml-tokens = { git = "https://github.com/open-web3-stack/open-runtime-module-library.git", branch = "polkadot-v0.9.39", default-features = false }
-pallet-hasher = { path = "../hasher", default-features = false }
-pallet-key-storage = { path = "../key-storage" }
+pallet-claims-verifier = { path = "../claims-verifier", default-features = false }
+pallet-hasher = { path = "../../hasher", default-features = false }
+pallet-key-storage = { path = "../../key-storage" }
 pallet-timestamp = { default-features = true, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
-pallet-vanchor-verifier = { path = "../vanchor-verifier", default-features = false }
+pallet-vanchor-verifier = { path = "../../vanchor-verifier", default-features = false }
 serde = { version = "1.0.119" }
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.39" }
 
+# For ark-circom
+ark-circom = { git = "https://github.com/vacp2p/ark-circom", branch = "wasm", default-features = false, features = ["circom-2"] }
+ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", default-features = false, features = ["parallel"] }
+cfg-if = "1.0"
+circom-proving = { path = "../../../circom-proving", default-features = false }
+color-eyre = "0.6.1"
+num-bigint = { version = "0.4", default-features = false, features = ["rand"] }
+num-traits = "0.2.11"
+once_cell = "1.14.0"
+serde_json = "1.0.48"
+thiserror = "1.0.0"
+wasmer = { version = "2.3.0", default-features = false }
+
 [features]
-default = ["std"]
+default = ["std", "wasmer/sys-default"]
 runtime-benchmarks = [
   "frame-system/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
@@ -80,3 +94,4 @@ std = [
   "pallet-token-wrapper/std",
 
 ]
+wasm = ["wasmer/js", "wasmer/std"]

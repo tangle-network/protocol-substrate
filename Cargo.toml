@@ -11,9 +11,9 @@ strip = "symbols"
 members = [
   "client",
   "primitives",
-  "pallets/anonymity-mining-rewards",
-  "pallets/anonymity-mining-claims",
-  "pallets/claims-verifier",
+  "pallets/masp/anonymity-mining-rewards",
+  "pallets/masp/anonymity-mining-claims",
+  "pallets/masp/claims-verifier",
   "pallets/asset-registry",
   "pallets/hasher",
   "pallets/verifier",
