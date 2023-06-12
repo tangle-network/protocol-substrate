@@ -49,7 +49,9 @@
             # Finally the toolchain
             toolchain
           ];
-          packages = [ ];
+          packages = [
+            pkgs.cargo-nextest
+          ];
           # Environment variables
           RUST_SRC_PATH = "${toolchain}/lib/rustlib/src/rust/library";
           # Runs DVC pull in the fixtures
