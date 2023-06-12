@@ -15,6 +15,7 @@ use webb_primitives::{hashing::ethereum::keccak_256, utils::compute_chain_id_typ
 use ark_bn254::{Bn254, Fr as Bn254Fr};
 use arkworks_native_gadgets::ark_std::rand::rngs::OsRng;
 use arkworks_setups::{common::verify_unchecked_raw, utxo::Utxo};
+use circom_proving::verify_proof;
 use subxt::{
 	ext::sp_runtime::AccountId32,
 	tx::{PairSigner, TxProgress},
@@ -197,7 +198,7 @@ async fn make_vanchor_tx(
 		wc,
 	);
 
-	let res = verify_proof(&circom_params.0.vk, &proof, &public_inputs);
+	let res = verify_proof(&circom_params.0.vk, &proof, public_inputs.clone());
 	assert!(res.unwrap(), "Invalid proof");
 	println!("proof verified");
 
