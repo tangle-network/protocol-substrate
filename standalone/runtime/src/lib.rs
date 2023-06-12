@@ -99,7 +99,10 @@ use webb_primitives::{
 	linkable_tree::LinkableTreeInspector,
 	merkle_tree::TreeInspector,
 	signing::SignatureVerifier,
-	verifying::ArkworksVerifierBn254,
+	verifying::{
+		ArkworksVerifierBn254 as ArkworksVerifierBn254Impl,
+		CircomVerifierBn254 as CircomVerifierBn254Impl,
+	},
 	Amount, ChainId, LeafIndex,
 };
 
@@ -1156,14 +1159,37 @@ impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
 	type Two = Two;
 	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
 }
+
+impl pallet_mt::Config<pallet_mt::Instance2> for Runtime {
+	type Currency = Balances;
+	type DataDepositBase = LeafDepositBase;
+	type DataDepositPerByte = LeafDepositPerByte;
+	type DefaultZeroElement = DefaultZeroElement;
+	type Element = Element;
+	type RuntimeEvent = RuntimeEvent;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Hasher = HasherBn254;
+	type LeafIndex = u32;
+	type MaxTreeDepth = MaxTreeDepth;
+	type RootHistorySize = RootHistorySize;
+	type RootIndex = u32;
+	type StringLimit = StringLimit;
+	type MaxEdges = MaxEdges;
+	type MaxDefaultHashes = MaxDefaultHashes;
+	type TreeDeposit = TreeDeposit;
+	type TreeId = u32;
+	type Two = Two;
+	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
+}
+
 parameter_types! {
-	pub const MaxParameterLength : u32 = 1000;
+	pub const MaxParameterLength : u32 = 2000;
 }
 
 impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Verifier = ArkworksVerifierBn254;
+	type Verifier = ArkworksVerifierBn254Impl;
 	type MaxParameterLength = MaxParameterLength;
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
@@ -1171,7 +1197,15 @@ impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 impl pallet_vanchor_verifier::Config<pallet_vanchor_verifier::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type Verifier = ArkworksVerifierBn254;
+	type Verifier = ArkworksVerifierBn254Impl;
+	type MaxParameterLength = MaxParameterLength;
+	type WeightInfo = pallet_vanchor_verifier::weights::WebbWeight<Runtime>;
+}
+
+impl pallet_vanchor_verifier::Config<pallet_vanchor_verifier::Instance2> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type Verifier = CircomVerifierBn254Impl;
 	type MaxParameterLength = MaxParameterLength;
 	type WeightInfo = pallet_vanchor_verifier::weights::WebbWeight<Runtime>;
 }
@@ -1252,7 +1286,7 @@ impl pallet_mixer::Config<pallet_mixer::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type NativeCurrencyId = GetNativeCurrencyId;
 	type PalletId = MixerPalletId;
-	type Tree = MerkleTreeBn254;
+	type Tree = MerkleTreeArkworksBn254;
 	type Verifier = MixerVerifierBn254;
 	type ArbitraryHasher = Keccak256HasherBn254;
 	type WeightInfo = pallet_mixer::weights::WebbWeight<Runtime>;
@@ -1272,7 +1306,17 @@ impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance1> for Runtime {
 	type ChainIdentifier = ChainIdentifier;
 	type RuntimeEvent = RuntimeEvent;
 	type HistoryLength = HistoryLength;
-	type Tree = MerkleTreeBn254;
+	type Tree = MerkleTreeArkworksBn254;
+	type WeightInfo = ();
+}
+
+impl pallet_linkable_tree::Config<pallet_linkable_tree::Instance2> for Runtime {
+	type ChainId = ChainId;
+	type ChainType = ChainType;
+	type ChainIdentifier = ChainIdentifier;
+	type RuntimeEvent = RuntimeEvent;
+	type HistoryLength = HistoryLength;
+	type Tree = MerkleTreeCircomBn254;
 	type WeightInfo = ();
 }
 
@@ -1286,8 +1330,8 @@ parameter_types! {
 impl pallet_vanchor::Config<pallet_vanchor::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type PalletId = VAnchorPalletId;
-	type LinkableTree = LinkableTreeBn254;
-	type VAnchorVerifier = VAnchorVerifier;
+	type LinkableTree = LinkableTreeArkworksBn254;
+	type VAnchorVerifier = VAnchorArkworksVerifier;
 	type KeyStorage = KeyStorage;
 	type EthereumHasher = Keccak256HasherBn254;
 	type IntoField = ArkworksIntoFieldBn254;
@@ -1303,7 +1347,32 @@ impl pallet_vanchor::Config<pallet_vanchor::Instance1> for Runtime {
 }
 
 impl pallet_vanchor_handler::Config<pallet_vanchor_handler::Instance1> for Runtime {
-	type VAnchor = VAnchorBn254;
+	type VAnchor = VAnchorArkworksBn254;
+	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Runtime, SignatureBridgeInstance>;
+	type RuntimeEvent = RuntimeEvent;
+}
+
+impl pallet_vanchor::Config<pallet_vanchor::Instance2> for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type PalletId = VAnchorPalletId;
+	type LinkableTree = LinkableTreeCircomBn254;
+	type VAnchorVerifier = VAnchorCircomVerifier;
+	type KeyStorage = KeyStorage;
+	type EthereumHasher = Keccak256HasherBn254;
+	type IntoField = ArkworksIntoFieldBn254;
+	type Currency = Currencies;
+	type MaxFee = MaxFee;
+	type MaxExtAmount = MaxExtAmount;
+	type MaxCurrencyId = MaxCurrencyId;
+	type PostDepositHook = ();
+	type ProposalNonce = u32;
+	type NativeCurrencyId = GetNativeCurrencyId;
+	type TokenWrapper = TokenWrapper;
+	type WeightInfo = ();
+}
+
+impl pallet_vanchor_handler::Config<pallet_vanchor_handler::Instance2> for Runtime {
+	type VAnchor = VAnchorCircomBn254;
 	type BridgeOrigin = pallet_signature_bridge::EnsureBridge<Runtime, SignatureBridgeInstance>;
 	type RuntimeEvent = RuntimeEvent;
 }
@@ -1312,7 +1381,11 @@ pub struct SetResourceProposalFilter;
 impl Contains<RuntimeCall> for SetResourceProposalFilter {
 	fn contains(c: &RuntimeCall) -> bool {
 		match c {
-			RuntimeCall::VAnchorHandlerBn254(method) => match method {
+			RuntimeCall::VAnchorHandlerArkworksBn254(method) => match method {
+				pallet_vanchor_handler::Call::execute_set_resource_proposal { .. } => true,
+				_ => false,
+			},
+			RuntimeCall::VAnchorHandlerCircomBn254(method) => match method {
 				pallet_vanchor_handler::Call::execute_set_resource_proposal { .. } => true,
 				_ => false,
 			},
@@ -1326,7 +1399,12 @@ pub struct ExecuteProposalFilter;
 impl Contains<RuntimeCall> for ExecuteProposalFilter {
 	fn contains(c: &RuntimeCall) -> bool {
 		match c {
-			RuntimeCall::VAnchorHandlerBn254(method) => match method {
+			RuntimeCall::VAnchorHandlerArkworksBn254(method) => match method {
+				pallet_vanchor_handler::Call::execute_vanchor_create_proposal { .. } => true,
+				pallet_vanchor_handler::Call::execute_vanchor_update_proposal { .. } => true,
+				_ => false,
+			},
+			RuntimeCall::VAnchorHandlerCircomBn254(method) => match method {
 				pallet_vanchor_handler::Call::execute_vanchor_create_proposal { .. } => true,
 				pallet_vanchor_handler::Call::execute_vanchor_update_proposal { .. } => true,
 				_ => false,
@@ -1473,23 +1551,27 @@ construct_runtime!(
 		// Mixer Verifier
 		MixerVerifierBn254: pallet_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
-		// VAnchor Verifier
-		VAnchorVerifier: pallet_vanchor_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		// VAnchor Verifier(s)
+		VAnchorArkworksVerifier: pallet_vanchor_verifier::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		VAnchorCircomVerifier: pallet_vanchor_verifier::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
 		// Merkle Tree
-		MerkleTreeBn254: pallet_mt::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		MerkleTreeArkworksBn254: pallet_mt::<Instance1>::{Pallet, Storage, Event<T>, Config<T>},
+		MerkleTreeCircomBn254: pallet_mt::<Instance2>::{Pallet, Storage, Event<T>, Config<T>},
 
 		// Linkable Merkle Tree
-		LinkableTreeBn254: pallet_linkable_tree::<Instance1>::{Pallet, Call, Storage, Event<T>},
-
+		LinkableTreeArkworksBn254: pallet_linkable_tree::<Instance1>::{Pallet, Storage, Event<T>},
+		LinkableTreeCircomBn254: pallet_linkable_tree::<Instance2>::{Pallet, Storage, Event<T>},
 		// Mixer
 		MixerBn254: pallet_mixer::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
-		// VAnchor
-		VAnchorBn254: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		// VAnchor(s)
+		VAnchorArkworksBn254: pallet_vanchor::<Instance1>::{Pallet, Call, Storage, Event<T>, Config<T>},
+		VAnchorCircomBn254: pallet_vanchor::<Instance2>::{Pallet, Call, Storage, Event<T>, Config<T>},
 
-		// VAnchor Handler
-		VAnchorHandlerBn254: pallet_vanchor_handler::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		// VAnchor Handler(s)
+		VAnchorHandlerArkworksBn254: pallet_vanchor_handler::<Instance1>::{Pallet, Call, Storage, Event<T>},
+		VAnchorHandlerCircomBn254: pallet_vanchor_handler::<Instance2>::{Pallet, Call, Storage, Event<T>},
 
 		// Signature Bridge
 		SignatureBridge: pallet_signature_bridge::<Instance1>::{Pallet, Call, Storage, Event<T>},
@@ -1743,7 +1825,7 @@ impl_runtime_apis! {
 
 	impl pallet_mt_rpc_runtime_api::MerkleTreeApi<Block, Element> for Runtime {
 		fn get_leaf(tree_id: u32, index: u32) -> Option<Element> {
-			let v = MerkleTreeBn254::leaves(tree_id, index);
+			let v = MerkleTreeArkworksBn254::leaves(tree_id, index);
 			if v == Element::default() {
 				None
 			} else {
@@ -1752,17 +1834,17 @@ impl_runtime_apis! {
 		}
 
 		fn is_known_root(tree_id: u32, target_root: Element) -> bool {
-			MerkleTreeBn254::is_known_root(tree_id, target_root).ok().unwrap_or_default()
+			MerkleTreeArkworksBn254::is_known_root(tree_id, target_root).ok().unwrap_or_default()
 		}
 	}
 
 	impl pallet_linkable_tree_rpc_runtime_api::LinkableTreeApi<Block, ChainId, Element, LeafIndex> for Runtime {
 		fn get_neighbor_roots(tree_id: u32) -> Vec<Element> {
-			LinkableTreeBn254::get_neighbor_roots(tree_id).ok().unwrap_or_default()
+			LinkableTreeArkworksBn254::get_neighbor_roots(tree_id).ok().unwrap_or_default()
 		}
 
 		fn get_neighbor_edges(tree_id: u32) -> Vec<EdgeMetadata<ChainId, Element, LeafIndex>> {
-			LinkableTreeBn254::get_neighbor_edges(tree_id).ok().unwrap_or_default()
+			LinkableTreeArkworksBn254::get_neighbor_edges(tree_id).ok().unwrap_or_default()
 		}
 	}
 

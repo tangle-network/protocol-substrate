@@ -15,9 +15,10 @@ use sp_std::convert::TryInto;
 use webb_runtime::{
 	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
 	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
-	GrandpaConfig, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBn254Config,
-	MixerBn254Config, MixerVerifierBn254Config, SessionConfig, StakerStatus, StakingConfig,
-	SudoConfig, VAnchorBn254Config, VAnchorVerifierConfig,
+	GrandpaConfig, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeArkworksBn254Config,
+	MerkleTreeCircomBn254Config, MixerBn254Config, MixerVerifierBn254Config, SessionConfig,
+	StakerStatus, StakingConfig, SudoConfig, VAnchorArkworksBn254Config,
+	VAnchorArkworksVerifierConfig, VAnchorCircomBn254Config, VAnchorCircomVerifierConfig,
 };
 
 // ImOnline consensus authority.
@@ -214,18 +215,74 @@ fn testnet_genesis(
 		vk_bytes.to_vec()
 	};
 
-	log::info!("Verifier params for vanchor");
-	let vanchor_verifier_2_2_bn254_params = {
+	log::info!("Verifier params for arkworks vanchor");
+	let vanchor_arkworks_verifier_2_2_bn254_params = {
 		let vk_bytes =
 			include_bytes!("../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin");
 		vk_bytes.to_vec()
 	};
-	let vanchor_verifier_2_16_bn254_params = {
+	let vanchor_arkworks_verifier_2_16_bn254_params = {
 		let vk_bytes =
 			include_bytes!("../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin");
 		vk_bytes.to_vec()
 	};
 
+	log::info!("Verifier params for circom vanchor");
+	let vanchor_circom_verifier_2_2_bn254_params = {
+		log::info!("Reading circom vk for 2-2");
+		let zk_bytes = include_bytes!(
+			"../../../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey"
+		);
+		// wrap the bytes in a Cursor and read the params
+		let mut zk_reader = std::io::Cursor::new(zk_bytes);
+		let params_2_2 = ark_circom::read_zkey(&mut zk_reader).expect("reading zkey for 2-2");
+		let mut vk_2_2_bytes = Vec::new();
+		ark_serialize::CanonicalSerialize::serialize(&params_2_2.0.vk, &mut vk_2_2_bytes)
+			.expect("serializing vk for 2-2");
+		vk_2_2_bytes
+	};
+
+	let vanchor_circom_verifier_2_8_bn254_params = {
+		log::info!("Reading circom vk for 2-8");
+		let zk_bytes = include_bytes!(
+			"../../../solidity-fixtures/solidity-fixtures/vanchor_2/8/circuit_final.zkey"
+		);
+		// wrap the bytes in a Cursor and read the params
+		let mut zk_reader = std::io::Cursor::new(zk_bytes);
+		let params_2_8 = ark_circom::read_zkey(&mut zk_reader).expect("reading zkey for 2-8");
+		let mut vk_2_8_bytes = Vec::new();
+		ark_serialize::CanonicalSerialize::serialize(&params_2_8.0.vk, &mut vk_2_8_bytes)
+			.expect("serializing vk for 2-8");
+		vk_2_8_bytes
+	};
+
+	let vanchor_circom_verifier_16_2_bn254_params = {
+		log::info!("Reading circom vk for 16-2");
+		let zk_bytes = include_bytes!(
+			"../../../solidity-fixtures/solidity-fixtures/vanchor_16/2/circuit_final.zkey"
+		);
+		// wrap the bytes in a Cursor and read the params
+		let mut zk_reader = std::io::Cursor::new(zk_bytes);
+		let params_16_2 = ark_circom::read_zkey(&mut zk_reader).expect("reading zkey for 16-2");
+		let mut vk_16_2_bytes = Vec::new();
+		ark_serialize::CanonicalSerialize::serialize(&params_16_2.0.vk, &mut vk_16_2_bytes)
+			.expect("serializing vk for 16-2");
+		vk_16_2_bytes
+	};
+
+	let vanchor_circom_verifier_16_8_bn254_params = {
+		log::info!("Reading circom vk for 16-8");
+		let zk_bytes = include_bytes!(
+			"../../../solidity-fixtures/solidity-fixtures/vanchor_16/8/circuit_final.zkey"
+		);
+		// wrap the bytes in a Cursor and read the params
+		let mut zk_reader = std::io::Cursor::new(zk_bytes);
+		let params_16_8 = ark_circom::read_zkey(&mut zk_reader).expect("reading zkey for 16-8");
+		let mut vk_16_8_bytes = Vec::new();
+		ark_serialize::CanonicalSerialize::serialize(&params_16_8.0.vk, &mut vk_16_8_bytes)
+			.expect("serializing vk for 16-8");
+		vk_16_8_bytes
+	};
 	let mut endowed_accounts: Vec<AccountId> = endowed_accounts;
 	// endow all authorities and nominators.
 	initial_authorities
@@ -255,29 +312,13 @@ fn testnet_genesis(
 	log::info!("Genesis Config");
 	GenesisConfig {
 		system: webb_runtime::SystemConfig { code: wasm_binary_unwrap().to_vec() },
-		asset_registry: AssetRegistryConfig {
-			asset_names: vec![(b"TEST".to_vec().try_into().unwrap(), 1)],
-			native_asset_name: b"WEBB".to_vec().try_into().unwrap(),
-			native_existential_deposit: webb_runtime::constants::currency::EXISTENTIAL_DEPOSIT,
-		},
-		tokens: webb_runtime::TokensConfig {
-			balances: unique.iter().cloned().map(|k| (k, 1, ENDOWMENT)).collect(),
-		},
-		balances: webb_runtime::BalancesConfig {
-			balances: unique.iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
+		babe: BabeConfig {
+			authorities: vec![],
+			epoch_config: Some(webb_runtime::BABE_GENESIS_EPOCH_CONFIG),
 		},
 		indices: IndicesConfig { indices: vec![] },
-		session: SessionConfig {
-			keys: initial_authorities
-				.iter()
-				.map(|x| {
-					(
-						x.0.clone(),
-						x.0.clone(),
-						webb_session_keys(x.2.clone(), x.3.clone(), x.4.clone(), x.5.clone()),
-					)
-				})
-				.collect::<Vec<_>>(),
+		balances: webb_runtime::BalancesConfig {
+			balances: unique.iter().cloned().map(|k| (k, ENDOWMENT)).collect(),
 		},
 		staking: StakingConfig {
 			validator_count: initial_authorities.len() as u32,
@@ -290,7 +331,20 @@ fn testnet_genesis(
 				.collect(),
 			..Default::default()
 		},
+		session: SessionConfig {
+			keys: initial_authorities
+				.iter()
+				.map(|x| {
+					(
+						x.0.clone(),
+						x.0.clone(),
+						webb_session_keys(x.2.clone(), x.3.clone(), x.4.clone(), x.5.clone()),
+					)
+				})
+				.collect::<Vec<_>>(),
+		},
 		democracy: DemocracyConfig::default(),
+		council: CouncilConfig::default(),
 		elections: ElectionsConfig {
 			members: endowed_accounts
 				.iter()
@@ -299,32 +353,48 @@ fn testnet_genesis(
 				.map(|member| (member, STASH))
 				.collect(),
 		},
-		council: CouncilConfig::default(),
-		sudo: SudoConfig { key: Some(root_key) },
-		babe: BabeConfig {
-			authorities: vec![],
-			epoch_config: Some(webb_runtime::BABE_GENESIS_EPOCH_CONFIG),
-		},
-		im_online: ImOnlineConfig { keys: vec![] },
-		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
 		grandpa: GrandpaConfig { authorities: vec![] },
 		treasury: Default::default(),
+		sudo: SudoConfig { key: Some(root_key) },
+		im_online: ImOnlineConfig { keys: vec![] },
+		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
 		hasher_bn_254: HasherBn254Config {
 			parameters: Some(bn254_x5_3_params.to_bytes().try_into().unwrap()),
 			phantom: Default::default(),
+		},
+		asset_registry: AssetRegistryConfig {
+			asset_names: vec![(b"TEST".to_vec().try_into().unwrap(), 1)],
+			native_asset_name: b"WEBB".to_vec().try_into().unwrap(),
+			native_existential_deposit: webb_runtime::constants::currency::EXISTENTIAL_DEPOSIT,
+		},
+		tokens: webb_runtime::TokensConfig {
+			balances: unique.iter().cloned().map(|k| (k, 1, ENDOWMENT)).collect(),
 		},
 		mixer_verifier_bn_254: MixerVerifierBn254Config {
 			parameters: Some(mixer_verifier_bn254_params.try_into().unwrap()),
 			phantom: Default::default(),
 		},
-		v_anchor_verifier: VAnchorVerifierConfig {
+		v_anchor_arkworks_verifier: VAnchorArkworksVerifierConfig {
 			parameters: Some(vec![
-				(2, 2, vanchor_verifier_2_2_bn254_params.try_into().unwrap()),
-				(2, 16, vanchor_verifier_2_16_bn254_params.try_into().unwrap()),
+				(2, 2, vanchor_arkworks_verifier_2_2_bn254_params.try_into().unwrap()),
+				(2, 16, vanchor_arkworks_verifier_2_16_bn254_params.try_into().unwrap()),
 			]),
 			phantom: Default::default(),
 		},
-		merkle_tree_bn_254: MerkleTreeBn254Config {
+		v_anchor_circom_verifier: VAnchorCircomVerifierConfig {
+			phantom: Default::default(),
+			parameters: Some(vec![
+				(2, 2, vanchor_circom_verifier_2_2_bn254_params.try_into().unwrap()),
+				(2, 8, vanchor_circom_verifier_2_8_bn254_params.try_into().unwrap()),
+				(16, 2, vanchor_circom_verifier_16_2_bn254_params.try_into().unwrap()),
+				(16, 8, vanchor_circom_verifier_16_8_bn254_params.try_into().unwrap()),
+			]),
+		},
+		merkle_tree_arkworks_bn_254: MerkleTreeArkworksBn254Config {
+			phantom: Default::default(),
+			default_hashes: None,
+		},
+		merkle_tree_circom_bn_254: MerkleTreeCircomBn254Config {
 			phantom: Default::default(),
 			default_hashes: None,
 		},
@@ -337,7 +407,13 @@ fn testnet_genesis(
 				(1, 100 * UNITS),
 			],
 		},
-		v_anchor_bn_254: VAnchorBn254Config {
+		v_anchor_arkworks_bn_254: VAnchorArkworksBn254Config {
+			max_deposit_amount: 1_000_000 * UNITS,
+			min_withdraw_amount: 0,
+			vanchors: vec![(0, 1)],
+			phantom: Default::default(),
+		},
+		v_anchor_circom_bn_254: VAnchorCircomBn254Config {
 			max_deposit_amount: 1_000_000 * UNITS,
 			min_withdraw_amount: 0,
 			vanchors: vec![(0, 1)],
