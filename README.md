@@ -92,6 +92,14 @@ Build the node in `release mode`:
 cargo build --release
 ```
 
+## Installation Using Nix 💻
+
+1. Install [Nix](https://nixos.org/download.html)
+2. Enable Flakes (if you are not already see here: [Flakes](https://nixos.wiki/wiki/Flakes))
+3. If you have [`direnv`](https://github.com/nix-community/nix-direnv#installation) installed, everything should work out of the box.
+4. Alternatively, you can run `nix flake develop` in the root of this repo to get a shell with all the dependencies installed.
+5. Happy hacking!
+
 #### Troubleshooting for Apple Silicon users
 
 Install Homebrew if you have not already. You can check if you have it installed with the following command:
