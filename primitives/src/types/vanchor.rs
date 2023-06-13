@@ -73,17 +73,32 @@ impl<I: Encode, A: Encode, B: Encode, C: Encode> ExtData<I, A, B, C> {
 }
 
 impl<I: Encode, A: Encode, B: Encode, C: Encode> IntoAbiToken for ExtData<I, A, B, C> {
+	// (bytes recipient,bytes extAmount,bytes relayer,bytes fee,bytes
+	// refund,bytes token,bytes encryptedOutput1,bytes encryptedOutput2)
 	fn into_abi(&self) -> Token {
+		// make sure every field is encoded as BE bytes
+		// Recipient is already encoded as BE bytes
 		let recipient = Token::Bytes(self.recipient.encode());
-		let ext_amount = Token::Bytes(self.ext_amount.encode());
+		// Ext amount is encoded as LE bytes, so we need to reverse it
+		let mut ext_amount_bytes = self.ext_amount.encode();
+		ext_amount_bytes.reverse();
+		let ext_amount = Token::Bytes(ext_amount_bytes);
+		// Relayer is already encoded as BE bytes
 		let relayer = Token::Bytes(self.relayer.encode());
-		let fee = Token::Bytes(self.fee.encode());
-		let refund = Token::Bytes(self.refund.encode());
+		// Fee is encoded as LE bytes, so we need to reverse it
+		let mut fee_bytes = self.fee.encode();
+		fee_bytes.reverse();
+		let fee = Token::Bytes(fee_bytes);
+		// Refund is encoded as LE bytes, so we need to reverse it
+		let mut refund_bytes = self.refund.encode();
+		refund_bytes.reverse();
+		let refund = Token::Bytes(refund_bytes);
+		// Token is already encoded as BE bytes
 		let token = Token::Bytes(self.token.encode());
+		// Do not reverse encrypted output bytes
+		// Encrypted output(s) is already encoded as BE bytes
 		let encrypted_output1 = Token::Bytes(self.encrypted_output1.clone());
 		let encrypted_output2 = Token::Bytes(self.encrypted_output2.clone());
-		// tuple(bytes recipient,bytes extAmount,bytes relayer,bttes fee,bytes
-		// refund,bytes token,bytes encryptedOutput1,bytes encryptedOutput2)
 		let ext_data_args = vec![
 			recipient,
 			ext_amount,
