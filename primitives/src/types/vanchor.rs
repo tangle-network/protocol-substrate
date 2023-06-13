@@ -82,10 +82,12 @@ impl<I: Encode, A: Encode, B: Encode, C: Encode> IntoAbiToken for ExtData<I, A, 
 		let token = Token::Bytes(self.token.encode());
 		let encrypted_output1 = Token::Bytes(self.encrypted_output1.clone());
 		let encrypted_output2 = Token::Bytes(self.encrypted_output2.clone());
+		// tuple(bytes recipient,bytes extAmount,bytes relayer,bttes fee,bytes
+		// refund,bytes token,bytes encryptedOutput1,bytes encryptedOutput2)
 		let ext_data_args = vec![
 			recipient,
-			relayer,
 			ext_amount,
+			relayer,
 			fee,
 			refund,
 			token,
