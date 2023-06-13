@@ -470,6 +470,14 @@ impl<T: Config<I>, I: 'static> VAnchorInterface<VAnchorConfiguration<T, I>> for 
 		let computed_ext_data_hash = T::EthereumHasher::hash(&ext_data.encode_abi(), &[])
 			.map_err(|_| Error::<T, I>::InvalidExtData)?;
 		// Ensure that the passed external data hash matches the computed one
+		if computed_ext_data_hash != proof_data.ext_data_hash.to_bytes() {
+			frame_support::log::error!(
+				target: "runtime::vanchor",
+				"Error: Computed ext data hash: 0x{}, passed ext data hash: 0x{}",
+				hex::encode(&computed_ext_data_hash),
+				hex::encode(proof_data.ext_data_hash.to_bytes())
+			)
+		}
 		ensure!(
 			proof_data.ext_data_hash.to_bytes() == computed_ext_data_hash,
 			Error::<T, I>::InvalidExtData

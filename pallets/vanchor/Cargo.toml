@@ -12,6 +12,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+hex = { version = "0.4", default-features = false }
 
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
 ark-ff = { version = "^0.3.0", default-features = false }
@@ -89,7 +90,8 @@ std = [
     "ark-std/std",
     "arkworks-setups/std",
     "pallet-vanchor-verifier/std",
-    "pallet-hasher/std"
+    "pallet-hasher/std",
+    "hex/std"
 ]
 runtime-benchmarks = [
   "frame-benchmarking",
