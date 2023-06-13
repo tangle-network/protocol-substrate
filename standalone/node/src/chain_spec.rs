@@ -15,10 +15,9 @@ use sp_std::convert::TryInto;
 use webb_runtime::{
 	constants::currency::*, wasm_binary_unwrap, AssetRegistryConfig, AuthorityDiscoveryConfig,
 	BabeConfig, Block, CouncilConfig, DemocracyConfig, ElectionsConfig, GenesisConfig,
-	GrandpaConfig, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeArkworksBn254Config,
-	MerkleTreeCircomBn254Config, MixerBn254Config, MixerVerifierBn254Config, SessionConfig,
-	StakerStatus, StakingConfig, SudoConfig, VAnchorArkworksBn254Config,
-	VAnchorArkworksVerifierConfig, VAnchorCircomBn254Config, VAnchorCircomVerifierConfig,
+	GrandpaConfig, HasherBn254Config, ImOnlineConfig, IndicesConfig, MerkleTreeBn254Config,
+	MixerBn254Config, MixerVerifierBn254Config, SessionConfig, StakerStatus, StakingConfig,
+	SudoConfig, VAnchorBn254Config, VAnchorVerifierConfig,
 };
 
 // ImOnline consensus authority.
@@ -215,19 +214,24 @@ fn testnet_genesis(
 		vk_bytes.to_vec()
 	};
 
+	#[cfg(feature = "arkworks-backend")]
 	log::info!("Verifier params for arkworks vanchor");
+	#[cfg(feature = "arkworks-backend")]
 	let vanchor_arkworks_verifier_2_2_bn254_params = {
 		let vk_bytes =
 			include_bytes!("../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin");
 		vk_bytes.to_vec()
 	};
+	#[cfg(feature = "arkworks-backend")]
 	let vanchor_arkworks_verifier_2_16_bn254_params = {
 		let vk_bytes =
 			include_bytes!("../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin");
 		vk_bytes.to_vec()
 	};
 
+	#[cfg(feature = "circom-backend")]
 	log::info!("Verifier params for circom vanchor");
+	#[cfg(feature = "circom-backend")]
 	let vanchor_circom_verifier_2_2_bn254_params = {
 		log::info!("Reading circom vk for 2-2");
 		let zk_bytes = include_bytes!(
@@ -242,6 +246,7 @@ fn testnet_genesis(
 		vk_2_2_bytes
 	};
 
+	#[cfg(feature = "circom-backend")]
 	let vanchor_circom_verifier_2_8_bn254_params = {
 		log::info!("Reading circom vk for 2-8");
 		let zk_bytes = include_bytes!(
@@ -256,6 +261,7 @@ fn testnet_genesis(
 		vk_2_8_bytes
 	};
 
+	#[cfg(feature = "circom-backend")]
 	let vanchor_circom_verifier_16_2_bn254_params = {
 		log::info!("Reading circom vk for 16-2");
 		let zk_bytes = include_bytes!(
@@ -270,6 +276,7 @@ fn testnet_genesis(
 		vk_16_2_bytes
 	};
 
+	#[cfg(feature = "circom-backend")]
 	let vanchor_circom_verifier_16_8_bn254_params = {
 		log::info!("Reading circom vk for 16-8");
 		let zk_bytes = include_bytes!(
@@ -283,6 +290,30 @@ fn testnet_genesis(
 			.expect("serializing vk for 16-8");
 		vk_16_8_bytes
 	};
+
+	#[cfg(feature = "arkworks-backend")]
+	let v_anchor_verifier_config = VAnchorVerifierConfig {
+		parameters: Some(vec![
+			(2, 2, vanchor_arkworks_verifier_2_2_bn254_params.try_into().unwrap()),
+			(2, 16, vanchor_arkworks_verifier_2_16_bn254_params.try_into().unwrap()),
+		]),
+		phantom: Default::default(),
+	};
+
+	#[cfg(feature = "circom-backend")]
+	let v_anchor_verifier_config = VAnchorVerifierConfig {
+		phantom: Default::default(),
+		parameters: Some(vec![
+			(2, 2, vanchor_circom_verifier_2_2_bn254_params.try_into().unwrap()),
+			(2, 8, vanchor_circom_verifier_2_8_bn254_params.try_into().unwrap()),
+			(16, 2, vanchor_circom_verifier_16_2_bn254_params.try_into().unwrap()),
+			(16, 8, vanchor_circom_verifier_16_8_bn254_params.try_into().unwrap()),
+		]),
+	};
+	#[cfg(not(any(feature = "arkworks-backend", feature = "circom-backend")))]
+	let v_anchor_verifier_config =
+		VAnchorVerifierConfig { phantom: Default::default(), parameters: None };
+
 	let mut endowed_accounts: Vec<AccountId> = endowed_accounts;
 	// endow all authorities and nominators.
 	initial_authorities
@@ -374,27 +405,8 @@ fn testnet_genesis(
 			parameters: Some(mixer_verifier_bn254_params.try_into().unwrap()),
 			phantom: Default::default(),
 		},
-		v_anchor_arkworks_verifier: VAnchorArkworksVerifierConfig {
-			parameters: Some(vec![
-				(2, 2, vanchor_arkworks_verifier_2_2_bn254_params.try_into().unwrap()),
-				(2, 16, vanchor_arkworks_verifier_2_16_bn254_params.try_into().unwrap()),
-			]),
-			phantom: Default::default(),
-		},
-		v_anchor_circom_verifier: VAnchorCircomVerifierConfig {
-			phantom: Default::default(),
-			parameters: Some(vec![
-				(2, 2, vanchor_circom_verifier_2_2_bn254_params.try_into().unwrap()),
-				(2, 8, vanchor_circom_verifier_2_8_bn254_params.try_into().unwrap()),
-				(16, 2, vanchor_circom_verifier_16_2_bn254_params.try_into().unwrap()),
-				(16, 8, vanchor_circom_verifier_16_8_bn254_params.try_into().unwrap()),
-			]),
-		},
-		merkle_tree_arkworks_bn_254: MerkleTreeArkworksBn254Config {
-			phantom: Default::default(),
-			default_hashes: None,
-		},
-		merkle_tree_circom_bn_254: MerkleTreeCircomBn254Config {
+		v_anchor_verifier: v_anchor_verifier_config,
+		merkle_tree_bn_254: MerkleTreeBn254Config {
 			phantom: Default::default(),
 			default_hashes: None,
 		},
@@ -407,13 +419,7 @@ fn testnet_genesis(
 				(1, 100 * UNITS),
 			],
 		},
-		v_anchor_arkworks_bn_254: VAnchorArkworksBn254Config {
-			max_deposit_amount: 1_000_000 * UNITS,
-			min_withdraw_amount: 0,
-			vanchors: vec![(0, 1)],
-			phantom: Default::default(),
-		},
-		v_anchor_circom_bn_254: VAnchorCircomBn254Config {
+		v_anchor_bn_254: VAnchorBn254Config {
 			max_deposit_amount: 1_000_000 * UNITS,
 			min_withdraw_amount: 0,
 			vanchors: vec![(0, 1)],

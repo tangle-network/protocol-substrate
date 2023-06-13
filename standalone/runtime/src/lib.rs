@@ -99,7 +99,7 @@ use webb_primitives::{
 	linkable_tree::LinkableTreeInspector,
 	merkle_tree::TreeInspector,
 	signing::SignatureVerifier,
-	verifying::ArkworksVerifierBn254,
+	verifying::{ArkworksVerifierBn254, CircomVerifierBn254},
 	Amount, ChainId, LeafIndex,
 };
 
@@ -1156,23 +1156,26 @@ impl pallet_mt::Config<pallet_mt::Instance1> for Runtime {
 	type Two = Two;
 	type WeightInfo = pallet_mt::weights::WebbWeight<Runtime>;
 }
-parameter_types! {
-	pub const MaxParameterLength : u32 = 1000;
-}
 
 impl pallet_verifier::Config<pallet_verifier::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type Verifier = ArkworksVerifierBn254;
-	type MaxParameterLength = MaxParameterLength;
+	type MaxParameterLength = ConstU32<1000>;
 	type WeightInfo = pallet_verifier::weights::WebbWeight<Runtime>;
 }
 
 impl pallet_vanchor_verifier::Config<pallet_vanchor_verifier::Instance1> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	#[cfg(feature = "arkworks-backend")]
 	type Verifier = ArkworksVerifierBn254;
-	type MaxParameterLength = MaxParameterLength;
+	#[cfg(feature = "arkworks-backend")]
+	type MaxParameterLength = ConstU32<1000>;
+	#[cfg(feature = "circom-backend")]
+	type Verifier = CircomVerifierBn254;
+	#[cfg(feature = "circom-backend")]
+	type MaxParameterLength = ConstU32<2000>;
 	type WeightInfo = pallet_vanchor_verifier::weights::WebbWeight<Runtime>;
 }
 

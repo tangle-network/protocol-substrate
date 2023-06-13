@@ -106,7 +106,9 @@ wasmer = { version = "2.3" }
 cli = [
   "clap",
 ]
-default = ["cli"]
+default = ["cli", "circom-backend"]
+arkworks-backend = ["webb-runtime/arkworks-backend"]
+circom-backend = ["webb-runtime/circom-backend"]
 runtime-benchmarks = [
   "webb-runtime/runtime-benchmarks",
   "frame-benchmarking/runtime-benchmarks",
