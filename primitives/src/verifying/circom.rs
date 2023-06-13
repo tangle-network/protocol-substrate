@@ -1,7 +1,7 @@
 use crate::*;
 use ark_bn254::{Bn254, Fr, G1Affine, G2Affine};
 use ark_crypto_primitives::Error;
-use ark_ff::{PrimeField, BigInteger, FromBytes};
+use ark_ff::{BigInteger, FromBytes, PrimeField};
 use ark_groth16::{
 	verify_proof as ark_verify_proof, PreparedVerifyingKey, Proof as ArkProof,
 	VerifyingKey as ArkVerifyingKey,

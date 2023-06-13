@@ -303,4 +303,3 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 		));
 	});
 }
-
