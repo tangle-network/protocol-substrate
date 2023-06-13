@@ -23,6 +23,7 @@ use arkworks_setups::{
 	Curve,
 };
 use circom_proving::{generate_proof, verify_proof};
+use codec::{Decode, Encode};
 use frame_support::assert_ok;
 use num_bigint::{BigInt, Sign};
 use pallet_linkable_tree::LinkableTreeConfigration;
@@ -299,4 +300,59 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 			ext_data
 		));
 	});
+}
+
+#[test]
+fn javascript_ext_data_to_rust() {
+	// {
+	//   recipient: '306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20',
+	//   relayer: '306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20',
+	//   extAmount: '000000000000003635c9adc5dea00000',
+	//   fee: '00000000000000000000000000000000',
+	//   refund: '00000000000000000000000000000000',
+	//   token: '00000000',
+	//   encryptedOutput1:
+	// '77c4ee470e581dab9d70393103bfdccac0e2cb9e5ceec7ce96a1563a9f77ebdfa5bb0194c37fc985d4d80312e151d8a3a2b6207a4aee9b370d6b58e29ee5c8045dbd0d60790d18e0d98b89fbdf25fbd88a0e9747e1f27ddaae0903fbadfb7dff8792a3425000693a27a50fd4a56db4be8d315ead7af591b2fb594bb7621bd337455f8c11e89f4c048f58993bd9a93de774977e9aa112b0cfd18981161fbeee9a91ae1f550a601c97'
+	// ,   encryptedOutput2:
+	// '21b190a5515998333e4e4f79f8c9063ade8fc794a8967a2a1e08416d3afd97c4a5947462f0ada64013c44a13ca0b6d4898bbdf9ce9fa8d5016771afd3931e99a8d5c3d25a7c0015bd8dc44cfa5f8da1b1357eca7ee12efe74209cfdfde9ceb835917558c418f06db2352a2266cbfed0099b48f63ca53ce19a59eefa03edfdb5ca1b747350200e1cd29b6dd2e133c0d119ffb114c6245e81bbc8a890c4d797cbcdc274b16a017aa68'
+	// }
+	let recipient_bytes =
+		hex::decode("306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20").unwrap();
+	let recipient = sp_runtime::AccountId32::decode(&mut &recipient_bytes[..]).unwrap();
+	let relayer_bytes =
+		hex::decode("306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20").unwrap();
+	let relayer = sp_runtime::AccountId32::decode(&mut &relayer_bytes[..]).unwrap();
+	let ext_amount_bytes = hex::decode("000000000000003635c9adc5dea00000").unwrap();
+	let ext_amount = Amount::decode(&mut &ext_amount_bytes[..]).unwrap();
+	let fee_bytes = hex::decode("00000000000000000000000000000000").unwrap();
+	let fee = Balance::decode(&mut &fee_bytes[..]).unwrap();
+	let refund_bytes = hex::decode("00000000000000000000000000000000").unwrap();
+	let refund = Balance::decode(&mut &refund_bytes[..]).unwrap();
+	let token_bytes = hex::decode("00000000").unwrap();
+	let token = AssetId::decode(&mut &token_bytes[..]).unwrap();
+	let output1_bytes = hex::decode("7a7cde632298bdb5f135bc50c8363ddac154658222efd8df0b6f631a4a2ca80dfb8e307622bfb1f10eda7346d4c4d5ee0501ae4f84c1a34932ead2c54468da9e124d36f9092d0613a903be16e1187c6f51ce8b797c20b5afc01df31ca2c2ccd614195d38dcd22af22f5d36943f23a4f75672654f49a04c10cfdd05afa023b3d14025460cb362f62acc3ec0a2d293df3adddecadfb1c31a8c37118b0f5e37e90ce2f3e33ab6d8052d").unwrap();
+	let output2_bytes = hex::decode("88be3138c3af2dbdadd2888eeb0b3a32a1bba77ca29afb9a9f38faffa5e924d97a8b4097b18e5c98652d1b96ed824c8204d50115ad15f028b0bef2067797d868cd6ef7995ff04da98994181b157c93c6f205ffde4cbefc9eefdb2434129fe639c54d0e92db5471621a052aa3e1e8bb86b625b2954c5794de3f5bbb2cac6b1e011b816306a8ae49f1c274bcad8b9261fd28b6f250a0b304ea291de7d352efef900e51e2ec819b5d7e").unwrap();
+	let ext_data = ExtData::<AccountId, Amount, Balance, AssetId>::new(
+		recipient,
+		relayer,
+		ext_amount,
+		fee,
+		refund,
+		token,
+		// Mock encryption value, not meant to be used in production
+		output1_bytes.to_vec(),
+		// Mock encryption value, not meant to be used in production
+		output2_bytes.to_vec(),
+	);
+	println!("ext_data: {ext_data:?}");
+	println!("ext_data.encode_abi(): {}", hex::encode(ext_data.encode_abi()));
+
+	let ext_data_hash = keccak_256(&ext_data.encode_abi());
+	let ext_data_hash_hex = hex::encode(ext_data_hash);
+	let expected_ext_data_hash_hex =
+		"392a72b9fbb5cf94eb5af9e27519bffc42420f9f83af73ea2729ff1565516796";
+	println!("ext_data_hash_hex: {ext_data_hash_hex}");
+	println!("expected_ext_data_hash_hex: {expected_ext_data_hash_hex}");
+	assert_eq!(ext_data_hash_hex, expected_ext_data_hash_hex);
+	let ext_data_hash = vec![BigInt::from_bytes_be(Sign::Plus, ext_data_hash.as_slice())];
 }
