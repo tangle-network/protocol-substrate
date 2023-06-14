@@ -59,9 +59,7 @@
           # is broken on nixos
           shellHook = ''
             ROOT=$(git rev-parse --show-toplevel)
-            cd $ROOT/solidity-fixtures && pipx run dvc pull
-            cd $ROOT
-            cd $ROOT/substrate-fixtures && pipx run dvc pull
+            cd $ROOT && pipx run dvc pull
             cd $ROOT
           '';
         };
