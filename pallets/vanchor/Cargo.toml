@@ -45,6 +45,7 @@ ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-featu
 ark-ec = { version = "^0.3.0", default-features = false }
 ark-ff = { version = "0.3.0", default-features = false, features = ["asm"] }
 ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", default-features = false, features = ["parallel"] }
+# ark-groth16 = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"] }
 ark-std = { version = "^0.3.0", default-features = false }

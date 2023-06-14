@@ -9,7 +9,8 @@ use ark_groth16::{
 use ark_serialize::CanonicalDeserialize;
 use ark_std::Zero;
 use arkworks_native_gadgets::to_field_elements;
-use ethabi::ethereum_types::U256;
+use ethabi::{ethereum_types::U256, ParamType};
+use sp_std::prelude::*;
 
 pub struct CircomVerifierBn254;
 
@@ -58,6 +59,13 @@ impl InstanceVerifier for CircomVerifierBn254 {
 				return Err(e)
 			},
 		};
+		frame_support::log::info!(
+			"public_input_field_elts: {:#?}",
+			public_input_field_elts
+				.iter()
+				.map(|x| ark_std::format!("{}", x.into_repr()))
+				.collect::<Vec<_>>()
+		);
 		let vk = match ArkVerifyingKey::deserialize(vk_bytes) {
 			Ok(v) => v,
 			Err(e) => {
@@ -65,11 +73,11 @@ impl InstanceVerifier for CircomVerifierBn254 {
 				return Err(e.into())
 			},
 		};
-		let proof = match ArkProof::deserialize(proof_bytes) {
-			Ok(v) => v,
+		let proof = match Proof::decode(proof_bytes) {
+			Ok(v) => v.into(),
 			Err(e) => {
 				frame_support::log::error!("Failed to deserialize proof: {e:?}");
-				return Err(e.into())
+				return Err(e)
 			},
 		};
 		let res = match verify_groth16(&vk.into(), &public_input_field_elts, &proof) {
@@ -163,10 +171,81 @@ impl Proof {
 	pub fn as_tuple(&self) -> (G1Tup, G2Tup, G1Tup) {
 		(self.a.as_tuple(), self.b.as_tuple(), self.c.as_tuple())
 	}
+
+	pub fn decode(input: &[u8]) -> Result<Self, Error> {
+		// (uint[2] a,uint[2][2] b,uint[2] c)
+		let mut decoded = ethabi::decode(
+			&[ParamType::Tuple(sp_std::vec![
+				ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2),
+				ParamType::FixedArray(
+					Box::new(ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2)),
+					2,
+				),
+				ParamType::FixedArray(Box::new(ParamType::Uint(256)), 2),
+			])],
+			input,
+		)
+		.map_err(|e| {
+			frame_support::log::error!("Failed to decode proof: {:?}", e);
+			CircomError::InvalidProofBytes
+		})?;
+		// Unwrap the decoded tuple
+		let decoded = decoded.pop().ok_or(CircomError::InvalidProofBytes)?;
+		let decoded = match decoded {
+			ethabi::Token::Tuple(v) => v,
+			_ => return Err(CircomError::InvalidProofBytes.into()),
+		};
+		let a = decoded[0].clone().into_fixed_array().ok_or(CircomError::InvalidProofBytes)?;
+		let a_x = a[0].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
+		let a_y = a[1].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
+
+		let b = decoded[1].clone().into_fixed_array().ok_or(CircomError::InvalidProofBytes)?;
+		let b_0 = b[0].clone().into_fixed_array().ok_or(CircomError::InvalidProofBytes)?;
+		let b_1 = b[1].clone().into_fixed_array().ok_or(CircomError::InvalidProofBytes)?;
+		let b_x_0 = b_0[0].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
+		let b_x_1 = b_0[1].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
+		let b_y_0 = b_1[0].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
+		let b_y_1 = b_1[1].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
+
+		let c = decoded[2].clone().into_fixed_array().ok_or(CircomError::InvalidProofBytes)?;
+		let c_x = c[0].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
+		let c_y = c[1].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
+		Ok(Self {
+			a: G1 { x: a_x, y: a_y },
+			b: G2 { x: [b_x_0, b_x_1], y: [b_y_0, b_y_1] },
+			c: G1 { x: c_x, y: c_y },
+		})
+	}
+
+	pub fn encode(&self) -> Result<Vec<u8>, Error> {
+		let a_x = self.a.x;
+		let a_y = self.a.y;
+		let b_x_0 = self.b.x[0];
+		let b_x_1 = self.b.x[1];
+		let b_y_0 = self.b.y[0];
+		let b_y_1 = self.b.y[1];
+		let c_x = self.c.x;
+		let c_y = self.c.y;
+		let encoded = ethabi::encode(&[ethabi::Token::Tuple(vec![
+			ethabi::Token::FixedArray(vec![ethabi::Token::Uint(a_x), ethabi::Token::Uint(a_y)]),
+			ethabi::Token::FixedArray(vec![
+				ethabi::Token::FixedArray(vec![
+					ethabi::Token::Uint(b_x_0),
+					ethabi::Token::Uint(b_x_1),
+				]),
+				ethabi::Token::FixedArray(vec![
+					ethabi::Token::Uint(b_y_0),
+					ethabi::Token::Uint(b_y_1),
+				]),
+			]),
+			ethabi::Token::FixedArray(vec![ethabi::Token::Uint(c_x), ethabi::Token::Uint(c_y)]),
+		])]);
+		Ok(encoded)
+	}
 }
 
-impl From<ark_groth16::Proof<Bn254>> for Proof {
-	fn from(proof: ark_groth16::Proof<Bn254>) -> Self {
+impl From<ArkProof<Bn254>> for Proof {
+	fn from(proof: ArkProof<Bn254>) -> Self {
 		Self { a: G1::from(&proof.a), b: G2::from(&proof.b), c: G1::from(&proof.c) }
 	}
 }
@@ -191,4 +270,17 @@ fn point_to_u256<F: PrimeField>(point: F) -> U256 {
 	let point = point.into_repr();
 	let point_bytes = point.to_bytes_be();
 	U256::from(&point_bytes[..])
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn from_js_to_ethproof_to_arkworks() {
+		let js_proof_bytes = hex::decode("283214454fd3acd78dd7d83e2e7ff187918f93c83a7a29c65e9d84c5b796e2f4165dedc98635cbb7226bca867c4b3454cc002902d74684b63bbba33bfbfe0b9e27f8c215f3b5574fa8c4cef8b4eacfe2577a17c37f60f0f037dec244d5f6d31401c2f126b04cb69727b8c273612659a3dd6cddb96891c2c2ebea6c313956ff700ebb472ecead76346d13468cf9eea1269b5a94b3c847840d5a5bb9dba50c39f029801c58394e18719ffacc6752e803b2e3fade1219f423c38618799bd954e9b910b3936beafe6bd89c38fe0f297a0c2387d20df79e9f20b4f04b3ae59ce9a22a0c08e7eae8e0b4f5234c040436720e5c44326034e69f4b0e5236958571b5f216").unwrap();
+		let eth_proof = Proof::decode(&js_proof_bytes[..]).unwrap();
+		eprintln!("eth_proof: {eth_proof:#?}");
+		let _ark_proof: ArkProof<Bn254> = eth_proof.into();
+	}
 }

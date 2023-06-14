@@ -1,5 +1,3 @@
-use core::str::FromStr;
-
 use crate::{
 	mock::*,
 	test_utils::{
@@ -14,7 +12,6 @@ use crate::{
 use ark_ff::{BigInteger, PrimeField};
 // use ark_groth16::ProvingKey;
 // use ark_relations::r1cs::ConstraintMatrices;
-use ark_serialize::CanonicalSerialize;
 use arkworks_native_gadgets::{
 	merkle_tree::{Path, SparseMerkleTree},
 	poseidon::Poseidon,
@@ -25,7 +22,6 @@ use arkworks_setups::{
 	Curve,
 };
 use circom_proving::{generate_proof, verify_proof};
-use codec::{Decode, Encode};
 use frame_support::assert_ok;
 use num_bigint::{BigInt, Sign};
 use pallet_linkable_tree::LinkableTreeConfigration;
@@ -36,6 +32,7 @@ use webb_primitives::{
 	merkle_tree::TreeInspector,
 	types::vanchor::{ExtData, ProofData},
 	utils::compute_chain_id_type,
+	verifying::circom::Proof as SolidityProof,
 	AccountId,
 };
 
@@ -280,8 +277,8 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
 			deconstruct_public_inputs_el(&inputs_for_verification.to_vec());
-		let mut proof_bytes = Vec::new();
-		proof.serialize(&mut proof_bytes).unwrap();
+		let solidity_proof = SolidityProof::from(proof);
+		let proof_bytes = solidity_proof.encode().unwrap();
 		let proof_data = ProofData::new(
 			proof_bytes,
 			public_amount,
