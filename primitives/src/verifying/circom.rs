@@ -277,10 +277,14 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn from_js_to_ethproof_to_arkworks() {
+	fn from_js_solidity_proof_to_arkworks() {
 		let js_proof_bytes = hex::decode("283214454fd3acd78dd7d83e2e7ff187918f93c83a7a29c65e9d84c5b796e2f4165dedc98635cbb7226bca867c4b3454cc002902d74684b63bbba33bfbfe0b9e27f8c215f3b5574fa8c4cef8b4eacfe2577a17c37f60f0f037dec244d5f6d31401c2f126b04cb69727b8c273612659a3dd6cddb96891c2c2ebea6c313956ff700ebb472ecead76346d13468cf9eea1269b5a94b3c847840d5a5bb9dba50c39f029801c58394e18719ffacc6752e803b2e3fade1219f423c38618799bd954e9b910b3936beafe6bd89c38fe0f297a0c2387d20df79e9f20b4f04b3ae59ce9a22a0c08e7eae8e0b4f5234c040436720e5c44326034e69f4b0e5236958571b5f216").unwrap();
 		let eth_proof = Proof::decode(&js_proof_bytes[..]).unwrap();
 		eprintln!("eth_proof: {eth_proof:#?}");
-		let _ark_proof: ArkProof<Bn254> = eth_proof.into();
+		let ark_proof: ArkProof<Bn254> = eth_proof.into();
+		let eth_proof2: Proof = ark_proof.clone().into();
+		assert_eq!(eth_proof, eth_proof2);
+		let ark_proof2: ArkProof<Bn254> = eth_proof2.into();
+		assert_eq!(ark_proof, ark_proof2);
 	}
 }

@@ -52,20 +52,20 @@ fn setup_environment() -> (Vec<u8>, Vec<u8>, Vec<u8>, Vec<u8>) {
 	//    but to do so, we need to have a VerifyingKey
 
 	let pk_2_2_bytes = include_bytes!(
-		"../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
+		"../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
 	let vk_2_2_bytes = include_bytes!(
-		"../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin"
+		"../../../substrate-fixtures/vanchor/bn254/x5/2-2-2/verifying_key.bin"
 	)
 	.to_vec();
 
 	let pk_2_16_bytes = include_bytes!(
-		"../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-16-2/proving_key_uncompressed.bin"
+		"../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/proving_key_uncompressed.bin"
 	)
 	.to_vec();
 	let vk_2_16_bytes = include_bytes!(
-		"../../../substrate-fixtures/substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin"
+		"../../../substrate-fixtures/vanchor/bn254/x5/2-16-2/verifying_key.bin"
 	)
 	.to_vec();
 
