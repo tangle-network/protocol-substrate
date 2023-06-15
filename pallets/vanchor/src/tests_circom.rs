@@ -277,7 +277,7 @@ fn circom_should_complete_2x2_transaction_with_withdraw() {
 
 		let (_chain_id, public_amount, root_set, nullifiers, commitments, ext_data_hash) =
 			deconstruct_public_inputs_el(&inputs_for_verification.to_vec());
-		let solidity_proof = SolidityProof::from(proof);
+		let solidity_proof = SolidityProof::try_from(proof).unwrap();
 		let proof_bytes = solidity_proof.encode().unwrap();
 		let proof_data = ProofData::new(
 			proof_bytes,

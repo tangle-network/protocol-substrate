@@ -1,3 +1,5 @@
+use core::convert::{TryFrom, TryInto};
+
 use crate::*;
 use ark_bn254::{Bn254, Fr, G1Affine, G2Affine};
 use ark_crypto_primitives::Error;
@@ -59,13 +61,6 @@ impl InstanceVerifier for CircomVerifierBn254 {
 				return Err(e)
 			},
 		};
-		frame_support::log::info!(
-			"public_input_field_elts: {:#?}",
-			public_input_field_elts
-				.iter()
-				.map(|x| ark_std::format!("{}", x.into_repr()))
-				.collect::<Vec<_>>()
-		);
 		let vk = match ArkVerifyingKey::deserialize(vk_bytes) {
 			Ok(v) => v,
 			Err(e) => {
@@ -73,8 +68,8 @@ impl InstanceVerifier for CircomVerifierBn254 {
 				return Err(e.into())
 			},
 		};
-		let proof = match Proof::decode(proof_bytes) {
-			Ok(v) => v.into(),
+		let proof = match Proof::decode(proof_bytes).and_then(|v| v.try_into()) {
+			Ok(v) => v,
 			Err(e) => {
 				frame_support::log::error!("Failed to deserialize proof: {e:?}");
 				return Err(e)
@@ -98,26 +93,20 @@ pub struct G1 {
 	pub y: U256,
 }
 
-impl From<G1> for G1Affine {
-	fn from(src: G1) -> G1Affine {
-		let x: ark_bn254::Fq = u256_to_point(src.x);
-		let y: ark_bn254::Fq = u256_to_point(src.y);
+impl TryFrom<G1> for G1Affine {
+	type Error = Error;
+	fn try_from(src: G1) -> Result<Self, Self::Error> {
+		let x: ark_bn254::Fq = u256_to_point(src.x)?;
+		let y: ark_bn254::Fq = u256_to_point(src.y)?;
 		let inf = x.is_zero() && y.is_zero();
-		G1Affine::new(x, y, inf)
+		Ok(Self::new(x, y, inf))
 	}
 }
 
-type G1Tup = (U256, U256);
-
-impl G1 {
-	pub fn as_tuple(&self) -> (U256, U256) {
-		(self.x, self.y)
-	}
-}
-
-impl From<&G1Affine> for G1 {
-	fn from(p: &G1Affine) -> Self {
-		Self { x: point_to_u256(p.x), y: point_to_u256(p.y) }
+impl TryFrom<&G1Affine> for G1 {
+	type Error = Error;
+	fn try_from(p: &G1Affine) -> Result<Self, Self::Error> {
+		Ok(Self { x: point_to_u256(p.x)?, y: point_to_u256(p.y)? })
 	}
 }
 
@@ -127,36 +116,29 @@ pub struct G2 {
 	pub y: [U256; 2],
 }
 
-impl From<G2> for G2Affine {
-	fn from(src: G2) -> G2Affine {
-		let c0 = u256_to_point(src.x[0]);
-		let c1 = u256_to_point(src.x[1]);
+impl TryFrom<G2> for G2Affine {
+	type Error = Error;
+	fn try_from(src: G2) -> Result<Self, Self::Error> {
+		let c0 = u256_to_point(src.x[0])?;
+		let c1 = u256_to_point(src.x[1])?;
 		let x = ark_bn254::Fq2::new(c0, c1);
 
-		let c0 = u256_to_point(src.y[0]);
-		let c1 = u256_to_point(src.y[1]);
+		let c0 = u256_to_point(src.y[0])?;
+		let c1 = u256_to_point(src.y[1])?;
 		let y = ark_bn254::Fq2::new(c0, c1);
 
 		let inf = x.is_zero() && y.is_zero();
-		G2Affine::new(x, y, inf)
+		Ok(Self::new(x, y, inf))
 	}
 }
 
-type G2Tup = ([U256; 2], [U256; 2]);
-
-impl G2 {
-	// NB: Serialize the c1 limb first.
-	pub fn as_tuple(&self) -> G2Tup {
-		([self.x[1], self.x[0]], [self.y[1], self.y[0]])
-	}
-}
-
-impl From<&G2Affine> for G2 {
-	fn from(p: &G2Affine) -> Self {
-		Self {
-			x: [point_to_u256(p.x.c0), point_to_u256(p.x.c1)],
-			y: [point_to_u256(p.y.c0), point_to_u256(p.y.c1)],
-		}
+impl TryFrom<&G2Affine> for G2 {
+	type Error = Error;
+	fn try_from(p: &G2Affine) -> Result<Self, Self::Error> {
+		Ok(Self {
+			x: [point_to_u256(p.x.c0)?, point_to_u256(p.x.c1)?],
+			y: [point_to_u256(p.y.c0)?, point_to_u256(p.y.c1)?],
+		})
 	}
 }
 
@@ -168,10 +150,6 @@ pub struct Proof {
 }
 
 impl Proof {
-	pub fn as_tuple(&self) -> (G1Tup, G2Tup, G1Tup) {
-		(self.a.as_tuple(), self.b.as_tuple(), self.c.as_tuple())
-	}
-
 	pub fn decode(input: &[u8]) -> Result<Self, Error> {
 		// (uint[2] a,uint[2][2] b,uint[2] c)
 		let mut decoded = ethabi::decode(
@@ -244,32 +222,41 @@ impl Proof {
 	}
 }
 
-impl From<ArkProof<Bn254>> for Proof {
-	fn from(proof: ArkProof<Bn254>) -> Self {
-		Self { a: G1::from(&proof.a), b: G2::from(&proof.b), c: G1::from(&proof.c) }
+impl TryFrom<ArkProof<Bn254>> for Proof {
+	type Error = Error;
+	fn try_from(proof: ArkProof<Bn254>) -> Result<Self, Self::Error> {
+		Ok(Self {
+			a: G1::try_from(&proof.a)?,
+			b: G2::try_from(&proof.b)?,
+			c: G1::try_from(&proof.c)?,
+		})
 	}
 }
 
-impl From<Proof> for ark_groth16::Proof<Bn254> {
-	fn from(src: Proof) -> ark_groth16::Proof<Bn254> {
-		ark_groth16::Proof { a: src.a.into(), b: src.b.into(), c: src.c.into() }
+impl TryFrom<Proof> for ArkProof<Bn254> {
+	type Error = Error;
+	fn try_from(src: Proof) -> Result<Self, Self::Error> {
+		Ok(Self { a: src.a.try_into()?, b: src.b.try_into()?, c: src.c.try_into()? })
 	}
 }
 
 // Helper for converting a PrimeField to its U256 representation for Ethereum compatibility
-fn u256_to_point<F: PrimeField>(point: U256) -> F {
+fn u256_to_point<F: PrimeField>(point: U256) -> Result<F, Error> {
 	let mut buf = [0; 32];
 	point.to_little_endian(&mut buf);
-	let bigint = F::BigInt::read(&buf[..]).expect("always works");
-	F::from_repr(bigint).expect("alwasy works")
+	let bigint = F::BigInt::read(&buf[..]).map_err(|_| CircomError::InvalidProofBytes)?;
+	F::from_repr(bigint).ok_or_else(|| CircomError::InvalidProofBytes.into())
 }
 
 // Helper for converting a PrimeField to its U256 representation for Ethereum compatibility
 // (U256 reads data as big endian)
-fn point_to_u256<F: PrimeField>(point: F) -> U256 {
+fn point_to_u256<F: PrimeField>(point: F) -> Result<U256, Error> {
 	let point = point.into_repr();
 	let point_bytes = point.to_bytes_be();
-	U256::from(&point_bytes[..])
+	if point_bytes.len() != 32 {
+		return Err(CircomError::InvalidProofBytes.into())
+	}
+	Ok(U256::from(&point_bytes[..]))
 }
 
 #[cfg(test)]
@@ -281,10 +268,10 @@ mod tests {
 		let js_proof_bytes = hex::decode("283214454fd3acd78dd7d83e2e7ff187918f93c83a7a29c65e9d84c5b796e2f4165dedc98635cbb7226bca867c4b3454cc002902d74684b63bbba33bfbfe0b9e27f8c215f3b5574fa8c4cef8b4eacfe2577a17c37f60f0f037dec244d5f6d31401c2f126b04cb69727b8c273612659a3dd6cddb96891c2c2ebea6c313956ff700ebb472ecead76346d13468cf9eea1269b5a94b3c847840d5a5bb9dba50c39f029801c58394e18719ffacc6752e803b2e3fade1219f423c38618799bd954e9b910b3936beafe6bd89c38fe0f297a0c2387d20df79e9f20b4f04b3ae59ce9a22a0c08e7eae8e0b4f5234c040436720e5c44326034e69f4b0e5236958571b5f216").unwrap();
 		let eth_proof = Proof::decode(&js_proof_bytes[..]).unwrap();
 		eprintln!("eth_proof: {eth_proof:#?}");
-		let ark_proof: ArkProof<Bn254> = eth_proof.into();
-		let eth_proof2: Proof = ark_proof.clone().into();
+		let ark_proof: ArkProof<Bn254> = eth_proof.try_into().unwrap();
+		let eth_proof2: Proof = ark_proof.clone().try_into().unwrap();
 		assert_eq!(eth_proof, eth_proof2);
-		let ark_proof2: ArkProof<Bn254> = eth_proof2.into();
+		let ark_proof2: ArkProof<Bn254> = eth_proof2.try_into().unwrap();
 		assert_eq!(ark_proof, ark_proof2);
 	}
 }
