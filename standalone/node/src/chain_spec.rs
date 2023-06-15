@@ -208,9 +208,8 @@ fn testnet_genesis(
 
 	log::info!("Verifier params for mixer");
 	let mixer_verifier_bn254_params = {
-		let vk_bytes = include_bytes!(
-			"../../../substrate-fixtures/mixer/bn254/x5/verifying_key.bin"
-		);
+		let vk_bytes =
+			include_bytes!("../../../substrate-fixtures/mixer/bn254/x5/verifying_key.bin");
 		vk_bytes.to_vec()
 	};
 
@@ -234,9 +233,7 @@ fn testnet_genesis(
 	#[cfg(feature = "circom-backend")]
 	let vanchor_circom_verifier_2_2_bn254_params = {
 		log::info!("Reading circom vk for 2-2");
-		let zk_bytes = include_bytes!(
-			"../../../solidity-fixtures/vanchor_2/2/circuit_final.zkey"
-		);
+		let zk_bytes = include_bytes!("../../../solidity-fixtures/vanchor_2/2/circuit_final.zkey");
 		// wrap the bytes in a Cursor and read the params
 		let mut zk_reader = std::io::Cursor::new(zk_bytes);
 		let params_2_2 = ark_circom::read_zkey(&mut zk_reader).expect("reading zkey for 2-2");
@@ -249,9 +246,7 @@ fn testnet_genesis(
 	#[cfg(feature = "circom-backend")]
 	let vanchor_circom_verifier_2_8_bn254_params = {
 		log::info!("Reading circom vk for 2-8");
-		let zk_bytes = include_bytes!(
-			"../../../solidity-fixtures/vanchor_2/8/circuit_final.zkey"
-		);
+		let zk_bytes = include_bytes!("../../../solidity-fixtures/vanchor_2/8/circuit_final.zkey");
 		// wrap the bytes in a Cursor and read the params
 		let mut zk_reader = std::io::Cursor::new(zk_bytes);
 		let params_2_8 = ark_circom::read_zkey(&mut zk_reader).expect("reading zkey for 2-8");
@@ -264,9 +259,7 @@ fn testnet_genesis(
 	#[cfg(feature = "circom-backend")]
 	let vanchor_circom_verifier_16_2_bn254_params = {
 		log::info!("Reading circom vk for 16-2");
-		let zk_bytes = include_bytes!(
-			"../../../solidity-fixtures/vanchor_16/2/circuit_final.zkey"
-		);
+		let zk_bytes = include_bytes!("../../../solidity-fixtures/vanchor_16/2/circuit_final.zkey");
 		// wrap the bytes in a Cursor and read the params
 		let mut zk_reader = std::io::Cursor::new(zk_bytes);
 		let params_16_2 = ark_circom::read_zkey(&mut zk_reader).expect("reading zkey for 16-2");
@@ -279,9 +272,7 @@ fn testnet_genesis(
 	#[cfg(feature = "circom-backend")]
 	let vanchor_circom_verifier_16_8_bn254_params = {
 		log::info!("Reading circom vk for 16-8");
-		let zk_bytes = include_bytes!(
-			"../../../solidity-fixtures/vanchor_16/8/circuit_final.zkey"
-		);
+		let zk_bytes = include_bytes!("../../../solidity-fixtures/vanchor_16/8/circuit_final.zkey");
 		// wrap the bytes in a Cursor and read the params
 		let mut zk_reader = std::io::Cursor::new(zk_bytes);
 		let params_16_8 = ark_circom::read_zkey(&mut zk_reader).expect("reading zkey for 16-8");

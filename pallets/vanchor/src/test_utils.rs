@@ -82,8 +82,7 @@ pub fn setup_environment_with_circom(
 		vk_2_2_bytes.try_into().unwrap(),
 	));
 
-	let wasm_2_2_path =
-		"../../solidity-fixtures//vanchor_2/2/poseidon_vanchor_2_2.wasm";
+	let wasm_2_2_path = "../../solidity-fixtures//vanchor_2/2/poseidon_vanchor_2_2.wasm";
 
 	let wc_2_2 = circom_from_folder(wasm_2_2_path);
 
