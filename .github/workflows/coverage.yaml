@@ -36,6 +36,7 @@ jobs:
         uses: nick-fields/retry@v2
         with:
           max_attempts: 10
+          timeout_minutes: 30
           command: dvc pull -v
 
       - name: Install apt dependencies

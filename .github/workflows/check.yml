@@ -31,6 +31,7 @@ jobs:
         uses: nick-fields/retry@v2
         with:
           max_attempts: 10
+          timeout_minutes: 30
           command: dvc pull -v
       - name: Check Format
         run: |
@@ -53,6 +54,7 @@ jobs:
         uses: nick-fields/retry@v2
         with:
           max_attempts: 10
+          timeout_minutes: 30
           command: dvc pull -v
       - name: Check Build
         run: |
@@ -74,6 +76,7 @@ jobs:
         uses: nick-fields/retry@v2
         with:
           max_attempts: 10
+          timeout_minutes: 30
           command: dvc pull -v
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -105,21 +108,5 @@ jobs:
     needs: [check-format, check-build, test]
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
-      - name: Set-Up
-        run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
-      - name: Setup DVC
-        uses: iterative/setup-dvc@v1
-      - name: Fetch Fixtures
-        uses: nick-fields/retry@v2
-        with:
-          max_attempts: 10
-          command: dvc pull -v
-      - name: Install toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: nightly
-      - name: Install cargo-nextest
-        uses: baptiste0928/cargo-install@v1
-        with:
-          crate: cargo-nextest
+      - name: All Done
+        run: echo "All Done"
