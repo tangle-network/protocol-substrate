@@ -28,7 +28,10 @@ jobs:
       - name: Setup DVC
         uses: iterative/setup-dvc@v1
       - name: Fetch Fixtures
-        run: dvc pull -v
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 10
+          command: dvc pull -v
       - name: Check Format
         run: |
           SKIP_WASM_BUILD=1 cargo fmt --all -- --check
@@ -47,7 +50,10 @@ jobs:
       - name: Setup DVC
         uses: iterative/setup-dvc@v1
       - name: Fetch Fixtures
-        run: dvc pull -v
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 10
+          command: dvc pull -v
       - name: Check Build
         run: |
           SKIP_WASM_BUILD=1 cargo build --release -Z sparse-registry
@@ -65,7 +71,10 @@ jobs:
       - name: Setup DVC
         uses: iterative/setup-dvc@v1
       - name: Fetch Fixtures
-        run: dvc pull -v
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 10
+          command: dvc pull -v
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -102,7 +111,10 @@ jobs:
       - name: Setup DVC
         uses: iterative/setup-dvc@v1
       - name: Fetch Fixtures
-        run: dvc pull -v
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 10
+          command: dvc pull -v
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable
         with:

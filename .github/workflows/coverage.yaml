@@ -33,15 +33,17 @@ jobs:
         uses: iterative/setup-dvc@v1
 
       - name: Fetch Fixtures
-        run: dvc pull -v
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 10
+          command: dvc pull -v
 
       - name: Install apt dependencies
         run: |
           sudo apt-get update && \
           sudo apt-get install -y clang libssl-dev llvm libudev-dev libgmp3-dev protobuf-compiler && \
           sudo rm -rf /var/lib/apt/lists/*
-      
-      
+
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1.3.0
 
