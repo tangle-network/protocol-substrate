@@ -200,19 +200,19 @@ impl Proof {
 		let a_y = a[1].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
 
 		let b = decoded[1].clone().into_fixed_array().ok_or(CircomError::InvalidProofBytes)?;
-		let b_0 = b[0].clone().into_fixed_array().ok_or(CircomError::InvalidProofBytes)?;
-		let b_1 = b[1].clone().into_fixed_array().ok_or(CircomError::InvalidProofBytes)?;
-		let b_x_0 = b_0[0].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
-		let b_x_1 = b_0[1].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
-		let b_y_0 = b_1[0].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
-		let b_y_1 = b_1[1].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
+		let b_x = b[0].clone().into_fixed_array().ok_or(CircomError::InvalidProofBytes)?;
+		let b_y = b[1].clone().into_fixed_array().ok_or(CircomError::InvalidProofBytes)?;
+		let b_x_0 = b_x[0].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
+		let b_x_1 = b_x[1].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
+		let b_y_0 = b_y[0].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
+		let b_y_1 = b_y[1].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
 
 		let c = decoded[2].clone().into_fixed_array().ok_or(CircomError::InvalidProofBytes)?;
 		let c_x = c[0].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
 		let c_y = c[1].clone().into_uint().ok_or(CircomError::InvalidProofBytes)?;
 		Ok(Self {
 			a: G1 { x: a_x, y: a_y },
-			b: G2 { x: [b_x_0, b_x_1], y: [b_y_0, b_y_1] },
+			b: G2 { x: [b_x_1, b_x_0], y: [b_y_1, b_y_0] },
 			c: G1 { x: c_x, y: c_y },
 		})
 	}
@@ -230,12 +230,12 @@ impl Proof {
 			ethabi::Token::FixedArray(vec![ethabi::Token::Uint(a_x), ethabi::Token::Uint(a_y)]),
 			ethabi::Token::FixedArray(vec![
 				ethabi::Token::FixedArray(vec![
-					ethabi::Token::Uint(b_x_0),
 					ethabi::Token::Uint(b_x_1),
+					ethabi::Token::Uint(b_x_0),
 				]),
 				ethabi::Token::FixedArray(vec![
-					ethabi::Token::Uint(b_y_0),
 					ethabi::Token::Uint(b_y_1),
+					ethabi::Token::Uint(b_y_0),
 				]),
 			]),
 			ethabi::Token::FixedArray(vec![ethabi::Token::Uint(c_x), ethabi::Token::Uint(c_y)]),
