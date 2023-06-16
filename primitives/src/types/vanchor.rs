@@ -1,5 +1,6 @@
 use super::{ElementTrait, IntoAbiToken, Token};
 use codec::{Decode, Encode, MaxEncodedLen};
+use ethabi::{Int, Uint};
 use scale_info::TypeInfo;
 use sp_std::{vec, vec::Vec};
 
@@ -73,30 +74,15 @@ impl<I: Encode, A: Encode, B: Encode, C: Encode> ExtData<I, A, B, C> {
 }
 
 impl<I: Encode, A: Encode, B: Encode, C: Encode> IntoAbiToken for ExtData<I, A, B, C> {
-	// (bytes recipient,bytes extAmount,bytes relayer,bytes fee,bytes
+	// (bytes recipient,int256 extAmount,bytes relayer,uint256 fee,uint256
 	// refund,bytes token,bytes encryptedOutput1,bytes encryptedOutput2)
 	fn into_abi(&self) -> Token {
-		// make sure every field is encoded as BE bytes
-		// Recipient is already encoded as BE bytes
 		let recipient = Token::Bytes(self.recipient.encode());
-		// Ext amount is encoded as LE bytes, so we need to reverse it
-		let mut ext_amount_bytes = self.ext_amount.encode();
-		ext_amount_bytes.reverse();
-		let ext_amount = Token::Bytes(ext_amount_bytes);
-		// Relayer is already encoded as BE bytes
+		let ext_amount = Token::Int(Int::from_little_endian(&self.ext_amount.encode()));
 		let relayer = Token::Bytes(self.relayer.encode());
-		// Fee is encoded as LE bytes, so we need to reverse it
-		let mut fee_bytes = self.fee.encode();
-		fee_bytes.reverse();
-		let fee = Token::Bytes(fee_bytes);
-		// Refund is encoded as LE bytes, so we need to reverse it
-		let mut refund_bytes = self.refund.encode();
-		refund_bytes.reverse();
-		let refund = Token::Bytes(refund_bytes);
-		// Token is already encoded as BE bytes
+		let fee = Token::Uint(Uint::from_little_endian(&self.fee.encode()));
+		let refund = Token::Uint(Uint::from_little_endian(&self.refund.encode()));
 		let token = Token::Bytes(self.token.encode());
-		// Do not reverse encrypted output bytes
-		// Encrypted output(s) is already encoded as BE bytes
 		let encrypted_output1 = Token::Bytes(self.encrypted_output1.clone());
 		let encrypted_output2 = Token::Bytes(self.encrypted_output2.clone());
 		let ext_data_args = vec![
@@ -110,5 +96,56 @@ impl<I: Encode, A: Encode, B: Encode, C: Encode> IntoAbiToken for ExtData<I, A, 
 			encrypted_output2,
 		];
 		Token::Tuple(ext_data_args)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use crate::hasher::InstanceHasher;
+	use core::convert::TryInto;
+
+	use super::*;
+
+	#[test]
+	fn ext_data_hash_works() {
+		type AccountId = [u8; 32];
+		type Amount = i128;
+		type Balance = u128;
+		type AssetId = u32;
+
+		let recipient: AccountId =
+			hex::decode("306721211d5404bd9da88e0204360a1a9ab8b87c66c1bc2fcdd37f3c2222cc20")
+				.unwrap()
+				.try_into()
+				.unwrap();
+		let relayer: AccountId = recipient;
+		let ext_amount: Amount = -1000000000000000000000;
+		let fee: Balance = 0;
+		let refund: Balance = 0;
+		let token: AssetId = 0;
+		let encrypted_output1 = hex::decode("4857e108572669341113cbe18b92defdd8ec1d2e54c7b39ea32007ce1df1232a743b9cef820f62b918825d207513b892e07908a89332c52a5fadc6bd2b5c2c8f3fad3768cb303e42bf43ecdb8779c72942401485f600c6a89cf48406fc12702e9b416bdd128b672e7d0f677aca180bb687ab2945208fdbf0d7f231d109a04d5a063c7728dd474d4709c9c6b78b20a5ad8d66ab3bf70ccce13f430fe09cca015d91d1124b3cb3a445").unwrap();
+		let encrypted_output2 = hex::decode("b57f36d4a39a9a571f65d0f7c1dbe80862925f73dc6fd5ccf8e2e196c4a7d37986497f5337b3bb29137128d4310e76525371602387999724d32fbddc898c6e8234e9756e48eee766e96196ad390f48ee5b8581407f65398f2c18ecf5d1edf92c8ed33ddff666d6cf6ca36e036a09124732d060c2029ab50e3bd223b33c69f0f28e979434b2b4abc72eb3eeb62dbfb4afdde749244adec2c0b00d6ce26361e02c8e32e83dba939472").unwrap();
+
+		let ext_data = ExtData::new(
+			recipient,
+			relayer,
+			ext_amount,
+			fee,
+			refund,
+			token,
+			encrypted_output1,
+			encrypted_output2,
+		);
+		let ext_data_bytes = ext_data.encode_abi();
+		eprintln!("ext_data_bytes: 0x{}", hex::encode(&ext_data_bytes));
+		let hash1 = crate::hashing::ethereum::keccak_256(&ext_data_bytes);
+		eprintln!("hash1: 0x{}", hex::encode(hash1));
+		let hash = crate::hashing::ethereum::Keccak256HasherBn254::hash(
+			&ext_data_bytes,
+			Default::default(),
+		)
+		.unwrap();
+		let expected_hash = "04b18a1a64975a01e67f70e790434edd7d85bf51935580f3ddbe20e0c9abecc8";
+		assert_eq!(hex::encode(hash), expected_hash);
 	}
 }
