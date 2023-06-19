@@ -19,6 +19,8 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 type BlockNumber = u64;
 
+pub const EXISTENSIAL_DEPOSIT: u64 = 1;
+
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
 	pub enum Test where
@@ -98,7 +100,7 @@ impl asset_registry::Config for Test {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u64 = 1;
+	pub const ExistentialDeposit: u64 = EXISTENSIAL_DEPOSIT;
 }
 
 impl pallet_balances::Config for Test {

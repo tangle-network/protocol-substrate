@@ -433,12 +433,33 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 			DispatchError,
 		>>::get_by_id(into_pool_share_id)?;
 
-		T::Currency::transfer(
-			from_currency_id,
-			&from,
-			&Self::get_fee_recipient(&asset_details.name),
-			Self::get_wrapping_fee(amount, into_pool_share_id)?,
-		)?;
+		let fee_recipient_account = Self::get_fee_recipient(&asset_details.name);
+		let wrapping_fee = Self::get_wrapping_fee(amount, into_pool_share_id)?;
+
+		// check if the amount is lower than ED
+		if wrapping_fee < T::Currency::minimum_balance(from_currency_id) {
+			// in this case transfer only if the recipient account already has ED
+			let current_balance_fee_recipient =
+				T::Currency::total_balance(from_currency_id, &fee_recipient_account);
+
+			if current_balance_fee_recipient.saturating_add(wrapping_fee) >=
+				T::Currency::minimum_balance(from_currency_id)
+			{
+				T::Currency::transfer(
+					from_currency_id,
+					&from,
+					&Self::get_fee_recipient(&asset_details.name),
+					Self::get_wrapping_fee(amount, into_pool_share_id)?,
+				)?;
+			}
+		} else {
+			T::Currency::transfer(
+				from_currency_id,
+				&from,
+				&Self::get_fee_recipient(&asset_details.name),
+				Self::get_wrapping_fee(amount, into_pool_share_id)?,
+			)?;
+		}
 
 		T::Currency::transfer(from_currency_id, &from, &Self::account_id(), amount)?;
 

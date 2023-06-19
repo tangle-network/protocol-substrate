@@ -83,6 +83,95 @@ fn should_wrap_token() {
 }
 
 #[test]
+fn token_wrap_should_not_fail_when_fee_less_than_ed() {
+	new_test_ext().execute_with(|| {
+		let existential_balance: u32 = 1000;
+		let first_token_id = AssetRegistry::register_asset(
+			b"shib".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+		let second_token_id = AssetRegistry::register_asset(
+			b"doge".to_vec().try_into().unwrap(),
+			AssetType::Token,
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let pool_share_id = AssetRegistry::register_asset(
+			b"meme".to_vec().try_into().unwrap(),
+			AssetType::PoolShare(vec![second_token_id, first_token_id].try_into().unwrap()),
+			existential_balance.into(),
+		)
+		.unwrap();
+
+		let recipient: u64 = 1;
+		let balance: i128 = 100000;
+		let fee_recipient: u64 = 10;
+		let nonce: u32 = 1;
+
+		assert_ok!(TokenWrapper::set_fee_recipient(
+			RuntimeOrigin::root(),
+			pool_share_id,
+			fee_recipient,
+			nonce
+		));
+
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			recipient,
+			first_token_id,
+			balance
+		));
+
+		// increment nonce
+		let nonce = nonce + 1;
+		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 1, pool_share_id, nonce));
+
+		// here we wrap 50, the fee recipient receives 1% which is equal to 10
+		// this is less than ED but should not fail
+		assert_ok!(TokenWrapper::wrap(
+			RuntimeOrigin::signed(recipient),
+			first_token_id,
+			pool_share_id,
+			1000_u128,
+			recipient
+		));
+		let wrapping_fee = TokenWrapper::get_wrapping_fee(1000_u128, pool_share_id).unwrap();
+		// sanity check
+		assert!(wrapping_fee < existential_balance.into());
+		// the fee recipient does not receive any fee since the account does not have ED
+		assert_eq!(TokenWrapper::get_balance(first_token_id, &fee_recipient), 0);
+
+		// deposit some ED to the fee recipient account
+		assert_ok!(Currencies::update_balance(
+			RuntimeOrigin::root(),
+			fee_recipient,
+			first_token_id,
+			existential_balance.into()
+		));
+
+		// here we wrap 50, the fee recipient receives 1% which is equal to 10
+		// this is less than ED but should not fail
+		assert_ok!(TokenWrapper::wrap(
+			RuntimeOrigin::signed(recipient),
+			first_token_id,
+			pool_share_id,
+			1000_u128,
+			recipient
+		));
+
+		// the fee recipient receives the fee even though less than ED since the account already has
+		// ED
+		assert_eq!(
+			TokenWrapper::get_balance(first_token_id, &fee_recipient),
+			1000_u128 + wrapping_fee
+		);
+	})
+}
+
+#[test]
 fn should_unwrap_token() {
 	new_test_ext().execute_with(|| {
 		let existential_balance: u32 = 1000;
