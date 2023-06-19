@@ -12,6 +12,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive", "max-encoded-len"] }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+hex = { version = "0.4", default-features = false }
 
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
 ark-ff = { version = "^0.3.0", default-features = false }
@@ -43,7 +44,8 @@ ark-circom = { git = "https://github.com/vacp2p/ark-circom", branch = "wasm", de
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
 ark-ec = { version = "^0.3.0", default-features = false }
 ark-ff = { version = "0.3.0", default-features = false, features = ["asm"] }
-ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", default-features = false, features = ["parallel"] }
+ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", default-features = false }
+# ark-groth16 = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"] }
 ark-std = { version = "^0.3.0", default-features = false }
@@ -89,7 +91,8 @@ std = [
     "ark-std/std",
     "arkworks-setups/std",
     "pallet-vanchor-verifier/std",
-    "pallet-hasher/std"
+    "pallet-hasher/std",
+    "hex/std"
 ]
 runtime-benchmarks = [
   "frame-benchmarking",

@@ -97,13 +97,18 @@ substrate-state-trie-migration-rpc = { git = "https://github.com/paritytech/subs
 
 
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
+ark-circom = { git = "https://github.com/vacp2p/ark-circom", branch = "wasm", default-features = false, features = ["circom-2"] }
 arkworks-setups = { version = "1.2.1", features = ["r1cs"], default-features = false }
+ark-serialize = { version = "^0.3.0", default-features = false }
+wasmer = { version = "2.3" }
 
 [features]
 cli = [
   "clap",
 ]
-default = ["cli"]
+default = ["cli", "circom-backend"]
+arkworks-backend = ["webb-runtime/arkworks-backend"]
+circom-backend = ["webb-runtime/circom-backend"]
 runtime-benchmarks = [
   "webb-runtime/runtime-benchmarks",
   "frame-benchmarking/runtime-benchmarks",

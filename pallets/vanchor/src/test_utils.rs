@@ -68,7 +68,7 @@ pub fn setup_environment_with_circom(
 	// Load the WASM and R1CS for witness and proof generation
 	// Get path to solidity fixtures
 	println!("Setting up ZKey");
-	let path_2_2 = "../../solidity-fixtures/solidity-fixtures/vanchor_2/2/circuit_final.zkey";
+	let path_2_2 = "../../solidity-fixtures/vanchor_2/2/circuit_final.zkey";
 	let mut file_2_2 = File::open(path_2_2).unwrap();
 	let params_2_2 = read_zkey(&mut file_2_2).unwrap();
 
@@ -82,8 +82,7 @@ pub fn setup_environment_with_circom(
 		vk_2_2_bytes.try_into().unwrap(),
 	));
 
-	let wasm_2_2_path =
-		"../../solidity-fixtures/solidity-fixtures//vanchor_2/2/poseidon_vanchor_2_2.wasm";
+	let wasm_2_2_path = "../../solidity-fixtures//vanchor_2/2/poseidon_vanchor_2_2.wasm";
 
 	let wc_2_2 = circom_from_folder(wasm_2_2_path);
 

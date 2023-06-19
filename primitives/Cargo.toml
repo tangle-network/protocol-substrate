@@ -23,8 +23,8 @@ ark-bls12-381 = { version = "^0.3.0", default-features = false, features = ["cur
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"], optional = true }
 ark-ec = { version = "^0.3.0", default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false }
-# ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", default-features = false, features = ["parallel"] }
-ark-groth16 = { version = "^0.3.0", default-features = false }
+ark-groth16 = { git = "https://github.com/arkworks-rs/groth16", rev = "765817f", default-features = false }
+# ark-groth16 = { version = "^0.3.0", default-features = false }
 ark-relations = { version = "^0.3.0", default-features = false }
 ark-serialize = { version = "^0.3.0", default-features = false, features = ["derive"] }
 ark-std = { version = "^0.3.0", default-features = false }
@@ -33,6 +33,7 @@ ark-std = { version = "^0.3.0", default-features = false }
 blake2 = { version = "0.9", default-features = false }
 byteorder = { version = "1", default-features = false }
 digest = { version = "0.9", default-features = false }
+hex = { version = "0.4", default-features = false }
 
 ark-crypto-primitives = { version = "^0.3.0", default-features = false }
 arkworks-native-gadgets = { version = "1.2.0", default-features = false, optional = true }
@@ -40,6 +41,7 @@ arkworks-native-gadgets = { version = "1.2.0", default-features = false, optiona
 ethabi = { version = "15.0.0", default-features = false }
 
 webb-proposals = { git = "https://github.com/webb-tools/webb-rs", default-features = false, features = ["scale", "substrate", "evm"] }
+
 
 [features]
 default = ["std", "hashing", "verifying", "field_ops"]
@@ -67,6 +69,7 @@ std = [
   "ark-std/std",
   "ark-relations/std",
   "webb-proposals/std",
+  "hex/std",
 ]
 verifying = [
   "arkworks-native-gadgets",

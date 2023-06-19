@@ -32,8 +32,7 @@ WORKDIR /webb
 COPY . .
 
 # Use "RUN" instructions to combine multiple commands into a single layer
-RUN git submodule update --init --recursive \
-  && sh ./scripts/fetch-fixtures.sh \
+RUN dvc pull -v \
   && RUST_BACKTRACE=1 cargo build --release -p webb-standalone-node --verbose
 
 # Use the final stage to reduce the size of the final image

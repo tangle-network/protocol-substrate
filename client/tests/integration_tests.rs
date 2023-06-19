@@ -15,6 +15,7 @@ use webb_primitives::{hashing::ethereum::keccak_256, utils::compute_chain_id_typ
 use ark_bn254::{Bn254, Fr as Bn254Fr};
 use arkworks_native_gadgets::ark_std::rand::rngs::OsRng;
 use arkworks_setups::{common::verify_unchecked_raw, utxo::Utxo};
+use circom_proving::verify_proof;
 use subxt::{
 	ext::sp_runtime::AccountId32,
 	tx::{PairSigner, TxProgress},
@@ -33,12 +34,10 @@ async fn test_mixer() -> Result<(), Box<dyn std::error::Error>> {
 	let api: OnlineClient<_> = OnlineClient::<SubstrateConfig>::new().await?;
 	let signer = PairSigner::new(AccountKeyring::Alice.pair());
 
-	let pk_bytes = include_bytes!(
-		"../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin"
-	);
-	let vk_bytes = include_bytes!(
-		"../../substrate-fixtures/substrate-fixtures/mixer/bn254/x5/verifying_key_uncompressed.bin"
-	);
+	let pk_bytes =
+		include_bytes!("../../substrate-fixtures/mixer/bn254/x5/proving_key_uncompressed.bin");
+	let vk_bytes =
+		include_bytes!("../../substrate-fixtures/mixer/bn254/x5/verifying_key_uncompressed.bin");
 	let recipient = AccountKeyring::Bob.to_account_id();
 	let relayer = AccountKeyring::Bob.to_account_id();
 	let recipient_bytes = truncate_and_pad(&recipient.encode());
@@ -197,7 +196,7 @@ async fn make_vanchor_tx(
 		wc,
 	);
 
-	let res = verify_proof(&circom_params.0.vk, &proof, &public_inputs);
+	let res = verify_proof(&circom_params.0.vk, &proof, public_inputs.clone());
 	assert!(res.unwrap(), "Invalid proof");
 	println!("proof verified");
 
