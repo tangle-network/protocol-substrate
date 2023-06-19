@@ -451,6 +451,12 @@ impl<T: Config> TokenWrapperInterface<T::AccountId, T::AssetId, BalanceOf<T>, T:
 					&Self::get_fee_recipient(&asset_details.name),
 					Self::get_wrapping_fee(amount, into_pool_share_id)?,
 				)?;
+			} else {
+				T::Currency::withdraw(
+					from_currency_id,
+					&from,
+					Self::get_wrapping_fee(amount, into_pool_share_id)?,
+				)?;
 			}
 		} else {
 			T::Currency::transfer(

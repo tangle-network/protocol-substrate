@@ -128,6 +128,7 @@ fn token_wrap_should_not_fail_when_fee_less_than_ed() {
 		// increment nonce
 		let nonce = nonce + 1;
 		assert_ok!(TokenWrapper::set_wrapping_fee(RuntimeOrigin::root(), 1, pool_share_id, nonce));
+		let initial_balance_first_token = TokenWrapper::get_balance(first_token_id, &recipient);
 
 		// here we wrap 50, the fee recipient receives 1% which is equal to 10
 		// this is less than ED but should not fail
@@ -143,6 +144,12 @@ fn token_wrap_should_not_fail_when_fee_less_than_ed() {
 		assert!(wrapping_fee < existential_balance.into());
 		// the fee recipient does not receive any fee since the account does not have ED
 		assert_eq!(TokenWrapper::get_balance(first_token_id, &fee_recipient), 0);
+
+		assert_eq!(
+			TokenWrapper::get_balance(first_token_id, &recipient),
+			initial_balance_first_token
+				.saturating_sub(TokenWrapper::get_amount_to_wrap(1000_u128, pool_share_id))
+		);
 
 		// deposit some ED to the fee recipient account
 		assert_ok!(Currencies::update_balance(
