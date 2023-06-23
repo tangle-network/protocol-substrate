@@ -23,7 +23,7 @@ tokio = { version = "1.17.0", features = ["full"] }
 # arkworks related deps
 ark-bls12-381 = { version = "^0.3.0", default-features = false, features = ["curve"] }
 ark-bn254 = { version = "^0.3.0", default-features = false, features = ["curve"] }
-ark-circom = { git = "https://github.com/gakonst/ark-circom", branch = "master", default-features = false, features = ["circom-2"] }
+ark-circom = { git = "https://github.com/vacp2p/ark-circom", branch = "wasm", default-features = false, features = ["circom-2"] }
 ark-crypto-primitives = { version = "^0.3.0", features = ["r1cs"], default-features = false }
 ark-ec = { version = "^0.3.0", default-features = false }
 ark-ff = { version = "^0.3.0", default-features = false }
@@ -52,6 +52,7 @@ wasmer = { version = "2.3.0", default-features = false }
 # Webb deps
 arkworks-native-gadgets = { version = "1.2.0", default-features = false }
 webb-primitives = { path = "../primitives", features = ["hashing", "verifying", "field_ops"] }
+circom-proving = { path = "../circom-proving", default-features = false }
 
 [features]
 default = ["std", "wasmer/sys-default"]

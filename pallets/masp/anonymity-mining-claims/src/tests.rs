@@ -120,7 +120,7 @@ fn should_create_pallet() {
 }
 
 #[test]
-// #[ignore]
+#[ignore = "Needs to update the fixtures to the latest commit"]
 fn circom_should_complete_30x2_reward_claim_with_json_file() {
 	new_test_ext().execute_with(|| {
 		let (params_2_2, wc_2_2) = setup_environment_with_circom();

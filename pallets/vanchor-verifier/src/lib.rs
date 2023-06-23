@@ -186,7 +186,7 @@ impl<T: Config<I>, I: 'static> VAnchorVerifierModule for Pallet<T, I> {
 		match T::Verifier::verify(public_inp_bytes, proof, &params) {
 			Ok(verified) => Ok(verified),
 			Err(e) => {
-				log::error!("{:?}", e);
+				log::error!("Proof Verification Error: {:?}", e);
 				ensure!(false, Error::<T, I>::VerifyError);
 				Ok(false)
 			},
